@@ -18,6 +18,7 @@
     "packages/shared"
   ],
   "devDependencies": {
+    "dotenv": "^16.4.5",
     "tsx": "^4.16.2"
   }
 }
