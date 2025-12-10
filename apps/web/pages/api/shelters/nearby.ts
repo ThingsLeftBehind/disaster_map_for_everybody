@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@jp-evac/db';
-import { NearbyQuerySchema } from '../../lib/validators';
+import { NearbyQuerySchema } from '../../../lib/validators';
 import { haversineDistance } from '@jp-evac/shared';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

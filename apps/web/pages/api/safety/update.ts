@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@jp-evac/db';
-import { SafetyUpdateSchema } from '../../lib/validators';
+import { SafetyUpdateSchema } from '../../../lib/validators';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
