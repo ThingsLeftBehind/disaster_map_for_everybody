@@ -1,0 +1,16 @@
+{
+  "name": "@jp-evac/db",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "prisma:generate": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.20.1"
+  },
+  "devDependencies": {
+    "prisma": "^5.20.1"
+  }
+}

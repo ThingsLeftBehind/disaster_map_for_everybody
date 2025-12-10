@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/@prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model evac_sites {
+  id                      String         @id @default(uuid()) @db.Uuid
+  common_id               String?        @unique
+  pref_city               String?
+  name                    String
+  address                 String?
+  lat                     Float
+  lon                     Float
+  hazards                 Json
+  is_same_address_as_shelter Boolean?
+  shelter_fields          Json?
+  notes                   String?
+  source_updated_at       DateTime?
+  created_at              DateTime       @default(now())
+  updated_at              DateTime       @updatedAt
+  crowd_reports           crowd_reports[]
+}
+
+model crowd_reports {
+  id          String   @id @default(cuid())
+  site        evac_sites @relation(fields: [site_id], references: [id])
+  site_id     String
+  status      CrowdStatus
+  comment     String?
+  device_hash String
+  created_at  DateTime @default(now())
+
+  @@index([site_id, created_at])
+  @@index([device_hash, created_at])
+}
+
+enum CrowdStatus {
+  OK
+  CROWDED
+  VERY_CROWDED
+  CLOSED
+  BLOCKED
+}
+
+model device_settings {
+  device_hash        String   @id
+  transfer_code      String?
+  saved_places       Json?
+  hazard_alert_prefs Json?
+  updated_at         DateTime @updatedAt
+  created_at         DateTime @default(now())
+  safety_status      safety_status?
+}
+
+model safety_status {
+  id              String   @id @default(cuid())
+  device_hash     String   @unique
+  status          SafetyStatus
+  updated_at      DateTime @default(now())
+  last_known_lat  Float?
+  last_known_lon  Float?
+  device          device_settings @relation(fields: [device_hash], references: [device_hash])
+}
+
+enum SafetyStatus {
+  SAFE
+  EVACUATING
+  EVACUATED
+  INJURED
+  ISOLATED
+}
