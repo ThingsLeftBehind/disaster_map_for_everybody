@@ -27,15 +27,15 @@ model evac_sites {
 }
 
 model crowd_reports {
-  id          String   @id @default(cuid())
-  site        evac_sites @relation(fields: [site_id], references: [id])
-  site_id     String
+  id          String    @id @default(uuid()) @db.Uuid
+  site        evac_sites @relation(fields: [siteId], references: [id])
+  siteId      String    @db.Uuid @map("site_id")
   status      CrowdStatus
   comment     String?
   device_hash String
   created_at  DateTime @default(now())
 
-  @@index([site_id, created_at])
+  @@index([siteId, created_at])
   @@index([device_hash, created_at])
 }
 

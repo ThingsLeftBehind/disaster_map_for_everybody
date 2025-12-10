@@ -31,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const created = await prisma.crowd_reports.create({
     data: {
-      site_id: siteId,
+      siteId,
       status,
       comment,
       device_hash,

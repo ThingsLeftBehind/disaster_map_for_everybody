@@ -5,10 +5,11 @@
   "packageManager": "npm@10.8.1",
   "scripts": {
     "dev": "npm --workspace apps/web run dev",
-    "build": "npm --workspace apps/web run build",
+    "build": "npm run -ws --if-present build",
     "lint": "npm --workspace apps/web run lint",
     "import": "tsx scripts/import-all.ts",
-    "prisma:generate": "npm --workspace packages/db run prisma:generate"
+    "prisma:generate": "npm --workspace packages/db run prisma:generate",
+    "db:push": "prisma db push --schema packages/db/prisma/schema.prisma"
   },
   "workspaces": [
     "apps/web",
