@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const since = new Date(Date.now() - 60 * 60 * 1000);
   const reports = await prisma.crowd_reports.findMany({
-    where: { site_id: siteId, created_at: { gte: since } },
+    where: { siteId, created_at: { gte: since } },
   });
 
   const summary = reports.reduce<Record<string, number>>((acc, report) => {

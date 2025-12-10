@@ -27,7 +27,9 @@ Next.js + Leaflet MVP for exploring Japan-wide evacuation locations, powered by 
 Prisma uses the schema at `packages/db/prisma/schema.prisma`.
 ```
 npm run prisma:generate
-npx prisma migrate dev --schema packages/db/prisma/schema.prisma
+npm run db:push
+# To reset and recreate all tables locally/Supabase:
+npx prisma db push --schema packages/db/prisma/schema.prisma --force-reset
 ```
 If you use Supabase, run these against your Supabase connection string.
 
