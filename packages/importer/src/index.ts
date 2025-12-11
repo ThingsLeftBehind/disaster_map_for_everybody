@@ -245,67 +245,89 @@ export async function runImport({
   const root = findRepoRoot();
   const dataDir = path.join(root, 'data');
 
-  // data/*.csv 중에서 evacuation_* 으로 시작하지 않는 것들 = 도도부현별 파일들
-  const allCsvFiles = fs.readdirSync(dataDir).filter((f) => f.endsWith('.csv'));
-  const perPrefCsvFiles = allCsvFiles.filter((f) => !f.startsWith('evacuation_'));
+  // 진행상태 저장 파일 경로
+  const progressPath = path.join(dataDir, '.import-progress.json');
 
-  // 94개 도도부현 파일이 있으면 그걸 전부 돈다
-  if (perPrefCsvFiles.length > 0 && !evacSpaceFile && !evacShelterFile) {
-    console.log(`Found ${perPrefCsvFiles.length} per-prefecture CSVs. Importing all of them...`);
+  // 진행상태 로드
+  let completed: string[] = [];
+  if (fs.existsSync(progressPath)) {
+    try {
+      const raw = fs.readFileSync(progressPath, 'utf8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed.completed)) {
+        completed = parsed.completed;
+      }
+    } catch (e) {
+      console.error('Failed to read import progress, starting fresh:', e);
+    }
+  }
 
-    // 파일명 정렬해서 항상 같은 순서로 돌도록
-    perPrefCsvFiles.sort();
+  const saveProgress = () => {
+    const payload = { completed };
+    fs.writeFileSync(progressPath, JSON.stringify(payload, null, 2), 'utf8');
+  };
 
-    for (const fileName of perPrefCsvFiles) {
-      const filePath = path.join(dataDir, fileName);
-      const rawRecords = readCsv(filePath);
-      if (rawRecords.length === 0) {
-        console.log(`${fileName}: empty file, skipped`);
+  // data 디렉토리 안의 파일 목록
+  const allFiles = fs.readdirSync(dataDir);
+
+  // 도도부현별 파일 패턴 (예: 01000_1.csv, 01000_2.csv ...)
+  const spaceFiles = allFiles.filter((f) => /^\d{5}_1\.csv$/.test(f));
+  const shelterFiles = allFiles.filter((f) => /^\d{5}_2\.csv$/.test(f));
+
+  // 도도부현 파일이 있으면 그걸 우선 사용
+  if (spaceFiles.length > 0 || shelterFiles.length > 0) {
+    console.log(`Found ${spaceFiles.length + shelterFiles.length} per-prefecture CSVs. Importing all of them...`);
+
+    // 정렬해서 항상 같은 순서로 처리
+    spaceFiles.sort();
+    shelterFiles.sort();
+
+    // 1) 지정緊急避難場所(= space) 쪽부터
+    for (const file of spaceFiles) {
+      const key = `space:${file}`;
+      if (completed.includes(key)) {
+        console.log(`Skip (already completed): ${key}`);
         continue;
       }
 
-      // 원래 헤더를 보고 space / shelter 판별
-      const rawHeaders = Object.keys(rawRecords[0]);
-
-      const hazardKeywords = ['洪水', '崖崩れ', '土石流', '地滑', '高潮', '地震', '津波', '内水', '火山', '大規模な火事'];
-
-      const hasHazardColumns = rawHeaders.some((h) =>
-        hazardKeywords.some((kw) => h.includes(kw))
-      );
-
-      const kind: 'space' | 'shelter' = hasHazardColumns ? 'space' : 'shelter';
-
-      const sourceName = path.basename(fileName, '.csv');
-
+      const filePath = path.join(dataDir, file);
       await importDataset({
         filePath,
-        kind,
-        sourceName
+        kind: 'space',
+        sourceName: file   // 여기서 sourceName = '01000_1.csv' 이런 식으로 고정
       });
+
+      completed.push(key);
+      saveProgress();
     }
 
+    // 2) 지정避難所(= shelter)
+    for (const file of shelterFiles) {
+      const key = `shelter:${file}`;
+      if (completed.includes(key)) {
+        console.log(`Skip (already completed): ${key}`);
+        continue;
+      }
+
+      const filePath = path.join(dataDir, file);
+      await importDataset({
+        filePath,
+        kind: 'shelter',
+        sourceName: file   // '01000_2.csv' 이런 식
+      });
+
+      completed.push(key);
+      saveProgress();
+    }
+
+    console.log('All per-prefecture files processed.');
     return;
   }
 
-  // 만약 per-pref 파일이 없거나, 특정 파일을 직접 지정해서 부르고 싶으면
-  // 기존 전국 파일 방식(evacuation_space_all / evacuation_shelter_all)을 그대로 사용
+  // 도도부현 파일이 없으면, 옛날처럼 전국 파일 2개만 사용하는 fallback
   const spacePath = evacSpaceFile ?? path.join(dataDir, 'evacuation_space_all.csv');
   const shelterPath = evacShelterFile ?? path.join(dataDir, 'evacuation_shelter_all.csv');
 
   await importDataset({ filePath: spacePath, kind: 'space', sourceName: 'evacuation_space_all' });
-  await importDataset({
-    filePath: shelterPath,
-    kind: 'shelter',
-    sourceName: 'evacuation_shelter_all'
-  });
-}
-
-if (require.main === module) {
-  runImport()
-    .then(() => prisma.$disconnect())
-    .catch(async (err) => {
-      console.error(err);
-      await prisma.$disconnect();
-      process.exit(1);
-    });
+  await importDataset({ filePath: shelterPath, kind: 'shelter', sourceName: 'evacuation_shelter_all' });
 }
