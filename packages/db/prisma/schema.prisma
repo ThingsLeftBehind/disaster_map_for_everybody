@@ -134,6 +134,7 @@ model WatchRegion {
   createdAt   DateTime                 @default(now())
   updatedAt   DateTime                 @updatedAt
   hazards     WatchRegionHazard[]
+  hazardAlertSnapshots HazardAlertSnapshot[]
 
   @@index([deviceId])
 }
