@@ -24,11 +24,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
   const { lat, lng, radiusKm, limit, hazardTypes } = parsed.data;
-  const hazardOptions = Object.values(HazardType);
   const hazardFilter = hazardTypes
     ?.split(',')
     .map((h) => h.trim())
-    .filter((h): h is HazardType => hazardOptions.includes(h as HazardType));
+    .filter((h) => h.length > 0);
   const bbox = boundingBox(lat, lng, radiusKm);
   const sites = await prisma.evacSite.findMany({
     where: {
