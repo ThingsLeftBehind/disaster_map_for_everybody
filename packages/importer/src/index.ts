@@ -146,9 +146,11 @@ async function importDataset(config: DatasetConfig) {
 
   for (const record of records) {
     parsedRows += 1;
+
     const lat = asNumber(getField(record, baseFieldMap.latitude));
     const lon = asNumber(getField(record, baseFieldMap.longitude));
     const name = getField(record, baseFieldMap.name);
+
     if (!lat || !lon) {
       skipReasons.missing_lat_lng = (skipReasons.missing_lat_lng ?? 0) + 1;
       continue;
@@ -184,34 +186,80 @@ async function importDataset(config: DatasetConfig) {
           config.sourceName
         );
 
-    const site = await prisma.evacSite.upsert({
+    // ===== 여기부터 "이미 있는 행은 건너뛰되, 내용 다르면 업데이트" 로직 =====
+    const existing = await prisma.evacSite.findUnique({
       where: { sourceId: stableId },
-      update: {
-        name: parsed.data.name,
-        address: parsed.data.address,
-        latitude: parsed.data.latitude,
-        longitude: parsed.data.longitude,
-        municipalityCode: parsed.data.municipality_code,
-        capacity: parsed.data.capacity,
-        isDesignated: parsed.data.is_designated,
-        sourceName: config.sourceName,
-        sourceUrl: parsed.data.source_url,
-        kind: config.kind
-      },
-      create: {
-        sourceId: stableId,
-        name: parsed.data.name,
-        address: parsed.data.address,
-        latitude: parsed.data.latitude,
-        longitude: parsed.data.longitude,
-        municipalityCode: parsed.data.municipality_code,
-        capacity: parsed.data.capacity,
-        isDesignated: parsed.data.is_designated,
-        sourceName: config.sourceName,
-        sourceUrl: parsed.data.source_url,
-        kind: config.kind
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        latitude: true,
+        longitude: true,
+        municipalityCode: true,
+        capacity: true,
+        isDesignated: true,
+        sourceName: true,
+        sourceUrl: true,
+        kind: true
       }
     });
+
+    let site;
+
+    if (existing) {
+      const same =
+        existing.name === parsed.data.name &&
+        existing.address === parsed.data.address &&
+        existing.latitude === parsed.data.latitude &&
+        existing.longitude === parsed.data.longitude &&
+        existing.municipalityCode === parsed.data.municipality_code &&
+        existing.capacity === parsed.data.capacity &&
+        existing.isDesignated === parsed.data.is_designated &&
+        existing.sourceName === config.sourceName &&
+        existing.sourceUrl === parsed.data.source_url &&
+        existing.kind === config.kind;
+
+      if (same) {
+        // 완전히 같은 데이터면 건너뛰기 (속도용)
+        skipReasons.already_exists = (skipReasons.already_exists ?? 0) + 1;
+        continue;
+      }
+
+      // 값이 다르면 업데이트해서 “깨진 행” / 옛날 행 복구
+      site = await prisma.evacSite.update({
+        where: { sourceId: stableId },
+        data: {
+          name: parsed.data.name,
+          address: parsed.data.address,
+          latitude: parsed.data.latitude,
+          longitude: parsed.data.longitude,
+          municipalityCode: parsed.data.municipality_code,
+          capacity: parsed.data.capacity,
+          isDesignated: parsed.data.is_designated,
+          sourceName: config.sourceName,
+          sourceUrl: parsed.data.source_url,
+          kind: config.kind
+        }
+      });
+    } else {
+      // 아예 없으면 새로 생성
+      site = await prisma.evacSite.create({
+        data: {
+          sourceId: stableId,
+          name: parsed.data.name,
+          address: parsed.data.address,
+          latitude: parsed.data.latitude,
+          longitude: parsed.data.longitude,
+          municipalityCode: parsed.data.municipality_code,
+          capacity: parsed.data.capacity,
+          isDesignated: parsed.data.is_designated,
+          sourceName: config.sourceName,
+          sourceUrl: parsed.data.source_url,
+          kind: config.kind
+        }
+      });
+    }
+
     upsertedSites += 1;
     hazardRows += await upsertHazards(site.id, hazards);
   }
@@ -234,7 +282,7 @@ function findRepoRoot(start = process.cwd()) {
   throw new Error('Repository root not found');
 }
 
-// ★ 여기부터가 핵심: 94개 CSV 자동 임포트 로직
+// ★ 94개 CSV + 진행상황 파일을 사용하는 runImport
 export async function runImport({
   evacSpaceFile,
   evacShelterFile
@@ -245,7 +293,6 @@ export async function runImport({
   const root = findRepoRoot();
   const dataDir = path.join(root, 'data');
 
-  // 진행상태 저장 파일 경로
   const progressPath = path.join(dataDir, '.import-progress.json');
 
   // 진행상태 로드
@@ -267,22 +314,17 @@ export async function runImport({
     fs.writeFileSync(progressPath, JSON.stringify(payload, null, 2), 'utf8');
   };
 
-  // data 디렉토리 안의 파일 목록
   const allFiles = fs.readdirSync(dataDir);
 
-  // 도도부현별 파일 패턴 (예: 01000_1.csv, 01000_2.csv ...)
   const spaceFiles = allFiles.filter((f) => /^\d{5}_1\.csv$/.test(f));
   const shelterFiles = allFiles.filter((f) => /^\d{5}_2\.csv$/.test(f));
 
-  // 도도부현 파일이 있으면 그걸 우선 사용
   if (spaceFiles.length > 0 || shelterFiles.length > 0) {
     console.log(`Found ${spaceFiles.length + shelterFiles.length} per-prefecture CSVs. Importing all of them...`);
 
-    // 정렬해서 항상 같은 순서로 처리
     spaceFiles.sort();
     shelterFiles.sort();
 
-    // 1) 지정緊急避難場所(= space) 쪽부터
     for (const file of spaceFiles) {
       const key = `space:${file}`;
       if (completed.includes(key)) {
@@ -294,14 +336,13 @@ export async function runImport({
       await importDataset({
         filePath,
         kind: 'space',
-        sourceName: file   // 여기서 sourceName = '01000_1.csv' 이런 식으로 고정
+        sourceName: file
       });
 
       completed.push(key);
       saveProgress();
     }
 
-    // 2) 지정避難所(= shelter)
     for (const file of shelterFiles) {
       const key = `shelter:${file}`;
       if (completed.includes(key)) {
@@ -313,7 +354,7 @@ export async function runImport({
       await importDataset({
         filePath,
         kind: 'shelter',
-        sourceName: file   // '01000_2.csv' 이런 식
+        sourceName: file
       });
 
       completed.push(key);
@@ -324,10 +365,21 @@ export async function runImport({
     return;
   }
 
-  // 도도부현 파일이 없으면, 옛날처럼 전국 파일 2개만 사용하는 fallback
+  // 도도부현별 파일이 없을 때 fallback (전국 2개 파일)
   const spacePath = evacSpaceFile ?? path.join(dataDir, 'evacuation_space_all.csv');
   const shelterPath = evacShelterFile ?? path.join(dataDir, 'evacuation_shelter_all.csv');
 
   await importDataset({ filePath: spacePath, kind: 'space', sourceName: 'evacuation_space_all' });
   await importDataset({ filePath: shelterPath, kind: 'shelter', sourceName: 'evacuation_shelter_all' });
+}
+
+// 직접 실행용
+if (require.main === module) {
+  runImport()
+    .then(() => prisma.$disconnect())
+    .catch(async (err) => {
+      console.error(err);
+      await prisma.$disconnect();
+      process.exit(1);
+    });
 }
