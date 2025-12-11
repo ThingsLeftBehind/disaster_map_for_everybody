@@ -1,30 +1,22 @@
 import dynamic from 'next/dynamic';
-import { useMemo } from 'react';
-import { hazardLabels } from '@jp-evac/shared';
-import type { evac_sites } from '@jp-evac/db';
+import { HazardKey, hazardLabels } from '@jp-evac/shared';
 
-const DynamicMap = dynamic(() => import('./MapViewInner'), { ssr: false });
+export type MapMarker = {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  hazards: HazardKey[];
+  distance?: number;
+};
 
-export type SiteWithDistance = evac_sites & { distance?: number };
+const MapCanvas = dynamic(() => import('./MapViewInner'), { ssr: false });
 
-interface Props {
-  sites: SiteWithDistance[];
-  center: { lat: number; lon: number };
-  onSelect: (site: SiteWithDistance) => void;
-}
-
-export default function MapView({ sites, center, onSelect }: Props) {
-  const markers = useMemo(
-    () =>
-      sites.map((site) => ({
-        id: site.id,
-        name: site.name,
-        position: { lat: site.lat, lon: site.lon },
-        hazards: site.hazards as Record<string, boolean>,
-        distance: site.distance,
-      })),
-    [sites]
-  );
-
-  return <DynamicMap center={center} markers={markers} onSelect={onSelect} hazardLabels={hazardLabels} />;
+export default function MapView({ markers, center, radiusKm, onSelect }: {
+  markers: MapMarker[];
+  center: { lat: number; lng: number };
+  radiusKm: number;
+  onSelect?: (id: string) => void;
+}) {
+  return <MapCanvas markers={markers} center={center} radiusKm={radiusKm} hazardLabels={hazardLabels} onSelect={onSelect} />;
 }

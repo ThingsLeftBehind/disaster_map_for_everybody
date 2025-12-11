@@ -1,15 +1,16 @@
-Follow README and build MVP in phases.
+Follow README for current v2 architecture.
 
 Architecture overview:
-- Monorepo with workspaces: apps/web (Next.js UI + API routes), packages/db (Prisma client and schema), packages/importer (CSV ingestion helpers), packages/shared (shared constants/utilities), and scripts (entry points such as import-all.ts).
-- PostgreSQL/Supabase is the target DB; Prisma manages schema and access. Leaflet renders maps from API data rather than committed GeoJSON.
+- Monorepo workspaces: apps/web (Next.js UI + API routes), packages/db (Prisma schema/client), packages/importer (CSV ingestion), packages/shared (types and utilities), scripts (entry points such as import-all.ts).
+- PostgreSQL/Supabase with Prisma 5 and pgbouncer-friendly dual URLs (DATABASE_URL for runtime, DIRECT_DATABASE_URL for migrations).
+- Leaflet renders map tiles dynamically; data is loaded from API queries rather than bundled GeoJSON.
 
 Conventions:
-- Use TypeScript across packages, Zod for input validation, and keep hazards keyed by hazardKeys in @jp-evac/shared.
-- Prefer functional React components with Tailwind utility classes.
-- Avoid storing large GeoJSON files in the repo; generate map data from DB queries.
+- Use TypeScript and Zod across packages. Hazard keys come from @jp-evac/shared.
+- Prefer functional React components with Tailwind utility classes and no inline comments.
+- Keep device identity anonymous via hashed device_hash stored in cookies/local storage; no user accounts.
 
-MVP checklist:
-- MVP1: map/search/filter UI wired to /api/shelters/nearby with device bootstrap.
-- MVP2: crowd reporting endpoints and 60-minute summary surfaced in the detail panel.
-- MVP3: safety status endpoints and transfer code flow persisting device state.
+v2 surface areas:
+- Importer normalizes headers, logs dataset metadata, and upserts evac_site with hazard capabilities from the two CSVs in /data.
+- API routes under apps/web/pages/api provide nearby search, shelter detail, status reporting, safety status, device transfer, watch regions, and hazard risk stubs.
+- Frontend home screen pairs map + list with filters, hazard badges, status reporting, safety status, transfer code, and watch region management with shared disclaimer.
