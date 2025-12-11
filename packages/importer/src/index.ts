@@ -7,7 +7,7 @@ import { prisma } from '@jp-evac/db';
 import { hazardKeys, HazardKey, hazardDefaults } from '@jp-evac/shared';
 
 const baseFieldMap: Record<string, string[]> = {
-  name: ['名称', '施設・場所名称', 'name', '施設名'],
+  name: ['名称', '施設・場所名称', '施設_場所名', 'name', '施設名'],
   address: ['住所', '所在地', 'address'],
   latitude: ['緯度', 'lat', 'latitude'],
   longitude: ['経度', 'lon', 'lng', 'longitude'],
