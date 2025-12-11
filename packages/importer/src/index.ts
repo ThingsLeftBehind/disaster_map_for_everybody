@@ -17,9 +17,34 @@ const hazardColumnCandidates: Record<HazardKey, string[]> = {
   volcano: ['volcano', '火山'],
 };
 
-const baseDir = path.resolve(__dirname, '../../../data');
-const evacSpaceFile = path.join(baseDir, 'evacuation_space_all.csv');
-const evacShelterFile = path.join(baseDir, 'evacuation_shelter_all.csv');
+const defaultBaseDir = path.resolve(process.cwd(), 'data');
+const defaultEvacSpaceFile = path.resolve(defaultBaseDir, 'evacuation_space_all.csv');
+const defaultEvacShelterFile = path.resolve(defaultBaseDir, 'evacuation_shelter_all.csv');
+
+type FieldAccessor = (candidates: string[]) => string | undefined;
+
+function normalizeKey(key: string): string {
+  return key
+    .toLowerCase()
+    .replace(/[_\-\s]/g, '')
+    .replace(/[（）()]/g, '');
+}
+
+function createFieldAccessor(record: Record<string, string>): FieldAccessor {
+  const normalizedKeys = new Map<string, string>();
+  for (const key of Object.keys(record)) {
+    normalizedKeys.set(normalizeKey(key), key);
+  }
+
+  return (candidates: string[]) => {
+    for (const candidate of candidates) {
+      const normalized = normalizeKey(candidate);
+      const originalKey = normalizedKeys.get(normalized);
+      if (originalKey) return record[originalKey];
+    }
+    return undefined;
+  };
+}
 
 function normalizeBoolean(value: string | undefined): boolean {
   if (!value) return false;
@@ -56,7 +81,7 @@ async function readCsv(filePath: string): Promise<Record<string, string>[]> {
   });
 }
 
-function mapHazards(record: Record<string, string>): Record<HazardKey, boolean> {
+function mapHazards(record: Record<string, string>, getField: FieldAccessor): Record<HazardKey, boolean> {
   const hazards: Record<HazardKey, boolean> = {
     flood: false,
     landslide: false,
@@ -69,13 +94,8 @@ function mapHazards(record: Record<string, string>): Record<HazardKey, boolean> 
   };
 
   for (const key of hazardKeys) {
-    const candidates = hazardColumnCandidates[key];
-    const column = Object.keys(record).find((k) =>
-      candidates.some((candidate) => k.toLowerCase().includes(candidate.toLowerCase()))
-    );
-    if (column) {
-      hazards[key] = normalizeBoolean(record[column]);
-    }
+    const value = getField(hazardColumnCandidates[key]);
+    hazards[key] = normalizeBoolean(value);
   }
 
   return hazards;
@@ -93,30 +113,43 @@ const spaceSchema = z.object({
   source_updated_at: z.string().optional(),
 });
 
-async function importData() {
+async function importData({
+  evacSpaceFile = defaultEvacSpaceFile,
+  evacShelterFile = defaultEvacShelterFile,
+}: {
+  evacSpaceFile?: string;
+  evacShelterFile?: string;
+} = {}) {
+  console.log('Resolved CSV paths:', { evacSpaceFile, evacShelterFile });
+
   const [spaceRows, shelterRows] = await Promise.all([
     readCsv(evacSpaceFile),
     readCsv(evacShelterFile),
   ]);
 
+  console.log(`Loaded ${spaceRows.length} rows from ${evacSpaceFile}`);
+  console.log(`Loaded ${shelterRows.length} rows from ${evacShelterFile}`);
+
   const sheltersByCommonId: Record<string, Record<string, string>> = {};
   for (const row of shelterRows) {
-    const id = row['共通ID'] || row['common_id'] || row['id'];
+    const getField = createFieldAccessor(row);
+    const id = getField(['共通ID', 'common_id', 'id']);
     if (id) sheltersByCommonId[id] = row;
   }
 
   let upserted = 0;
   for (const row of spaceRows) {
+    const getField = createFieldAccessor(row);
     const mapped = {
-      common_id: row['共通ID'] || row['common_id'],
-      name: row['施設・場所名称'] || row['name'] || '不明',
-      address: row['住所'] || row['address'],
-      lat: Number(row['緯度'] || row['lat'] || row['latitude']),
-      lon: Number(row['経度'] || row['lon'] || row['longitude']),
-      pref_city: row['都道府県市区町村'] || row['pref_city'],
-      is_same_address_as_shelter: row['避難所と同住所'] || row['is_same_address_as_shelter'],
-      notes: row['備考'] || row['notes'],
-      source_updated_at: row['更新日'] || row['source_updated_at'],
+      common_id: getField(['共通ID', 'common_id']),
+      name: getField(['施設・場所名称', 'name']) || '不明',
+      address: getField(['住所', 'address']),
+      lat: Number(getField(['緯度', 'lat', 'latitude'])),
+      lon: Number(getField(['経度', 'lon', 'longitude'])),
+      pref_city: getField(['都道府県市区町村', 'pref_city']),
+      is_same_address_as_shelter: getField(['避難所と同住所', 'is_same_address_as_shelter']),
+      notes: getField(['備考', 'notes']),
+      source_updated_at: getField(['更新日', 'source_updated_at']),
     } satisfies Record<string, unknown>;
 
     const parsed = spaceSchema.safeParse(mapped);
@@ -125,7 +158,7 @@ async function importData() {
       continue;
     }
 
-    const hazards = mapHazards(row);
+    const hazards = mapHazards(row, getField);
     const shelter_fields = mapped.common_id ? sheltersByCommonId[mapped.common_id] : undefined;
     const existing = mapped.common_id
       ? await prisma.evac_sites.findUnique({ where: { common_id: mapped.common_id } })
@@ -167,8 +200,11 @@ async function importData() {
   console.log(`Upserted ${upserted} evacuation sites.`);
 }
 
-export async function runImport() {
-  await importData();
+export async function runImport(options?: {
+  evacSpaceFile?: string;
+  evacShelterFile?: string;
+}) {
+  await importData(options);
 }
 
 if (require.main === module) {
