@@ -24,9 +24,9 @@ const hazardColumnCandidates: Record<HazardKey, string[]> = {
   flood: ['flood', '洪水', '洪水浸水想定'],
   inland_flood: ['inland_flood', '内水', '内水氾濫'],
   typhoon: ['typhoon', '台風', '風水害'],
-  landslide: ['landslide', '土砂災害', '崖崩れ、土石流及び地滑り'],
-  fire: ['fire', '火災', '大規模火災', '大規模な火事'],
-  volcano: ['volcano', '火山', '火山現象'],
+  landslide: ['landslide', '土砂災害'],
+  fire: ['fire', '火災', '大規模火災'],
+  volcano: ['volcano', '火山'],
   storm_surge: ['storm_surge', '高潮']
 };
 
@@ -217,7 +217,9 @@ async function importDataset(config: DatasetConfig) {
   }
 
   console.log(
-    `${config.sourceName}: rows=${parsedRows}, sites_upserted=${upsertedSites}, hazards_upserted=${hazardRows}, skipped=${summarizeSkip(skipReasons)}`
+    `${config.sourceName}: rows=${parsedRows}, sites_upserted=${upsertedSites}, hazards_upserted=${hazardRows}, skipped=${summarizeSkip(
+      skipReasons
+    )}`
   );
 }
 
@@ -232,62 +234,70 @@ function findRepoRoot(start = process.cwd()) {
   throw new Error('Repository root not found');
 }
 
-/**
- * data/ 아래의 모든 .csv 를 읽어서
- *  - 재해 열(洪水 / 地震 / 津波 ... )이 있는 파일 => kind: 'space'
- *  - 없는 파일 => kind: 'shelter'
- * 로 나눠서 전부 import
- */
-export async function runImport() {
+// ★ 여기부터가 핵심: 94개 CSV 자동 임포트 로직
+export async function runImport({
+  evacSpaceFile,
+  evacShelterFile
+}: {
+  evacSpaceFile?: string;
+  evacShelterFile?: string;
+} = {}) {
   const root = findRepoRoot();
   const dataDir = path.join(root, 'data');
 
-  const entries = fs.readdirSync(dataDir).filter((f) => f.toLowerCase().endsWith('.csv'));
+  // data/*.csv 중에서 evacuation_* 으로 시작하지 않는 것들 = 도도부현별 파일들
+  const allCsvFiles = fs.readdirSync(dataDir).filter((f) => f.endsWith('.csv'));
+  const perPrefCsvFiles = allCsvFiles.filter((f) => !f.startsWith('evacuation_'));
 
-  if (entries.length === 0) {
-    console.log(`No CSV files found in ${dataDir}`);
+  // 94개 도도부현 파일이 있으면 그걸 전부 돈다
+  if (perPrefCsvFiles.length > 0 && !evacSpaceFile && !evacShelterFile) {
+    console.log(`Found ${perPrefCsvFiles.length} per-prefecture CSVs. Importing all of them...`);
+
+    // 파일명 정렬해서 항상 같은 순서로 돌도록
+    perPrefCsvFiles.sort();
+
+    for (const fileName of perPrefCsvFiles) {
+      const filePath = path.join(dataDir, fileName);
+      const rawRecords = readCsv(filePath);
+      if (rawRecords.length === 0) {
+        console.log(`${fileName}: empty file, skipped`);
+        continue;
+      }
+
+      // 원래 헤더를 보고 space / shelter 판별
+      const rawHeaders = Object.keys(rawRecords[0]);
+
+      const hazardKeywords = ['洪水', '崖崩れ', '土石流', '地滑', '高潮', '地震', '津波', '内水', '火山', '大規模な火事'];
+
+      const hasHazardColumns = rawHeaders.some((h) =>
+        hazardKeywords.some((kw) => h.includes(kw))
+      );
+
+      const kind: 'space' | 'shelter' = hasHazardColumns ? 'space' : 'shelter';
+
+      const sourceName = path.basename(fileName, '.csv');
+
+      await importDataset({
+        filePath,
+        kind,
+        sourceName
+      });
+    }
+
     return;
   }
 
-  const spaceFiles: string[] = [];
-  const shelterFiles: string[] = [];
+  // 만약 per-pref 파일이 없거나, 특정 파일을 직접 지정해서 부르고 싶으면
+  // 기존 전국 파일 방식(evacuation_space_all / evacuation_shelter_all)을 그대로 사용
+  const spacePath = evacSpaceFile ?? path.join(dataDir, 'evacuation_space_all.csv');
+  const shelterPath = evacShelterFile ?? path.join(dataDir, 'evacuation_shelter_all.csv');
 
-  for (const entry of entries) {
-    const filePath = path.join(dataDir, entry);
-    const records = readCsv(filePath).map(normalizeRecord);
-    const headers = records[0] ? Object.keys(records[0]) : [];
-
-    const hazardHeaderSet = new Set(
-      [
-        '洪水',
-        '崖崩れ、土石流及び地滑り',
-        '高潮',
-        '地震',
-        '津波',
-        '大規模な火事',
-        '内水氾濫',
-        '火山現象'
-      ].map(normalizeHeader)
-    );
-
-    const hasHazardCols = headers.some((h) => hazardHeaderSet.has(h));
-
-    if (hasHazardCols) {
-      spaceFiles.push(filePath);
-    } else {
-      shelterFiles.push(filePath);
-    }
-  }
-
-  console.log('Space-like CSV files:', spaceFiles.map((p) => path.basename(p)));
-  console.log('Shelter-like CSV files:', shelterFiles.map((p) => path.basename(p)));
-
-  for (const filePath of spaceFiles) {
-    await importDataset({ filePath, kind: 'space', sourceName: path.basename(filePath) });
-  }
-  for (const filePath of shelterFiles) {
-    await importDataset({ filePath, kind: 'shelter', sourceName: path.basename(filePath) });
-  }
+  await importDataset({ filePath: spacePath, kind: 'space', sourceName: 'evacuation_space_all' });
+  await importDataset({
+    filePath: shelterPath,
+    kind: 'shelter',
+    sourceName: 'evacuation_shelter_all'
+  });
 }
 
 if (require.main === module) {
