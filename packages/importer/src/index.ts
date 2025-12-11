@@ -24,7 +24,6 @@ const hazardColumnCandidates: Record<HazardKey, string[]> = {
   flood: ['flood', '洪水', '洪水浸水想定'],
   inland_flood: ['inland_flood', '内水', '内水氾濫'],
   typhoon: ['typhoon', '台風', '風水害'],
-  // 전국ファイルの実ヘッダーも含めて補強
   landslide: ['landslide', '土砂災害', '崖崩れ、土石流及び地滑り'],
   fire: ['fire', '火災', '大規模火災', '大規模な火事'],
   volcano: ['volcano', '火山', '火山現象'],
@@ -218,9 +217,7 @@ async function importDataset(config: DatasetConfig) {
   }
 
   console.log(
-    `${config.sourceName}: rows=${parsedRows}, sites_upserted=${upsertedSites}, hazards_upserted=${hazardRows}, skipped=${summarizeSkip(
-      skipReasons
-    )}`
+    `${config.sourceName}: rows=${parsedRows}, sites_upserted=${upsertedSites}, hazards_upserted=${hazardRows}, skipped=${summarizeSkip(skipReasons)}`
   );
 }
 
@@ -235,68 +232,62 @@ function findRepoRoot(start = process.cwd()) {
   throw new Error('Repository root not found');
 }
 
-export async function runImport({
-  evacSpaceFile,
-  evacShelterFile
-}: {
-  evacSpaceFile?: string;
-  evacShelterFile?: string;
-} = {}) {
+/**
+ * data/ 아래의 모든 .csv 를 읽어서
+ *  - 재해 열(洪水 / 地震 / 津波 ... )이 있는 파일 => kind: 'space'
+ *  - 없는 파일 => kind: 'shelter'
+ * 로 나눠서 전부 import
+ */
+export async function runImport() {
   const root = findRepoRoot();
   const dataDir = path.join(root, 'data');
 
-  // 1) 명시적으로 파일이 들어오면 기존처럼 그 파일만 사용
-  if (evacSpaceFile || evacShelterFile) {
-    const spacePath = evacSpaceFile ?? path.join(dataDir, 'evacuation_space_all.csv');
-    const shelterPath = evacShelterFile ?? path.join(dataDir, 'evacuation_shelter_all.csv');
+  const entries = fs.readdirSync(dataDir).filter((f) => f.toLowerCase().endsWith('.csv'));
 
-    await importDataset({
-      filePath: spacePath,
-      kind: 'space',
-      sourceName: path.basename(spacePath)
-    });
-    await importDataset({
-      filePath: shelterPath,
-      kind: 'shelter',
-      sourceName: path.basename(shelterPath)
-    });
+  if (entries.length === 0) {
+    console.log(`No CSV files found in ${dataDir}`);
     return;
   }
 
-  // 2) data 디렉토리 안의 도도부현별 CSV(01000_1.csv, 01000_2.csv …) 탐색
-  const allCsvFiles = fs
-    .readdirSync(dataDir)
-    .filter((f) => f.toLowerCase().endsWith('.csv'));
+  const spaceFiles: string[] = [];
+  const shelterFiles: string[] = [];
 
-  const prefectureCsvs = allCsvFiles.filter((f) => /^\d{5}_[12]\.csv$/u.test(f));
+  for (const entry of entries) {
+    const filePath = path.join(dataDir, entry);
+    const records = readCsv(filePath).map(normalizeRecord);
+    const headers = records[0] ? Object.keys(records[0]) : [];
 
-  if (prefectureCsvs.length > 0) {
-    console.log(`Found ${prefectureCsvs.length} prefecture CSV files, importing them.`);
-    // 안정적인 순서를 위해 소트
-    const sorted = [...prefectureCsvs].sort();
+    const hazardHeaderSet = new Set(
+      [
+        '洪水',
+        '崖崩れ、土石流及び地滑り',
+        '高潮',
+        '地震',
+        '津波',
+        '大規模な火事',
+        '内水氾濫',
+        '火山現象'
+      ].map(normalizeHeader)
+    );
 
-    for (const file of sorted) {
-      const fullPath = path.join(dataDir, file);
-      // 규칙: _1 = 指定避難所 = shelter, _2 = 指定緊急避難場所 = space
-      const isShelter = /_1\.csv$/u.test(file);
-      const kind: 'space' | 'shelter' = isShelter ? 'shelter' : 'space';
-      const sourceName = file.replace(/\.csv$/i, '');
+    const hasHazardCols = headers.some((h) => hazardHeaderSet.has(h));
 
-      await importDataset({
-        filePath: fullPath,
-        kind,
-        sourceName
-      });
+    if (hasHazardCols) {
+      spaceFiles.push(filePath);
+    } else {
+      shelterFiles.push(filePath);
     }
-    return;
   }
 
-  // 3) 도도부현별 CSV가 없으면, 기존처럼 전국ファイル 2개만 사용
-  const spacePath = path.join(dataDir, 'evacuation_space_all.csv');
-  const shelterPath = path.join(dataDir, 'evacuation_shelter_all.csv');
+  console.log('Space-like CSV files:', spaceFiles.map((p) => path.basename(p)));
+  console.log('Shelter-like CSV files:', shelterFiles.map((p) => path.basename(p)));
 
-  await importDataset({ filePath: spacePath, kind: 'space', sourceName: 'evacuation_space_all' });
-  await importDataset({ filePath: shelterPath, kind: 'shelter', sourceName: 'evacuation_shelter_all' });
+  for (const filePath of spaceFiles) {
+    await importDataset({ filePath, kind: 'space', sourceName: path.basename(filePath) });
+  }
+  for (const filePath of shelterFiles) {
+    await importDataset({ filePath, kind: 'shelter', sourceName: path.basename(filePath) });
+  }
 }
 
 if (require.main === module) {
