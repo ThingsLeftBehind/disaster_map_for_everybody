@@ -4,73 +4,157 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
-model evac_sites {
-  id                      String         @id @default(uuid()) @db.Uuid
-  common_id               String?        @unique
-  pref_city               String?
-  name                    String
-  address                 String?
-  lat                     Float
-  lon                     Float
-  hazards                 Json
-  is_same_address_as_shelter Boolean?
-  shelter_fields          Json?
-  notes                   String?
-  source_updated_at       DateTime?
-  created_at              DateTime       @default(now())
-  updated_at              DateTime       @updatedAt
-  crowd_reports           crowd_reports[]
+enum SiteKind {
+  shelter
+  space
+  other
 }
 
-model crowd_reports {
-  id          String    @id @default(uuid()) @db.Uuid
-  site        evac_sites @relation(fields: [siteId], references: [id])
-  siteId      String    @db.Uuid @map("site_id")
-  status      CrowdStatus
-  comment     String?
-  device_hash String
-  created_at  DateTime @default(now())
-
-  @@index([siteId, created_at])
-  @@index([device_hash, created_at])
+enum HazardType {
+  earthquake
+  tsunami
+  flood
+  inland_flood
+  typhoon
+  landslide
+  fire
+  volcano
+  storm_surge
 }
 
-enum CrowdStatus {
-  OK
-  CROWDED
-  VERY_CROWDED
-  CLOSED
-  BLOCKED
+enum CongestionLevel {
+  low
+  normal
+  high
 }
 
-model device_settings {
-  device_hash        String   @id
-  transfer_code      String?
-  saved_places       Json?
-  hazard_alert_prefs Json?
-  updated_at         DateTime @updatedAt
-  created_at         DateTime @default(now())
-  safety_status      safety_status?
+enum AccessibilityLevel {
+  accessible
+  blocked
+  unknown
 }
 
-model safety_status {
-  id              String   @id @default(cuid())
-  device_hash     String   @unique
-  status          SafetyStatus
-  updated_at      DateTime @default(now())
-  last_known_lat  Float?
-  last_known_lon  Float?
-  device          device_settings @relation(fields: [device_hash], references: [device_hash])
+enum SafetyState {
+  safe
+  minor_injury
+  serious_injury
+  isolated
+  evacuating
+  evacuated
 }
 
-enum SafetyStatus {
-  SAFE
-  EVACUATING
-  EVACUATED
-  INJURED
-  ISOLATED
+model EvacSite {
+  id                 String                      @id @default(uuid()) @db.Uuid
+  kind               SiteKind
+  sourceId           String?
+  name               String
+  address            String?
+  latitude           Float
+  longitude          Float
+  municipalityCode   String?
+  capacity           Int?
+  isDesignated       Boolean                     @default(true)
+  sourceName         String
+  sourceUrl          String?
+  createdAt          DateTime                    @default(now())
+  updatedAt          DateTime                    @updatedAt
+  hazardCapabilities EvacSiteHazardCapability[]
+  statusReports      SiteStatusReport[]
+  safetyStatuses     SafetyStatus[]              @relation("SiteSafetyStatus")
+
+  @@unique([sourceId])
+  @@index([latitude, longitude])
+  @@index([municipalityCode])
+}
+
+model EvacSiteHazardCapability {
+  id          String      @id @default(uuid()) @db.Uuid
+  site        EvacSite    @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  siteId      String      @db.Uuid
+  hazardType  HazardType
+  isSupported Boolean     @default(false)
+  remark      String?
+
+  @@unique([siteId, hazardType])
+  @@index([hazardType])
+}
+
+model SiteStatusReport {
+  id               String             @id @default(uuid()) @db.Uuid
+  site             EvacSite           @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  siteId           String             @db.Uuid
+  deviceHash       String
+  device           Device?            @relation("DeviceReports", fields: [deviceId], references: [id], onDelete: SetNull)
+  deviceId         String?            @db.Uuid
+  congestionLevel  CongestionLevel
+  accessibility    AccessibilityLevel
+  comment          String?
+  reportedAt       DateTime           @default(now())
+
+  @@index([siteId, reportedAt])
+  @@index([deviceHash, reportedAt])
+  @@index([deviceId])
+}
+
+model Device {
+  id            String          @id @default(uuid()) @db.Uuid
+  deviceHash    String          @unique
+  transferCode  String          @unique
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  safetyStatus  SafetyStatus?
+  watchRegions  WatchRegion[]
+  statusReports SiteStatusReport[] @relation("DeviceReports")
+}
+
+model SafetyStatus {
+  id             String       @id @default(uuid()) @db.Uuid
+  device         Device       @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  deviceId       String       @unique @db.Uuid
+  status         SafetyState
+  currentSite    EvacSite?    @relation("SiteSafetyStatus", fields: [currentSiteId], references: [id])
+  currentSiteId  String?      @db.Uuid
+  updatedAt      DateTime     @default(now())
+}
+
+model WatchRegion {
+  id          String                   @id @default(uuid()) @db.Uuid
+  device      Device                   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  deviceId    String                   @db.Uuid
+  label       String
+  latitude    Float
+  longitude   Float
+  radiusKm    Float
+  active      Boolean                  @default(true)
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+  hazards     WatchRegionHazard[]
+
+  @@index([deviceId])
+}
+
+model WatchRegionHazard {
+  id         String      @id @default(uuid()) @db.Uuid
+  region     WatchRegion @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  regionId   String      @db.Uuid
+  hazardType HazardType
+  active     Boolean     @default(true)
+
+  @@unique([regionId, hazardType])
+}
+
+model HazardAlertSnapshot {
+  id         String      @id @default(uuid()) @db.Uuid
+  region     WatchRegion @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  regionId   String      @db.Uuid
+  hazardType HazardType
+  riskLevel  String
+  checkedAt  DateTime    @default(now())
+
+  @@index([regionId, hazardType, checkedAt])
 }
