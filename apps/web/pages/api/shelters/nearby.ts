@@ -4,7 +4,6 @@ import { boundingBox, haversineDistance } from '@jp-evac/shared';
 import { prisma } from '../../../lib/prisma';
 import { summarizeReports } from '../../../lib/status';
 import { subMinutes } from 'date-fns';
-import { HazardType } from '@prisma/client';
 
 const querySchema = z.object({
   lat: z.coerce.number(),
