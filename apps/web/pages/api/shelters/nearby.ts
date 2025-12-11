@@ -5,6 +5,20 @@ import { prisma } from '../../../lib/prisma';
 import { summarizeReports } from '../../../lib/status';
 import { subMinutes } from 'date-fns';
 
+const hazardOptions = [
+  'earthquake',
+  'tsunami',
+  'river_flood',
+  'inland_flood',
+  'sediment',
+  'storm_surge',
+  'high_wind',
+  'snow',
+  'volcano',
+] as const;
+
+type HazardType = (typeof hazardOptions)[number];
+
 const querySchema = z.object({
   lat: z.coerce.number(),
   lng: z.coerce.number(),
@@ -23,11 +37,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(400).json({ error: 'invalid_query' });
     return;
   }
+  
   const { lat, lng, radiusKm, limit, hazardTypes } = parsed.data;
-  const hazardFilter = hazardTypes
-    ?.split(',')
-    .map((h) => h.trim())
-    .filter((h) => h.length > 0);
+
+  const hazardFilter =
+    hazardTypes && hazardTypes.length > 0
+      ? hazardTypes
+          .split(',')
+          .map((h) => h.trim())
+          .filter((h): h is HazardType => (hazardOptions as readonly string[]).includes(h))
+      : undefined;
+
   const bbox = boundingBox(lat, lng, radiusKm);
   const sites = await prisma.evacSite.findMany({
     where: {
