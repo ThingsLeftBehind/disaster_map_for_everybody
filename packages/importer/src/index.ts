@@ -325,8 +325,10 @@ export async function runImport({
     spaceFiles.sort();
     shelterFiles.sort();
 
+    // ★ 여기 수정: 확장자 뺀 base 이름을 sourceName / progress key 로 사용
     for (const file of spaceFiles) {
-      const key = `space:${file}`;
+      const base = path.basename(file, '.csv');      // 01000_1.csv -> 01000_1
+      const key = `space:${base}`;
       if (completed.includes(key)) {
         console.log(`Skip (already completed): ${key}`);
         continue;
@@ -336,7 +338,7 @@ export async function runImport({
       await importDataset({
         filePath,
         kind: 'space',
-        sourceName: file
+        sourceName: base
       });
 
       completed.push(key);
@@ -344,7 +346,8 @@ export async function runImport({
     }
 
     for (const file of shelterFiles) {
-      const key = `shelter:${file}`;
+      const base = path.basename(file, '.csv');      // 01000_2.csv -> 01000_2
+      const key = `shelter:${base}`;
       if (completed.includes(key)) {
         console.log(`Skip (already completed): ${key}`);
         continue;
@@ -354,7 +357,7 @@ export async function runImport({
       await importDataset({
         filePath,
         kind: 'shelter',
-        sourceName: file
+        sourceName: base
       });
 
       completed.push(key);
