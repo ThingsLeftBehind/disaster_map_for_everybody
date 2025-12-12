@@ -113,18 +113,31 @@ function hazardFromRecord(record: NormalizedRecord) {
   }, { ...hazardDefaults });
 }
 
+// ★ 하자드 플래그 저장: 기존 upsert → "싹 지우고 다시 넣기" 방식으로 변경
 async function upsertHazards(siteId: string, hazards: Record<HazardKey, boolean>) {
-  let count = 0;
-  for (const [key, enabled] of Object.entries(hazards)) {
-    const hazardType = key as HazardKey;
-    await prisma.evacSiteHazardCapability.upsert({
-      where: { siteId_hazardType: { siteId, hazardType } },
-      update: { isSupported: enabled },
-      create: { siteId, hazardType, isSupported: enabled }
+  await prisma.$transaction(async (tx) => {
+    // 1) 해당 siteId 의 기존 하자드 플래그 전부 삭제
+    await tx.evacSiteHazardCapability.deleteMany({
+      where: { siteId }
     });
-    count += 1;
-  }
-  return count;
+
+    // 2) 새 데이터로 전부 다시 생성
+    const data = Object.entries(hazards).map(([key, enabled]) => ({
+      siteId,
+      hazardType: key as HazardKey,
+      isSupported: enabled
+    }));
+
+    if (data.length > 0) {
+      await tx.evacSiteHazardCapability.createMany({
+        data,
+        skipDuplicates: true
+      });
+    }
+  });
+
+  // hazardKeys 개수만큼 들어간다고 보면 됨
+  return hazardKeys.length;
 }
 
 async function importDataset(config: DatasetConfig) {
