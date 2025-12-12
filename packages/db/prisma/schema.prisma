@@ -66,6 +66,7 @@ model EvacSite {
   hazardCapabilities EvacSiteHazardCapability[]
   statusReports      SiteStatusReport[]
   safetyStatuses     SafetyStatus[]              @relation("SiteSafetyStatus")
+  isActive           Boolean                     @default(true)
 
   @@unique([sourceId])
   @@index([latitude, longitude])
