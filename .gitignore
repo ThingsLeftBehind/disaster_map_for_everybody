@@ -1,7 +1,20 @@
 node_modules
 .next
 .env
+.env.local
+.env.*.local
+.next-dev.log
 npm-debug.log*
 *.sqlite
 prisma/migrations
 .DS_Store
+
+# Runtime caches + local persistence (never commit)
+data/cache/
+data/cache/**
+data/local_store/
+data/local_store/**
+
+# Optional inspectability outputs
+data/generated/_pretty/
+data/generated/_pretty/**

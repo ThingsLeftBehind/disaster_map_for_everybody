@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '@jp-evac/db';
+import { getDeviceState } from 'lib/store/adapter';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -11,14 +11,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'device_hash is required' });
   }
 
-  const device = await prisma.device_settings.findUnique({
-    where: { device_hash },
-    include: { safety_status: true },
-  });
-
-  if (!device) {
-    return res.status(404).json({ error: 'Not found' });
-  }
-
+  const device = await getDeviceState(device_hash);
   res.status(200).json({ device });
 }

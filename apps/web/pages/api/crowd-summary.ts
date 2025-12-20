@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '@jp-evac/db';
+import { getShelterCommunitySnapshot } from 'lib/store/adapter';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -11,15 +11,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'siteId is required' });
   }
 
-  const since = new Date(Date.now() - 60 * 60 * 1000);
-  const reports = await prisma.crowd_reports.findMany({
-    where: { site_id: siteId, created_at: { gte: since } },
-  });
+  const community = await getShelterCommunitySnapshot(siteId);
+  const sinceMs = Date.now() - 60 * 60 * 1000;
+  const summary = community.votes
+    .filter((v) => Date.parse(v.createdAt) >= sinceMs)
+    .reduce<Record<string, number>>((acc, v) => {
+      acc[v.value] = (acc[v.value] ?? 0) + 1;
+      return acc;
+    }, {});
 
-  const summary = reports.reduce<Record<string, number>>((acc, report) => {
-    acc[report.status] = (acc[report.status] || 0) + 1;
-    return acc;
-  }, {});
-
-  res.status(200).json({ summary, count: reports.length });
+  const count = Object.values(summary).reduce((a, b) => a + b, 0);
+  res.status(200).json({ summary, count });
 }

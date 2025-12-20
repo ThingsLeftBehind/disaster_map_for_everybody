@@ -7,7 +7,14 @@
     "dev": "npm --workspace apps/web run dev",
     "build": "npm --workspace apps/web run build",
     "lint": "npm --workspace apps/web run lint",
+    "test:jma": "node --test apps/web/lib/jma/__tests__/*.test.mjs",
+    "test:store": "node --test apps/web/lib/store/__tests__/*.test.mjs",
     "import": "tsx scripts/import-all.ts",
+    "data:refs": "node scripts/fetch-static-refs.js",
+    "data:municipalities": "node scripts/generate-municipalities.js",
+    "data:validate": "node scripts/validate-data.js",
+    "data:pretty:municipalities": "node scripts/pretty-municipalities.js",
+    "data:refresh": "npm run data:refs && npm run data:municipalities && npm run data:validate",
     "prisma:generate": "npm --workspace packages/db run prisma:generate"
   },
   "workspaces": [

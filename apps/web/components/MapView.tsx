@@ -2,18 +2,51 @@ import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
 import { hazardLabels } from '@jp-evac/shared';
 import type { evac_sites } from '@jp-evac/db';
+import type { ComponentProps } from 'react';
+import type { Coords } from 'lib/client/location';
 
 const DynamicMap = dynamic(() => import('./MapViewInner'), { ssr: false });
 
 export type SiteWithDistance = evac_sites & { distance?: number };
 
+export type CheckinPin = {
+  id: string;
+  status: 'INJURED' | 'SAFE' | 'ISOLATED' | 'EVACUATING' | 'COMPLETED';
+  lat: number;
+  lon: number;
+  precision: 'COARSE' | 'PRECISE';
+  comment: string | null;
+  updatedAt: string;
+  archived: boolean;
+  archivedAt: string | null;
+  reportCount: number;
+  commentHidden: boolean;
+};
+
 interface Props {
   sites: SiteWithDistance[];
   center: { lat: number; lon: number };
+  recenterSignal?: number;
+  origin?: Coords | null;
+  fromAreaLabel?: string | null;
   onSelect: (site: SiteWithDistance) => void;
+  checkinPins?: CheckinPin[] | null;
+  checkinModerationPolicy?: { reportCautionThreshold: number; reportHideThreshold: number } | null;
+  onReportCheckin?: ((pinId: string) => void) | null;
 }
 
-export default function MapView({ sites, center, onSelect }: Props) {
+export default function MapView({
+  sites,
+  center,
+  recenterSignal,
+  origin,
+  fromAreaLabel,
+  onSelect,
+  checkinPins,
+  checkinModerationPolicy,
+  onReportCheckin,
+}: Props) {
+  const sitesById = useMemo(() => new Map(sites.map((s) => [s.id, s])), [sites]);
   const markers = useMemo(
     () =>
       sites.map((site) => ({
@@ -26,5 +59,23 @@ export default function MapView({ sites, center, onSelect }: Props) {
     [sites]
   );
 
-  return <DynamicMap center={center} markers={markers} onSelect={onSelect} hazardLabels={hazardLabels} />;
+  const handleSelect: ComponentProps<typeof DynamicMap>['onSelect'] = (marker) => {
+    const site = sitesById.get(marker.id);
+    if (site) onSelect(site);
+  };
+
+  return (
+    <DynamicMap
+      center={center}
+      recenterSignal={recenterSignal}
+      origin={origin ?? null}
+      fromAreaLabel={fromAreaLabel ?? null}
+      markers={markers}
+      onSelect={handleSelect}
+      hazardLabels={hazardLabels}
+      checkinPins={checkinPins ?? null}
+      checkinModerationPolicy={checkinModerationPolicy ?? null}
+      onReportCheckin={onReportCheckin ?? null}
+    />
+  );
 }

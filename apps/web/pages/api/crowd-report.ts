@@ -1,42 +1,93 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '@jp-evac/db';
-import { CrowdReportSchema } from '../../lib/validators';
+import { CrowdReportSchema } from 'lib/validators';
+import { submitComment, submitVote } from 'lib/store/adapter';
+import { ipHash } from 'lib/store/security';
+import { assertSameOrigin, getClientIp, jsonError, jsonOk, rateLimit } from 'lib/server/security';
 
-const MINUTES_BETWEEN_REPORTS = 2;
+export const config = {
+  api: {
+    bodyParser: { sizeLimit: '32kb' },
+  },
+};
+
+const WRITE_RATE_LIMIT = { keyPrefix: 'write:crowd_report', limit: 30, windowMs: 5 * 60_000 };
+
+function mapLegacyStatus(status: string) {
+  switch (status) {
+    case 'OK':
+      return 'NORMAL';
+    case 'CROWDED':
+      return 'CROWDED';
+    case 'VERY_CROWDED':
+      return 'CROWDED';
+    case 'CLOSED':
+      return 'CLOSED';
+    case 'BLOCKED':
+      return 'CLOSED';
+    default:
+      return 'NORMAL';
+  }
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return jsonError(res, 405, { ok: false, error: 'method_not_allowed', errorCode: 'METHOD_NOT_ALLOWED' });
+  }
+
+  if (!assertSameOrigin(req)) return jsonError(res, 403, { ok: false, error: 'forbidden', errorCode: 'ORIGIN_BLOCKED' });
+
+  const rl = rateLimit(req, WRITE_RATE_LIMIT);
+  if (!rl.ok) {
+    res.setHeader('Retry-After', String(rl.retryAfterSec));
+    return jsonError(res, 429, { ok: false, error: 'rate_limited', errorCode: 'RATE_LIMITED' });
   }
 
   const parsed = CrowdReportSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ error: 'Invalid payload', details: parsed.error.flatten() });
+    return jsonError(res, 400, { ok: false, error: 'invalid_payload', errorCode: 'INVALID_BODY' });
   }
 
   const { siteId, status, comment, device_hash } = parsed.data;
-
-  const recentReport = await prisma.crowd_reports.findFirst({
-    where: {
-      device_hash,
-      created_at: {
-        gte: new Date(Date.now() - MINUTES_BETWEEN_REPORTS * 60 * 1000),
-      },
-    },
-  });
-
-  if (recentReport) {
-    return res.status(429).json({ error: 'Please wait before submitting another report.' });
+  const trimmedComment = typeof comment === 'string' ? comment.trim() : '';
+  if (trimmedComment && trimmedComment.length > 300) {
+    return jsonError(res, 400, { ok: false, error: 'invalid_payload', errorCode: 'INVALID_BODY' });
   }
 
-  const created = await prisma.crowd_reports.create({
-    data: {
-      site_id: siteId,
-      status,
-      comment,
-      device_hash,
-    },
-  });
+  const ip = getClientIp(req);
+  const deviceId = device_hash;
+  const value = mapLegacyStatus(status);
 
-  res.status(200).json({ report: created });
+  const voteResult = await submitVote({
+    shelterId: siteId,
+    deviceId,
+    ipHash: ipHash(ip),
+    value: value as any,
+  });
+  if (!voteResult.ok) {
+    return jsonError(res, voteResult.code === 'RATE_LIMITED' ? 429 : 400, {
+      ok: false,
+      error: voteResult.message,
+      code: voteResult.code,
+      errorCode: voteResult.code,
+    });
+  }
+
+  if (trimmedComment) {
+    const commentResult = await submitComment({
+      shelterId: siteId,
+      deviceId,
+      ipHash: ipHash(ip),
+      text: trimmedComment,
+    });
+    if (!commentResult.ok) {
+      return jsonError(res, commentResult.code === 'RATE_LIMITED' ? 429 : 400, {
+        ok: false,
+        error: commentResult.message,
+        code: commentResult.code,
+        errorCode: commentResult.code,
+      });
+    }
+  }
+
+  return jsonOk(res, { ok: true });
 }
