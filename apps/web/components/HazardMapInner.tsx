@@ -168,7 +168,7 @@ export default function HazardMapInner({
 
   useEffect(() => {
     statsRef.current = {};
-    if (onDiagnostics) {
+    if (onDiagnostics && process.env.NODE_ENV !== 'production') {
       onDiagnostics({
         updatedAt: new Date().toISOString(),
         items: [],
@@ -177,7 +177,7 @@ export default function HazardMapInner({
   }, [enabledKeys, onDiagnostics]);
 
   const queueDiagnostics = () => {
-    if (!onDiagnostics) return;
+    if (!onDiagnostics || process.env.NODE_ENV === 'production') return;
     if (diagTimerRef.current !== null) return;
     diagTimerRef.current = window.setTimeout(() => {
       diagTimerRef.current = null;

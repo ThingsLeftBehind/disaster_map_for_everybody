@@ -10,9 +10,16 @@ export const config = {
 };
 
 const WRITE_RATE_LIMIT = { keyPrefix: 'write:device', limit: 30, windowMs: 5 * 60_000 };
+const READ_RATE_LIMIT = { keyPrefix: 'read:device', limit: 120, windowMs: 60_000 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
+    if (!assertSameOrigin(req)) return jsonError(res, 403, { ok: false, error: 'forbidden', errorCode: 'ORIGIN_BLOCKED' });
+    const rl = rateLimit(req, READ_RATE_LIMIT);
+    if (!rl.ok) {
+      res.setHeader('Retry-After', String(rl.retryAfterSec));
+      return jsonError(res, 429, { ok: false, error: 'rate_limited', errorCode: 'RATE_LIMITED' });
+    }
     const deviceId = Array.isArray(req.query.deviceId) ? req.query.deviceId[0] : req.query.deviceId;
     const parsed = DeviceIdSchema.safeParse(deviceId);
     if (!parsed.success) return jsonError(res, 400, { ok: false, error: 'invalid_payload', errorCode: 'INVALID_BODY' });

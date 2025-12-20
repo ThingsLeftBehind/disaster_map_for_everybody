@@ -8,7 +8,15 @@ type RateLimitOptions = {
 
 type RateLimitResult = { ok: true; retryAfterSec: 0 } | { ok: false; retryAfterSec: number };
 
-const rateLimitStore = new Map<string, number[]>();
+type RateLimitEntry = {
+  timestamps: number[];
+  windowMs: number;
+  lastAccess: number;
+};
+
+const rateLimitStore = new Map<string, RateLimitEntry>();
+const MAX_RATE_LIMIT_KEYS = 10_000;
+let rateLimitCalls = 0;
 
 function firstHeaderValue(value: string | string[] | undefined): string | null {
   if (!value) return null;
@@ -49,22 +57,49 @@ export function assertSameOrigin(req: NextApiRequest): boolean {
   }
 }
 
+function pruneRateLimitStore(): void {
+  const now = Date.now();
+  for (const [key, entry] of rateLimitStore) {
+    const windowStart = now - entry.windowMs;
+    entry.timestamps = entry.timestamps.filter((t) => t > windowStart);
+    if (entry.timestamps.length === 0 && now - entry.lastAccess > entry.windowMs) {
+      rateLimitStore.delete(key);
+    } else {
+      rateLimitStore.set(key, entry);
+    }
+  }
+  if (rateLimitStore.size <= MAX_RATE_LIMIT_KEYS) return;
+  const entries = Array.from(rateLimitStore.entries()).sort((a, b) => a[1].lastAccess - b[1].lastAccess);
+  for (const [key] of entries) {
+    rateLimitStore.delete(key);
+    if (rateLimitStore.size <= MAX_RATE_LIMIT_KEYS) break;
+  }
+}
+
 export function rateLimit(req: NextApiRequest, opts: RateLimitOptions): RateLimitResult {
   const ip = getClientIp(req);
   const key = `${opts.keyPrefix}:${ip}`;
   const now = Date.now();
   const windowStart = now - opts.windowMs;
-  const existing = rateLimitStore.get(key) ?? [];
-  const recent = existing.filter((t) => t > windowStart);
+  const entry = rateLimitStore.get(key) ?? { timestamps: [], windowMs: opts.windowMs, lastAccess: now };
+  if (entry.windowMs !== opts.windowMs) entry.windowMs = opts.windowMs;
+  entry.lastAccess = now;
+  const recent = entry.timestamps.filter((t) => t > windowStart);
   if (recent.length >= opts.limit) {
     const oldest = Math.min(...recent);
     const retryAfterMs = oldest + opts.windowMs - now;
     const retryAfterSec = Math.max(1, Math.ceil(retryAfterMs / 1000));
-    rateLimitStore.set(key, recent);
+    entry.timestamps = recent;
+    rateLimitStore.set(key, entry);
     return { ok: false, retryAfterSec };
   }
   recent.push(now);
-  rateLimitStore.set(key, recent);
+  entry.timestamps = recent;
+  rateLimitStore.set(key, entry);
+  rateLimitCalls += 1;
+  if (rateLimitCalls % 200 === 0 || rateLimitStore.size > MAX_RATE_LIMIT_KEYS) {
+    pruneRateLimitStore();
+  }
   return { ok: true, retryAfterSec: 0 };
 }
 

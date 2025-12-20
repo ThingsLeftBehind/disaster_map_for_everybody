@@ -7,7 +7,11 @@ const SAMPLE_TILES = [
 ];
 
 const SAMPLE_TILES_BY_LAYER = {
-  liquefaction: [{ z: 11, x: 1818, y: 806 }],
+  liquefaction: [
+    { z: 11, x: 1818, y: 806 },
+    { z: 11, x: 1819, y: 806 },
+    { z: 12, x: 3637, y: 1613 },
+  ],
 };
 
 const timeout = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

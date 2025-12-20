@@ -113,7 +113,7 @@ export default function HazardPage() {
                 enabledKeys={enabled}
                 layers={layers}
                 center={center}
-                onDiagnostics={setDiagnostics}
+                onDiagnostics={showDev ? setDiagnostics : undefined}
                 onZoomOutOfRange={({ direction, keys }) => {
                   if (keys.length === 0) return;
                   setEnabled((prev) => prev.filter((k) => !keys.includes(k)));
@@ -163,6 +163,7 @@ export default function HazardPage() {
               key={l.key}
               disabled={lowBandwidth}
               onClick={() => toggle(l.key)}
+              aria-pressed={enabled.includes(l.key)}
               className={`rounded border px-3 py-2 text-sm font-semibold ${
                 enabled.includes(l.key) ? 'border-blue-600 bg-blue-50 text-blue-900' : 'border-gray-300 bg-white text-gray-800'
               } ${lowBandwidth ? 'opacity-50' : ''}`}

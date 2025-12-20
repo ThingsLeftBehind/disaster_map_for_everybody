@@ -171,6 +171,24 @@ async function safeFetchJson(url: string, init?: RequestInit): Promise<any> {
   return res.json();
 }
 
+async function postCheckinJson(url: string, init: RequestInit): Promise<{ ok: true } | { ok: false; retryable: boolean; errorCode?: string | null }> {
+  try {
+    const res = await fetch(url, init);
+    if (res.ok) return { ok: true };
+    let payload: any = null;
+    try {
+      payload = await res.json();
+    } catch {
+      payload = null;
+    }
+    const errorCode = typeof payload?.errorCode === 'string' ? payload.errorCode : null;
+    const retryable = errorCode !== 'DUPLICATE' && errorCode !== 'RATE_LIMITED';
+    return { ok: false, retryable, errorCode };
+  } catch {
+    return { ok: false, retryable: true };
+  }
+}
+
 export function DeviceProvider({ children }: { children: React.ReactNode }) {
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [device, setDevice] = useState<DeviceState | null>(null);
@@ -396,7 +414,7 @@ export function DeviceProvider({ children }: { children: React.ReactNode }) {
         const controller = new AbortController();
         inflightCheckinRef.current = controller;
         try {
-          await safeFetchJson('/api/store/checkin', {
+          const result = await postCheckinJson('/api/store/checkin', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({
@@ -410,9 +428,19 @@ export function DeviceProvider({ children }: { children: React.ReactNode }) {
             }),
             signal: controller.signal,
           });
-          const last = { status: payload.status, at: Date.now() };
-          lastCheckinRef.current = last;
-          writeLastCheckin(last);
+          if (result.ok) {
+            const last = { status: payload.status, at: Date.now() };
+            lastCheckinRef.current = last;
+            writeLastCheckin(last);
+            return;
+          }
+          if (!result.retryable) {
+            const last = { status: payload.status, at: Date.now() };
+            lastCheckinRef.current = last;
+            writeLastCheckin(last);
+            return;
+          }
+          if (!controller.signal.aborted) enqueuePayload(payload);
         } catch {
           if (!controller.signal.aborted) enqueuePayload(payload);
         } finally {
@@ -455,23 +483,27 @@ export function DeviceProvider({ children }: { children: React.ReactNode }) {
 
       const remaining: PendingCheckin[] = [];
       for (const p of pending) {
-        try {
-          await safeFetchJson('/api/store/checkin', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
-              deviceId,
-              status: p.status,
-              shelterId: p.shelterId ?? null,
-              lat: p.lat,
-              lon: p.lon,
-              precision: p.precision,
-              comment: p.comment,
-            }),
-          });
-        } catch {
-          remaining.push(p);
+        const result = await postCheckinJson('/api/store/checkin', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            deviceId,
+            status: p.status,
+            shelterId: p.shelterId ?? null,
+            lat: p.lat,
+            lon: p.lon,
+            precision: p.precision,
+            comment: p.comment,
+          }),
+        });
+        if (result.ok) continue;
+        if (!result.retryable) {
+          const last = { status: p.status, at: Date.now() };
+          lastCheckinRef.current = last;
+          writeLastCheckin(last);
+          continue;
         }
+        remaining.push(p);
       }
       writePendingCheckins(remaining);
     } finally {
