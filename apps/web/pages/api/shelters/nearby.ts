@@ -191,11 +191,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const textQuery = typeof q === 'string' ? q.trim().toLowerCase() : '';
     const requestedRadiusKm = radiusKm ?? 30;
     const requestedLimit = limit ?? DEFAULT_MAIN_LIMIT;
+    const overfetchLimit = Math.max(DEFAULT_MAIN_LIMIT * 4, requestedLimit * 4, 24);
     const isDev = process.env.NODE_ENV === 'development';
+    if (isDev) res.setHeader('x-overfetch-limit', String(overfetchLimit));
 
     const scaleCandidates = await getEvacSitesCoordScales(prisma);
     const factorCandidates = mergeScaleCandidates(scaleCandidates);
-    const bufferTake = Math.max(200, requestedLimit * 20);
+    const bufferTake = overfetchLimit;
 
     const table = Prisma.raw(`"${'public'}"."${'evac_sites'}"`);
     const latColRaw = Prisma.raw(`"lat"`);
@@ -307,12 +309,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { lat, lon, hazardTypes, limit, radiusKm, hideIneligible, q } = parsed.data;
       const requestedRadiusKm = radiusKm ?? 30;
       const requestedLimit = limit ?? DEFAULT_MAIN_LIMIT;
+      const overfetchLimit = Math.max(DEFAULT_MAIN_LIMIT * 4, requestedLimit * 4, 24);
       const isDev = process.env.NODE_ENV === 'development';
+      if (isDev) res.setHeader('x-overfetch-limit', String(overfetchLimit));
       const fallback = await fallbackNearbyShelters(prisma, {
         lat,
         lon,
         hazardTypes,
-        limit: requestedLimit,
+        limit: overfetchLimit,
         radiusKm: requestedRadiusKm,
         hideIneligible,
         includeDiagnostics: isDev,
@@ -320,13 +324,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const textQuery = typeof q === 'string' ? q.trim().toLowerCase() : '';
       const dedupedFallback = dedupeSites(fallback.sites ?? []);
       const hazardFilteredFallback = dedupedFallback.filter((site) => hasAnyHazard(site.hazards));
-      const fallbackSites = hazardFilteredFallback.filter((site) => {
-        if (!textQuery) return true;
-        const name = String(site.name ?? '').toLowerCase();
-        const address = String(site.address ?? '').toLowerCase();
-        const notes = String(site.notes ?? '').toLowerCase();
-        return name.includes(textQuery) || address.includes(textQuery) || notes.includes(textQuery);
-      });
+      const fallbackSites = hazardFilteredFallback
+        .filter((site) => {
+          if (!textQuery) return true;
+          const name = String(site.name ?? '').toLowerCase();
+          const address = String(site.address ?? '').toLowerCase();
+          const notes = String(site.notes ?? '').toLowerCase();
+          return name.includes(textQuery) || address.includes(textQuery) || notes.includes(textQuery);
+        })
+        .filter((site) => (hideIneligible ? Boolean(site.matchesHazards) : true))
+        .slice(0, requestedLimit);
 
       return res.status(200).json({
         fetchStatus: 'OK',

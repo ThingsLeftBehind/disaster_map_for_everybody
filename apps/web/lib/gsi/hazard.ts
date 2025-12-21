@@ -193,6 +193,17 @@ function normalizeSnapshot(snapshot: HazardLayersSnapshot): { snapshot: HazardLa
   return { snapshot: { ...snapshot, layers: normalizedLayers }, changed: true };
 }
 
+function stabilizeSnapshot(snapshot: HazardLayersSnapshot): { snapshot: HazardLayersSnapshot; changed: boolean } {
+  if (snapshot.fetchStatus === 'OK') return { snapshot, changed: false };
+  if (snapshot.lastError) return { snapshot, changed: false };
+  if (!snapshot.layers || snapshot.layers.length === 0) return { snapshot, changed: false };
+  const updatedAt = snapshot.updatedAt ?? nowIso();
+  return {
+    snapshot: { ...snapshot, fetchStatus: 'OK', updatedAt },
+    changed: true,
+  };
+}
+
 function normalizeTemplate(raw: string): string | null {
   if (!raw) return null;
   const normalized = forceHttps(raw.trim()).replace(/\$\{([xyz])\}/g, '{$1}');
@@ -376,13 +387,17 @@ export async function getHazardLayersSnapshot(): Promise<HazardLayersSnapshot> {
         };
 
   const normalized = normalizeSnapshot(snapshot);
-  if (normalized.changed) void atomicWriteJson(CACHE_PATH, normalized.snapshot).catch(() => null);
+  const stabilized = stabilizeSnapshot(normalized.snapshot);
+  const readySnapshot = stabilized.changed ? stabilized.snapshot : normalized.snapshot;
+  if (normalized.changed || stabilized.changed) {
+    void atomicWriteJson(CACHE_PATH, readySnapshot).catch(() => null);
+  }
 
-  if (msSince(normalized.snapshot.updatedAt) <= STALE_MS) return normalized.snapshot;
+  if (msSince(readySnapshot.updatedAt) <= STALE_MS) return readySnapshot;
 
   // Stale-while-revalidate: refresh opportunistically; never throw.
   void refreshHazardLayers().catch(() => null);
-  return normalized.snapshot;
+  return readySnapshot;
 }
 
 export async function refreshHazardLayers(): Promise<void> {

@@ -3,6 +3,7 @@ import { getHazardLayersSnapshot } from 'lib/gsi/hazard';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600, stale-while-revalidate=3600');
   try {
     const snapshot = await getHazardLayersSnapshot();
     return res.status(200).json(snapshot);

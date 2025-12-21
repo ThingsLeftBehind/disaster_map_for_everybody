@@ -26,6 +26,7 @@ export type CheckinPin = {
 interface Props {
   sites: SiteWithDistance[];
   center: { lat: number; lon: number };
+  bounds?: [[number, number], [number, number]] | null;
   initialZoom?: number;
   recenterSignal?: number;
   origin?: Coords | null;
@@ -40,6 +41,7 @@ interface Props {
 export default function MapView({
   sites,
   center,
+  bounds,
   initialZoom,
   recenterSignal,
   origin,
@@ -69,11 +71,12 @@ export default function MapView({
   };
 
   return (
-      <DynamicMap
-        center={center}
-        initialZoom={initialZoom}
-        recenterSignal={recenterSignal}
-        origin={origin ?? null}
+    <DynamicMap
+      center={center}
+      bounds={bounds ?? null}
+      initialZoom={initialZoom}
+      recenterSignal={recenterSignal}
+      origin={origin ?? null}
       fromAreaLabel={fromAreaLabel ?? null}
       markers={markers}
       onSelect={handleSelect}

@@ -3,7 +3,7 @@ import { Prisma, prisma } from '@jp-evac/db';
 import { z } from 'zod';
 import { hazardKeys } from '@jp-evac/shared';
 import { listMunicipalitiesByPref, listPrefectures } from 'lib/ref/municipalities';
-import { fallbackSearchShelters } from 'lib/db/sheltersFallback';
+import { fallbackNearbyShelters, fallbackSearchShelters } from 'lib/db/sheltersFallback';
 import { getEvacSitesCoordScale, normalizeLatLon } from 'lib/shelters/coords';
 import {
   isEvacSitesTableMismatchError,
@@ -12,6 +12,22 @@ import {
 
 function nowIso() {
   return new Date().toISOString();
+}
+
+type SearchMode = 'LOCATION' | 'AREA';
+
+function normalizeText(value: unknown): string {
+  return String(value ?? '').toLowerCase();
+}
+
+function textIncludes(value: unknown, needle: string): boolean {
+  if (!needle) return false;
+  return normalizeText(value).includes(needle);
+}
+
+function textStartsWith(value: unknown, needle: string): boolean {
+  if (!needle) return false;
+  return normalizeText(value).startsWith(needle);
 }
 
 function hazardCount(hazards: Record<string, boolean> | null | undefined): number {
@@ -97,6 +113,21 @@ function dedupeSites<T extends { hazards?: Record<string, boolean>; common_id?: 
 }
 
 const SearchQuerySchema = z.object({
+  mode: z.preprocess((v) => (Array.isArray(v) ? v[0] : v), z.enum(['LOCATION', 'AREA'])).optional(),
+  lat: z
+    .preprocess((v) => {
+      const raw = Array.isArray(v) ? v[0] : v;
+      if (raw === undefined || raw === null || raw === '') return undefined;
+      return Number(raw);
+    }, z.number().finite().min(-90).max(90))
+    .optional(),
+  lon: z
+    .preprocess((v) => {
+      const raw = Array.isArray(v) ? v[0] : v;
+      if (raw === undefined || raw === null || raw === '') return undefined;
+      return Number(raw);
+    }, z.number().finite().min(-180).max(180))
+    .optional(),
   prefCode: z
     .preprocess((v) => (Array.isArray(v) ? v[0] : v), z.string().regex(/^\d{2}$/))
     .optional(),
@@ -124,6 +155,7 @@ const SearchQuerySchema = z.object({
   designatedOnly: z
     .preprocess((v) => (v === '1' || v === 'true' ? true : v === '0' || v === 'false' ? false : false), z.boolean())
     .optional(),
+  radiusKm: z.preprocess((v) => (v ? Number(v) : 30), z.number().min(1).max(50)).optional(),
   limit: z.preprocess((v) => (v ? Number(v) : 50), z.number().int().min(1).max(50)).optional(),
   offset: z.preprocess((v) => (v ? Number(v) : 0), z.number().int().min(0).max(10_000)).optional(),
 });
@@ -134,7 +166,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const parsed = SearchQuerySchema.safeParse(req.query);
   if (!parsed.success) return res.status(400).json({ error: 'Invalid parameters', details: parsed.error.flatten() });
 
-  const { prefCode, prefName, muniCode, cityText, q, limit, offset, hazardTypes, hideIneligible, includeHazardless, designatedOnly } = parsed.data;
+  const {
+    mode,
+    prefCode,
+    prefName,
+    muniCode,
+    cityText,
+    q,
+    limit,
+    offset,
+    hazardTypes,
+    hideIneligible,
+    includeHazardless,
+    designatedOnly,
+    lat,
+    lon,
+    radiusKm,
+  } = parsed.data;
   const hazardFilters = (hazardTypes ?? []).filter(Boolean);
   const debugParam = Array.isArray(req.query.debug) ? req.query.debug[0] : req.query.debug;
   const debugEnabled = process.env.NODE_ENV !== 'production' || String(debugParam ?? '') === '1';
@@ -142,6 +190,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const recordTrace = (step: string, matchedCount: number) => {
     if (debugEnabled) debugTrace.push({ step, matchedCount });
   };
+  const modeUsed: SearchMode = (mode ?? 'AREA') as SearchMode;
+
+  if (mode === 'AREA' && !prefCode) {
+    return res.status(400).json({ error: 'prefCode_required' });
+  }
+  if (modeUsed === 'LOCATION' && (lat === null || lat === undefined || lon === null || lon === undefined)) {
+    return res.status(400).json({ error: 'lat_lon_required' });
+  }
 
   let resolvedPrefName: string | null = prefName ?? null;
   if (!resolvedPrefName && prefCode) {
@@ -232,6 +288,118 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return hideIneligible ? hazardFiltered.filter((site) => site.matchesHazards) : hazardFiltered;
   };
 
+  const sortAreaSites = (sites: any[]) => {
+    sites.sort((a, b) => {
+      const prefA = String(a.pref_city ?? '');
+      const prefB = String(b.pref_city ?? '');
+      const prefCmp = prefA.localeCompare(prefB);
+      if (prefCmp !== 0) return prefCmp;
+      const nameA = String(a.name ?? '');
+      const nameB = String(b.name ?? '');
+      const nameCmp = nameA.localeCompare(nameB);
+      if (nameCmp !== 0) return nameCmp;
+      return String(a.id ?? '').localeCompare(String(b.id ?? ''));
+    });
+  };
+
+  if (modeUsed === 'LOCATION') {
+    const requestedLimit = limit ?? 50;
+    const requestedRadiusKm = radiusKm ?? 30;
+    const bufferLimit = Math.min(200, Math.max(requestedLimit * 5, requestedLimit));
+    try {
+      const fallback = await fallbackNearbyShelters(prisma, {
+        lat: lat as number,
+        lon: lon as number,
+        hazardTypes: hazardFilters,
+        limit: bufferLimit,
+        radiusKm: requestedRadiusKm,
+        hideIneligible,
+        includeDiagnostics: debugEnabled,
+      });
+      recordTrace('location-raw', fallback.sites.length);
+
+      const prefNeedle = resolvedPrefName ? resolvedPrefName.toLowerCase() : '';
+      const muniCodeNeedle = muniCode ? muniCode.toLowerCase() : '';
+      const muniNameNeedle = resolvedMuniName ? resolvedMuniName.toLowerCase() : '';
+      const cityNeedle = cityText ? cityText.toLowerCase() : '';
+      const qNeedle = q ? q.toLowerCase() : '';
+
+      let filteredSites = applyFilters(fallback.sites ?? []);
+      recordTrace('location-filtered', filteredSites.length);
+
+      if (prefNeedle || muniCodeNeedle || muniNameNeedle || cityNeedle || qNeedle) {
+        filteredSites = filteredSites.filter((site) => {
+          const prefCity = normalizeText(site.pref_city);
+          const address = normalizeText(site.address);
+          const name = normalizeText(site.name);
+          const notes = normalizeText(site.notes);
+          const commonId = normalizeText(site.common_id);
+
+          const matchesPref =
+            !prefNeedle ||
+            textStartsWith(prefCity, prefNeedle) ||
+            textStartsWith(address, prefNeedle) ||
+            textIncludes(address, prefNeedle);
+          const matchesCity = !cityNeedle || textIncludes(prefCity, cityNeedle) || textIncludes(address, cityNeedle);
+          let matchesMuni = true;
+          if (muniCodeNeedle) {
+            matchesMuni =
+              textIncludes(prefCity, muniCodeNeedle) ||
+              textIncludes(address, muniCodeNeedle) ||
+              textIncludes(commonId, muniCodeNeedle) ||
+              (muniNameNeedle && (textIncludes(prefCity, muniNameNeedle) || textIncludes(address, muniNameNeedle)));
+          }
+          const matchesQ =
+            !qNeedle || textIncludes(name, qNeedle) || textIncludes(address, qNeedle) || textIncludes(notes, qNeedle);
+
+          return matchesPref && matchesCity && matchesMuni && matchesQ;
+        });
+      }
+
+      recordTrace('location-final', filteredSites.length);
+      filteredSites.sort((a, b) => {
+        const aDist = typeof a.distanceKm === 'number' ? a.distanceKm : typeof a.distance === 'number' ? a.distance : Number.POSITIVE_INFINITY;
+        const bDist = typeof b.distanceKm === 'number' ? b.distanceKm : typeof b.distance === 'number' ? b.distance : Number.POSITIVE_INFINITY;
+        if (aDist !== bDist) return aDist - bDist;
+        return String(a.id ?? '').localeCompare(String(b.id ?? ''));
+      });
+
+      const sliced = filteredSites.slice(0, requestedLimit);
+      const payload = {
+        fetchStatus: 'OK',
+        updatedAt: nowIso(),
+        lastError: null,
+        modeUsed,
+        prefName: resolvedPrefName,
+        muniCode: muniCode ?? null,
+        muniName: resolvedMuniName,
+        usedMuniFallback: false,
+        usedPrefFallback: false,
+        sites: sliced,
+        items: sliced,
+      } as any;
+      if (debugEnabled) payload.debugTrace = debugTrace;
+      return res.status(200).json(payload);
+    } catch (error) {
+      const message = safeErrorMessage(error);
+      const payload = {
+        fetchStatus: 'DOWN',
+        updatedAt: null,
+        lastError: message,
+        modeUsed,
+        prefName: resolvedPrefName,
+        muniCode: muniCode ?? null,
+        muniName: resolvedMuniName,
+        usedMuniFallback: false,
+        usedPrefFallback: false,
+        sites: [],
+        items: [],
+      } as any;
+      if (debugEnabled) payload.debugTrace = debugTrace;
+      return res.status(200).json(payload);
+    }
+  }
+
   try {
     const factor = await getEvacSitesCoordScale(prisma);
     const fetchSites = async (whereClause: any) => {
@@ -292,10 +460,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       filteredSites = await runQuery(wherePrefOnly, 'pref-only');
     }
 
+    sortAreaSites(filteredSites);
+
     const payload = {
       fetchStatus: 'OK',
       updatedAt: nowIso(),
       lastError: null,
+      modeUsed,
       prefName: resolvedPrefName,
       muniCode: muniCode ?? null,
       muniName: resolvedMuniName,
@@ -313,6 +484,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         fetchStatus: 'DOWN',
         updatedAt: null,
         lastError: message,
+        modeUsed,
         prefName: resolvedPrefName,
         muniCode: muniCode ?? null,
         muniName: resolvedMuniName,
@@ -361,10 +533,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         filteredSites = await runFallback({ muniCode: null, muniName: null }, 'pref-only');
       }
 
+      sortAreaSites(filteredSites);
+
       const payload = {
         fetchStatus: 'OK',
         updatedAt: nowIso(),
         lastError: null,
+        modeUsed,
         prefName: resolvedPrefName,
         muniCode: muniCode ?? null,
         muniName: resolvedMuniName,
@@ -381,6 +556,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         fetchStatus: 'DOWN',
         updatedAt: null,
         lastError: message,
+        modeUsed,
         prefName: resolvedPrefName,
         muniCode: muniCode ?? null,
         muniName: resolvedMuniName,

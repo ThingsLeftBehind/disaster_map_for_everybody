@@ -2,8 +2,7 @@ import Link from 'next/link';
 import useSWR from 'swr';
 import { useDevice } from './device/DeviceProvider';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { buildWarningBuckets, shapeAlertWarnings } from '../lib/jma/alerts';
-import { getTokyoScopedItems, type TokyoGroupKey, type TokyoGroups, type WarningItem } from '../lib/alerts/tokyoScope';
+import { shapeAlertWarnings } from '../lib/jma/alerts';
 import { useRouter } from 'next/router';
 import { useAreaName } from '../lib/client/areaName';
 
@@ -14,15 +13,6 @@ function formatUpdatedAt(updatedAt: string | null | undefined): string {
   const t = Date.parse(updatedAt);
   if (Number.isNaN(t)) return '未取得';
   return new Date(t).toLocaleString();
-}
-
-function countWarningsForTokyo(data: { items?: WarningItem[]; tokyoGroups?: TokyoGroups | null }, group: TokyoGroupKey): number {
-  const tokyoGroups = (data?.tokyoGroups as TokyoGroups | null) ?? null;
-  const items = Array.isArray(data?.items) ? (data.items as WarningItem[]) : [];
-  const isTokyoArea = Boolean(tokyoGroups && (data as any)?.area === '130000');
-  const scoped = getTokyoScopedItems({ items, tokyoGroups, isTokyoArea, primaryGroup: group });
-  const buckets = buildWarningBuckets(scoped.primaryItems);
-  return buckets.urgent.length + buckets.advisory.length;
 }
 
 function Chip({
@@ -125,7 +115,6 @@ export default function Layout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { device, selectedJmaAreaCode, currentJmaAreaCode, coarseArea, online } = useDevice();
   const { label: coarseAreaLabel } = useAreaName({ prefCode: coarseArea?.prefCode ?? null, muniCode: coarseArea?.muniCode ?? null });
-  const debugEnabled = process.env.NODE_ENV !== 'production' && String(router.query.debug ?? '') === '1';
   const refreshMs = device?.settings?.powerSaving ? 180_000 : 60_000;
 
   const { data: bannerData } = useSWR('/api/store/banner', fetcher, { dedupingInterval: 10_000 });
@@ -175,28 +164,6 @@ export default function Layout({ children }: { children: ReactNode }) {
   const bannerCounts = warningSource === 'selected' ? selectedCounts : warningSource === 'current' ? currentCounts : null;
   const bannerUrgentCount = bannerCounts?.urgent ?? 0;
   const bannerAdvisoryCount = bannerCounts?.advisory ?? 0;
-  const bannerScope =
-    warningSource === 'selected'
-      ? selectedShape.isTokyoArea
-        ? selectedShape.tokyoGroup ?? 'mainland'
-        : 'all'
-      : warningSource === 'current'
-        ? currentShape.isTokyoArea
-          ? currentShape.tokyoGroup ?? 'mainland'
-          : 'all'
-        : null;
-  const bannerMainlandCount =
-    warningSource === 'selected'
-      ? countWarningsForTokyo(selectedWarnings, 'mainland')
-      : warningSource === 'current'
-        ? countWarningsForTokyo(currentWarnings, 'mainland')
-        : 0;
-  const bannerIslandCount =
-    warningSource === 'selected'
-      ? countWarningsForTokyo(selectedWarnings, 'izu') + countWarningsForTokyo(selectedWarnings, 'ogasawara')
-      : warningSource === 'current'
-        ? countWarningsForTokyo(currentWarnings, 'izu') + countWarningsForTokyo(currentWarnings, 'ogasawara')
-        : 0;
 
   const { data: jmaStatus } = useSWR('/api/jma/status', fetcher, { refreshInterval: refreshMs, dedupingInterval: 10_000 });
   const rawJmaFetchStatus: 'OK' | 'DEGRADED' = jmaStatus?.fetchStatus === 'OK' ? 'OK' : 'DEGRADED';
@@ -350,11 +317,6 @@ export default function Layout({ children }: { children: ReactNode }) {
                   <span className="ml-2 text-xs font-normal text-red-800">現在地: {coarseAreaLabel ?? 'エリア未確定'}</span>
                 )}
               </div>
-              {debugEnabled && bannerScope && (
-                <div className="text-[11px] text-red-800">
-                  debug: scope={bannerScope}, mainlandCount={bannerMainlandCount}, islandCount={bannerIslandCount}
-                </div>
-              )}
               <Link href="/alerts" className="rounded bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-700">
                 警報ページへ
               </Link>

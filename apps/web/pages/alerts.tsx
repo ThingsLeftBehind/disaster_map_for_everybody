@@ -149,7 +149,7 @@ export default function AlertsPage() {
                   urgentCount > 0 ? 'bg-red-50 text-red-800 ring-red-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
                 )}
               >
-                警報 {urgentCount}
+                警報 {urgentCount}種類
               </span>
               <span
                 className={classNames(
@@ -157,7 +157,7 @@ export default function AlertsPage() {
                   advisoryCount > 0 ? 'bg-amber-50 text-amber-900 ring-amber-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
                 )}
               >
-                注意報 {advisoryCount}
+                注意報 {advisoryCount}種類
               </span>
             </div>
             {isTokyoArea && <div className="text-[11px] text-gray-600">対象: {formatTokyoLabel(primaryTokyoGroup)}</div>}

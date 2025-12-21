@@ -23,6 +23,7 @@ type CheckinStatus = 'INJURED' | 'SAFE' | 'ISOLATED' | 'EVACUATING' | 'COMPLETED
 
 interface Props {
   center: { lat: number; lon: number };
+  bounds?: [[number, number], [number, number]] | null;
   initialZoom?: number;
   recenterSignal?: number;
   origin?: Coords | null;
@@ -46,11 +47,21 @@ interface Props {
   onReportCheckin?: ((pinId: string) => void) | null;
 }
 
-function Recenter({ center, recenterSignal }: { center: { lat: number; lon: number }; recenterSignal: number }) {
+function Recenter({ center, recenterSignal, enabled }: { center: { lat: number; lon: number }; recenterSignal: number; enabled: boolean }) {
   const map = useMap();
   useEffect(() => {
+    if (!enabled) return;
     map.setView([center.lat, center.lon], map.getZoom(), { animate: true });
-  }, [center.lat, center.lon, map, recenterSignal]);
+  }, [center.lat, center.lon, enabled, map, recenterSignal]);
+  return null;
+}
+
+function FitBounds({ bounds }: { bounds: [[number, number], [number, number]] | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!bounds) return;
+    map.fitBounds(bounds, { padding: [24, 24] });
+  }, [bounds, map]);
   return null;
 }
 
@@ -118,6 +129,7 @@ function getPinIcon(status: CheckinStatus, archived: boolean): L.DivIcon {
 
 export default function MapViewInner({
   center,
+  bounds = null,
   initialZoom = 13,
   recenterSignal = 0,
   origin = null,
@@ -141,7 +153,8 @@ export default function MapViewInner({
   return (
     <div className="relative">
       <MapContainer center={[center.lat, center.lon]} zoom={initialZoom} scrollWheelZoom={true} className="h-[520px] w-full rounded-xl">
-        <Recenter center={center} recenterSignal={recenterSignal} />
+        <Recenter center={center} recenterSignal={recenterSignal} enabled={!bounds} />
+        <FitBounds bounds={bounds} />
         <MapCenterWatcher onCenterChange={onCenterChange ?? null} />
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
