@@ -296,10 +296,10 @@ export default function ListPage() {
   }, [apiError, cached?.value?.sites, list, searchError]);
 
   const appliedMode: SearchMode = appliedQuery?.mode ?? mode;
+  const appliedLat = appliedMode === 'LOCATION' ? appliedQuery?.lat : null;
+  const appliedLon = appliedMode === 'LOCATION' ? appliedQuery?.lon : null;
   const appliedCoords =
-    appliedMode === 'LOCATION' && appliedQuery?.lat !== null && appliedQuery?.lon !== null
-      ? { lat: appliedQuery.lat, lon: appliedQuery.lon }
-      : null;
+    appliedLat != null && appliedLon != null ? { lat: appliedLat, lon: appliedLon } : null;
   const areaBounds = useMemo(() => {
     if (appliedMode !== 'AREA' || effectiveList.length === 0) return null;
     let minLat = Number.POSITIVE_INFINITY;
