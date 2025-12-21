@@ -117,25 +117,24 @@ export default function QuakesPage() {
   const lastErrorLabel = data?.lastError ? '取得エラー' : 'なし';
 
   const strongPicks = useMemo(() => {
-    const scored = items.map((q) => {
-      const intensity = parseMaxIntensityRaw(q.maxIntensity) ?? parseMaxIntensityFromTitle(q.title);
-      const magnitudeNum = parseMagnitude(q.magnitude);
-      const t = q.time ? Date.parse(q.time) : NaN;
-      const timeMs = Number.isFinite(t) ? t : 0;
-      const severityScore = (intensity?.score ?? magnitudeNum ?? 0) * 10;
-      return { q, intensity, magnitudeNum, timeMs, severityScore };
-    });
-
-    const meetsThreshold = (v: (typeof scored)[number]) =>
-      (v.intensity?.score ?? null) !== null
-        ? (v.intensity?.score ?? 0) >= 6
-        : (v.magnitudeNum ?? 0) >= 6.5;
+    const uniqueRecent = Array.from(new Map(recentItems.map((q) => [q.id, q])).values());
+    const scored = uniqueRecent
+      .map((q) => {
+        const intensity = parseMaxIntensityRaw(q.maxIntensity) ?? parseMaxIntensityFromTitle(q.title);
+        if (!intensity) return null;
+        const rawTime = typeof q.time === 'string' ? q.time : null;
+        const t = rawTime ? Date.parse(rawTime) : NaN;
+        if (!Number.isFinite(t)) return null;
+        const severityScore = intensity.score * 10;
+        return { q, intensity, timeMs: t, severityScore, rawTime };
+      })
+      .filter((v): v is NonNullable<typeof v> => Boolean(v));
 
     const bySeverity = (a: (typeof scored)[number], b: (typeof scored)[number]) =>
       b.severityScore - a.severityScore || b.timeMs - a.timeMs;
 
     const picks: (typeof scored)[number][] = [];
-    for (const v of scored.filter(meetsThreshold).sort(bySeverity)) {
+    for (const v of scored.filter((s) => (s.intensity?.score ?? 0) >= 6).sort(bySeverity)) {
       picks.push(v);
       if (picks.length >= 3) break;
     }
@@ -146,7 +145,7 @@ export default function QuakesPage() {
       }
     }
     return picks.slice(0, 3);
-  }, [items]);
+  }, [recentItems]);
 
   return (
     <div className="space-y-6">
@@ -170,7 +169,7 @@ export default function QuakesPage() {
 
       <section className="rounded-lg bg-white p-5 shadow">
         <h2 className="text-lg font-semibold">最近の強い揺れ</h2>
-        <div className="mt-2 text-xs text-gray-600">最大震度を優先し、無い場合はマグニチュードで補います。</div>
+        <div className="mt-2 text-xs text-gray-600">最大震度（震度）に基づいて表示します。</div>
 
         <div className="mt-3 grid gap-2 md:grid-cols-3">
           {(strongPicks.length > 0 ? strongPicks : [null, null, null]).slice(0, 3).map((v, idx) => {
@@ -182,16 +181,13 @@ export default function QuakesPage() {
               );
             }
 
-            const tone = severityTone({ intensityScore: v.intensity?.score ?? null, magnitude: v.magnitudeNum });
-            const summary =
-              v.intensity ? `最大震度${v.intensity.label}` : v.magnitudeNum !== null ? `M${v.magnitudeNum}` : '—';
+            const tone = severityTone({ intensityScore: v.intensity?.score ?? null, magnitude: null });
+            const summary = v.intensity ? `最大震度${v.intensity.label}` : '最大震度不明';
             return (
               <div key={v.q.id} className={`rounded border px-3 py-3 ${toneClasses(tone)}`}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="text-sm font-bold">{summary}</div>
-                  <span className="rounded bg-white/70 px-2 py-1 text-[11px] font-semibold">
-                    {formatEventTime(v.q.time)}
-                  </span>
+                  <span className="rounded bg-white/70 px-2 py-1 text-[11px] font-semibold">{formatEventTime(v.rawTime)}</span>
                 </div>
                 <div className="mt-2 text-sm font-semibold text-gray-900">{v.q.epicenter ?? v.q.title}</div>
                 {v.q.link && (

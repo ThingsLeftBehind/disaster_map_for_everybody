@@ -2,11 +2,17 @@ import Head from 'next/head';
 import Link from 'next/link';
 import useSWR from 'swr';
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/router';
 import HazardMap from '../components/HazardMap';
 import { useDevice } from '../components/device/DeviceProvider';
 import { loadLastLocation } from '../lib/client/location';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
+const healthFetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('health');
+  return res.json();
+};
 
 type HazardLayerTile = { url: string; scheme?: 'xyz' | 'tms' };
 type HazardLayer = { key: string; name: string; jaName: string; tileUrl: string; scheme?: 'xyz' | 'tms'; tiles?: HazardLayerTile[]; minZoom: number; maxZoom: number };
@@ -17,6 +23,7 @@ type OverlayDiagnostics = {
 };
 
 export default function HazardPage() {
+  const router = useRouter();
   const { device } = useDevice();
   const lowBandwidth = Boolean(device?.settings?.lowBandwidth || device?.settings?.powerSaving);
 
@@ -37,8 +44,8 @@ export default function HazardPage() {
       minZoom: 10,
       maxZoom: 17,
     },
-    { key: 'tsunami', name: 'Tsunami', jaName: '津波', tileUrl: 'https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png', scheme: 'xyz', minZoom: 10, maxZoom: 17 },
-    { key: 'liquefaction', name: 'Liquefaction', jaName: '液状化', tileUrl: 'https://cyberjapandata.gsi.go.jp/xyz/LCM25K_2012/{z}/{x}/{y}.png', scheme: 'xyz', minZoom: 10, maxZoom: 16 },
+    { key: 'tsunami', name: 'Tsunami', jaName: '津波', tileUrl: '/api/tiles/tsunami/{z}/{x}/{y}.png', scheme: 'xyz', minZoom: 10, maxZoom: 17 },
+    { key: 'liquefaction', name: 'Liquefaction', jaName: '液状化', tileUrl: '/api/tiles/lcm25k_2012/{z}/{x}/{y}.png', scheme: 'xyz', minZoom: 10, maxZoom: 16 },
   ];
   const layers: HazardLayer[] = data?.layers?.length ? data.layers : fallbackLayers;
   const fetchStatus: string = data?.fetchStatus ?? 'DEGRADED';
@@ -46,10 +53,11 @@ export default function HazardPage() {
   const lastError: string | null = data?.lastError ?? null;
 
   const [enabled, setEnabled] = useState<string[]>([]);
-  const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [zoomWarn, setZoomWarn] = useState<string | null>(null);
   const [diagnostics, setDiagnostics] = useState<OverlayDiagnostics | null>(null);
-  const showDev = process.env.NODE_ENV !== 'production';
+  const debugEnabled = process.env.NODE_ENV !== 'production' && String(router.query.debug ?? '') === '1';
+  const { data: health, error: healthError } = useSWR(debugEnabled ? '/api/health' : null, healthFetcher, { dedupingInterval: 30_000, shouldRetryOnError: false });
+  const apiUnreachable = debugEnabled && (healthError || health?.ok !== true);
 
   const [center, setCenter] = useState<{ lat: number; lon: number }>({ lat: 35.681236, lon: 139.767125 });
   useEffect(() => {
@@ -63,9 +71,7 @@ export default function HazardPage() {
 
   const toggle = (key: string) => {
     setEnabled((prev) => {
-      const next = prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key];
-      if (next.length > 0 && prev.length === 0) setShowDisclaimer(true);
-      return next;
+      return prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key];
     });
   };
 
@@ -101,6 +107,11 @@ export default function HazardPage() {
         <div className="mt-2 text-xs text-gray-600">
           レイヤーをONにするとタイルを読み込みます。ズームが低い場合は自動的にOFFになります。
         </div>
+        {apiUnreachable && (
+          <div className="mt-3 rounded border bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            Server API unreachable (wrong port or dev server stopped).
+          </div>
+        )}
 
         {lowBandwidth ? (
           <div className="mt-3 rounded border bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -113,7 +124,7 @@ export default function HazardPage() {
                 enabledKeys={enabled}
                 layers={layers}
                 center={center}
-                onDiagnostics={showDev ? setDiagnostics : undefined}
+                onDiagnostics={debugEnabled ? setDiagnostics : undefined}
                 onZoomOutOfRange={({ direction, keys }) => {
                   if (keys.length === 0) return;
                   setEnabled((prev) => prev.filter((k) => !keys.includes(k)));
@@ -146,47 +157,31 @@ export default function HazardPage() {
         )}
       </section>
 
-      <section className="rounded-lg border bg-amber-50 p-4 text-sm text-amber-900">
-        <div className="font-semibold">注意事項</div>
-        <div className="mt-1">ハザード表示は参考情報です。実際の危険度や避難判断は自治体・国土地理院等の公式情報を優先してください。</div>
-        <div className="mt-1">
-          詳細は <Link href="/sources" className="text-amber-900 underline">出典・注意事項</Link> を確認してください。
-        </div>
-      </section>
-
       <section className="rounded-lg bg-white p-5 shadow">
         <h2 className="text-lg font-semibold">レイヤー選択</h2>
         <div className="mt-2 text-xs text-gray-600">洪水 / 土砂 / 津波 / 液状化（デフォルトOFF）</div>
         <div className="mt-3 grid gap-2 md:grid-cols-4">
           {layers.map((l) => (
-            <button
-              key={l.key}
-              disabled={lowBandwidth}
-              onClick={() => toggle(l.key)}
-              aria-pressed={enabled.includes(l.key)}
-              className={`rounded border px-3 py-2 text-sm font-semibold ${
-                enabled.includes(l.key) ? 'border-blue-600 bg-blue-50 text-blue-900' : 'border-gray-300 bg-white text-gray-800'
-              } ${lowBandwidth ? 'opacity-50' : ''}`}
-            >
-              {l.jaName}
-            </button>
+            <div key={l.key} className="space-y-1">
+              <button
+                disabled={lowBandwidth}
+                onClick={() => toggle(l.key)}
+                aria-pressed={enabled.includes(l.key)}
+                className={`w-full rounded border px-3 py-2 text-sm font-semibold ${
+                  enabled.includes(l.key) ? 'border-blue-600 bg-blue-50 text-blue-900' : 'border-gray-300 bg-white text-gray-800'
+                } ${lowBandwidth ? 'opacity-50' : ''}`}
+              >
+                {l.jaName}
+              </button>
+              {l.key === 'liquefaction' && (
+                <div className="text-[11px] text-gray-600">
+                  液状化はデータがある地域のみ表示されます。データがない地域は空白になります。
+                </div>
+              )}
+            </div>
           ))}
         </div>
 
-        {showDisclaimer && (
-          <div className="mt-3 rounded border bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            <div className="font-semibold">注意（必読）</div>
-            <div className="mt-1">
-              ハザード表示は参考情報です。実際の危険度や避難判断は必ず自治体・国土地理院等の公式情報を優先してください。
-            </div>
-            <button
-              className="mt-2 rounded bg-white px-3 py-1 text-xs text-amber-900 hover:bg-amber-100"
-              onClick={() => setShowDisclaimer(false)}
-            >
-              閉じる
-            </button>
-          </div>
-        )}
       </section>
 
       <section className="rounded-lg bg-white p-5 shadow">
@@ -221,7 +216,7 @@ export default function HazardPage() {
         </div>
       </section>
 
-      {showDev && diagnostics && (
+      {debugEnabled && diagnostics && (
         <section className="rounded-lg bg-white p-5 shadow">
           <h2 className="text-lg font-semibold">Overlay diagnostics (dev)</h2>
           <div className="mt-2 text-xs text-gray-600">更新: {new Date(diagnostics.updatedAt).toLocaleTimeString()}</div>

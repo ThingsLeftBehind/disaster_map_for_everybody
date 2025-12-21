@@ -35,6 +35,12 @@ Hazard tile verification:
 node apps/web/scripts/verify-hazard-tiles.mjs
 ```
 
+Manual checks:
+
+- `/main`: マイエリアの追加/編集/削除（現在地/地図中心/手入力）と警報カウント表示
+- `/shelters/[id]`: 投票/コメントは「送信」ボタンで1回送信（投票必須、コメント任意）
+- `/hazard`: 液状化のタイルが `lcm25k_2012` を読みに行く
+
 Store APIs (device id required; see browser localStorage `jp_evac_device_id`):
 
 ```bash

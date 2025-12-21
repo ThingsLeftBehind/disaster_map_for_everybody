@@ -10,6 +10,8 @@ import ShareMenu from '../components/ShareMenu';
 import { loadLastLocation, reverseGeocodeGsi, saveLastLocation, type Coords } from '../lib/client/location';
 import { buildUrl, formatShelterShareText } from '../lib/client/share';
 import { formatPrefMuniLabel, useAreaName } from '../lib/client/areaName';
+import { getJmaWarningPriority } from '../lib/jma/filters';
+import { DEFAULT_MAIN_LIMIT } from '../lib/constants';
 
 const MapView = dynamic(() => import('../components/MapView'), {
   ssr: false,
@@ -35,8 +37,11 @@ type NearbySite = {
 };
 
 type AlertSummaryArea = {
-  area: string;
+  id: string;
+  label: string | null;
+  areaCode: string;
   areaName: string | null;
+  tokyoLabel: string | null;
   updatedAt: string | null;
   urgentCount: number;
   advisoryCount: number;
@@ -104,12 +109,85 @@ function splitTitle(title: string): { short: string; area: string | null } {
   return { short: t, area: null };
 }
 
+const CHECKIN_COOLDOWN_MS = 60_000;
+const LS_CHECKIN_COOLDOWN = 'jp_evac_checkin_cooldown_v1';
+
+function readCheckinCooldown(): number {
+  if (typeof window === 'undefined') return 0;
+  try {
+    const raw = localStorage.getItem(LS_CHECKIN_COOLDOWN);
+    const value = raw ? Number(raw) : 0;
+    return Number.isFinite(value) ? value : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeCheckinCooldown(untilMs: number) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(LS_CHECKIN_COOLDOWN, String(untilMs));
+  } catch {
+    // ignore
+  }
+}
+
+type WarningItem = { id: string; kind: string; status: string | null; source: string };
+
+type TokyoGroupKey = 'mainland' | 'izu' | 'ogasawara';
+
+const TOKYO_LABELS: Record<TokyoGroupKey, string> = {
+  mainland: '東京都（島しょ除く）',
+  izu: '東京都（伊豆諸島）',
+  ogasawara: '東京都（小笠原諸島）',
+};
+
+function inferTokyoGroupFromLabel(label: string | null | undefined): TokyoGroupKey {
+  if (label?.includes('小笠原')) return 'ogasawara';
+  if (label?.includes('伊豆')) return 'izu';
+  return 'mainland';
+}
+
+function summarizeWarningItems(items: WarningItem[]): {
+  urgentCount: number;
+  advisoryCount: number;
+  topUrgent: string[];
+  topAdvisory: string[];
+} {
+  const urgentCounts = new Map<string, number>();
+  const advisoryCounts = new Map<string, number>();
+
+  for (const it of items) {
+    const kind = String(it.kind ?? '').trim();
+    if (!kind) continue;
+    const priority = getJmaWarningPriority(kind);
+    if (priority === 'URGENT') urgentCounts.set(kind, (urgentCounts.get(kind) ?? 0) + 1);
+    if (priority === 'ADVISORY') advisoryCounts.set(kind, (advisoryCounts.get(kind) ?? 0) + 1);
+  }
+
+  const topUrgent = Array.from(urgentCounts.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([kind]) => kind)
+    .slice(0, 2);
+  const topAdvisory = Array.from(advisoryCounts.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([kind]) => kind)
+    .slice(0, 2);
+
+  return {
+    urgentCount: urgentCounts.size,
+    advisoryCount: advisoryCounts.size,
+    topUrgent,
+    topAdvisory,
+  };
+}
+
 export default function MainPage() {
   const router = useRouter();
-  const { device, deviceId, updateDevice, coarseArea, setCoarseArea, currentJmaAreaCode, checkin } = useDevice();
+  const { device, deviceId, updateDevice, coarseArea, setCoarseArea, checkin, addSavedArea, removeSavedArea } = useDevice();
   const lowBandwidth = Boolean(device?.settings?.lowBandwidth || device?.settings?.powerSaving);
   const refreshMs = device?.settings?.powerSaving ? 180_000 : 60_000;
-  const { label: coarseAreaLabel } = useAreaName({ prefCode: coarseArea?.prefCode ?? null, muniCode: coarseArea?.muniCode ?? null });
+  const { area: coarseAreaInfo, label: coarseAreaLabel } = useAreaName({ prefCode: coarseArea?.prefCode ?? null, muniCode: coarseArea?.muniCode ?? null });
   const savedAreaLabel = useMemo(() => {
     const selected = device?.settings?.selectedAreaId
       ? device?.savedAreas?.find((a) => a.id === device.settings.selectedAreaId)
@@ -174,12 +252,20 @@ export default function MainPage() {
     );
   };
 
-  const nearbyUrl = coords
-    ? `/api/shelters/nearby?lat=${coords.lat}&lon=${coords.lon}&limit=6&radiusKm=30&hideIneligible=false&hazardTypes=`
+  const nearbyLimit = useMemo(() => {
+    const raw = Array.isArray(router.query.limit) ? router.query.limit[0] : router.query.limit;
+    const parsed = raw ? Number(raw) : NaN;
+    if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_MAIN_LIMIT;
+    return Math.min(Math.floor(parsed), 50);
+  }, [router.query.limit]);
+
+  const nearbyCoords = coords ?? center;
+  const nearbyUrl = nearbyCoords
+    ? `/api/shelters/nearby?lat=${nearbyCoords.lat}&lon=${nearbyCoords.lon}&limit=${nearbyLimit}&radiusKm=30&hideIneligible=false&hazardTypes=`
     : null;
   const { data: nearbyData } = useSWR(nearbyUrl, fetcher, { dedupingInterval: 10_000, refreshInterval: 0 });
   const sites: NearbySite[] = nearbyData?.sites ?? [];
-  const top6 = useMemo(() => sites.slice(0, 6), [sites]);
+  const topNearby = useMemo(() => sites.slice(0, nearbyLimit), [nearbyLimit, sites]);
   const devDiagnostics = nearbyData?.devDiagnostics ?? null;
 
   const { data: healthData } = useSWR('/api/health', fetcher, { dedupingInterval: 60_000 });
@@ -188,7 +274,8 @@ export default function MainPage() {
   const sheltersUnavailable = dbConnected === false || sheltersCount === 0;
 
   const isDev = process.env.NODE_ENV === 'development';
-  const showDevDataCard = Boolean(isDev && coords);
+  const debugEnabled = isDev && String(router.query.debug ?? '') === '1';
+  const showDevDataCard = Boolean(debugEnabled && coords);
 
   const firstDistanceKm = useMemo(() => {
     const first = sites[0] as any;
@@ -224,6 +311,128 @@ export default function MainPage() {
     const t = setTimeout(() => setToast(null), 2500);
     return () => clearTimeout(t);
   }, [toast]);
+
+  const savedAreas = device?.savedAreas ?? [];
+  const [areaLabelInput, setAreaLabelInput] = useState('');
+  const [areaInputMode, setAreaInputMode] = useState<'select' | 'current' | 'map' | 'manual'>('select');
+  const [manualLat, setManualLat] = useState('');
+  const [manualLon, setManualLon] = useState('');
+  const [areaActionError, setAreaActionError] = useState<string | null>(null);
+  const [areaActionBusy, setAreaActionBusy] = useState(false);
+  const [editingAreaId, setEditingAreaId] = useState<string | null>(null);
+  const [editingLabel, setEditingLabel] = useState('');
+  const [selectedPrefCode, setSelectedPrefCode] = useState('');
+  const [selectedMuniCode, setSelectedMuniCode] = useState('');
+
+  const { data: prefData } = useSWR('/api/ref/municipalities', fetcher, { dedupingInterval: 60_000 });
+  const prefectures: Array<{ prefCode: string; prefName: string }> = prefData?.prefectures ?? [];
+  const selectedPrefName = useMemo(
+    () => prefectures.find((p) => p.prefCode === selectedPrefCode)?.prefName ?? null,
+    [prefectures, selectedPrefCode]
+  );
+  const municipalitiesUrl = selectedPrefCode ? `/api/ref/municipalities?prefCode=${selectedPrefCode}` : null;
+  const { data: muniData } = useSWR(municipalitiesUrl, fetcher, { dedupingInterval: 60_000 });
+  const municipalities: Array<{ muniCode: string; muniName: string }> = muniData?.municipalities ?? [];
+  const selectedMuniName = useMemo(
+    () => municipalities.find((m) => m.muniCode === selectedMuniCode)?.muniName ?? null,
+    [municipalities, selectedMuniCode]
+  );
+
+  const resolveAreaNames = async (prefCode: string | null, muniCode: string | null) => {
+    if (!prefCode) return null;
+    const params = new URLSearchParams();
+    params.set('prefCode', prefCode);
+    if (muniCode) params.set('muniCode', muniCode);
+    const res = await fetch(`/api/ref/area-name?${params.toString()}`);
+    if (!res.ok) return null;
+    const json = await res.json();
+    const area = json?.area ?? null;
+    if (!area?.prefName) return null;
+    return { prefName: area.prefName as string, muniName: (area.muniName as string | null) ?? null };
+  };
+
+  const buildAreaLabel = () => {
+    const raw = areaLabelInput.trim();
+    return raw ? raw.slice(0, 40) : null;
+  };
+
+  const handleAddArea = async (coordsSource?: Coords | null) => {
+    if (savedAreas.length >= 5) {
+      setAreaActionError('マイエリアは最大5件までです');
+      return;
+    }
+    setAreaActionError(null);
+    setAreaActionBusy(true);
+    try {
+      let prefCode = coarseArea?.prefCode ?? null;
+      let muniCode = coarseArea?.muniCode ?? null;
+
+      if (coordsSource) {
+        const r = await reverseGeocodeGsi(coordsSource);
+        prefCode = r.prefCode;
+        muniCode = r.muniCode;
+      }
+
+      if (!prefCode) {
+        setAreaActionError('エリアを特定できませんでした');
+        return;
+      }
+
+      const cachedNames =
+        !coordsSource &&
+        coarseAreaInfo &&
+        coarseAreaInfo.prefCode === prefCode
+          ? { prefName: coarseAreaInfo.prefName, muniName: coarseAreaInfo.muniName ?? null }
+          : null;
+      const names = cachedNames ?? (await resolveAreaNames(prefCode, muniCode ?? null));
+      if (!names?.prefName) {
+        setAreaActionError('都道府県名の取得に失敗しました');
+        return;
+      }
+
+      await addSavedArea({
+        label: buildAreaLabel(),
+        prefCode,
+        prefName: names.prefName,
+        muniCode: muniCode ?? null,
+        muniName: names.muniName ?? null,
+        jmaAreaCode: `${prefCode}0000`,
+      } as any);
+      setToast('マイエリアを保存しました');
+    } catch {
+      setAreaActionError('保存に失敗しました');
+    } finally {
+      setAreaActionBusy(false);
+    }
+  };
+
+  const handleAddAreaBySelection = async () => {
+    if (!selectedPrefCode || !selectedPrefName) {
+      setAreaActionError('都道府県を選択してください');
+      return;
+    }
+    if (savedAreas.length >= 5) {
+      setAreaActionError('マイエリアは最大5件までです');
+      return;
+    }
+    setAreaActionError(null);
+    setAreaActionBusy(true);
+    try {
+      await addSavedArea({
+        label: buildAreaLabel(),
+        prefCode: selectedPrefCode,
+        prefName: selectedPrefName,
+        muniCode: selectedMuniCode || null,
+        muniName: selectedMuniName ?? null,
+        jmaAreaCode: `${selectedPrefCode}0000`,
+      } as any);
+      setToast('マイエリアを保存しました');
+    } catch {
+      setAreaActionError('保存に失敗しました');
+    } finally {
+      setAreaActionBusy(false);
+    }
+  };
 
   const isFavorite = (id: string) => favoriteIds.includes(id);
   const setFavorite = (id: string, next: boolean) => {
@@ -264,23 +473,102 @@ export default function MainPage() {
   const { data: nationalUrgent } = useSWR('/api/jma/urgent', fetcher, { refreshInterval: refreshMs, dedupingInterval: 10_000 });
   const nationalItems: Array<{ id: string; title: string; updated: string | null }> = nationalUrgent?.items ?? [];
 
-  const savedAreaCodes = useMemo(() => {
-    const areas = (device?.savedAreas ?? [])
+  const myAreaCodes = useMemo(() => {
+    const codes = savedAreas
       .map((a) => a.jmaAreaCode ?? `${a.prefCode}0000`)
       .filter((v): v is string => typeof v === 'string' && /^\d{6}$/.test(v));
-    const merged = currentJmaAreaCode ? [...areas, currentJmaAreaCode] : areas;
-    return Array.from(new Set(merged)).slice(0, 6);
-  }, [currentJmaAreaCode, device?.savedAreas]);
+    return Array.from(new Set(codes)).slice(0, 5);
+  }, [savedAreas]);
 
-  const summariesUrl = savedAreaCodes.length > 0 ? `/api/jma/warnings-summaries?areas=${encodeURIComponent(savedAreaCodes.join(','))}` : null;
-  const { data: mySummary } = useSWR(summariesUrl, fetcher, { refreshInterval: refreshMs, dedupingInterval: 10_000 });
-  const myAreas: AlertSummaryArea[] = mySummary?.areas ?? [];
+  const myAreaKey = myAreaCodes.length > 0 ? ['my-areas', myAreaCodes.join(',')] : null;
+  const { data: myAreaWarnings } = useSWR(
+    myAreaKey,
+    async ([, list]) => {
+      const codes = String(list).split(',').filter(Boolean);
+      const responses = await Promise.all(
+        codes.map(async (code) => {
+          const res = await fetch(`/api/jma/warnings?area=${encodeURIComponent(code)}`);
+          const json = await res.json().catch(() => null);
+          return { code, data: json };
+        })
+      );
+      return responses;
+    },
+    { refreshInterval: refreshMs, dedupingInterval: 10_000 }
+  );
+
+  const warningsByCode = useMemo(() => {
+    const map = new Map<string, any>();
+    for (const entry of myAreaWarnings ?? []) {
+      if (entry?.code) map.set(entry.code, entry.data ?? null);
+    }
+    return map;
+  }, [myAreaWarnings]);
+
+  const myAreas: AlertSummaryArea[] = useMemo(
+    () =>
+      savedAreas.map((area) => {
+        const areaCode = area.jmaAreaCode ?? `${area.prefCode}0000`;
+        const warnings = warningsByCode.get(areaCode) ?? null;
+        const items: WarningItem[] = warnings?.items ?? [];
+        const tokyoGroups = (warnings?.tokyoGroups as Record<TokyoGroupKey, { items: WarningItem[] }> | null) ?? null;
+        let targetItems = items;
+        let tokyoLabel: string | null = null;
+        if (areaCode === '130000' && tokyoGroups) {
+          const group = inferTokyoGroupFromLabel(area.muniName ?? area.label ?? null);
+          targetItems = tokyoGroups[group]?.items ?? [];
+          tokyoLabel = TOKYO_LABELS[group];
+        }
+        const summary = summarizeWarningItems(targetItems);
+        return {
+          id: area.id,
+          label: area.label ?? null,
+          areaCode,
+          areaName: formatPrefMuniLabel({ prefName: area.prefName, muniName: area.muniName ?? null }) ?? area.prefName,
+          tokyoLabel,
+          updatedAt: warnings?.updatedAt ?? null,
+          urgentCount: summary.urgentCount,
+          advisoryCount: summary.advisoryCount,
+          topUrgent: summary.topUrgent,
+          topAdvisory: summary.topAdvisory,
+        };
+      }),
+    [savedAreas, warningsByCode]
+  );
 
   const myActiveCheckin: any =
     (device?.checkins ?? []).find((c: any) => c && typeof c === 'object' && (c as any).active !== false) ?? (device?.checkins ?? [])[0] ?? null;
   const [myCheckinStatus, setMyCheckinStatus] = useState<'SAFE' | 'INJURED' | 'ISOLATED' | 'EVACUATING' | 'COMPLETED'>('SAFE');
   const [myCheckinPrecise, setMyCheckinPrecise] = useState(false);
   const [myCheckinComment, setMyCheckinComment] = useState('');
+  const [checkinCooldownUntil, setCheckinCooldownUntil] = useState(0);
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
+
+  useEffect(() => {
+    const initial = readCheckinCooldown();
+    if (initial) setCheckinCooldownUntil(initial);
+  }, []);
+
+  useEffect(() => {
+    if (!checkinCooldownUntil) {
+      setCooldownRemaining(0);
+      return;
+    }
+    const update = () => {
+      const remaining = Math.max(0, checkinCooldownUntil - Date.now());
+      setCooldownRemaining(remaining);
+      if (remaining === 0) {
+        setCheckinCooldownUntil(0);
+        writeCheckinCooldown(0);
+      }
+    };
+    update();
+    const timer = window.setInterval(update, 1000);
+    return () => window.clearInterval(timer);
+  }, [checkinCooldownUntil]);
+
+  const checkinCooldownActive = cooldownRemaining > 0;
+  const cooldownLabel = checkinCooldownActive ? `次の更新まで ${Math.ceil(cooldownRemaining / 1000)}秒` : null;
 
   return (
     <div className="space-y-6">
@@ -325,9 +613,16 @@ export default function MainPage() {
             <MapView
               sites={sites as any}
               center={center}
+              initialZoom={13}
               recenterSignal={recenterSignal}
               origin={coords}
               fromAreaLabel={shareFromArea}
+              onCenterChange={(next) =>
+                setCenter((prev) => {
+                  if (Math.abs(prev.lat - next.lat) < 1e-6 && Math.abs(prev.lon - next.lon) < 1e-6) return prev;
+                  return next;
+                })
+              }
               onSelect={(site: any) => {
                 void router.push(`/shelters/${site.id}`);
               }}
@@ -368,12 +663,12 @@ export default function MainPage() {
             </div>
           )}
 
-          {coords && top6.length === 0 && <div className="mt-3 text-sm text-gray-600">近くの避難場所が見つかりませんでした。</div>}
+          {coords && topNearby.length === 0 && <div className="mt-3 text-sm text-gray-600">近くの避難場所が見つかりませんでした。</div>}
 
           <div className="mt-4 grid grid-cols-2 gap-2">
-            {top6.map((site) => {
+            {topNearby.map((site) => {
               const hazardCount = hazardKeys.filter((k) => Boolean((site.hazards as any)?.[k])).length;
-              const caution = hazardCount === 0 || Boolean(site.is_same_address_as_shelter);
+              const caution = Boolean(site.is_same_address_as_shelter);
               const dest: Coords = { lat: site.lat, lon: site.lon };
               const shareUrl = origin ? buildUrl(origin, `/shelters/${site.id}`, {}) : null;
 
@@ -392,8 +687,6 @@ export default function MainPage() {
                       <div className="mt-0.5 text-[10px] text-gray-500">{hazardPreview(site.hazards)}</div>
                       {caution && (
                         <div className="mt-0.5 text-[10px] font-semibold text-amber-800">
-                          {hazardCount === 0 ? '対応ハザード情報が未設定（要確認）' : ''}
-                          {hazardCount === 0 && site.is_same_address_as_shelter ? ' / ' : ''}
                           {site.is_same_address_as_shelter ? '同一住所データの可能性（要確認）' : ''}
                         </div>
                       )}
@@ -534,11 +827,11 @@ export default function MainPage() {
           </div>
         </div>
 
-        <details className="mt-4 rounded-2xl border bg-white p-4">
-          <summary className="cursor-pointer list-none text-sm font-bold text-gray-900">
+        <div className="mt-4 rounded-2xl border bg-white p-4">
+          <div className="text-sm font-bold text-gray-900">
             自分の安否ピンを更新（手動）
             <span className="ml-2 text-xs font-normal text-gray-600">最終: {myActiveCheckin ? formatAt(myActiveCheckin.updatedAt) : '未更新'}</span>
-          </summary>
+          </div>
 
           <div className="mt-3 space-y-4">
             <div className="rounded-xl bg-gray-50 p-3">
@@ -595,7 +888,7 @@ export default function MainPage() {
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <button
                 className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-60"
-                disabled={!coords}
+                disabled={!coords || checkinCooldownActive}
                 onClick={async () => {
                   if (!coords) {
                     setToast('まず現在地を取得してください');
@@ -609,15 +902,43 @@ export default function MainPage() {
                     shelterId: null,
                   });
                   setMyCheckinComment('');
+                  const nextCooldown = Date.now() + CHECKIN_COOLDOWN_MS;
+                  setCheckinCooldownUntil(nextCooldown);
+                  writeCheckinCooldown(nextCooldown);
                   setToast('安否ピンを更新しました');
                 }}
               >
                 ピンを更新
               </button>
+              <button
+                className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-800 ring-1 ring-gray-200 hover:bg-gray-50 disabled:opacity-60"
+                disabled={checkinCooldownActive}
+                onClick={async () => {
+                  const nowIso = new Date().toISOString();
+                  if (device?.checkins?.length) {
+                    const archived = device.checkins.map((c) => ({
+                      ...c,
+                      active: false,
+                      archivedAt: c.archivedAt ?? c.updatedAt ?? nowIso,
+                    }));
+                    await updateDevice({ checkins: archived } as any);
+                  }
+                  setMyCheckinStatus('SAFE');
+                  setMyCheckinComment('');
+                  setMyCheckinPrecise(false);
+                  const nextCooldown = Date.now() + CHECKIN_COOLDOWN_MS;
+                  setCheckinCooldownUntil(nextCooldown);
+                  writeCheckinCooldown(nextCooldown);
+                  setToast('安否ピンを解除しました');
+                }}
+              >
+                解除
+              </button>
               <div className="text-xs text-gray-600">更新: {myActiveCheckin ? formatAt(myActiveCheckin.updatedAt) : '未更新'}</div>
             </div>
+            {cooldownLabel && <div className="text-xs text-gray-600">{cooldownLabel}</div>}
           </div>
-        </details>
+        </div>
       </section>
 
       <section className="rounded-2xl bg-white p-5 shadow">
@@ -701,17 +1022,237 @@ export default function MainPage() {
           </button>
         </div>
 
+        <div className="mt-4 rounded-2xl border bg-gray-50 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-sm font-semibold">マイエリア登録（最大5件）</div>
+            <div className="text-xs text-gray-600">{savedAreas.length}/5</div>
+          </div>
+
+          {savedAreas.length === 0 ? (
+            <div className="mt-2 text-sm text-gray-600">まだ登録されていません。</div>
+          ) : (
+            <div className="mt-3 space-y-2">
+              {savedAreas.map((area) => {
+                const areaLabel = formatPrefMuniLabel({ prefName: area.prefName, muniName: area.muniName ?? null }) ?? area.prefName;
+                const isEditing = editingAreaId === area.id;
+                return (
+                  <div key={area.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-white px-3 py-2">
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold">{area.label ?? areaLabel}</div>
+                      {area.label && <div className="mt-1 text-xs text-gray-600">{areaLabel}</div>}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {isEditing ? (
+                        <>
+                          <input
+                            className="rounded border px-2 py-1 text-xs"
+                            value={editingLabel}
+                            maxLength={40}
+                            onChange={(e) => setEditingLabel(e.target.value)}
+                            placeholder="名称（任意）"
+                          />
+                          <button
+                            className="rounded bg-gray-900 px-3 py-1 text-xs font-semibold text-white hover:bg-black"
+                            onClick={async () => {
+                              const trimmed = editingLabel.trim();
+                              const next = savedAreas.map((a) => (a.id === area.id ? { ...a, label: trimmed || null } : a));
+                              await updateDevice({ savedAreas: next } as any);
+                              setEditingAreaId(null);
+                              setEditingLabel('');
+                            }}
+                          >
+                            保存
+                          </button>
+                          <button
+                            className="rounded bg-white px-3 py-1 text-xs text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50"
+                            onClick={() => {
+                              setEditingAreaId(null);
+                              setEditingLabel('');
+                            }}
+                          >
+                            キャンセル
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            className="rounded bg-white px-3 py-1 text-xs text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50"
+                            onClick={() => {
+                              setEditingAreaId(area.id);
+                              setEditingLabel(area.label ?? '');
+                            }}
+                          >
+                            編集
+                          </button>
+                          <button
+                            className="rounded bg-white px-3 py-1 text-xs text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50"
+                            onClick={() => removeSavedArea(area.id)}
+                          >
+                            削除
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="mt-4 rounded-xl border bg-white p-3">
+            <div className="text-sm font-semibold">追加</div>
+            <div className="mt-2">
+              <div className="text-xs text-gray-600">名称（任意）</div>
+              <input
+                className="mt-1 w-full rounded border px-3 py-2 text-sm"
+                placeholder="自宅 / 職場 など"
+                value={areaLabelInput}
+                maxLength={40}
+                onChange={(e) => setAreaLabelInput(e.target.value)}
+              />
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              {[
+                ['select', '都道府県・市区町村'],
+                ['current', '現在地'],
+                ['map', '地図中心'],
+                ['manual', '手入力'],
+              ].map(([key, label]) => (
+                <button
+                  key={key}
+                  className={classNames(
+                    'rounded px-3 py-2 text-xs font-semibold ring-1',
+                    areaInputMode === key ? 'bg-blue-600 text-white ring-blue-600' : 'bg-white text-gray-800 ring-gray-200'
+                  )}
+                  onClick={() => setAreaInputMode(key as any)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {areaInputMode === 'select' && (
+              <div className="mt-3 space-y-2">
+                <select
+                  className="w-full rounded border px-3 py-2 text-sm"
+                  value={selectedPrefCode}
+                  onChange={(e) => {
+                    setSelectedPrefCode(e.target.value);
+                    setSelectedMuniCode('');
+                  }}
+                >
+                  <option value="">都道府県を選択</option>
+                  {prefectures.map((p) => (
+                    <option key={p.prefCode} value={p.prefCode}>
+                      {p.prefName}
+                    </option>
+                  ))}
+                </select>
+                {selectedPrefCode && municipalities.length > 0 && (
+                  <select
+                    className="w-full rounded border px-3 py-2 text-sm"
+                    value={selectedMuniCode}
+                    onChange={(e) => setSelectedMuniCode(e.target.value)}
+                  >
+                    <option value="">市区町村を選択（任意）</option>
+                    {municipalities.map((m) => (
+                      <option key={m.muniCode} value={m.muniCode}>
+                        {m.muniName}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <button
+                  className="rounded bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-black disabled:opacity-60"
+                  disabled={areaActionBusy}
+                  onClick={handleAddAreaBySelection}
+                >
+                  選択したエリアを保存
+                </button>
+              </div>
+            )}
+
+            {areaInputMode === 'current' && (
+              <div className="mt-3 space-y-2">
+                <div className="text-xs text-gray-600">現在地: {coarseAreaLabel ?? '未取得'}</div>
+                <button
+                  className="rounded bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-black disabled:opacity-60"
+                  disabled={areaActionBusy}
+                  onClick={() => handleAddArea(coords ?? null)}
+                >
+                  現在地を保存
+                </button>
+              </div>
+            )}
+
+            {areaInputMode === 'map' && (
+              <div className="mt-3 space-y-2">
+                <div className="text-xs text-gray-600">地図を動かして中心を合わせてください。</div>
+                <button
+                  className="rounded bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-black disabled:opacity-60"
+                  disabled={areaActionBusy}
+                  onClick={() => handleAddArea(center)}
+                >
+                  地図中央を保存
+                </button>
+              </div>
+            )}
+
+            {areaInputMode === 'manual' && (
+              <details className="mt-3 rounded border bg-gray-50 px-3 py-2">
+                <summary className="cursor-pointer text-xs font-semibold text-gray-800">高度な設定: 緯度・経度で追加</summary>
+                <div className="mt-3 space-y-2">
+                  <div className="grid gap-2 md:grid-cols-2">
+                    <input
+                      className="rounded border px-3 py-2 text-sm"
+                      placeholder="緯度（例: 35.68）"
+                      value={manualLat}
+                      onChange={(e) => setManualLat(e.target.value)}
+                    />
+                    <input
+                      className="rounded border px-3 py-2 text-sm"
+                      placeholder="経度（例: 139.76）"
+                      value={manualLon}
+                      onChange={(e) => setManualLon(e.target.value)}
+                    />
+                  </div>
+                  <button
+                    className="rounded bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-black disabled:opacity-60"
+                    disabled={areaActionBusy}
+                    onClick={() => {
+                      const lat = Number(manualLat);
+                      const lon = Number(manualLon);
+                      if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+                        setAreaActionError('緯度・経度が不正です');
+                        return;
+                      }
+                      void handleAddArea({ lat, lon });
+                    }}
+                  >
+                    手入力から保存
+                  </button>
+                </div>
+              </details>
+            )}
+
+            {areaActionError && <div className="mt-2 text-xs text-red-700">{areaActionError}</div>}
+          </div>
+        </div>
+
         {myAreas.length === 0 ? (
-          <div className="mt-3 text-sm text-gray-600">保存エリアを追加するか、現在地を取得すると表示されます。</div>
+          <div className="mt-4 text-sm text-gray-600">登録したエリアの警報・注意報を表示します。</div>
         ) : (
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {myAreas.map((a) => {
               const hasAny = a.urgentCount + a.advisoryCount > 0;
               return (
-                <div key={a.area} className="rounded-2xl border bg-gray-50 p-4">
+                <div key={a.id} className="rounded-2xl border bg-gray-50 p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="truncate text-base font-bold">{a.areaName ?? 'エリア名不明'}</div>
+                      <div className="truncate text-base font-bold">{a.label ?? a.areaName ?? 'エリア名不明'}</div>
+                      {a.label && <div className="mt-1 text-xs text-gray-600">{a.areaName}</div>}
+                      {a.tokyoLabel && <div className="mt-1 text-xs text-gray-600">{a.tokyoLabel}</div>}
                       <div className="mt-1 text-xs text-gray-600">
                         {a.updatedAt ? `最終取得: ${new Date(a.updatedAt).toLocaleString()}` : 'まだ取得できていません'}
                       </div>

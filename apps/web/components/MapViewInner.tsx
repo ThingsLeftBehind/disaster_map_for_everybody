@@ -1,4 +1,4 @@
-import { CircleMarker, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
+import { CircleMarker, MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { useEffect, useMemo, useState } from 'react';
 import { buildUrl, formatShelterShareText } from 'lib/client/share';
@@ -23,12 +23,14 @@ type CheckinStatus = 'INJURED' | 'SAFE' | 'ISOLATED' | 'EVACUATING' | 'COMPLETED
 
 interface Props {
   center: { lat: number; lon: number };
+  initialZoom?: number;
   recenterSignal?: number;
   origin?: Coords | null;
   fromAreaLabel?: string | null;
   markers: MarkerData[];
   hazardLabels: Record<string, string>;
   onSelect: (marker: MarkerData) => void;
+  onCenterChange?: ((coords: { lat: number; lon: number }) => void) | null;
   checkinPins?: Array<{
     id: string;
     status: CheckinStatus;
@@ -52,10 +54,24 @@ function Recenter({ center, recenterSignal }: { center: { lat: number; lon: numb
   return null;
 }
 
+function MapCenterWatcher({ onCenterChange }: { onCenterChange?: ((coords: { lat: number; lon: number }) => void) | null }) {
+  useMapEvents({
+    moveend: (evt) => {
+      if (!onCenterChange) return;
+      const center = evt.target.getCenter();
+      onCenterChange({ lat: center.lat, lon: center.lng });
+    },
+  });
+  return null;
+}
 function formatAt(iso: string): string {
   const t = Date.parse(iso);
   if (Number.isNaN(t)) return '不明';
   return new Date(t).toLocaleString();
+}
+
+function sanitizeLocationText(value: string): string {
+  return value.replace(/[0-9０-９一二三四五六七八九十]+丁目/g, '');
 }
 
 function statusMeta(status: CheckinStatus): {
@@ -102,12 +118,14 @@ function getPinIcon(status: CheckinStatus, archived: boolean): L.DivIcon {
 
 export default function MapViewInner({
   center,
+  initialZoom = 13,
   recenterSignal = 0,
   origin = null,
   fromAreaLabel = null,
   markers,
   hazardLabels,
   onSelect,
+  onCenterChange,
   checkinPins,
   checkinModerationPolicy,
   onReportCheckin,
@@ -122,8 +140,9 @@ export default function MapViewInner({
 
   return (
     <div className="relative">
-      <MapContainer center={[center.lat, center.lon]} zoom={11} scrollWheelZoom={true} className="h-[520px] w-full rounded-xl">
+      <MapContainer center={[center.lat, center.lon]} zoom={initialZoom} scrollWheelZoom={true} className="h-[520px] w-full rounded-xl">
         <Recenter center={center} recenterSignal={recenterSignal} />
+        <MapCenterWatcher onCenterChange={onCenterChange ?? null} />
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -173,13 +192,13 @@ export default function MapViewInner({
                 </div>
                 <div className="text-xs text-gray-600">更新: {formatAt(pin.updatedAt)}</div>
 
-                {pin.comment && !pin.commentHidden && <div className="whitespace-pre-wrap text-sm text-gray-900">{pin.comment}</div>}
+                {pin.comment && !pin.commentHidden && <div className="whitespace-pre-wrap text-sm text-gray-900">{sanitizeLocationText(pin.comment)}</div>}
                 {pin.comment && pin.commentHidden && (
                   <details className="rounded border bg-gray-50 px-2 py-2">
                     <summary className="cursor-pointer list-none text-sm font-semibold text-gray-900">
                       通報により非表示（詳細を見る）
                     </summary>
-                    <div className="mt-2 whitespace-pre-wrap text-sm text-gray-800">{pin.comment}</div>
+                    <div className="mt-2 whitespace-pre-wrap text-sm text-gray-800">{sanitizeLocationText(pin.comment)}</div>
                   </details>
                 )}
 

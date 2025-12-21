@@ -1,9 +1,11 @@
 import { z } from 'zod';
 import { hazardKeys } from '@jp-evac/shared';
+import { DEFAULT_MAIN_LIMIT } from './constants';
 
 export const NearbyQuerySchema = z.object({
   lat: z.preprocess((v) => Number(v), z.number().finite().min(-90).max(90)),
   lon: z.preprocess((v) => Number(v), z.number().finite().min(-180).max(180)),
+  q: z.preprocess((v) => (Array.isArray(v) ? v[0] : v), z.string().min(1).max(80)).optional(),
   hazardTypes: z
     .union([z.string(), z.array(z.string())])
     .optional()
@@ -13,7 +15,7 @@ export const NearbyQuerySchema = z.object({
       return value.split(',').filter(Boolean);
     })
     .transform((values) => values.filter((v) => hazardKeys.includes(v as any))),
-  limit: z.preprocess((v) => (v ? Number(v) : 20), z.number().min(1).max(50)).optional(),
+  limit: z.preprocess((v) => (v ? Number(v) : DEFAULT_MAIN_LIMIT), z.number().min(1).max(50)).optional(),
   radiusKm: z.preprocess((v) => (v ? Number(v) : 30), z.number().min(1).max(50)).optional(),
   hideIneligible: z
     .preprocess((v) => (v === '1' || v === 'true' ? true : v === '0' || v === 'false' ? false : false), z.boolean())

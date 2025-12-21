@@ -10,6 +10,7 @@ const SAMPLE_TILES_BY_LAYER = {
   liquefaction: [
     { z: 11, x: 1818, y: 806 },
     { z: 11, x: 1819, y: 806 },
+    { z: 12, x: 3636, y: 1612 },
     { z: 12, x: 3637, y: 1613 },
   ],
 };
@@ -34,10 +35,16 @@ function buildTileUrl(template, z, x, y, scheme) {
   return template.replace(/\{z\}/g, String(z)).replace(/\{x\}/g, String(x)).replace(/\{y\}/g, String(tmsY));
 }
 
+function resolveTemplate(template) {
+  if (template.startsWith('http://') || template.startsWith('https://')) return template;
+  if (template.startsWith('/')) return `${BASE_URL}${template}`;
+  return `${BASE_URL}/${template}`;
+}
+
 async function probeTemplate(template, scheme, samples = SAMPLE_TILES) {
   const statuses = [];
   for (const sample of samples) {
-    const url = buildTileUrl(template, sample.z, sample.x, sample.y, scheme);
+    const url = buildTileUrl(resolveTemplate(template), sample.z, sample.x, sample.y, scheme);
     const status = await fetchWithTimeout(url);
     statuses.push(status);
     await timeout(150);

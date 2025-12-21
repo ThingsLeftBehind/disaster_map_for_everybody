@@ -1,6 +1,5 @@
 import type { GetServerSideProps } from 'next';
 import Head from 'next/head';
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 export const getServerSideProps: GetServerSideProps = async () => {
@@ -143,11 +142,9 @@ export default function OpsPage({ adminEnabled }: { adminEnabled: boolean }) {
           <div className="mt-3 space-y-2">
             {moderation.queue.map((q: any) => (
               <div key={q.id} className="rounded border bg-gray-50 px-3 py-2 text-sm">
-                <div className="font-semibold">
-                  shelter: <Link className="text-blue-600 hover:underline" href={`/shelters/${q.shelterId}`}>{q.shelterId}</Link>
-                </div>
+                <div className="font-semibold">shelter: （ID非表示）</div>
                 <div className="mt-1 text-xs text-gray-700">
-                  comment: {q.commentId} / reports: {q.reportCount} / at: {q.createdAt}
+                  comment: （ID非表示） / reports: {q.reportCount} / at: {q.createdAt}
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {(['HIDE_COMMENT', 'UNHIDE_COMMENT', 'DELETE_FROM_QUEUE'] as const).map((action) => (
@@ -181,11 +178,7 @@ export default function OpsPage({ adminEnabled }: { adminEnabled: boolean }) {
       <section className="rounded-lg bg-white p-5 shadow">
         <h2 className="text-lg font-semibold">JMA 取得状況</h2>
         {!jmaStatus && <div className="mt-3 text-sm text-gray-600">未取得</div>}
-        {jmaStatus && (
-          <pre className="mt-3 max-h-96 overflow-auto rounded border bg-gray-50 p-3 text-xs text-gray-800">
-            {JSON.stringify(jmaStatus, null, 2)}
-          </pre>
-        )}
+        {jmaStatus && <div className="mt-3 text-sm text-gray-700">取得済み（詳細はログ/監視で確認）</div>}
       </section>
     </div>
   );

@@ -9,6 +9,7 @@ export const JmaAreaCodeSchema = z.string().regex(/^\d{6}$/);
 
 export const SavedAreaSchema = z.object({
   id: z.string().min(6).max(80),
+  label: z.string().max(40).nullable().optional(),
   prefCode: PrefCodeSchema,
   prefName: z.string().min(1).max(40),
   muniCode: MuniCodeSchema.nullable().optional(),

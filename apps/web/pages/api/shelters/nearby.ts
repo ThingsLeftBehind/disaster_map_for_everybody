@@ -2,9 +2,10 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { Prisma, prisma } from '@jp-evac/db';
 import { fallbackNearbyShelters } from 'lib/db/sheltersFallback';
 import { NearbyQuerySchema } from 'lib/validators';
-import { haversineDistance } from '@jp-evac/shared';
+import { haversineDistance, hazardKeys } from '@jp-evac/shared';
 import { getEvacSitesCoordScales, normalizeLatLon } from 'lib/shelters/coords';
 import { isEvacSitesTableMismatchError, safeErrorMessage } from 'lib/shelters/evacsiteCompat';
+import { DEFAULT_MAIN_LIMIT } from 'lib/constants';
 
 const BASE_SCALE_FACTORS = [1, 1e7, 1e6, 1e5, 1e4, 1e3, 1e2] as const;
 
@@ -92,6 +93,88 @@ function buildDiagnostics(items: Array<{ distanceKm: number }>): { minDistanceKm
   return { minDistanceKm, countWithin1Km, countWithin5Km };
 }
 
+function hazardCount(hazards: Record<string, boolean> | null | undefined): number {
+  if (!hazards) return 0;
+  return hazardKeys.reduce((acc, key) => acc + (hazards[key] ? 1 : 0), 0);
+}
+
+function hasAnyHazard(hazards: Record<string, boolean> | null | undefined): boolean {
+  return hazardCount(hazards) > 0;
+}
+
+// Dedupe key: prefer shared id, else name + address + rounded coords for stability.
+function dedupeKey(site: { common_id?: string | null; name?: string | null; address?: string | null; lat?: number | null; lon?: number | null }): string {
+  const commonId = site.common_id ? String(site.common_id).trim() : '';
+  if (commonId) return `c:${commonId}`;
+  const name = String(site.name ?? '').trim().toLowerCase();
+  const address = String(site.address ?? '').trim().toLowerCase();
+  const lat = typeof site.lat === 'number' && Number.isFinite(site.lat) ? site.lat.toFixed(4) : '0';
+  const lon = typeof site.lon === 'number' && Number.isFinite(site.lon) ? site.lon.toFixed(4) : '0';
+  return `n:${name}|a:${address}|${lat}|${lon}`;
+}
+
+function mergeHazards(a?: Record<string, boolean>, b?: Record<string, boolean>): Record<string, boolean> {
+  const merged: Record<string, boolean> = {};
+  for (const key of hazardKeys) {
+    merged[key] = Boolean(a?.[key] || b?.[key]);
+  }
+  return merged;
+}
+
+function valueScore(value: unknown): number {
+  if (!value) return 0;
+  if (typeof value === 'string') return value.trim().length;
+  if (typeof value === 'number') return Number.isFinite(value) ? 1 : 0;
+  if (typeof value === 'boolean') return 1;
+  if (typeof value === 'object') return Object.keys(value as Record<string, unknown>).length;
+  return 0;
+}
+
+function pickRicher<T>(a: T | null | undefined, b: T | null | undefined): T | null {
+  const aScore = valueScore(a);
+  const bScore = valueScore(b);
+  if (aScore === 0 && bScore === 0) return (a ?? b) ?? null;
+  return aScore >= bScore ? (a ?? b) ?? null : (b ?? a) ?? null;
+}
+
+function pickBase<T extends { hazards?: Record<string, boolean>; updated_at?: unknown; id?: unknown }>(a: T, b: T): T {
+  const aHaz = hazardCount(a.hazards);
+  const bHaz = hazardCount(b.hazards);
+  if (aHaz !== bHaz) return aHaz > bHaz ? a : b;
+  const aUpdated = a.updated_at ? Date.parse(String(a.updated_at)) : Number.NEGATIVE_INFINITY;
+  const bUpdated = b.updated_at ? Date.parse(String(b.updated_at)) : Number.NEGATIVE_INFINITY;
+  if (aUpdated !== bUpdated) return aUpdated >= bUpdated ? a : b;
+  return String(a.id ?? '') <= String(b.id ?? '') ? a : b;
+}
+
+function mergeSites<T extends { hazards?: Record<string, boolean>; shelter_fields?: unknown; notes?: unknown; is_same_address_as_shelter?: boolean | null }>(a: T, b: T): T {
+  const base = pickBase(a, b);
+  const other = base === a ? b : a;
+  return {
+    ...base,
+    hazards: mergeHazards(a.hazards, b.hazards),
+    shelter_fields: pickRicher(base.shelter_fields, other.shelter_fields),
+    notes: pickRicher(base.notes, other.notes),
+    is_same_address_as_shelter: Boolean(base.is_same_address_as_shelter || other.is_same_address_as_shelter) || null,
+  };
+}
+
+function dedupeSites<T extends { hazards?: Record<string, boolean>; common_id?: string | null; name?: string | null; address?: string | null; lat?: number | null; lon?: number | null; updated_at?: unknown; id?: unknown; shelter_fields?: unknown; notes?: unknown; is_same_address_as_shelter?: boolean | null }>(
+  sites: T[]
+): T[] {
+  const map = new Map<string, T>();
+  for (const site of sites) {
+    const key = dedupeKey(site);
+    const existing = map.get(key);
+    if (!existing) {
+      map.set(key, site);
+      continue;
+    }
+    map.set(key, mergeSites(existing, site));
+  }
+  return Array.from(map.values());
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -103,10 +186,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { lat, lon, hazardTypes, limit, radiusKm, hideIneligible } = parsed.data;
+    const { lat, lon, hazardTypes, limit, radiusKm, hideIneligible, q } = parsed.data;
     const hazardFilters = hazardTypes ?? [];
+    const textQuery = typeof q === 'string' ? q.trim().toLowerCase() : '';
     const requestedRadiusKm = radiusKm ?? 30;
-    const requestedLimit = limit ?? 20;
+    const requestedLimit = limit ?? DEFAULT_MAIN_LIMIT;
     const isDev = process.env.NODE_ENV === 'development';
 
     const scaleCandidates = await getEvacSitesCoordScales(prisma);
@@ -170,6 +254,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const missing = hazardFilters.filter((key) => !Boolean(flags?.[key]));
         return {
           ...site,
+          hazards: flags,
           lat: coords.lat,
           lon: coords.lon,
           distanceKm,
@@ -183,8 +268,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .sort((a, b) => a.distanceKm - b.distanceKm || String(a.id).localeCompare(String(b.id)));
 
     const devDiagnostics = isDev ? buildDiagnostics(enriched) : null;
-
-    const filtered = enriched
+    const deduped = dedupeSites(enriched);
+    const hazardFiltered = deduped.filter((site) => hasAnyHazard(site.hazards));
+    const filtered = hazardFiltered
+      .filter((site) => {
+        if (!textQuery) return true;
+        const name = String(site.name ?? '').toLowerCase();
+        const address = String(site.address ?? '').toLowerCase();
+        const notes = String(site.notes ?? '').toLowerCase();
+        return name.includes(textQuery) || address.includes(textQuery) || notes.includes(textQuery);
+      })
       .filter((site) => (hideIneligible ? Boolean(site.matchesHazards) : true))
       .slice(0, requestedLimit);
 
@@ -211,9 +304,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
-      const { lat, lon, hazardTypes, limit, radiusKm, hideIneligible } = parsed.data;
+      const { lat, lon, hazardTypes, limit, radiusKm, hideIneligible, q } = parsed.data;
       const requestedRadiusKm = radiusKm ?? 30;
-      const requestedLimit = limit ?? 20;
+      const requestedLimit = limit ?? DEFAULT_MAIN_LIMIT;
       const isDev = process.env.NODE_ENV === 'development';
       const fallback = await fallbackNearbyShelters(prisma, {
         lat,
@@ -224,6 +317,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         hideIneligible,
         includeDiagnostics: isDev,
       });
+      const textQuery = typeof q === 'string' ? q.trim().toLowerCase() : '';
+      const dedupedFallback = dedupeSites(fallback.sites ?? []);
+      const hazardFilteredFallback = dedupedFallback.filter((site) => hasAnyHazard(site.hazards));
+      const fallbackSites = hazardFilteredFallback.filter((site) => {
+        if (!textQuery) return true;
+        const name = String(site.name ?? '').toLowerCase();
+        const address = String(site.address ?? '').toLowerCase();
+        const notes = String(site.notes ?? '').toLowerCase();
+        return name.includes(textQuery) || address.includes(textQuery) || notes.includes(textQuery);
+      });
 
       return res.status(200).json({
         fetchStatus: 'OK',
@@ -231,8 +334,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         lastError: null,
         usedFallback: true,
         usedRadiusKm: requestedRadiusKm,
-        sites: fallback.sites,
-        items: fallback.sites,
+        sites: fallbackSites,
+        items: fallbackSites,
         devDiagnostics: fallback.diagnostics,
       });
     } catch (fallbackError) {

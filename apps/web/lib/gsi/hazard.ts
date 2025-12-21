@@ -131,7 +131,7 @@ function defaultLayers(): HazardLayer[] {
       key: 'tsunami',
       name: 'Tsunami',
       jaName: '津波',
-      tileUrl: 'https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png',
+      tileUrl: '/api/tiles/tsunami/{z}/{x}/{y}.png',
       scheme: 'xyz',
       minZoom: 10,
       maxZoom: 17,
@@ -140,7 +140,7 @@ function defaultLayers(): HazardLayer[] {
       key: 'liquefaction',
       name: 'Liquefaction',
       jaName: '液状化',
-      tileUrl: 'https://cyberjapandata.gsi.go.jp/xyz/LCM25K_2012/{z}/{x}/{y}.png',
+      tileUrl: '/api/tiles/lcm25k_2012/{z}/{x}/{y}.png',
       scheme: 'xyz',
       minZoom: 10,
       maxZoom: 16,
@@ -179,7 +179,11 @@ async function releaseLock(): Promise<void> {
 
 function needsUpgrade(layers: HazardLayer[] | null | undefined): boolean {
   if (!layers) return true;
-  return layers.some((l) => !l.scheme || /^http:\/\//i.test(l.tileUrl));
+  return layers.some((l) => {
+    if (!l.scheme || /^http:\/\//i.test(l.tileUrl)) return true;
+    if (l.key === 'liquefaction' && /\/liquefaction\//i.test(l.tileUrl)) return true;
+    return false;
+  });
 }
 
 function normalizeSnapshot(snapshot: HazardLayersSnapshot): { snapshot: HazardLayersSnapshot; changed: boolean } {

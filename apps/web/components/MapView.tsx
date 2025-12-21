@@ -26,10 +26,12 @@ export type CheckinPin = {
 interface Props {
   sites: SiteWithDistance[];
   center: { lat: number; lon: number };
+  initialZoom?: number;
   recenterSignal?: number;
   origin?: Coords | null;
   fromAreaLabel?: string | null;
   onSelect: (site: SiteWithDistance) => void;
+  onCenterChange?: ((coords: { lat: number; lon: number }) => void) | null;
   checkinPins?: CheckinPin[] | null;
   checkinModerationPolicy?: { reportCautionThreshold: number; reportHideThreshold: number } | null;
   onReportCheckin?: ((pinId: string) => void) | null;
@@ -38,10 +40,12 @@ interface Props {
 export default function MapView({
   sites,
   center,
+  initialZoom,
   recenterSignal,
   origin,
   fromAreaLabel,
   onSelect,
+  onCenterChange,
   checkinPins,
   checkinModerationPolicy,
   onReportCheckin,
@@ -65,13 +69,15 @@ export default function MapView({
   };
 
   return (
-    <DynamicMap
-      center={center}
-      recenterSignal={recenterSignal}
-      origin={origin ?? null}
+      <DynamicMap
+        center={center}
+        initialZoom={initialZoom}
+        recenterSignal={recenterSignal}
+        origin={origin ?? null}
       fromAreaLabel={fromAreaLabel ?? null}
       markers={markers}
       onSelect={handleSelect}
+      onCenterChange={onCenterChange ?? null}
       hazardLabels={hazardLabels}
       checkinPins={checkinPins ?? null}
       checkinModerationPolicy={checkinModerationPolicy ?? null}

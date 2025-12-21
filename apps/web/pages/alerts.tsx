@@ -1,11 +1,12 @@
 import Head from 'next/head';
 import useSWR from 'swr';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import classNames from 'classnames';
 import { useDevice } from '../components/device/DeviceProvider';
-import { loadLastLocation, reverseGeocodeGsi, saveLastLocation, type Coords } from '../lib/client/location';
-import { getJmaWarningPriority, type JmaWarningPriority } from '../lib/jma/filters';
+import { reverseGeocodeGsi, saveLastLocation } from '../lib/client/location';
 import { formatPrefMuniLabel, useAreaName } from '../lib/client/areaName';
+import { shapeAlertWarnings, type WarningGroup } from '../lib/jma/alerts';
+import { type TokyoGroupKey } from '../lib/alerts/tokyoScope';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -14,84 +15,6 @@ function formatUpdatedAt(updatedAt: string | null | undefined): string {
   const t = Date.parse(updatedAt);
   if (Number.isNaN(t)) return '未取得';
   return new Date(t).toLocaleString();
-}
-
-type WarningItem = { id: string; kind: string; status: string | null; source: string };
-
-type WarningGroup = {
-  kind: string;
-  count: number;
-  statuses: string[];
-  priority: JmaWarningPriority;
-};
-
-type TokyoGroupKey = 'mainland' | 'izu' | 'ogasawara';
-type TokyoGroups = Partial<Record<TokyoGroupKey, { label: string; items: WarningItem[] }>>;
-
-const PRIORITY_RANK: Record<JmaWarningPriority, number> = { URGENT: 2, ADVISORY: 1, REFERENCE: 0 };
-
-function maxPriority(a: JmaWarningPriority, b: JmaWarningPriority): JmaWarningPriority {
-  return PRIORITY_RANK[a] >= PRIORITY_RANK[b] ? a : b;
-}
-
-function priorityFromStatus(status: string | null | undefined): JmaWarningPriority | null {
-  const s = String(status ?? '').trim();
-  if (!s) return null;
-  if (/(特別警報|警報)/.test(s) && !/注意報/.test(s)) return 'URGENT';
-  if (/注意報/.test(s)) return 'ADVISORY';
-  if (/(特別警報|警報)/.test(s)) return 'URGENT';
-  return null;
-}
-
-function groupWarnings(items: WarningItem[]): WarningGroup[] {
-  const map = new Map<string, WarningGroup>();
-  for (const it of items) {
-    const kind = String(it.kind ?? '').trim();
-    if (!kind) continue;
-    const base = getJmaWarningPriority(kind);
-    const statusPriority = priorityFromStatus(it.status);
-    const itemPriority = statusPriority ? maxPriority(base, statusPriority) : base;
-
-    const existing = map.get(kind);
-    if (!existing) {
-      map.set(kind, {
-        kind,
-        count: 1,
-        statuses: it.status ? [it.status] : [],
-        priority: itemPriority,
-      });
-      continue;
-    }
-    existing.count += 1;
-    if (it.status && !existing.statuses.includes(it.status)) existing.statuses.push(it.status);
-    existing.priority = maxPriority(existing.priority, itemPriority);
-  }
-  return Array.from(map.values());
-}
-
-function buildWarningBuckets(items: WarningItem[]): {
-  urgent: WarningGroup[];
-  advisory: WarningGroup[];
-  reference: WarningGroup[];
-} {
-  const grouped = groupWarnings(items);
-  return {
-    urgent: grouped.filter((g) => g.priority === 'URGENT'),
-    advisory: grouped.filter((g) => g.priority === 'ADVISORY'),
-    reference: grouped.filter((g) => g.priority === 'REFERENCE'),
-  };
-}
-
-function inferTokyoGroup(coords: Coords | null, label: string | null | undefined): TokyoGroupKey | null {
-  if (label) {
-    if (label.includes('小笠原')) return 'ogasawara';
-    if (label.includes('伊豆')) return 'izu';
-  }
-  if (!coords) return null;
-  const { lat, lon } = coords;
-  if (lat < 28.5 && lon >= 141.0 && lon <= 143.5) return 'ogasawara';
-  if (lat >= 32.0 && lat <= 34.5 && lon >= 138.5 && lon <= 140.6) return 'izu';
-  return 'mainland';
 }
 
 function sanitizeFetchError(message: string | null | undefined): string {
@@ -105,10 +28,9 @@ export default function AlertsPage() {
 
   const { data: status } = useSWR('/api/jma/status', fetcher, { refreshInterval: refreshMs, dedupingInterval: 10_000 });
 
-  const [useCurrent, setUseCurrent] = useState(false);
+  const [useCurrent, setUseCurrent] = useState(true);
   const [manualPrefCode, setManualPrefCode] = useState('');
   const [showReference, setShowReference] = useState(false);
-  const [lastCoords, setLastCoords] = useState<Coords | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
   const lastActionRef = useRef(0);
 
@@ -124,27 +46,60 @@ export default function AlertsPage() {
   const effectiveAreaCode = useCurrent ? currentJmaAreaCode : selectedJmaAreaCode ?? manualAreaCode;
   const warningsUrl = effectiveAreaCode ? `/api/jma/warnings?area=${effectiveAreaCode}` : null;
   const { data: warnings, mutate: mutateWarnings } = useSWR(warningsUrl, fetcher, { refreshInterval: refreshMs, dedupingInterval: 10_000 });
+  const areaContext = useMemo(() => {
+    if (useCurrent) {
+      return {
+        prefCode: coarseArea?.prefCode ?? null,
+        muniCode: coarseArea?.muniCode ?? null,
+        label: coarseAreaLabel ?? null,
+      };
+    }
+    if (selectedArea) {
+      return {
+        prefCode: selectedArea.prefCode ?? null,
+        muniCode: selectedArea.muniCode ?? null,
+        label: selectedArea.muniName ?? selectedArea.label ?? null,
+      };
+    }
+    if (manualPrefCode) {
+      return {
+        prefCode: manualPrefCode,
+        muniCode: null,
+        label: manualPrefName ?? null,
+      };
+    }
+    return { prefCode: null, muniCode: null, label: null };
+  }, [
+    coarseArea?.prefCode,
+    coarseArea?.muniCode,
+    coarseAreaLabel,
+    manualPrefCode,
+    manualPrefName,
+    selectedArea,
+    useCurrent,
+  ]);
 
-  const items: WarningItem[] = warnings?.items ?? [];
-  const tokyoGroups = (warnings?.tokyoGroups as TokyoGroups | null) ?? null;
-  const isTokyoArea = Boolean(tokyoGroups && warnings?.area === '130000');
-  const inferredTokyoGroup = inferTokyoGroup(lastCoords, coarseAreaLabel);
-  const primaryTokyoGroup: TokyoGroupKey = inferredTokyoGroup ?? 'mainland';
-  const primaryItems = useMemo(() => {
-    if (!isTokyoArea || !tokyoGroups) return items;
-    const primary = tokyoGroups[primaryTokyoGroup]?.items ?? [];
-    const groupKeys = new Set(
-      Object.values(tokyoGroups ?? {})
-        .flatMap((g) => g.items ?? [])
-        .map((it) => `${it.kind}|${it.status ?? ''}`)
-    );
-    const ungrouped = items.filter((it) => !groupKeys.has(`${it.kind}|${it.status ?? ''}`));
-    return [...primary, ...ungrouped];
-  }, [isTokyoArea, items, primaryTokyoGroup, tokyoGroups]);
-  const primaryBuckets = useMemo(() => buildWarningBuckets(primaryItems), [primaryItems]);
+  const warningShape = useMemo(
+    () =>
+      shapeAlertWarnings({
+        warnings,
+        area: areaContext,
+      }),
+    [areaContext.label, areaContext.muniCode, areaContext.prefCode, warnings]
+  );
 
-  const urgentCount = primaryBuckets.urgent.length;
-  const advisoryCount = primaryBuckets.advisory.length;
+  const primaryBuckets = warningShape.buckets;
+  const urgentCount = warningShape.counts.urgent;
+  const advisoryCount = warningShape.counts.advisory;
+  const primaryWarningCount = warningShape.counts.total;
+  const isTokyoArea = warningShape.isTokyoArea;
+  const primaryTokyoGroup: TokyoGroupKey = warningShape.tokyoGroup ?? 'mainland';
+
+  const formatTokyoLabel = (key: TokyoGroupKey) => {
+    if (key === 'mainland') return '東京都（島しょ除く）';
+    if (key === 'izu') return '東京都（伊豆諸島）';
+    return '東京都（小笠原諸島）';
+  };
 
   const targetLabel = useCurrent
     ? currentJmaAreaCode
@@ -163,15 +118,6 @@ export default function AlertsPage() {
   const hasTitleFallbackNote = confidenceNotes.some((n) => /Atom entry titles/i.test(n));
   const showAccuracyNote = Boolean(warningsUrl && (hasPrefOnlyNote || hasTitleFallbackNote));
   const errorLabel = sanitizeFetchError(warnings?.lastError ?? status?.lastError);
-
-  useEffect(() => {
-    try {
-      const last = loadLastLocation();
-      if (last) setLastCoords(last);
-    } catch {
-      setLastCoords(null);
-    }
-  }, []);
 
   const beginAction = () => {
     const now = Date.now();
@@ -195,23 +141,26 @@ export default function AlertsPage() {
             <h1 className="text-2xl font-bold">警報・注意報</h1>
             <div className="mt-1 text-sm text-gray-600">重要なものを上から表示します（可能性・定時などはデフォルト非表示）。</div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span
-              className={classNames(
-                'rounded-full px-3 py-1 text-xs font-bold ring-1',
-                urgentCount > 0 ? 'bg-red-50 text-red-800 ring-red-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
-              )}
-            >
-              警報 {urgentCount}
-            </span>
-            <span
-              className={classNames(
-                'rounded-full px-3 py-1 text-xs font-bold ring-1',
-                advisoryCount > 0 ? 'bg-amber-50 text-amber-900 ring-amber-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
-              )}
-            >
-              注意報 {advisoryCount}
-            </span>
+          <div className="flex flex-col items-end gap-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={classNames(
+                  'rounded-full px-3 py-1 text-xs font-bold ring-1',
+                  urgentCount > 0 ? 'bg-red-50 text-red-800 ring-red-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
+                )}
+              >
+                警報 {urgentCount}
+              </span>
+              <span
+                className={classNames(
+                  'rounded-full px-3 py-1 text-xs font-bold ring-1',
+                  advisoryCount > 0 ? 'bg-amber-50 text-amber-900 ring-amber-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
+                )}
+              >
+                注意報 {advisoryCount}
+              </span>
+            </div>
+            {isTokyoArea && <div className="text-[11px] text-gray-600">対象: {formatTokyoLabel(primaryTokyoGroup)}</div>}
           </div>
         </div>
 
@@ -236,6 +185,7 @@ export default function AlertsPage() {
                 >
                   {(device?.savedAreas ?? []).map((a) => (
                     <option key={a.id} value={a.id}>
+                      {a.label ? `${a.label} / ` : ''}
                       {a.prefName}
                       {a.muniName ? ` ${a.muniName}` : ''}
                     </option>
@@ -282,18 +232,28 @@ export default function AlertsPage() {
               </button>
 
               <button
-                className="rounded-xl bg-gray-900 px-4 py-2 font-semibold text-white hover:bg-black"
+                className={classNames(
+                  'rounded-xl px-4 py-2 font-semibold ring-1',
+                  useCurrent
+                    ? 'bg-emerald-600 text-white ring-emerald-500 hover:bg-emerald-700'
+                    : 'bg-gray-900 text-white ring-gray-900 hover:bg-black'
+                )}
+                aria-pressed={useCurrent}
                 onClick={() => {
                   if (!beginAction()) return;
+                  if (useCurrent) {
+                    setUseCurrent(false);
+                    endAction();
+                    return;
+                  }
                   navigator.geolocation.getCurrentPosition(
                     async (pos) => {
-                      const next = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-                      saveLastLocation(next);
-                      setLastCoords(next);
-                      try {
-                        const r = await reverseGeocodeGsi(next);
-                        setCoarseArea({ prefCode: r.prefCode, muniCode: r.muniCode, address: r.address });
-                        setUseCurrent(true);
+          const next = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+          saveLastLocation(next);
+          try {
+            const r = await reverseGeocodeGsi(next);
+            setCoarseArea({ prefCode: r.prefCode, muniCode: r.muniCode, address: r.address });
+            setUseCurrent(true);
                         endAction();
                       } catch {
                         setCoarseArea(null);
@@ -309,7 +269,7 @@ export default function AlertsPage() {
                 }}
                 disabled={actionBusy}
               >
-                現在地で表示
+                {useCurrent ? '現在地を解除' : '現在地で表示'}
               </button>
             </div>
 
@@ -348,19 +308,13 @@ export default function AlertsPage() {
         {warnings && (
           <>
             <div className="mt-2 text-sm text-gray-700">
-              {primaryBuckets.urgent.length + primaryBuckets.advisory.length + (showReference ? primaryBuckets.reference.length : 0) > 0
-                ? `${primaryBuckets.urgent.length + primaryBuckets.advisory.length + (showReference ? primaryBuckets.reference.length : 0)}種類`
+              {primaryWarningCount > 0
+                ? `${primaryWarningCount}種類`
                 : '該当なし'}
               {!showReference && primaryBuckets.reference.length > 0 && (
                 <span className="ml-2 text-xs text-gray-500">（参考 {primaryBuckets.reference.length}種類を非表示）</span>
               )}
             </div>
-
-            {isTokyoArea && tokyoGroups && (
-              <div className="mt-2 text-xs text-gray-600">
-                優先表示: {tokyoGroups[primaryTokyoGroup]?.label ?? '（島しょ除く）'}（他エリアは下に表示）
-              </div>
-            )}
 
             {primaryBuckets.reference.length > 0 && (
               <label className="mt-2 flex items-center gap-2 text-sm text-gray-700">
@@ -375,29 +329,6 @@ export default function AlertsPage() {
               <WarningGroupSection title="参考/可能性/定時" groups={primaryBuckets.reference} hidden={!showReference} />
             </div>
 
-            {isTokyoArea && tokyoGroups && (
-              <div className="mt-4 space-y-3">
-                {(Object.keys(tokyoGroups) as TokyoGroupKey[])
-                  .filter((key) => key !== primaryTokyoGroup)
-                  .map((key) => {
-                    const sectionItems: WarningItem[] = tokyoGroups[key]?.items ?? [];
-                    const buckets = buildWarningBuckets(sectionItems);
-                    const count = buckets.urgent.length + buckets.advisory.length + (showReference ? buckets.reference.length : 0);
-                    return (
-                      <details key={key} className="rounded-xl border bg-gray-50 px-3 py-2">
-                        <summary className="cursor-pointer text-sm font-semibold text-gray-800">
-                          {tokyoGroups[key]?.label ?? 'エリア別'}（{count > 0 ? `${count}種類` : '該当なし'}）
-                        </summary>
-                        <div className="mt-3 space-y-4">
-                          <WarningGroupSection title="緊急（警報/特別警報）" groups={buckets.urgent} />
-                          <WarningGroupSection title="注意報" groups={buckets.advisory} />
-                          <WarningGroupSection title="参考/可能性/定時" groups={buckets.reference} hidden={!showReference} />
-                        </div>
-                      </details>
-                    );
-                  })}
-              </div>
-            )}
           </>
         )}
       </section>
@@ -457,11 +388,8 @@ function WarningGroupSection({
       </div>
       <ul className="mt-2 space-y-2">
         {sorted.map((g) => (
-          <li key={g.kind} className="rounded-2xl border bg-gray-50 px-3 py-2 text-sm">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="font-semibold">{g.kind}</div>
-              {g.count > 1 && <span className="rounded bg-white px-2 py-1 text-xs text-gray-700">×{g.count}</span>}
-            </div>
+          <li key={g.key} className="rounded-2xl border bg-gray-50 px-3 py-2 text-sm">
+            <div className="font-semibold">{g.kind}</div>
             {g.statuses.length > 0 && <div className="mt-1 text-xs text-gray-600">状態: {g.statuses.join(' / ')}</div>}
           </li>
         ))}

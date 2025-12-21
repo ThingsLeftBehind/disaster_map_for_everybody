@@ -8,7 +8,6 @@ import { hazardKeys, hazardLabels } from '@jp-evac/shared';
 import { useDevice } from '../components/device/DeviceProvider';
 import MapView from '../components/MapView';
 import { loadLastLocation, reverseGeocodeGsi, roundCoords, saveLastLocation, type Coords } from '../lib/client/location';
-import { buildLineShareUrl, buildUrl, formatShelterListShareText } from '../lib/client/share';
 import { isJmaLowPriorityWarning } from '../lib/jma/filters';
 import { formatPrefMuniLabel, useAreaName } from '../lib/client/areaName';
 
@@ -57,6 +56,22 @@ type ShelterListItem = {
 };
 
 type HazardKey = (typeof hazardKeys)[number];
+type AreaQuery = {
+  prefCode: string;
+  muniCode: string;
+  cityText: string;
+  q: string;
+  hazards: string[];
+  hideIneligible: boolean;
+};
+type NearbyQuery = {
+  coords: Coords;
+  limit: number;
+  radiusKm: number;
+  hazards: string[];
+  hideIneligible: boolean;
+  q: string;
+};
 
 function hazardTags(hazards: any): HazardKey[] {
   const flags = (hazards ?? {}) as Record<string, boolean>;
@@ -138,6 +153,8 @@ export default function ListPage() {
   const [offlineSaved, setOfflineSaved] = useState(false);
   const [recenterSignal, setRecenterSignal] = useState(0);
   const [muniText, setMuniText] = useState('');
+  const [appliedAreaQuery, setAppliedAreaQuery] = useState<AreaQuery | null>(null);
+  const [appliedNearbyQuery, setAppliedNearbyQuery] = useState<NearbyQuery | null>(null);
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -177,12 +194,62 @@ export default function ListPage() {
     if (last) setCoords(last);
   }, [router.isReady, router.query.hazards, router.query.lat, router.query.limit, router.query.lon, router.query.radiusKm]);
 
-  const nearbyUrl = coords
-    ? `/api/shelters/nearby?lat=${coords.lat}&lon=${coords.lon}&limit=${limit}&radiusKm=${radiusKm}&hideIneligible=${hideIneligible ? 'true' : 'false'}&hazardTypes=${hazards.join(',')}`
-    : null;
+  const pendingTrimmedQ = q.trim();
+  const nearbyUrl = useMemo(() => {
+    if (!coords || !appliedNearbyQuery) return null;
+    const params = new URLSearchParams();
+    params.set('lat', String(appliedNearbyQuery.coords.lat));
+    params.set('lon', String(appliedNearbyQuery.coords.lon));
+    params.set('limit', String(appliedNearbyQuery.limit));
+    params.set('radiusKm', String(appliedNearbyQuery.radiusKm));
+    if (appliedNearbyQuery.hideIneligible) params.set('hideIneligible', 'true');
+    if (appliedNearbyQuery.hazards.length > 0) params.set('hazardTypes', appliedNearbyQuery.hazards.join(','));
+    if (appliedNearbyQuery.q) params.set('q', appliedNearbyQuery.q);
+    return `/api/shelters/nearby?${params.toString()}`;
+  }, [appliedNearbyQuery, coords]);
 
   const areaPrefCode = selectedArea?.prefCode ?? tempPrefCode ?? '';
-  const areaUrl = !coords && areaPrefCode ? `/api/shelters/search?prefCode=${areaPrefCode}&muniCode=${muniCode || ''}&q=${encodeURIComponent(q)}&limit=50&offset=0` : null;
+  const buildAreaQuery = (): AreaQuery => ({
+    prefCode: areaPrefCode,
+    muniCode,
+    cityText: !muniCode && muniText.trim() ? muniText.trim() : '',
+    q: pendingTrimmedQ,
+    hazards: [...hazards],
+    hideIneligible,
+  });
+  useEffect(() => {
+    if (!areaPrefCode) {
+      setMuniCode('');
+      setMuniText('');
+    }
+  }, [areaPrefCode]);
+
+  const areaUrl = useMemo(() => {
+    if (coords || !appliedAreaQuery?.prefCode) return null;
+    const query = appliedAreaQuery;
+    const params = new URLSearchParams();
+    params.set('prefCode', query.prefCode);
+    if (query.muniCode) params.set('muniCode', query.muniCode);
+    if (!query.muniCode && query.cityText) params.set('cityText', query.cityText);
+    if (query.q) params.set('q', query.q);
+    if (query.hazards.length > 0) params.set('hazardTypes', query.hazards.join(','));
+    if (query.hideIneligible) params.set('hideIneligible', 'true');
+    params.set('limit', '50');
+    params.set('offset', '0');
+    return `/api/shelters/search?${params.toString()}`;
+  }, [appliedAreaQuery, coords]);
+
+  useEffect(() => {
+    if (!coords || appliedNearbyQuery) return;
+    setAppliedNearbyQuery({
+      coords,
+      limit,
+      radiusKm,
+      hazards: [...hazards],
+      hideIneligible,
+      q: pendingTrimmedQ,
+    });
+  }, [appliedNearbyQuery, coords, hazards, hideIneligible, limit, pendingTrimmedQ, radiusKm]);
 
   const municipalitiesUrl = areaPrefCode ? `/api/ref/municipalities?prefCode=${areaPrefCode}` : null;
   const { data: municipalitiesData } = useSWR(municipalitiesUrl, fetcher, { dedupingInterval: 60_000 });
@@ -191,6 +258,18 @@ export default function ListPage() {
 
   const { data: nearbyData, error: nearbyError } = useSWR(nearbyUrl, fetcher, { refreshInterval: 0, dedupingInterval: 10_000 });
   const { data: areaData, error: areaError } = useSWR(areaUrl, fetcher, { refreshInterval: 0, dedupingInterval: 10_000 });
+  const nearbyLoading = Boolean(nearbyUrl && !nearbyData && !nearbyError);
+  const areaLoading = Boolean(areaUrl && !areaData && !areaError);
+  const activeLoading = coords ? nearbyLoading : areaLoading;
+  const activeError = coords ? nearbyError : areaError;
+  const appliedHazards = (coords ? appliedNearbyQuery?.hazards : appliedAreaQuery?.hazards) ?? [];
+  const appliedHideIneligible = (coords ? appliedNearbyQuery?.hideIneligible : appliedAreaQuery?.hideIneligible) ?? false;
+  const appliedQ = (coords ? appliedNearbyQuery?.q : appliedAreaQuery?.q) ?? '';
+  const appliedLimit = appliedNearbyQuery?.limit ?? limit;
+  const appliedRadiusKm = appliedNearbyQuery?.radiusKm ?? radiusKm;
+  const hasAppliedArea = Boolean(appliedAreaQuery?.prefCode);
+  const hasAppliedNearby = Boolean(appliedNearbyQuery);
+  const hasAppliedQuery = coords ? hasAppliedNearby : hasAppliedArea;
   const { data: healthData } = useSWR('/api/health', fetcher, { dedupingInterval: 60_000 });
   const sheltersCount: number | null = typeof healthData?.sheltersCount === 'number' ? healthData.sheltersCount : null;
   const dbConnected: boolean | null = typeof healthData?.dbConnected === 'boolean' ? healthData.dbConnected : null;
@@ -211,7 +290,17 @@ export default function ListPage() {
     return areaData?.sites ?? [];
   }, [areaData?.sites, coords, nearbyData?.sites]);
 
-  const cacheId = cacheKey({ mode: coords ? 'nearby' : 'area', coords: coords ? roundCoords(coords, 2) : null, areaPrefCode, muniCode, q, hazards, limit, radiusKm, hideIneligible });
+  const cacheId = cacheKey({
+    mode: coords ? 'nearby' : 'area',
+    coords: coords ? roundCoords(coords, 2) : null,
+    areaPrefCode: appliedAreaQuery?.prefCode ?? '',
+    muniCode: appliedAreaQuery?.muniCode ?? '',
+    q: appliedQ,
+    hazards: appliedHazards,
+    limit: appliedLimit,
+    radiusKm: appliedRadiusKm,
+    hideIneligible: appliedHideIneligible,
+  });
   const cached = typeof window !== 'undefined' ? readCache<{ sites: ShelterListItem[] }>(cacheId) : null;
 
   useEffect(() => {
@@ -226,6 +315,34 @@ export default function ListPage() {
     return list;
   }, [areaError, cached?.value?.sites, list, nearbyError]);
 
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') return;
+    const url = coords ? nearbyUrl : areaUrl;
+    if (!url) return;
+    // eslint-disable-next-line no-console
+    console.debug('[list] query', url, 'count', list.length);
+  }, [areaUrl, coords, list.length, nearbyUrl]);
+
+  const filteredList = useMemo(() => {
+    let next = effectiveList;
+    if (appliedQ) {
+      const needle = appliedQ.toLowerCase();
+      next = next.filter((site) => {
+        const name = String(site.name ?? '').toLowerCase();
+        const address = String(site.address ?? '').toLowerCase();
+        const notes = String(site.notes ?? '').toLowerCase();
+        return name.includes(needle) || address.includes(needle) || notes.includes(needle);
+      });
+    }
+    if (appliedHazards.length > 0 && appliedHideIneligible) {
+      next = next.filter((site) => {
+        const flags = (site.hazards ?? {}) as Record<string, boolean>;
+        return appliedHazards.every((h) => Boolean(flags?.[h]));
+      });
+    }
+    return next;
+  }, [appliedHazards, appliedHideIneligible, appliedQ, effectiveList]);
+
   const effectiveJmaAreaCode = selectedJmaAreaCode ?? (tempPrefCode ? `${tempPrefCode}0000` : null);
   const warningsUrl = effectiveJmaAreaCode ? `/api/jma/warnings?area=${effectiveJmaAreaCode}` : null;
   const { data: warnings } = useSWR(warningsUrl, fetcher, { refreshInterval: refreshMs, dedupingInterval: 10_000 });
@@ -237,11 +354,33 @@ export default function ListPage() {
     setCoords(null);
     setCoordsFromLink(false);
     setReverse(null);
+    setAppliedNearbyQuery(null);
+  };
+
+  const applySearch = () => {
+    if (coords) {
+      setAppliedNearbyQuery({
+        coords,
+        limit,
+        radiusKm,
+        hazards: [...hazards],
+        hideIneligible,
+        q: pendingTrimmedQ,
+      });
+      return;
+    }
+    if (!areaPrefCode) return;
+    setAppliedAreaQuery(buildAreaQuery());
   };
 
   const toggleHazard = (hazard: string) => {
-    disableLocationMode();
-    setHazards((prev) => (prev.includes(hazard) ? prev.filter((h) => h !== hazard) : [...prev, hazard]));
+    setHazards((prev) => {
+      const next = prev.includes(hazard) ? prev.filter((h) => h !== hazard) : [...prev, hazard];
+      if (next.length > 0) {
+        setHideIneligible((current) => (current ? current : true));
+      }
+      return next;
+    });
   };
 
   const handleLocate = async () => {
@@ -251,6 +390,14 @@ export default function ListPage() {
         setCoords(next);
         setRecenterSignal((v) => v + 1);
         setCoordsFromLink(false);
+        setAppliedNearbyQuery({
+          coords: next,
+          limit,
+          radiusKm,
+          hazards: [...hazards],
+          hideIneligible,
+          q: pendingTrimmedQ,
+        });
         saveLastLocation(next);
         try {
           const r = await reverseGeocodeGsi(next);
@@ -272,28 +419,6 @@ export default function ListPage() {
     );
   };
 
-  const origin = typeof window !== 'undefined' ? window.location.origin : null;
-  const shareUrl = origin
-    ? buildUrl(origin, '/list', {
-        limit,
-        radiusKm,
-        hazards: hazards.join(','),
-      })
-    : null;
-
-  const shareText = formatShelterListShareText({
-    title: warningsActive ? '【災害時】近くの避難場所候補（手動共有）' : '近くの避難場所候補（手動共有）',
-    fromArea: shareFromArea,
-    now: new Date(),
-    shelters: effectiveList.slice(0, Math.min(limit, 20)).map((s) => ({
-      name: s.name,
-      distanceKm: typeof s.distanceKm === 'number' ? s.distanceKm : typeof s.distance === 'number' ? s.distance : undefined,
-      url: origin ? buildUrl(origin, `/shelters/${s.id}`, {}) : undefined,
-    })),
-  });
-
-  const lineShare = shareUrl ? buildLineShareUrl(shareUrl, shareText) : null;
-
   return (
     <div className="space-y-6">
       <Head>
@@ -301,7 +426,12 @@ export default function ListPage() {
       </Head>
 
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <h1 className="text-2xl font-bold">避難場所（一覧）</h1>
+        <div>
+          <h1 className="text-2xl font-bold">避難場所（一覧）</h1>
+          <Link href="/designated" className="mt-1 inline-block text-xs font-semibold text-blue-700 hover:underline">
+            指定避難所（参考）はこちら
+          </Link>
+        </div>
       </div>
 
       <section className={classNames('rounded-lg border p-4', warningsActive ? 'bg-red-50 border-red-200' : 'bg-white')}>
@@ -361,8 +491,14 @@ export default function ListPage() {
           <div className="mt-3 rounded border bg-amber-50 px-3 py-2 text-sm text-amber-900">
             低帯域/省電力モードのため、地図は省略しています。
           </div>
-        ) : effectiveList.length === 0 ? (
-          <div className="mt-3 text-sm text-gray-600">表示できる避難場所がありません。</div>
+        ) : activeLoading ? (
+          <div className="mt-3 text-sm text-gray-600">読み込み中...</div>
+        ) : activeError ? (
+          <div className="mt-3 text-sm text-amber-900">取得に失敗しました。条件を確認してください。</div>
+        ) : !coords && !hasAppliedArea ? (
+          <div className="mt-3 text-sm text-gray-600">都道府県を選択して検索してください。</div>
+        ) : hasAppliedQuery && effectiveList.length === 0 ? (
+          <div className="mt-3 text-sm text-gray-600">0件（該当なし）</div>
         ) : (
           <div className="mt-3">
             <MapView
@@ -398,12 +534,12 @@ export default function ListPage() {
                   className="w-full rounded border px-3 py-2"
                   value={selectedArea?.id ?? ''}
                   onChange={(e) => {
-                    disableLocationMode();
                     setSelectedAreaId(e.target.value || null);
                   }}
                 >
                   {(device?.savedAreas ?? []).map((a) => (
                     <option key={a.id} value={a.id}>
+                      {a.label ? `${a.label} / ` : ''}
                       {a.prefName}
                       {a.muniName ? ` ${a.muniName}` : ''}
                     </option>
@@ -422,7 +558,6 @@ export default function ListPage() {
                   className="w-full rounded border px-3 py-2"
                   value={tempPrefCode}
                   onChange={(e) => {
-                    disableLocationMode();
                     setTempPrefCode(e.target.value);
                     setMuniCode('');
                     setMuniText('');
@@ -447,40 +582,37 @@ export default function ListPage() {
 
           <div className="space-y-2">
             <div className="text-sm font-semibold">市区町村</div>
-            {areaPrefCode && municipalities.length > 0 && (
-              <>
-                <input
-                  className="w-full rounded border px-3 py-2"
-                  list="muni-list"
-                  placeholder="市区町村を入力（候補から選択）"
-                  value={muniText}
-                  onChange={(e) => {
-                    disableLocationMode();
-                    const next = e.target.value;
-                    setMuniText(next);
-                    const hit = municipalities.find((m) => m.muniName === next) ?? null;
-                    setMuniCode(hit?.muniCode ?? '');
+            <>
+              <input
+                className={classNames('w-full rounded border px-3 py-2', !areaPrefCode && 'bg-gray-100 text-gray-500')}
+                list="muni-list"
+                placeholder={areaPrefCode ? '市区町村を入力（候補から選択）' : '都道府県を先に選択'}
+                value={muniText}
+                disabled={!areaPrefCode}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setMuniText(next);
+                  const hit = municipalities.find((m) => m.muniName === next) ?? null;
+                  setMuniCode(hit?.muniCode ?? '');
+                }}
+              />
+              <datalist id="muni-list">
+                {municipalities.map((m) => (
+                  <option key={m.muniCode} value={m.muniName} />
+                ))}
+              </datalist>
+              {(muniText || muniCode) && (
+                <button
+                  className="rounded bg-gray-100 px-3 py-2 text-sm text-gray-800 hover:bg-gray-200"
+                  onClick={() => {
+                    setMuniText('');
+                    setMuniCode('');
                   }}
-                />
-                <datalist id="muni-list">
-                  {municipalities.map((m) => (
-                    <option key={m.muniCode} value={m.muniName} />
-                  ))}
-                </datalist>
-                {(muniText || muniCode) && (
-                  <button
-                    className="rounded bg-gray-100 px-3 py-2 text-sm text-gray-800 hover:bg-gray-200"
-                    onClick={() => {
-                      disableLocationMode();
-                      setMuniText('');
-                      setMuniCode('');
-                    }}
-                  >
-                    市区町村をクリア
-                  </button>
-                )}
-              </>
-            )}
+                >
+                  市区町村をクリア
+                </button>
+              )}
+            </>
             {muniCode && <div className="rounded border bg-gray-50 px-3 py-2 text-xs text-gray-700">市区町村: {selectedMuniName ?? '選択中'}</div>}
           </div>
 
@@ -491,15 +623,16 @@ export default function ListPage() {
               placeholder="施設名"
               value={q}
               onChange={(e) => {
-                disableLocationMode();
                 setQ(e.target.value);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') applySearch();
               }}
             />
             <div className="flex items-center justify-between rounded border bg-gray-50 px-3 py-2">
               <div className="text-xs text-gray-700">不適合を隠す</div>
               <button
                 onClick={() => {
-                  disableLocationMode();
                   setHideIneligible((v) => !v);
                 }}
                 className="rounded bg-white px-2 py-1 text-xs hover:bg-gray-100"
@@ -531,6 +664,11 @@ export default function ListPage() {
           <div className="mt-2 text-xs text-gray-600">
             ※ここは「避難所が対応する災害種別」の絞り込みです。地図ハザードレイヤーは /hazard で別途表示（デフォルトOFF）。
           </div>
+          <div className="mt-3">
+            <button onClick={applySearch} className="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+              検索
+            </button>
+          </div>
         </div>
 
         {coords && (
@@ -555,52 +693,9 @@ export default function ListPage() {
                 ))}
               </select>
             </div>
-            <div className="space-y-2">
-              <div className="text-sm font-semibold">共有</div>
-              <div className="rounded border bg-gray-50 px-3 py-2 text-sm text-gray-800">
-                共有文は「都道府県・市区町村」までを表示します（緯度経度は表示しません）。
-              </div>
-            </div>
           </div>
         )}
       </section>
-
-      {coords && (
-        <section className="rounded-lg bg-white p-5 shadow">
-          <h2 className="text-lg font-semibold">手動共有（LINE/SNS/DM）</h2>
-          {!shareUrl && <div className="mt-3 text-sm text-gray-600">共有リンクの作成に失敗しました。</div>}
-          {shareUrl && (
-            <div className="mt-3 space-y-2">
-              <div className="text-xs text-gray-600">共有リンク（深いリンク）</div>
-              <input className="w-full rounded border px-3 py-2 text-xs" value={shareUrl} readOnly />
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={async () => {
-                    try {
-                      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-                      alert('コピーしました');
-                    } catch {
-                      alert('コピーに失敗しました');
-                    }
-                  }}
-                  className="rounded bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700"
-                >
-                  テキスト+URLをコピー
-                </button>
-                {lineShare && (
-                  <a href={lineShare} target="_blank" rel="noreferrer" className="rounded bg-emerald-600 px-3 py-2 text-sm text-white hover:bg-emerald-700">
-                    LINEで共有
-                  </a>
-                )}
-              </div>
-              <textarea className="w-full rounded border p-2 text-xs" rows={5} value={`${shareText}\n${shareUrl}`} readOnly />
-              <div className="text-xs text-gray-600">
-                プライバシー: 共有文は「都道府県・市区町村」までです（緯度経度は含めません）。
-              </div>
-            </div>
-          )}
-        </section>
-      )}
 
       <section className="rounded-lg bg-white p-5 shadow">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -637,10 +732,14 @@ export default function ListPage() {
         {!coords && !areaPrefCode && <div className="mt-3 text-sm text-gray-600">保存エリアを追加してください（/main）。</div>}
 
         <div className="mt-4 space-y-2">
-          {effectiveList.map((site) => {
+          {activeLoading && <div className="text-sm text-gray-600">読み込み中...</div>}
+          {!activeLoading && !activeError && hasAppliedQuery && filteredList.length === 0 && (
+            <div className="text-sm text-gray-600">0件（該当なし）</div>
+          )}
+          {filteredList.map((site) => {
             const flags = (site.hazards ?? {}) as Record<string, boolean>;
-            const missing = hazards.filter((h) => !flags?.[h]);
-            const matches = hazards.length === 0 ? true : missing.length === 0;
+            const missing = appliedHazards.filter((h) => !flags?.[h]);
+            const matches = appliedHazards.length === 0 ? true : missing.length === 0;
             const eligible = coords ? (site.matchesHazards ?? matches) : matches;
 
             return (
@@ -674,11 +773,14 @@ export default function ListPage() {
                         {hazardLabels[k]}
                       </span>
                     ))}
+                  {hazardKeys.filter((k) => Boolean((site.hazards as any)?.[k])).length === 0 && (
+                    <span className="text-[10px] text-gray-600">対応ハザード: 不明</span>
+                  )}
                 </div>
 
-                <div className="mt-2 text-xs text-gray-700">{whyRecommended(site, hazards)}</div>
+                <div className="mt-2 text-xs text-gray-700">{whyRecommended(site, appliedHazards)}</div>
 
-                {!eligible && hazards.length > 0 && (
+                {!eligible && appliedHazards.length > 0 && (
                   <div className="mt-1 text-xs text-red-700">
                     不適合: {missing.map((k) => hazardLabels[k as keyof typeof hazardLabels] ?? k).join('、')}
                   </div>

@@ -37,6 +37,13 @@ const LANDSLIDE_TILE_URLS = [
   'https://disaportaldata.gsi.go.jp/raster/05_jisuberikeikaikuiki/{z}/{x}/{y}.png',
 ];
 
+const JAPAN_BOUNDS: L.LatLngBoundsExpression = [
+  [20.0, 122.0],
+  [46.0, 154.0],
+];
+const TRANSPARENT_PNG =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=';
+
 function overlayTiles(layer: HazardLayer): Array<{ url: string; scheme: 'xyz' | 'tms' }> {
   if (layer.tiles && layer.tiles.length > 0) {
     return layer.tiles.map((tile) => ({ url: tile.url, scheme: tile.scheme ?? layer.scheme ?? 'xyz' }));
@@ -60,16 +67,20 @@ function readErrorStatus(error: unknown): number | null {
 
 function isKnownHazardDomain(url: string | null): boolean {
   if (!url) return false;
+  if (url.startsWith('/api/tiles/')) return true;
   return /disaportaldata\.gsi\.go\.jp|cyberjapandata\.gsi\.go\.jp/i.test(url);
 }
 
 type HazardTileLayerProps = {
   url: string;
   scheme: 'xyz' | 'tms';
+  errorTileUrl?: string;
   opacity?: number;
   minZoom?: number;
   maxZoom?: number;
   maxNativeZoom?: number;
+  bounds?: L.LatLngBoundsExpression;
+  noWrap?: boolean;
   zIndex?: number;
   attribution?: string;
   eventHandlers?: L.LeafletEventHandlerFnMap;
@@ -153,6 +164,13 @@ export default function HazardMapInner({
   const [overlayTileError, setOverlayTileError] = useState<string | null>(null);
   const statsRef = useRef<Record<string, { urls: Set<string>; loaded: number; errors: number; fatalErrors: number; errorSamples: TileErrorSample[] }>>({});
   const diagTimerRef = useRef<number | null>(null);
+  const diagnosticsEnabled = Boolean(onDiagnostics) && process.env.NODE_ENV !== 'production';
+
+  const safeTileOptions = {
+    bounds: JAPAN_BOUNDS,
+    noWrap: true,
+    errorTileUrl: TRANSPARENT_PNG,
+  };
 
   useEffect(() => setReady(true), []);
   const hasOverlays = overlays.length > 0;
@@ -168,16 +186,30 @@ export default function HazardMapInner({
 
   useEffect(() => {
     statsRef.current = {};
-    if (onDiagnostics && process.env.NODE_ENV !== 'production') {
+    if (diagnosticsEnabled && onDiagnostics) {
       onDiagnostics({
         updatedAt: new Date().toISOString(),
         items: [],
       });
     }
-  }, [enabledKeys, onDiagnostics]);
+  }, [diagnosticsEnabled, enabledKeys, onDiagnostics]);
+
+  useEffect(() => {
+    if (!diagnosticsEnabled) return;
+    if (overlayTileEntries.length === 0) return;
+    const entries = overlayTileEntries.map((entry) => ({
+      key: entry.layer.key,
+      url: entry.url,
+      scheme: entry.scheme,
+      minZoom: entry.layer.minZoom,
+      maxZoom: entry.layer.maxZoom,
+    }));
+    // eslint-disable-next-line no-console
+    console.debug('[hazard] resolved tiles', entries);
+  }, [diagnosticsEnabled, overlayTileEntries]);
 
   const queueDiagnostics = () => {
-    if (!onDiagnostics || process.env.NODE_ENV === 'production') return;
+    if (!diagnosticsEnabled || !onDiagnostics) return;
     if (diagTimerRef.current !== null) return;
     diagTimerRef.current = window.setTimeout(() => {
       diagTimerRef.current = null;
@@ -194,6 +226,7 @@ export default function HazardMapInner({
   };
 
   const bumpStats = (key: string, url: string, kind: 'load' | 'error', fatal: boolean, sample?: TileErrorSample) => {
+    if (!diagnosticsEnabled) return;
     const bucket = statsRef.current[key] ?? { urls: new Set<string>(), loaded: 0, errors: 0, fatalErrors: 0, errorSamples: [] };
     bucket.urls.add(url);
     if (kind === 'load') bucket.loaded += 1;
@@ -244,6 +277,9 @@ export default function HazardMapInner({
                   minZoom={entry.layer.minZoom}
                   maxZoom={entry.layer.maxZoom}
                   maxNativeZoom={entry.layer.maxZoom}
+                  bounds={safeTileOptions.bounds}
+                  noWrap={safeTileOptions.noWrap}
+                  errorTileUrl={safeTileOptions.errorTileUrl}
                   zIndex={200}
                   attribution='&copy; <a href="https://disaportal.gsi.go.jp/">GSI Hazard Map</a>'
                   eventHandlers={{

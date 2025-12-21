@@ -6,9 +6,10 @@ import { useEffect, useMemo, useState } from 'react';
 import classNames from 'classnames';
 import { hazardKeys, hazardLabels } from '@jp-evac/shared';
 import { useDevice } from '../../components/device/DeviceProvider';
+import MapView from '../../components/MapView';
 import ShareMenu from '../../components/ShareMenu';
 import { buildUrl, formatShelterShareText } from '../../lib/client/share';
-import { loadLastLocation, saveLastLocation, type Coords } from '../../lib/client/location';
+import { loadLastLocation, type Coords } from '../../lib/client/location';
 import { formatPrefMuniLabel, useAreaName } from '../../lib/client/areaName';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -37,6 +38,98 @@ function formatPrefCityLabel(value: string | null | undefined): string {
   return `${pref} ${rest}`.trim();
 }
 
+function sanitizeNoteText(value: string): string {
+  return value.replace(/[0-9０-９一二三四五六七八九十]+丁目/g, '');
+}
+
+function sanitizeCommentText(value: string): string {
+  return value.replace(/[0-9０-９一二三四五六七八九十]+丁目/g, '');
+}
+
+function parseShelterFields(raw: unknown): Record<string, unknown> | null {
+  if (!raw) return null;
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed as Record<string, unknown>;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof raw === 'object' && !Array.isArray(raw)) return raw as Record<string, unknown>;
+  return null;
+}
+
+function normalizeShelterFields(raw: unknown): Array<{ label: string; value: string }> {
+  const obj = parseShelterFields(raw);
+  if (!obj) return [];
+
+  const allowKey = (key: string) =>
+    /(収容|受入|受け入れ|対象者|バリア|トイレ|車いす|車椅子|ペット|宿泊|開設|要配慮|避難|駐車|授乳|オストメイト)/.test(key);
+  const denyKey = (key: string) => /(code|id|緯度|経度|lat|lon|住所)/i.test(key);
+
+  return Object.entries(obj)
+    .filter(([key]) => allowKey(key) && !denyKey(key))
+    .map(([key, value]) => {
+      const text = typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' ? String(value) : '';
+      return { label: key, value: sanitizeNoteText(text) };
+    })
+    .filter((row) => row.value.trim())
+    .slice(0, 12);
+}
+
+function normalizeEligibilityFields(raw: unknown): Array<{ label: string; value: string }> {
+  const obj = parseShelterFields(raw);
+  if (!obj) return [];
+
+  const allowKey = (key: string) =>
+    /(受入|受け入れ|対象者|対象|宿泊|利用条件|利用上|開設|要配慮|避難対象|避難区分|収容|条件|制限)/.test(key);
+  const denyKey = (key: string) => /(code|id|緯度|経度|lat|lon|住所)/i.test(key);
+
+  return Object.entries(obj)
+    .filter(([key]) => allowKey(key) && !denyKey(key))
+    .map(([key, value]) => {
+      const text = typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' ? String(value) : '';
+      return { label: key, value: sanitizeNoteText(text) };
+    })
+    .filter((row) => row.value.trim())
+    .slice(0, 12);
+}
+
+type VoteHistoryEntry = { id: string; status: string; comment: string; createdAt: string };
+
+const HISTORY_KEY_PREFIX = 'jp_evac_shelter_history_v1';
+
+function loadVoteHistory(shelterId: string): VoteHistoryEntry[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(`${HISTORY_KEY_PREFIX}:${shelterId}`);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((v) => v && typeof v === 'object')
+      .map((v) => ({
+        id: typeof (v as any).id === 'string' ? (v as any).id : String(Date.now()),
+        status: typeof (v as any).status === 'string' ? (v as any).status : 'UNKNOWN',
+        comment: typeof (v as any).comment === 'string' ? (v as any).comment : '',
+        createdAt: typeof (v as any).createdAt === 'string' ? (v as any).createdAt : new Date().toISOString(),
+      }))
+      .slice(0, 10);
+  } catch {
+    return [];
+  }
+}
+
+function saveVoteHistory(shelterId: string, entries: VoteHistoryEntry[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(`${HISTORY_KEY_PREFIX}:${shelterId}`, JSON.stringify(entries.slice(0, 10)));
+  } catch {
+    // ignore
+  }
+}
+
 function googleMapsRouteUrl(args: { origin?: Coords | null; dest: Coords }) {
   const u = new URL('https://www.google.com/maps/dir/');
   u.searchParams.set('api', '1');
@@ -50,7 +143,7 @@ export default function ShelterDetailPage() {
   const router = useRouter();
   const id = typeof router.query.id === 'string' ? router.query.id : Array.isArray(router.query.id) ? router.query.id[0] : null;
 
-  const { device, deviceId, updateDevice, checkin, coarseArea } = useDevice();
+  const { device, deviceId, updateDevice, coarseArea } = useDevice();
   const communityRefresh = device?.settings?.powerSaving || device?.settings?.lowBandwidth ? 0 : 30_000;
 
   const { data: siteData } = useSWR(id ? `/api/shelters/${id}` : null, fetcher, { dedupingInterval: 10_000 });
@@ -91,6 +184,25 @@ export default function ShelterDetailPage() {
   const originUrl = typeof window !== 'undefined' ? window.location.origin : null;
   const shareUrl = id && originUrl ? buildUrl(originUrl, `/shelters/${id}`, {}) : null;
 
+  const mapSites = useMemo(() => {
+    if (!site || !dest) return [];
+    return [
+      {
+        id: String(site.id ?? id ?? 'shelter'),
+        name: String(site.name ?? '避難場所'),
+        pref_city: site.pref_city ?? null,
+        address: site.address ?? null,
+        lat: dest.lat,
+        lon: dest.lon,
+        hazards: site.hazards ?? {},
+        is_same_address_as_shelter: site.is_same_address_as_shelter ?? null,
+        notes: site.notes ?? null,
+        source_updated_at: site.source_updated_at ?? null,
+        updated_at: site.updated_at ?? null,
+      },
+    ];
+  }, [dest, id, site]);
+
   const votesSummary: Record<string, number> = community?.votesSummary ?? {};
   const topVote = useMemo(() => {
     const entries = Object.entries(votesSummary);
@@ -98,40 +210,32 @@ export default function ShelterDetailPage() {
     entries.sort((a, b) => b[1] - a[1]);
     return entries[0][0];
   }, [votesSummary]);
+  const detailFields = useMemo(() => normalizeShelterFields(site?.shelter_fields ?? null), [site?.shelter_fields]);
+  const eligibilityFields = useMemo(() => normalizeEligibilityFields(site?.shelter_fields ?? null), [site?.shelter_fields]);
 
-  const myActiveCheckin: any =
-    (device?.checkins ?? []).find((c: any) => c && typeof c === 'object' && (c as any).active !== false) ?? (device?.checkins ?? [])[0] ?? null;
+  const voteOptions = useMemo(
+    () => [
+      { value: 'EVACUATING', label: '避難中', badge: 'bg-blue-50 text-blue-900 ring-blue-200' },
+      { value: 'SMOOTH', label: 'スムーズ', badge: 'bg-emerald-50 text-emerald-900 ring-emerald-200' },
+      { value: 'NORMAL', label: '普通', badge: 'bg-gray-50 text-gray-900 ring-gray-200' },
+      { value: 'CROWDED', label: '混雑', badge: 'bg-amber-50 text-amber-900 ring-amber-200' },
+      { value: 'CLOSED', label: '閉鎖', badge: 'bg-red-50 text-red-900 ring-red-200' },
+    ],
+    []
+  );
 
-  const [pinCoords, setPinCoords] = useState<Coords | null>(origin ?? null);
+
+  const [selectedVote, setSelectedVote] = useState<string | null>(null);
+  const [voteComment, setVoteComment] = useState('');
+  const [submitBusy, setSubmitBusy] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitNotice, setSubmitNotice] = useState<string | null>(null);
+  const [voteHistory, setVoteHistory] = useState<VoteHistoryEntry[]>([]);
+
   useEffect(() => {
-    if (!pinCoords && origin) setPinCoords(origin);
-  }, [origin, pinCoords]);
-
-  const [pinLocating, setPinLocating] = useState(false);
-  const [pinPrecise, setPinPrecise] = useState(false);
-  const [pinStatus, setPinStatus] = useState<'SAFE' | 'INJURED' | 'ISOLATED' | 'EVACUATING' | 'COMPLETED'>('SAFE');
-  const [pinComment, setPinComment] = useState('');
-
-  const requestPinLocation = (highAccuracy: boolean) => {
-    setPinLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const next = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-        setPinCoords(next);
-        saveLastLocation(next);
-        setPinLocating(false);
-      },
-      () => {
-        setPinLocating(false);
-        alert('位置情報の取得に失敗しました');
-      },
-      {
-        enableHighAccuracy: highAccuracy,
-        timeout: highAccuracy ? 15_000 : 8_000,
-        maximumAge: highAccuracy ? 0 : 5 * 60_000,
-      }
-    );
-  };
+    if (!id) return;
+    setVoteHistory(loadVoteHistory(id));
+  }, [id]);
 
   return (
     <div className="space-y-6">
@@ -219,7 +323,35 @@ export default function ShelterDetailPage() {
         {site?.notes && (
           <div className="mt-4 rounded border bg-gray-50 px-3 py-2 text-sm text-gray-800">
             <div className="font-semibold">備考</div>
-            <div className="mt-1 whitespace-pre-wrap text-sm">{site.notes}</div>
+            <div className="mt-1 whitespace-pre-wrap text-sm">{sanitizeNoteText(site.notes)}</div>
+          </div>
+        )}
+
+        {eligibilityFields.length > 0 && (
+          <div className="mt-4 rounded border bg-gray-50 px-3 py-2 text-sm text-gray-800">
+            <div className="font-semibold">受入対象者/利用条件</div>
+            <div className="mt-2 grid gap-2 text-xs md:grid-cols-2">
+              {eligibilityFields.map((row) => (
+                <div key={row.label} className="rounded bg-white px-2 py-2">
+                  <div className="text-[11px] text-gray-600">{row.label}</div>
+                  <div className="mt-1 text-sm text-gray-900">{row.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {detailFields.length > 0 && (
+          <div className="mt-4 rounded border bg-gray-50 px-3 py-2 text-sm text-gray-800">
+            <div className="font-semibold">施設情報（詳細）</div>
+            <div className="mt-2 grid gap-2 text-xs md:grid-cols-2">
+              {detailFields.map((row) => (
+                <div key={row.label} className="rounded bg-white px-2 py-2">
+                  <div className="text-[11px] text-gray-600">{row.label}</div>
+                  <div className="mt-1 text-sm text-gray-900">{row.value}</div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -237,6 +369,25 @@ export default function ShelterDetailPage() {
             <div className="text-sm text-gray-600">座標不明のためルート表示できません。</div>
           )}
           <div className="mt-2 text-xs text-gray-600">現在地: {shareFromArea ?? 'エリア未確定'}</div>
+        </div>
+      </section>
+
+      <section className="rounded-lg bg-white p-5 shadow">
+        <h2 className="text-lg font-semibold">地図</h2>
+        <div className="mt-2 text-xs text-gray-600">避難場所の位置を表示します。</div>
+        <div className="mt-3">
+          {dest ? (
+            <MapView
+              sites={mapSites as any}
+              center={dest}
+              initialZoom={14}
+              origin={origin}
+              fromAreaLabel={shareFromArea}
+              onSelect={() => undefined}
+            />
+          ) : (
+            <div className="text-sm text-gray-600">座標不明のため地図を表示できません。</div>
+          )}
         </div>
       </section>
 
@@ -278,145 +429,132 @@ export default function ShelterDetailPage() {
             <div className="mt-4">
               <div className="text-sm font-semibold">投票</div>
               <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-5">
-                {[
-                  ['EVACUATING', '避難中'],
-                  ['SMOOTH', 'スムーズ'],
-                  ['NORMAL', '普通'],
-                  ['CROWDED', '混雑'],
-                  ['CLOSED', '閉鎖'],
-                ].map(([value, label]) => (
+                {voteOptions.map((opt) => (
                   <button
-                    key={value}
-                    className="rounded border bg-white px-3 py-2 text-sm font-semibold hover:bg-gray-50 disabled:bg-gray-100"
+                    key={opt.value}
+                    className={classNames(
+                      'rounded border px-3 py-2 text-sm font-semibold hover:bg-gray-50 disabled:bg-gray-100',
+                      selectedVote === opt.value ? 'border-blue-600 bg-blue-50 text-blue-900' : 'border-gray-300 bg-white text-gray-900'
+                    )}
                     disabled={!deviceId}
-                    onClick={async () => {
-                      if (!deviceId || !id) return;
-                      const res = await fetch('/api/store/shelter/vote', {
-                        method: 'POST',
-                        headers: { 'content-type': 'application/json' },
-                        body: JSON.stringify({ shelterId: id, deviceId, value }),
-                      });
-                      if (!res.ok) {
-                        const j = await res.json().catch(() => null);
-                        alert(j?.error ?? '送信できませんでした');
-                        return;
-                      }
-                      await mutateCommunity();
+                    onClick={() => {
+                      if (!deviceId) return;
+                      setSelectedVote(opt.value);
+                      setSubmitError(null);
+                      setSubmitNotice(null);
                     }}
                   >
-                    {label}
-                    <div className="mt-1 text-xs text-gray-600">{votesSummary[value] ?? 0}</div>
+                    {opt.label}
+                    <div className="mt-1 text-xs text-gray-600">{votesSummary[opt.value] ?? 0}</div>
                   </button>
                 ))}
               </div>
-              <div className="mt-2 text-xs text-gray-600">同じ避難所への連続投票は時間制限があります。</div>
+
+              <div className="mt-3">
+                <div className="text-xs font-semibold text-gray-700">コメント（任意）</div>
+                <textarea
+                  className="mt-2 w-full rounded border px-3 py-2 text-sm"
+                  rows={2}
+                  maxLength={500}
+                  value={voteComment}
+                  onChange={(e) => setVoteComment(e.target.value)}
+                  placeholder="空欄の場合は「コメントなし」として送信されます"
+                />
+              </div>
+
+              <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <button
+                  className="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-gray-300"
+                  disabled={!deviceId || submitBusy}
+                  onClick={async () => {
+                    setSubmitError(null);
+                    setSubmitNotice(null);
+                    if (!deviceId || !id) return;
+                    if (!selectedVote) {
+                      setSubmitError('投票状況は必須です');
+                      return;
+                    }
+                    const commentText = voteComment.trim() || 'コメントなし';
+                    setSubmitBusy(true);
+                    try {
+                      const voteRes = await fetch('/api/store/shelter/vote', {
+                        method: 'POST',
+                        headers: { 'content-type': 'application/json' },
+                        body: JSON.stringify({ shelterId: id, deviceId, value: selectedVote }),
+                      });
+                      const voteJson = await voteRes.json().catch(() => null);
+                      const voteCode = typeof voteJson?.errorCode === 'string' ? voteJson.errorCode : null;
+                      if (!voteRes.ok && voteCode !== 'DUPLICATE' && voteCode !== 'RATE_LIMITED') {
+                        setSubmitError(voteJson?.error ?? '送信できませんでした');
+                        return;
+                      }
+
+                      const commentRes = await fetch('/api/store/shelter/comment', {
+                        method: 'POST',
+                        headers: { 'content-type': 'application/json' },
+                        body: JSON.stringify({ shelterId: id, deviceId, text: commentText }),
+                      });
+                      const commentJson = await commentRes.json().catch(() => null);
+                      const commentCode = typeof commentJson?.errorCode === 'string' ? commentJson.errorCode : null;
+                      if (!commentRes.ok && commentCode !== 'DUPLICATE' && commentCode !== 'RATE_LIMITED') {
+                        setSubmitError(commentJson?.error ?? '送信できませんでした');
+                        return;
+                      }
+
+                      const entry: VoteHistoryEntry = {
+                        id: `${Date.now()}`,
+                        status: selectedVote,
+                        comment: commentText,
+                        createdAt: new Date().toISOString(),
+                      };
+                      setVoteHistory((prev) => {
+                        const nextHistory = [entry, ...prev].slice(0, 10);
+                        saveVoteHistory(id, nextHistory);
+                        return nextHistory;
+                      });
+                      setVoteComment('');
+                      setSelectedVote(null);
+                      setSubmitNotice('送信しました');
+                      await mutateCommunity();
+                    } finally {
+                      setSubmitBusy(false);
+                    }
+                  }}
+                >
+                  送信
+                </button>
+                <div className="text-xs text-gray-600">同じ避難所への連続投票は時間制限があります。</div>
+              </div>
+
+              {submitError && <div className="mt-2 text-sm text-red-700">{submitError}</div>}
+              {submitNotice && <div className="mt-2 text-sm text-emerald-700">{submitNotice}</div>}
+
+              {voteHistory.length > 0 && (
+                <div className="mt-4">
+                  <div className="text-sm font-semibold">送信履歴</div>
+                  <div className="mt-2 space-y-2">
+                    {voteHistory.map((entry) => {
+                      const meta = voteOptions.find((o) => o.value === entry.status);
+                      return (
+                        <div key={entry.id} className="rounded border bg-gray-50 px-3 py-2 text-sm">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className={classNames('rounded-full px-2 py-1 text-xs font-semibold ring-1', meta?.badge ?? 'bg-gray-50 text-gray-700 ring-gray-200')}>
+                              {meta?.label ?? entry.status}
+                            </span>
+                            <span className="text-xs text-gray-600">{formatUpdatedAt(entry.createdAt)}</span>
+                          </div>
+                          <div className="mt-1 text-sm text-gray-800">{sanitizeCommentText(entry.comment)}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             <CommentThread shelterId={id!} deviceId={deviceId} community={community} onChanged={mutateCommunity} />
           </>
         )}
-      </section>
-
-      <section className="rounded-lg bg-white p-5 shadow">
-        <h2 className="text-lg font-semibold">安否ピン（手動）</h2>
-        <div className="mt-2 text-xs text-gray-600">
-          現在地にピンを置き、状態と短いコメントを残せます（粗い位置がデフォルト）。個人情報は書かないでください。
-        </div>
-
-        <div className="mt-3 space-y-4">
-          <div className="rounded border bg-gray-50 px-3 py-3">
-            <div className="text-xs font-semibold text-gray-700">1) 位置の確認（保存は粗い位置がデフォルト）</div>
-            <div className="mt-1 text-xs text-gray-600">
-              保存する位置: {shareFromArea ?? 'エリア未確定'}
-            </div>
-
-            <div className="mt-2 flex flex-wrap gap-2">
-              <button
-                className="rounded bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-black disabled:opacity-60"
-                disabled={pinLocating}
-                title="位置情報は端末内で利用。表示・共有は概略のみ。"
-                onClick={() => {
-                  setPinPrecise(false);
-                  requestPinLocation(false);
-                }}
-              >
-                現在地を取得（概略）
-              </button>
-              <button
-                className="rounded bg-white px-3 py-2 text-xs font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-50 disabled:opacity-60"
-                disabled={pinLocating}
-                title="高精度はバッテリー消費が増えることがあります。位置情報は端末内で利用。表示・共有は概略のみ。"
-                onClick={() => {
-                  setPinPrecise(true);
-                  requestPinLocation(true);
-                }}
-              >
-                高精度で取得
-              </button>
-            </div>
-            <div className="mt-2 text-[11px] text-gray-600">
-              表示/共有は「都道府県・市区町村」までに丸めます（緯度経度は表示しません）。
-            </div>
-          </div>
-
-          <div>
-            <div className="text-xs font-semibold text-gray-700">2) 状態を選ぶ</div>
-            <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-5">
-              {[
-                { key: 'SAFE', label: '無事', cls: 'border-emerald-300 bg-emerald-50 text-emerald-900' },
-                { key: 'INJURED', label: '負傷', cls: 'border-amber-300 bg-amber-50 text-amber-900' },
-                { key: 'ISOLATED', label: '孤立', cls: 'border-red-300 bg-red-50 text-red-900' },
-                { key: 'EVACUATING', label: '避難中', cls: 'border-blue-300 bg-blue-50 text-blue-900' },
-                { key: 'COMPLETED', label: '避難完了', cls: 'border-emerald-300 bg-emerald-50 text-emerald-900' },
-              ].map((s) => (
-                <button
-                  key={s.key}
-                  className={classNames(
-                    'rounded border px-3 py-2 text-left text-sm font-semibold hover:bg-white',
-                    pinStatus === (s.key as any) ? s.cls : 'border-gray-200 bg-white text-gray-900'
-                  )}
-                  onClick={() => setPinStatus(s.key as any)}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <div className="text-xs font-semibold text-gray-700">3) コメント（任意）</div>
-            <textarea
-              className="mt-2 w-full rounded border px-3 py-2 text-sm"
-              rows={2}
-              maxLength={120}
-              value={pinComment}
-              onChange={(e) => setPinComment(e.target.value)}
-              placeholder="短く（個人情報は書かないでください）"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <button
-              className="rounded bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-60"
-              disabled={!deviceId || !pinCoords}
-              onClick={async () => {
-                if (!pinCoords) return alert('まず現在地を取得してください');
-                await checkin({
-                  status: pinStatus,
-                  coords: pinCoords,
-                  precision: pinPrecise ? 'PRECISE' : 'COARSE',
-                  comment: pinComment,
-                  shelterId: id ?? null,
-                });
-                setPinComment('');
-                alert('安否ピンを更新しました');
-              }}
-            >
-              ピンを更新
-            </button>
-            <div className="text-xs text-gray-600">更新: {myActiveCheckin ? formatUpdatedAt(myActiveCheckin.updatedAt) : '未更新'}</div>
-          </div>
-        </div>
       </section>
 
       <section className="rounded-lg border bg-amber-50 p-4 text-sm text-amber-900">
@@ -438,7 +576,6 @@ function CommentThread({
   community: any;
   onChanged: () => Promise<any>;
   }) {
-  const [text, setText] = useState('');
   const cautionThreshold = typeof community?.moderationPolicy?.reportCautionThreshold === 'number' ? community.moderationPolicy.reportCautionThreshold : 3;
 
   return (
@@ -459,7 +596,7 @@ function CommentThread({
           {(community.comments ?? []).length === 0 && <div className="text-sm text-gray-600">コメントはまだありません。</div>}
           {(community.comments ?? []).map((c: any) => (
             <div key={c.id} className="rounded border bg-gray-50 px-3 py-2 text-sm">
-              <div className="whitespace-pre-wrap">{c.text}</div>
+              <div className="whitespace-pre-wrap">{sanitizeCommentText(String(c.text ?? ''))}</div>
               <div className="mt-1 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-600">
                 <span>{formatUpdatedAt(c.createdAt)}</span>
                 <div className="flex items-center gap-2">
@@ -494,32 +631,6 @@ function CommentThread({
           ))}
         </div>
       )}
-
-      <div className="mt-4 rounded border bg-white p-3">
-        <div className="text-xs text-gray-600">個人情報は書かないでください。誹謗中傷は禁止です。</div>
-        <textarea className="mt-2 w-full rounded border p-2 text-sm" rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="混雑状況や注意点（500文字まで）" />
-        <button
-          className="mt-2 rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:bg-gray-300"
-          disabled={!deviceId || !text.trim()}
-          onClick={async () => {
-            if (!deviceId) return;
-            const res = await fetch('/api/store/shelter/comment', {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ shelterId, deviceId, text: text.trim() }),
-            });
-            if (!res.ok) {
-              const j = await res.json().catch(() => null);
-              alert(j?.error ?? '送信できませんでした');
-              return;
-            }
-            setText('');
-            await onChanged();
-          }}
-        >
-          送信
-        </button>
-      </div>
     </div>
   );
 }

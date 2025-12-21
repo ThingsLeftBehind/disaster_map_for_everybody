@@ -12,6 +12,7 @@ type DeviceState = {
   };
   savedAreas: Array<{
     id: string;
+    label?: string | null;
     prefCode: string;
     prefName: string;
     muniCode?: string | null;
