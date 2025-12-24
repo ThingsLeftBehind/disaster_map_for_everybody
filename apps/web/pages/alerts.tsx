@@ -564,6 +564,81 @@ function WarningGroupSection({
   );
 }
 
+// Phenomenon color mapping (Tailwind classes)
+const PHENOMENON_COLOR_MAP: Record<string, { bg: string; border: string; text: string }> = {
+  '雷': { bg: 'bg-yellow-100', border: 'border-yellow-400', text: 'text-yellow-800' },
+  '落雷': { bg: 'bg-yellow-100', border: 'border-yellow-400', text: 'text-yellow-800' },
+  '濃霧': { bg: 'bg-sky-100', border: 'border-sky-300', text: 'text-sky-800' },
+  '大雨': { bg: 'bg-blue-100', border: 'border-blue-400', text: 'text-blue-800' },
+  '洪水': { bg: 'bg-teal-100', border: 'border-teal-400', text: 'text-teal-800' },
+  '強風': { bg: 'bg-green-100', border: 'border-green-400', text: 'text-green-800' },
+  '暴風': { bg: 'bg-green-100', border: 'border-green-400', text: 'text-green-800' },
+  '大雪': { bg: 'bg-slate-100', border: 'border-slate-400', text: 'text-slate-700' },
+  '暴風雪': { bg: 'bg-slate-100', border: 'border-slate-400', text: 'text-slate-700' },
+  '波浪': { bg: 'bg-cyan-100', border: 'border-cyan-400', text: 'text-cyan-800' },
+  '高潮': { bg: 'bg-indigo-100', border: 'border-indigo-400', text: 'text-indigo-800' },
+};
+
+const DEFAULT_PHENOMENON_COLOR = { bg: 'bg-gray-100', border: 'border-gray-300', text: 'text-gray-700' };
+
+// Phenomenon info mapping
+const PHENOMENON_INFO: Record<string, { description: string; action: string }> = {
+  '雷': {
+    description: '雷雲が発達し、落雷や突風、急な強い雨が起こることがあります。',
+    action: '屋外では開けた場所を避け建物内へ。金属製品から離れてください。',
+  },
+  '落雷': {
+    description: '雷雲が発達し、落雷や突風、急な強い雨が起こることがあります。',
+    action: '屋外では開けた場所を避け建物内へ。金属製品から離れてください。',
+  },
+  '濃霧': {
+    description: '視界が著しく悪化し、交通に影響が出ることがあります。',
+    action: '運転は速度を落としてライト点灯。交通情報を確認してください。',
+  },
+  '大雨': {
+    description: '雨量が増え、浸水や土砂災害の危険が高まります。',
+    action: '低地・地下を避け、河川に近づかない。避難情報に注意。',
+  },
+  '洪水': {
+    description: '河川の増水により氾濫の恐れがあります。',
+    action: '川沿いを避け高い場所へ。避難指示が出たら速やかに行動。',
+  },
+  '強風': {
+    description: '強い風が吹き、飛来物や転倒の危険があります。',
+    action: '屋外では飛来物に注意。看板や木の近くを避けてください。',
+  },
+  '暴風': {
+    description: '非常に強い風が吹き、重大な被害の恐れがあります。',
+    action: '外出を控え、窓から離れてください。飛来物に厳重注意。',
+  },
+  '大雪': {
+    description: '大量の降雪により交通障害や建物被害の恐れがあります。',
+    action: '不要な外出を控え、除雪作業に注意。停電に備えてください。',
+  },
+  '波浪': {
+    description: '高い波が発生し、海岸付近での危険が高まります。',
+    action: '海岸や堤防に近づかないでください。',
+  },
+  '高潮': {
+    description: '潮位が異常に上昇し、浸水の恐れがあります。',
+    action: '海岸や河口から離れ、高い場所へ避難してください。',
+  },
+};
+
+const DEFAULT_PHENOMENON_INFO = {
+  description: '気象状況が悪化する可能性があります。',
+  action: '自治体・気象庁の最新情報を確認してください。',
+};
+
+// Helper: extract phenomenon from kind name by stripping suffixes
+function extractPhenomenon(kind: string): string {
+  // Remove suffixes: 特別警報, 警報, 注意報, 情報
+  let ph = kind.replace(/(特別警報|警報|注意報|情報)$/, '');
+  // Normalize 落雷 to 雷
+  if (ph === '落雷') ph = '雷';
+  return ph;
+}
+
 function GuidanceSection({ urgent, advisory }: { urgent: WarningGroup[]; advisory: WarningGroup[] }) {
   // const [isOpen, setIsOpen] = useState(false); // Removed per request
 
@@ -580,9 +655,22 @@ function GuidanceSection({ urgent, advisory }: { urgent: WarningGroup[]; advisor
   ];
 
   const matchedTips = TIPS.filter((tip) => tip.keys.some((k) => Array.from(activeKinds).some((kind) => kind.includes(k))));
-  // Always expanded
-  // const hasMatches = matchedTips.length > 0;
-  // const show = hasMatches || isOpen;  
+
+  // Extract unique phenomena from active alerts, preserving order of appearance
+  const activePhenomena = useMemo(() => {
+    const seen = new Set<string>();
+    const result: string[] = [];
+    for (const g of [...urgent, ...advisory]) {
+      const ph = extractPhenomenon(g.kind);
+      // Normalize 雷/落雷 to same key
+      const key = ph === '落雷' ? '雷' : ph;
+      if (!seen.has(key) && key) {
+        seen.add(key);
+        result.push(key);
+      }
+    }
+    return result;
+  }, [urgent, advisory]);
 
   return (
     <section className="rounded-2xl bg-white p-5 shadow">
@@ -595,6 +683,27 @@ function GuidanceSection({ urgent, advisory }: { urgent: WarningGroup[]; advisor
           <div><span className="font-bold text-gray-900 border-b-2 border-amber-300">注意報</span>: 災害が起こるおそれがある場合に発表されます。</div>
           <div><span className="font-bold text-red-800 border-b-2 border-red-300">警報</span>: 重大な災害が起こるおそれがある場合に発表されます。</div>
           <div><span className="font-bold text-purple-900 border-b-2 border-purple-300">特別警報</span>: 予想をはるかに超える現象です。直ちに命を守る行動をとってください。</div>
+
+          {/* Phenomenon-specific blocks */}
+          {activePhenomena.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+              {activePhenomena.map((ph) => {
+                const color = PHENOMENON_COLOR_MAP[ph] ?? DEFAULT_PHENOMENON_COLOR;
+                const info = PHENOMENON_INFO[ph] ?? DEFAULT_PHENOMENON_INFO;
+                return (
+                  <div key={ph} className="flex items-start gap-2 text-sm">
+                    <span className={classNames('shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold border', color.bg, color.border, color.text)}>
+                      {ph}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-gray-700 leading-snug"><span className="font-medium text-gray-600">説明:</span> {info.description}</div>
+                      <div className="text-gray-700 leading-snug"><span className="font-medium text-gray-600">対応:</span> {info.action}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {matchedTips.length > 0 && (
