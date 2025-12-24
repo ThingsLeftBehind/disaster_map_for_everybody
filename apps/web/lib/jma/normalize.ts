@@ -552,7 +552,8 @@ function normalizeWarningsFromWebJson(raw: unknown): NormalizedWarningItem[] {
 function normalizeWarningsFromAtomTitles(titles: string[]): NormalizedWarningItem[] {
   const warningish = titles.filter((t) => /警報|注意報|特別警報/.test(t));
   const limited = warningish.slice(0, 30);
-  return limited.map((title) => {
+  const unique = Array.from(new Set(limited));
+  return unique.map((title) => {
     const id = crypto.createHash('sha256').update(title).digest('hex').slice(0, 16);
     return { id, kind: title, status: null, source: 'pull' };
   });

@@ -11,7 +11,8 @@ import { loadLastLocation, reverseGeocodeGsi, saveLastLocation, type Coords } fr
 import { buildUrl, formatShelterShareText } from '../lib/client/share';
 import { formatPrefMuniLabel, useAreaName } from '../lib/client/areaName';
 import { getJmaWarningPriority } from '../lib/jma/filters';
-import { DEFAULT_MAIN_LIMIT } from '../lib/constants';
+import { DEFAULT_MAIN_LIMIT, MAP_DEFAULT_ZOOM } from '../lib/constants';
+import { getAllSavedShelters, removeShelterFromStorage, saveShelterToStorage, type SavedShelter } from '../lib/client/shelterStorage';
 
 const MapView = dynamic(() => import('../components/MapView'), {
   ssr: false,
@@ -36,18 +37,7 @@ type NearbySite = {
   distance?: number;
 };
 
-type AlertSummaryArea = {
-  id: string;
-  label: string | null;
-  areaCode: string;
-  areaName: string | null;
-  tokyoLabel: string | null;
-  updatedAt: string | null;
-  urgentCount: number;
-  advisoryCount: number;
-  topUrgent: string[];
-  topAdvisory: string[];
-};
+
 
 function formatAt(iso: string | null | undefined): string {
   if (!iso) return '未更新';
@@ -134,53 +124,7 @@ function writeCheckinCooldown(untilMs: number) {
 
 type WarningItem = { id: string; kind: string; status: string | null; source: string };
 
-type TokyoGroupKey = 'mainland' | 'izu' | 'ogasawara';
 
-const TOKYO_LABELS: Record<TokyoGroupKey, string> = {
-  mainland: '東京都（島しょ除く）',
-  izu: '東京都（伊豆諸島）',
-  ogasawara: '東京都（小笠原諸島）',
-};
-
-function inferTokyoGroupFromLabel(label: string | null | undefined): TokyoGroupKey {
-  if (label?.includes('小笠原')) return 'ogasawara';
-  if (label?.includes('伊豆')) return 'izu';
-  return 'mainland';
-}
-
-function summarizeWarningItems(items: WarningItem[]): {
-  urgentCount: number;
-  advisoryCount: number;
-  topUrgent: string[];
-  topAdvisory: string[];
-} {
-  const urgentCounts = new Map<string, number>();
-  const advisoryCounts = new Map<string, number>();
-
-  for (const it of items) {
-    const kind = String(it.kind ?? '').trim();
-    if (!kind) continue;
-    const priority = getJmaWarningPriority(kind);
-    if (priority === 'URGENT') urgentCounts.set(kind, (urgentCounts.get(kind) ?? 0) + 1);
-    if (priority === 'ADVISORY') advisoryCounts.set(kind, (advisoryCounts.get(kind) ?? 0) + 1);
-  }
-
-  const topUrgent = Array.from(urgentCounts.entries())
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .map(([kind]) => kind)
-    .slice(0, 2);
-  const topAdvisory = Array.from(advisoryCounts.entries())
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .map(([kind]) => kind)
-    .slice(0, 2);
-
-  return {
-    urgentCount: urgentCounts.size,
-    advisoryCount: advisoryCounts.size,
-    topUrgent,
-    topAdvisory,
-  };
-}
 
 export default function MainPage() {
   const router = useRouter();
@@ -296,14 +240,31 @@ export default function MainPage() {
     mutate: mutateFavorites,
     isLoading: favoritesLoading,
   } = useSWR(favoritesUrl, fetcher, { dedupingInterval: 60_000, keepPreviousData: true });
+  const [localSavedShelters, setLocalSavedShelters] = useState<SavedShelter[]>([]);
+  useEffect(() => {
+    setLocalSavedShelters(getAllSavedShelters());
+  }, []);
+
   const favoriteSitesById = useMemo(() => {
     const rows: NearbySite[] = favoritesData?.sites ?? favoritesData?.items ?? [];
-    const map = new Map(rows.map((s) => [s.id, s]));
+    const map = new Map<string, NearbySite>();
+
+    // 1. Populate from local storage first (offline support)
+    for (const s of localSavedShelters) {
+      map.set(s.id, s as NearbySite);
+    }
+
+    // 2. Override with API data if available (online)
+    for (const s of rows) {
+      map.set(s.id, s);
+    }
+
+    // 3. Ensure nearby sites are also used if they match favorite IDs
     for (const site of sites) {
       if (favoriteIds.includes(site.id)) map.set(site.id, site);
     }
     return map;
-  }, [favoritesData?.items, favoritesData?.sites, favoriteIds, sites]);
+  }, [favoritesData, localSavedShelters, favoriteIds, sites]);
 
   const [toast, setToast] = useState<string | null>(null);
   useEffect(() => {
@@ -312,136 +273,36 @@ export default function MainPage() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const savedAreas = device?.savedAreas ?? [];
-  const [areaLabelInput, setAreaLabelInput] = useState('');
-  const [areaInputMode, setAreaInputMode] = useState<'select' | 'current' | 'map' | 'manual'>('select');
-  const [manualLat, setManualLat] = useState('');
-  const [manualLon, setManualLon] = useState('');
-  const [areaActionError, setAreaActionError] = useState<string | null>(null);
-  const [areaActionBusy, setAreaActionBusy] = useState(false);
-  const [editingAreaId, setEditingAreaId] = useState<string | null>(null);
-  const [editingLabel, setEditingLabel] = useState('');
-  const [selectedPrefCode, setSelectedPrefCode] = useState('');
-  const [selectedMuniCode, setSelectedMuniCode] = useState('');
-
-  const { data: prefData } = useSWR('/api/ref/municipalities', fetcher, { dedupingInterval: 60_000 });
-  const prefectures: Array<{ prefCode: string; prefName: string }> = prefData?.prefectures ?? [];
-  const selectedPrefName = useMemo(
-    () => prefectures.find((p) => p.prefCode === selectedPrefCode)?.prefName ?? null,
-    [prefectures, selectedPrefCode]
-  );
-  const municipalitiesUrl = selectedPrefCode ? `/api/ref/municipalities?prefCode=${selectedPrefCode}` : null;
-  const { data: muniData } = useSWR(municipalitiesUrl, fetcher, { dedupingInterval: 60_000 });
-  const municipalities: Array<{ muniCode: string; muniName: string }> = muniData?.municipalities ?? [];
-  const selectedMuniName = useMemo(
-    () => municipalities.find((m) => m.muniCode === selectedMuniCode)?.muniName ?? null,
-    [municipalities, selectedMuniCode]
-  );
-
-  const resolveAreaNames = async (prefCode: string | null, muniCode: string | null) => {
-    if (!prefCode) return null;
-    const params = new URLSearchParams();
-    params.set('prefCode', prefCode);
-    if (muniCode) params.set('muniCode', muniCode);
-    const res = await fetch(`/api/ref/area-name?${params.toString()}`);
-    if (!res.ok) return null;
-    const json = await res.json();
-    const area = json?.area ?? null;
-    if (!area?.prefName) return null;
-    return { prefName: area.prefName as string, muniName: (area.muniName as string | null) ?? null };
-  };
-
-  const buildAreaLabel = () => {
-    const raw = areaLabelInput.trim();
-    return raw ? raw.slice(0, 40) : null;
-  };
-
-  const handleAddArea = async (coordsSource?: Coords | null) => {
-    if (savedAreas.length >= 5) {
-      setAreaActionError('マイエリアは最大5件までです');
-      return;
-    }
-    setAreaActionError(null);
-    setAreaActionBusy(true);
-    try {
-      let prefCode = coarseArea?.prefCode ?? null;
-      let muniCode = coarseArea?.muniCode ?? null;
-
-      if (coordsSource) {
-        const r = await reverseGeocodeGsi(coordsSource);
-        prefCode = r.prefCode;
-        muniCode = r.muniCode;
-      }
-
-      if (!prefCode) {
-        setAreaActionError('エリアを特定できませんでした');
-        return;
-      }
-
-      const cachedNames =
-        !coordsSource &&
-        coarseAreaInfo &&
-        coarseAreaInfo.prefCode === prefCode
-          ? { prefName: coarseAreaInfo.prefName, muniName: coarseAreaInfo.muniName ?? null }
-          : null;
-      const names = cachedNames ?? (await resolveAreaNames(prefCode, muniCode ?? null));
-      if (!names?.prefName) {
-        setAreaActionError('都道府県名の取得に失敗しました');
-        return;
-      }
-
-      await addSavedArea({
-        label: buildAreaLabel(),
-        prefCode,
-        prefName: names.prefName,
-        muniCode: muniCode ?? null,
-        muniName: names.muniName ?? null,
-        jmaAreaCode: `${prefCode}0000`,
-      } as any);
-      setToast('マイエリアを保存しました');
-    } catch {
-      setAreaActionError('保存に失敗しました');
-    } finally {
-      setAreaActionBusy(false);
-    }
-  };
-
-  const handleAddAreaBySelection = async () => {
-    if (!selectedPrefCode || !selectedPrefName) {
-      setAreaActionError('都道府県を選択してください');
-      return;
-    }
-    if (savedAreas.length >= 5) {
-      setAreaActionError('マイエリアは最大5件までです');
-      return;
-    }
-    setAreaActionError(null);
-    setAreaActionBusy(true);
-    try {
-      await addSavedArea({
-        label: buildAreaLabel(),
-        prefCode: selectedPrefCode,
-        prefName: selectedPrefName,
-        muniCode: selectedMuniCode || null,
-        muniName: selectedMuniName ?? null,
-        jmaAreaCode: `${selectedPrefCode}0000`,
-      } as any);
-      setToast('マイエリアを保存しました');
-    } catch {
-      setAreaActionError('保存に失敗しました');
-    } finally {
-      setAreaActionBusy(false);
-    }
-  };
-
   const isFavorite = (id: string) => favoriteIds.includes(id);
-  const setFavorite = (id: string, next: boolean) => {
+  const setFavorite = (id: string, next: boolean, siteData?: NearbySite) => {
     const current = device?.favorites?.shelterIds ?? [];
     const already = current.includes(id);
     if (next && !already && current.length >= 5) {
       setToast('保存は最大5件です');
       return;
     }
+
+    // Offline Storage Logic
+    if (next && siteData) {
+      saveShelterToStorage({
+        id: siteData.id,
+        name: siteData.name,
+        address: siteData.address,
+        pref_city: siteData.pref_city,
+        lat: siteData.lat,
+        lon: siteData.lon,
+        hazards: siteData.hazards,
+        updatedAt: new Date().toISOString(),
+        is_same_address_as_shelter: Boolean(siteData.is_same_address_as_shelter),
+        source_updated_at: siteData.source_updated_at,
+        updated_at: siteData.updated_at,
+      });
+      setLocalSavedShelters(getAllSavedShelters());
+    } else if (!next) {
+      removeShelterFromStorage(id);
+      setLocalSavedShelters(getAllSavedShelters());
+    }
+
     const updated = next ? [id, ...current] : current.filter((s) => s !== id);
     void updateDevice({ favorites: { shelterIds: Array.from(new Set(updated)).slice(0, 5) } as any } as any);
     void mutateFavorites();
@@ -473,72 +334,9 @@ export default function MainPage() {
   const { data: nationalUrgent } = useSWR('/api/jma/urgent', fetcher, { refreshInterval: refreshMs, dedupingInterval: 10_000 });
   const nationalItems: Array<{ id: string; title: string; updated: string | null }> = nationalUrgent?.items ?? [];
 
-  const myAreaCodes = useMemo(() => {
-    const codes = savedAreas
-      .map((a) => a.jmaAreaCode ?? `${a.prefCode}0000`)
-      .filter((v): v is string => typeof v === 'string' && /^\d{6}$/.test(v));
-    return Array.from(new Set(codes)).slice(0, 5);
-  }, [savedAreas]);
-
-  const myAreaKey = myAreaCodes.length > 0 ? ['my-areas', myAreaCodes.join(',')] : null;
-  const { data: myAreaWarnings } = useSWR(
-    myAreaKey,
-    async ([, list]) => {
-      const codes = String(list).split(',').filter(Boolean);
-      const responses = await Promise.all(
-        codes.map(async (code) => {
-          const res = await fetch(`/api/jma/warnings?area=${encodeURIComponent(code)}`);
-          const json = await res.json().catch(() => null);
-          return { code, data: json };
-        })
-      );
-      return responses;
-    },
-    { refreshInterval: refreshMs, dedupingInterval: 10_000 }
-  );
-
-  const warningsByCode = useMemo(() => {
-    const map = new Map<string, any>();
-    for (const entry of myAreaWarnings ?? []) {
-      if (entry?.code) map.set(entry.code, entry.data ?? null);
-    }
-    return map;
-  }, [myAreaWarnings]);
-
-  const myAreas: AlertSummaryArea[] = useMemo(
-    () =>
-      savedAreas.map((area) => {
-        const areaCode = area.jmaAreaCode ?? `${area.prefCode}0000`;
-        const warnings = warningsByCode.get(areaCode) ?? null;
-        const items: WarningItem[] = warnings?.items ?? [];
-        const tokyoGroups = (warnings?.tokyoGroups as Record<TokyoGroupKey, { items: WarningItem[] }> | null) ?? null;
-        let targetItems = items;
-        let tokyoLabel: string | null = null;
-        if (areaCode === '130000' && tokyoGroups) {
-          const group = inferTokyoGroupFromLabel(area.muniName ?? area.label ?? null);
-          targetItems = tokyoGroups[group]?.items ?? [];
-          tokyoLabel = TOKYO_LABELS[group];
-        }
-        const summary = summarizeWarningItems(targetItems);
-        return {
-          id: area.id,
-          label: area.label ?? null,
-          areaCode,
-          areaName: formatPrefMuniLabel({ prefName: area.prefName, muniName: area.muniName ?? null }) ?? area.prefName,
-          tokyoLabel,
-          updatedAt: warnings?.updatedAt ?? null,
-          urgentCount: summary.urgentCount,
-          advisoryCount: summary.advisoryCount,
-          topUrgent: summary.topUrgent,
-          topAdvisory: summary.topAdvisory,
-        };
-      }),
-    [savedAreas, warningsByCode]
-  );
-
   const myActiveCheckin: any =
     (device?.checkins ?? []).find((c: any) => c && typeof c === 'object' && (c as any).active !== false) ?? (device?.checkins ?? [])[0] ?? null;
-  const [myCheckinStatus, setMyCheckinStatus] = useState<'SAFE' | 'INJURED' | 'ISOLATED' | 'EVACUATING' | 'COMPLETED'>('SAFE');
+  const [myCheckinStatus, setMyCheckinStatus] = useState<'SAFE' | 'INJURED' | 'ISOLATED' | 'EVACUATING' | 'COMPLETED' | null>(null);
   const [myCheckinPrecise, setMyCheckinPrecise] = useState(false);
   const [myCheckinComment, setMyCheckinComment] = useState('');
   const [checkinCooldownUntil, setCheckinCooldownUntil] = useState(0);
@@ -577,26 +375,18 @@ export default function MainPage() {
       </Head>
 
       <section className="rounded-2xl bg-white p-5 shadow">
-        <div className="flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h1 className="text-xl font-bold">いま避難先を探す</h1>
-            <div className="mt-1 text-sm text-gray-600">地図と近くの避難場所（距離順）を表示します。</div>
-          </div>
-          <div className="mt-3 flex flex-wrap items-center gap-2 md:mt-0">
-            <button
-              disabled={locating}
-              onClick={requestLocation}
-              className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-60"
-              title={locationTooltip}
-            >
-              現在地を取得
-            </button>
-          </div>
+        <div className="flex flex-row flex-wrap items-center justify-between gap-2">
+          <h1 className="text-xl font-bold">いま避難先を探す</h1>
+          <button
+            disabled={locating}
+            onClick={requestLocation}
+            className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-60"
+            title={locationTooltip}
+          >
+            現在地を取得
+          </button>
         </div>
 
-        <div className="mt-2 text-xs text-gray-500">
-          位置情報は端末内でのみ使います。共有文には「都道府県・市区町村」までを表示します。{shareFromArea ? `現在地: ${shareFromArea}` : ''}
-        </div>
         {locError && <div className="mt-2 rounded-xl border bg-amber-50 px-3 py-2 text-sm text-amber-900">{locError}</div>}
         {(sheltersUnavailable || (coords && nearbyData?.fetchStatus === 'DOWN')) && (
           <div className="mt-2 rounded-xl border bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -613,7 +403,7 @@ export default function MainPage() {
             <MapView
               sites={sites as any}
               center={center}
-              initialZoom={13}
+              initialZoom={MAP_DEFAULT_ZOOM}
               recenterSignal={recenterSignal}
               origin={coords}
               fromAreaLabel={shareFromArea}
@@ -647,132 +437,6 @@ export default function MainPage() {
             />
           )}
         </div>
-
-        <div className="mt-5 border-t pt-5">
-          <div className="flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
-            <div>
-              <h2 className="text-lg font-bold">近くの避難場所（距離順）</h2>
-              <div className="mt-1 text-sm text-gray-600">行き先は必ず自治体の情報でも確認してください。</div>
-            </div>
-            <div className="mt-2 text-xs text-gray-500 md:mt-0">{coords ? `${sites.length}件から` : '現在地を取得すると表示します'}</div>
-          </div>
-
-          {!coords && (
-            <div className="mt-3 rounded-xl border bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              まず「現在地を取得」を押してください。
-            </div>
-          )}
-
-          {coords && topNearby.length === 0 && <div className="mt-3 text-sm text-gray-600">近くの避難場所が見つかりませんでした。</div>}
-
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            {topNearby.map((site) => {
-              const hazardCount = hazardKeys.filter((k) => Boolean((site.hazards as any)?.[k])).length;
-              const caution = Boolean(site.is_same_address_as_shelter);
-              const dest: Coords = { lat: site.lat, lon: site.lon };
-              const shareUrl = origin ? buildUrl(origin, `/shelters/${site.id}`, {}) : null;
-
-              return (
-                <div
-                  key={site.id}
-                  className={classNames('rounded-xl border bg-white p-2 shadow-sm hover:border-gray-400', caution && 'opacity-75')}
-                  onClick={() => void router.push(`/shelters/${site.id}`)}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="truncate text-xs font-bold">{site.name}</div>
-                      <div className="mt-0.5 truncate text-[11px] text-gray-700">{formatPrefCityLabel(site.pref_city)}</div>
-                      <div className="mt-0.5 text-[10px] text-gray-500">{hazardPreview(site.hazards)}</div>
-                      {caution && (
-                        <div className="mt-0.5 text-[10px] font-semibold text-amber-800">
-                          {site.is_same_address_as_shelter ? '同一住所データの可能性（要確認）' : ''}
-                        </div>
-                      )}
-                    </div>
-                    <div className="shrink-0 rounded-lg bg-gray-100 px-2 py-1 text-xs font-bold text-gray-900">
-                      {formatDistanceKm(site.distanceKm ?? site.distance)}
-                    </div>
-                  </div>
-
-                  <div className="mt-2 flex flex-wrap items-center justify-between gap-1">
-                    <div className="flex flex-wrap gap-1">
-                      {hazardKeys
-                        .filter((k) => Boolean((site.hazards as any)?.[k]))
-                        .slice(0, 2)
-                        .map((k) => (
-                          <span
-                            key={k}
-                            className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 ring-1 ring-emerald-200"
-                          >
-                            {hazardLabels[k]}
-                          </span>
-                        ))}
-                    </div>
-
-                    <div className="flex flex-wrap gap-1" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        className="rounded bg-white px-2 py-1 text-[11px] font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-50"
-                        onClick={() => void router.push(`/shelters/${site.id}`)}
-                      >
-                        詳細
-                      </button>
-                      <a
-                        href={googleMapsRouteUrl({ origin: coords, dest })}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded bg-gray-900 px-2 py-1 text-[11px] font-semibold text-white hover:bg-black"
-                      >
-                        Google Mapsで経路
-                      </a>
-                      <ShareMenu
-                        shareUrl={shareUrl}
-                        getShareText={() =>
-                          formatShelterShareText({
-                            shelterName: site.name,
-                            address: site.pref_city ? formatPrefCityLabel(site.pref_city) : null,
-                            fromArea: shareFromArea,
-                            now: new Date(),
-                          })
-                        }
-                      />
-                      <button
-                        className={classNames(
-                          'rounded px-2 py-1 text-[11px] font-semibold ring-1',
-                          isFavorite(site.id)
-                            ? 'bg-amber-600 text-white ring-amber-700 hover:bg-amber-700'
-                            : 'bg-white text-gray-900 ring-gray-300 hover:bg-gray-50'
-                        )}
-                        onClick={() => setFavorite(site.id, !isFavorite(site.id))}
-                      >
-                        {isFavorite(site.id) ? '★' : '☆'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {showDevDataCard && (
-          <div className="mt-3 rounded-xl border bg-gray-50 px-3 py-2 text-xs text-gray-800">
-            <div className="font-semibold">データ接続（dev）</div>
-            <div className="mt-1">
-              nearby: {nearbyData?.fetchStatus ?? 'unknown'} / 件数: {sites.length} / 先頭距離: {firstDistanceKm !== null ? `${firstDistanceKm.toFixed(2)}km` : '不明'} / 更新:{' '}
-              {formatAt(nearbyData?.updatedAt)} / err: {sanitizeUiError(nearbyData?.lastError)}
-            </div>
-            <div className="mt-1">
-              minDistanceKm(50件): {devDiagnostics?.minDistanceKm !== null && devDiagnostics?.minDistanceKm !== undefined ? devDiagnostics.minDistanceKm.toFixed(2) : '不明'} /
-              within1Km: {devDiagnostics?.countWithin1Km ?? '?'} / within5Km: {devDiagnostics?.countWithin5Km ?? '?'}
-            </div>
-            <div className="mt-1">
-              health: dbConnected={String(Boolean(healthData?.dbConnected))} / sheltersCount={String(healthData?.sheltersCount ?? '?')} /
-              nearbySampleCount={String(healthData?.nearbySampleCount ?? '?')} / err: {sanitizeUiError(healthData?.lastError)}
-            </div>
-          </div>
-        )}
 
         <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-wrap items-center gap-2">
@@ -823,14 +487,26 @@ export default function MainPage() {
             )}
           </div>
           <div className="text-xs text-gray-500">
-            {coords ? `現在地: ${shareFromArea ?? 'エリア未確定'}` : '現在地: 未取得'}
           </div>
+        </div>
+
+
+        <div className="mt-5 border-t pt-5">
+          <NearbySheltersSection
+            coords={coords}
+            sites={sites}
+            topNearby={topNearby}
+            origin={origin}
+            shareFromArea={shareFromArea}
+            formatDistanceKm={formatDistanceKm}
+            isFavorite={isFavorite}
+            setFavorite={setFavorite}
+          />
         </div>
 
         <div className="mt-4 rounded-2xl border bg-white p-4">
           <div className="text-sm font-bold text-gray-900">
             自分の安否ピンを更新（手動）
-            <span className="ml-2 text-xs font-normal text-gray-600">最終: {myActiveCheckin ? formatAt(myActiveCheckin.updatedAt) : '未更新'}</span>
           </div>
 
           <div className="mt-3 space-y-4">
@@ -862,8 +538,9 @@ export default function MainPage() {
                   <button
                     key={s.key}
                     className={classNames(
-                      'rounded-xl border px-3 py-2 text-left text-sm font-semibold hover:bg-white',
-                      myCheckinStatus === (s.key as any) ? s.cls : 'border-gray-200 bg-white text-gray-900'
+                      'rounded-lg border px-2 py-2 text-sm font-bold ring-1 transition-all hover:brightness-95',
+                      myCheckinStatus === s.key ? s.cls : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50',
+                      myCheckinStatus === s.key ? 'ring-2 ring-offset-1 ring-blue-500 shadow-md transform scale-105' : 'ring-transparent opacity-80 hover:opacity-100'
                     )}
                     onClick={() => setMyCheckinStatus(s.key as any)}
                   >
@@ -873,35 +550,31 @@ export default function MainPage() {
               </div>
             </div>
 
-            <div>
-              <div className="text-xs font-semibold text-gray-700">3) コメント（任意）</div>
-              <textarea
-                className="mt-2 w-full rounded-xl border px-3 py-2 text-sm"
-                rows={2}
-                maxLength={120}
+            <div className="rounded-xl bg-gray-50 p-3">
+              <div className="text-xs font-semibold text-gray-700">3) ひとこと（任意）</div>
+              <input
+                className="mt-1 w-full rounded border px-3 py-2 text-sm"
+                placeholder="無事です / 水と食料が不足しています など"
+                maxLength={100}
                 value={myCheckinComment}
                 onChange={(e) => setMyCheckinComment(e.target.value)}
-                placeholder="短く（個人情報は書かないでください）"
               />
             </div>
 
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-3 border-t pt-3">
               <button
-                className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-60"
-                disabled={!coords || checkinCooldownActive}
+                className="flex-1 rounded-xl bg-gray-900 px-4 py-3 text-sm font-extrabold text-white shadow hover:bg-black disabled:opacity-60"
+                disabled={checkinCooldownActive}
                 onClick={async () => {
-                  if (!coords) {
-                    setToast('まず現在地を取得してください');
-                    return;
-                  }
+                  if (!coords) return alert('位置情報がありません。「現在地を取得」してください。');
+                  if (!deviceId) return alert('端末IDが生成されていません。再読み込みしてください。');
+                  if (!myCheckinStatus) return alert('状態を選択してください');
                   await checkin({
+                    coords: { lat: coords.lat, lon: coords.lon },
                     status: myCheckinStatus,
-                    coords,
+                    comment: myCheckinComment.trim() || null,
                     precision: myCheckinPrecise ? 'PRECISE' : 'COARSE',
-                    comment: myCheckinComment,
-                    shelterId: null,
                   });
-                  setMyCheckinComment('');
                   const nextCooldown = Date.now() + CHECKIN_COOLDOWN_MS;
                   setCheckinCooldownUntil(nextCooldown);
                   writeCheckinCooldown(nextCooldown);
@@ -923,7 +596,7 @@ export default function MainPage() {
                     }));
                     await updateDevice({ checkins: archived } as any);
                   }
-                  setMyCheckinStatus('SAFE');
+                  setMyCheckinStatus(null);
                   setMyCheckinComment('');
                   setMyCheckinPrecise(false);
                   const nextCooldown = Date.now() + CHECKIN_COOLDOWN_MS;
@@ -934,11 +607,31 @@ export default function MainPage() {
               >
                 解除
               </button>
-              <div className="text-xs text-gray-600">更新: {myActiveCheckin ? formatAt(myActiveCheckin.updatedAt) : '未更新'}</div>
             </div>
             {cooldownLabel && <div className="text-xs text-gray-600">{cooldownLabel}</div>}
           </div>
         </div>
+
+
+
+        {showDevDataCard && (
+          <div className="mt-3 rounded-xl border bg-gray-50 px-3 py-2 text-xs text-gray-800">
+            <div className="font-semibold">データ接続（dev）</div>
+            <div className="mt-1">
+              nearby: {nearbyData?.fetchStatus ?? 'unknown'} / 件数: {sites.length} / 先頭距離: {firstDistanceKm !== null ? `${firstDistanceKm.toFixed(2)}km` : '不明'} / 更新:{' '}
+              {formatAt(nearbyData?.updatedAt)} / err: {sanitizeUiError(nearbyData?.lastError)}
+            </div>
+            <div className="mt-1">
+              minDistanceKm(50件): {devDiagnostics?.minDistanceKm !== null && devDiagnostics?.minDistanceKm !== undefined ? devDiagnostics.minDistanceKm.toFixed(2) : '不明'} /
+              within1Km: {devDiagnostics?.countWithin1Km ?? '?'} / within5Km: {devDiagnostics?.countWithin5Km ?? '?'}
+            </div>
+            <div className="mt-1">
+              health: dbConnected={String(Boolean(healthData?.dbConnected))} / sheltersCount={String(healthData?.sheltersCount ?? '?')} /
+              nearbySampleCount={String(healthData?.nearbySampleCount ?? '?')} / err: {sanitizeUiError(healthData?.lastError)}
+            </div>
+          </div>
+        )}
+
       </section>
 
       <section className="rounded-2xl bg-white p-5 shadow">
@@ -964,7 +657,7 @@ export default function MainPage() {
                   <div key={id} className="flex items-center justify-between gap-2 rounded-xl border bg-gray-50 px-3 py-2">
                     <button className="min-w-0 text-left" onClick={() => void router.push(`/shelters/${id}`)}>
                       <div className="truncate font-semibold">{site?.name ?? '避難場所'}</div>
-                      <div className="truncate text-xs text-gray-600">{formatPrefCityLabel(site?.pref_city)}</div>
+                      <div className="truncate text-xs text-gray-600">{site?.address ?? formatPrefCityLabel(site?.pref_city)}</div>
                     </button>
                     <button
                       onClick={() => setFavorite(id, false)}
@@ -1008,291 +701,159 @@ export default function MainPage() {
         </section>
       )}
 
-      <section className="rounded-2xl bg-white p-5 shadow">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-lg font-bold">マイエリアの警報・注意報</h2>
-            <div className="mt-1 text-sm text-gray-600">参考/可能性/定時などはここでは表示しません。</div>
-          </div>
-          <button
-            className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black"
-            onClick={() => void router.push('/alerts')}
-          >
-            警報ページへ
-          </button>
+
+      {toast && <div className="rounded-xl border bg-gray-900 px-4 py-3 text-sm font-semibold text-white">{toast}</div>}
+    </div>
+  );
+}
+
+function NearbySheltersSection({
+  coords,
+  sites,
+  topNearby,
+  origin,
+  shareFromArea,
+  formatDistanceKm,
+  isFavorite,
+  setFavorite,
+}: {
+  coords: Coords | null;
+  sites: any[];
+  topNearby: any[];
+  origin: any;
+  shareFromArea: string | null;
+  formatDistanceKm: (d?: number) => string;
+  isFavorite: (id: string) => boolean;
+  setFavorite: (id: string, next: boolean, site?: any) => void;
+}) {
+  const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div>
+      <button
+        className="flex w-full items-center justify-between rounded-xl border bg-white p-3 hover:bg-gray-50"
+        onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+      >
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-bold text-gray-900">近くの避難場所（タップで開閉）</h2>
         </div>
-
-        <div className="mt-4 rounded-2xl border bg-gray-50 p-4">
-          <div className="flex items-center justify-between gap-2">
-            <div className="text-sm font-semibold">マイエリア登録（最大5件）</div>
-            <div className="text-xs text-gray-600">{savedAreas.length}/5</div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-gray-600">
+            {coords ? `${sites.length}件` : '未取得'}
+          </span>
+          <div className={classNames("text-gray-400 transition-transform", isOpen ? "rotate-90" : "rotate-0")}>
+            ▶
           </div>
+        </div>
+      </button>
 
-          {savedAreas.length === 0 ? (
-            <div className="mt-2 text-sm text-gray-600">まだ登録されていません。</div>
-          ) : (
-            <div className="mt-3 space-y-2">
-              {savedAreas.map((area) => {
-                const areaLabel = formatPrefMuniLabel({ prefName: area.prefName, muniName: area.muniName ?? null }) ?? area.prefName;
-                const isEditing = editingAreaId === area.id;
-                return (
-                  <div key={area.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-white px-3 py-2">
-                    <div className="min-w-0">
-                      <div className="truncate font-semibold">{area.label ?? areaLabel}</div>
-                      {area.label && <div className="mt-1 text-xs text-gray-600">{areaLabel}</div>}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {isEditing ? (
-                        <>
-                          <input
-                            className="rounded border px-2 py-1 text-xs"
-                            value={editingLabel}
-                            maxLength={40}
-                            onChange={(e) => setEditingLabel(e.target.value)}
-                            placeholder="名称（任意）"
-                          />
-                          <button
-                            className="rounded bg-gray-900 px-3 py-1 text-xs font-semibold text-white hover:bg-black"
-                            onClick={async () => {
-                              const trimmed = editingLabel.trim();
-                              const next = savedAreas.map((a) => (a.id === area.id ? { ...a, label: trimmed || null } : a));
-                              await updateDevice({ savedAreas: next } as any);
-                              setEditingAreaId(null);
-                              setEditingLabel('');
-                            }}
-                          >
-                            保存
-                          </button>
-                          <button
-                            className="rounded bg-white px-3 py-1 text-xs text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50"
-                            onClick={() => {
-                              setEditingAreaId(null);
-                              setEditingLabel('');
-                            }}
-                          >
-                            キャンセル
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            className="rounded bg-white px-3 py-1 text-xs text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50"
-                            onClick={() => {
-                              setEditingAreaId(area.id);
-                              setEditingLabel(area.label ?? '');
-                            }}
-                          >
-                            編集
-                          </button>
-                          <button
-                            className="rounded bg-white px-3 py-1 text-xs text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50"
-                            onClick={() => removeSavedArea(area.id)}
-                          >
-                            削除
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+      {isOpen && (
+        <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-200">
+          {!coords && (
+            <div className="rounded-xl border bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              まず「現在地を取得」を押してください。
             </div>
           )}
 
-          <div className="mt-4 rounded-xl border bg-white p-3">
-            <div className="text-sm font-semibold">追加</div>
-            <div className="mt-2">
-              <div className="text-xs text-gray-600">名称（任意）</div>
-              <input
-                className="mt-1 w-full rounded border px-3 py-2 text-sm"
-                placeholder="自宅 / 職場 など"
-                value={areaLabelInput}
-                maxLength={40}
-                onChange={(e) => setAreaLabelInput(e.target.value)}
-              />
-            </div>
+          {coords && topNearby.length === 0 && <div className="text-sm text-gray-600">近くの避難場所が見つかりませんでした。</div>}
 
-            <div className="mt-3 flex flex-wrap gap-2">
-              {[
-                ['select', '都道府県・市区町村'],
-                ['current', '現在地'],
-                ['map', '地図中心'],
-                ['manual', '手入力'],
-              ].map(([key, label]) => (
-                <button
-                  key={key}
-                  className={classNames(
-                    'rounded px-3 py-2 text-xs font-semibold ring-1',
-                    areaInputMode === key ? 'bg-blue-600 text-white ring-blue-600' : 'bg-white text-gray-800 ring-gray-200'
-                  )}
-                  onClick={() => setAreaInputMode(key as any)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+            {topNearby.map((site) => {
+              const caution = Boolean(site.is_same_address_as_shelter);
+              const dest = { lat: site.lat, lon: site.lon };
+              const shareUrl = origin ? buildUrl(origin, `/shelters/${site.id}`, {}) : null;
 
-            {areaInputMode === 'select' && (
-              <div className="mt-3 space-y-2">
-                <select
-                  className="w-full rounded border px-3 py-2 text-sm"
-                  value={selectedPrefCode}
-                  onChange={(e) => {
-                    setSelectedPrefCode(e.target.value);
-                    setSelectedMuniCode('');
-                  }}
-                >
-                  <option value="">都道府県を選択</option>
-                  {prefectures.map((p) => (
-                    <option key={p.prefCode} value={p.prefCode}>
-                      {p.prefName}
-                    </option>
-                  ))}
-                </select>
-                {selectedPrefCode && municipalities.length > 0 && (
-                  <select
-                    className="w-full rounded border px-3 py-2 text-sm"
-                    value={selectedMuniCode}
-                    onChange={(e) => setSelectedMuniCode(e.target.value)}
-                  >
-                    <option value="">市区町村を選択（任意）</option>
-                    {municipalities.map((m) => (
-                      <option key={m.muniCode} value={m.muniCode}>
-                        {m.muniName}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                <button
-                  className="rounded bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-black disabled:opacity-60"
-                  disabled={areaActionBusy}
-                  onClick={handleAddAreaBySelection}
-                >
-                  選択したエリアを保存
-                </button>
-              </div>
-            )}
-
-            {areaInputMode === 'current' && (
-              <div className="mt-3 space-y-2">
-                <div className="text-xs text-gray-600">現在地: {coarseAreaLabel ?? '未取得'}</div>
-                <button
-                  className="rounded bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-black disabled:opacity-60"
-                  disabled={areaActionBusy}
-                  onClick={() => handleAddArea(coords ?? null)}
-                >
-                  現在地を保存
-                </button>
-              </div>
-            )}
-
-            {areaInputMode === 'map' && (
-              <div className="mt-3 space-y-2">
-                <div className="text-xs text-gray-600">地図を動かして中心を合わせてください。</div>
-                <button
-                  className="rounded bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-black disabled:opacity-60"
-                  disabled={areaActionBusy}
-                  onClick={() => handleAddArea(center)}
-                >
-                  地図中央を保存
-                </button>
-              </div>
-            )}
-
-            {areaInputMode === 'manual' && (
-              <details className="mt-3 rounded border bg-gray-50 px-3 py-2">
-                <summary className="cursor-pointer text-xs font-semibold text-gray-800">高度な設定: 緯度・経度で追加</summary>
-                <div className="mt-3 space-y-2">
-                  <div className="grid gap-2 md:grid-cols-2">
-                    <input
-                      className="rounded border px-3 py-2 text-sm"
-                      placeholder="緯度（例: 35.68）"
-                      value={manualLat}
-                      onChange={(e) => setManualLat(e.target.value)}
-                    />
-                    <input
-                      className="rounded border px-3 py-2 text-sm"
-                      placeholder="経度（例: 139.76）"
-                      value={manualLon}
-                      onChange={(e) => setManualLon(e.target.value)}
-                    />
-                  </div>
-                  <button
-                    className="rounded bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-black disabled:opacity-60"
-                    disabled={areaActionBusy}
-                    onClick={() => {
-                      const lat = Number(manualLat);
-                      const lon = Number(manualLon);
-                      if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
-                        setAreaActionError('緯度・経度が不正です');
-                        return;
-                      }
-                      void handleAddArea({ lat, lon });
-                    }}
-                  >
-                    手入力から保存
-                  </button>
-                </div>
-              </details>
-            )}
-
-            {areaActionError && <div className="mt-2 text-xs text-red-700">{areaActionError}</div>}
-          </div>
-        </div>
-
-        {myAreas.length === 0 ? (
-          <div className="mt-4 text-sm text-gray-600">登録したエリアの警報・注意報を表示します。</div>
-        ) : (
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            {myAreas.map((a) => {
-              const hasAny = a.urgentCount + a.advisoryCount > 0;
               return (
-                <div key={a.id} className="rounded-2xl border bg-gray-50 p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="truncate text-base font-bold">{a.label ?? a.areaName ?? 'エリア名不明'}</div>
-                      {a.label && <div className="mt-1 text-xs text-gray-600">{a.areaName}</div>}
-                      {a.tokyoLabel && <div className="mt-1 text-xs text-gray-600">{a.tokyoLabel}</div>}
-                      <div className="mt-1 text-xs text-gray-600">
-                        {a.updatedAt ? `最終取得: ${new Date(a.updatedAt).toLocaleString()}` : 'まだ取得できていません'}
-                      </div>
+                <div
+                  key={site.id}
+                  className={classNames('rounded-xl border bg-white p-2 shadow-sm hover:border-gray-400', caution && 'opacity-75')}
+                  onClick={() => void router.push(`/shelters/${site.id}`)}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-xs font-bold">{site.name}</div>
+                      <div className="mt-0.5 truncate text-[11px] text-gray-700">{site.address ?? '所在地不明'}</div>
+                      {caution && (
+                        <div className="mt-0.5 text-[10px] font-semibold text-amber-800 break-words">
+                          {site.is_same_address_as_shelter ? '同一住所データの可能性（要確認）' : ''}
+                        </div>
+                      )}
                     </div>
-                    <div className="flex gap-2">
-                      <span className={classNames('rounded-full px-3 py-1 text-xs font-bold ring-1', a.urgentCount > 0 ? 'bg-red-50 text-red-800 ring-red-200' : 'bg-white text-gray-800 ring-gray-200')}>
-                        警報 {a.urgentCount}
-                      </span>
-                      <span className={classNames('rounded-full px-3 py-1 text-xs font-bold ring-1', a.advisoryCount > 0 ? 'bg-amber-50 text-amber-900 ring-amber-200' : 'bg-white text-gray-800 ring-gray-200')}>
-                        注意報 {a.advisoryCount}
-                      </span>
+                    <div className="shrink-0 flex items-center gap-1">
+                      <div className="rounded-lg bg-gray-100 px-2 py-1 text-xs font-bold text-gray-900">
+                        {formatDistanceKm(site.distanceKm ?? site.distance)}
+                      </div>
+                      <button
+                        className={classNames(
+                          'rounded px-1.5 py-1 text-xs font-bold ring-1',
+                          isFavorite(site.id)
+                            ? 'bg-amber-500 text-white ring-amber-600 hover:bg-amber-600'
+                            : 'bg-white text-gray-600 ring-gray-300 hover:bg-gray-50'
+                        )}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFavorite(site.id, !isFavorite(site.id), site);
+                        }}
+                        title={isFavorite(site.id) ? '保存を解除' : '保存'}
+                      >
+                        {isFavorite(site.id) ? '★' : '☆'}
+                      </button>
                     </div>
                   </div>
 
-                  {hasAny ? (
-                    <div className="mt-3 space-y-2 text-sm text-gray-900">
-                      {a.topUrgent.length > 0 && (
-                        <div>
-                          <div className="text-xs font-semibold text-red-800">警報</div>
-                          <div className="mt-1 text-sm">{a.topUrgent.join(' / ')}</div>
-                        </div>
-                      )}
-                      {a.topAdvisory.length > 0 && (
-                        <div>
-                          <div className="text-xs font-semibold text-amber-900">注意報</div>
-                          <div className="mt-1 text-sm">{a.topAdvisory.join(' / ')}</div>
-                        </div>
-                      )}
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-1">
+                    <div className="flex flex-wrap gap-1">
+                      {hazardKeys
+                        .filter((k) => Boolean((site.hazards as any)?.[k]))
+                        .slice(0, 2)
+                        .map((k) => (
+                          <span
+                            key={k}
+                            className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 ring-1 ring-emerald-200 whitespace-nowrap"
+                          >
+                            {hazardLabels[k]}
+                          </span>
+                        ))}
                     </div>
-                  ) : (
-                    <div className="mt-3 text-sm text-gray-700">いまは警報・注意報は確認できません。</div>
-                  )}
+
+                    <div className="flex flex-wrap gap-1" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        className="rounded bg-white px-2 py-1 text-[11px] font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-50"
+                        onClick={() => void router.push(`/shelters/${site.id}`)}
+                      >
+                        詳細
+                      </button>
+                      <a
+                        href={googleMapsRouteUrl({ origin: coords, dest })}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded bg-white px-2 py-1 text-[11px] font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-50"
+                      >
+                        経路
+                      </a>
+                      <ShareMenu
+                        shareUrl={shareUrl}
+                        getShareText={() =>
+                          formatShelterShareText({
+                            shelterName: site.name,
+                            address: site.address ?? null,
+                            fromArea: shareFromArea,
+                            now: new Date(),
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
                 </div>
               );
             })}
           </div>
-        )}
-      </section>
-
-      {toast && <div className="rounded-xl border bg-gray-900 px-4 py-3 text-sm font-semibold text-white">{toast}</div>}
+        </div>
+      )}
     </div>
   );
 }

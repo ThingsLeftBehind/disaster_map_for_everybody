@@ -1,4 +1,4 @@
-import { MapContainer, Pane, TileLayer, useMapEvents } from 'react-leaflet';
+import { CircleMarker, MapContainer, Pane, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createLayerComponent, updateGridLayer } from '@react-leaflet/core';
 import L from 'leaflet';
@@ -37,9 +37,14 @@ const LANDSLIDE_TILE_URLS = [
   'https://disaportaldata.gsi.go.jp/raster/05_jisuberikeikaikuiki/{z}/{x}/{y}.png',
 ];
 
+function toProxyUrl(url: string) {
+  // Encode the URL but preserve template parameters {z}, {x}, {y} so Leaflet can replace them
+  return `/api/tiles/gsi?url=${encodeURIComponent(url).replace(/%7B/g, '{').replace(/%7D/g, '}')}`;
+}
+
 const JAPAN_BOUNDS: L.LatLngBoundsExpression = [
   [20.0, 122.0],
-  [46.0, 154.0],
+  [45.33, 153.98], // Slightly optimized bounds
 ];
 const TRANSPARENT_PNG =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=';
@@ -49,7 +54,7 @@ function overlayTiles(layer: HazardLayer): Array<{ url: string; scheme: 'xyz' | 
     return layer.tiles.map((tile) => ({ url: tile.url, scheme: tile.scheme ?? layer.scheme ?? 'xyz' }));
   }
   if (layer.key === 'landslide') {
-    return LANDSLIDE_TILE_URLS.map((url) => ({ url, scheme: layer.scheme ?? 'xyz' }));
+    return LANDSLIDE_TILE_URLS.map((url) => ({ url: toProxyUrl(url), scheme: layer.scheme ?? 'xyz' }));
   }
   return [{ url: layer.tileUrl, scheme: layer.scheme ?? 'xyz' }];
 }
@@ -124,18 +129,30 @@ function ZoomWatcher({ onZoomChange }: { onZoomChange: (zoom: number) => void })
   return null;
 }
 
+function Recenter({ center }: { center: { lat: number; lon: number } }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView([center.lat, center.lon], map.getZoom(), { animate: true });
+  }, [center.lat, center.lon, map]);
+  return null;
+}
+
 export default function HazardMapInner({
   enabledKeys,
   layers,
   center,
   onZoomOutOfRange,
+  onZoomValid,
   onDiagnostics,
+  userLocation,
 }: {
   enabledKeys: string[];
   layers: HazardLayer[];
   center: { lat: number; lon: number };
   onZoomOutOfRange: (args: { direction: 'low' | 'high'; zoom: number; min: number; max: number; keys: string[] }) => void;
+  onZoomValid?: (keys: string[]) => void;
   onDiagnostics?: (diag: OverlayDiagnostics) => void;
+  userLocation?: { lat: number; lon: number } | null;
 }) {
   const overlays = useMemo(() => layers.filter((l) => enabledKeys.includes(l.key)), [enabledKeys, layers]);
   const overlayTileEntries = useMemo(
@@ -243,13 +260,17 @@ export default function HazardMapInner({
     if (!hasOverlays) return;
     const lowKeys = overlays.filter((o) => currentZoom < o.minZoom).map((o) => o.key);
     const highKeys = overlays.filter((o) => currentZoom > o.maxZoom).map((o) => o.key);
+    const validKeys = overlays.filter((o) => currentZoom >= o.minZoom && currentZoom <= o.maxZoom).map((o) => o.key);
+
     if (lowKeys.length > 0) onZoomOutOfRange({ direction: 'low', zoom: currentZoom, min: minOverlayZoom, max: maxOverlayZoom, keys: lowKeys });
     if (highKeys.length > 0) onZoomOutOfRange({ direction: 'high', zoom: currentZoom, min: minOverlayZoom, max: maxOverlayZoom, keys: highKeys });
-  }, [currentZoom, hasOverlays, maxOverlayZoom, minOverlayZoom, onZoomOutOfRange, overlays]);
+    if (validKeys.length > 0 && onZoomValid) onZoomValid(validKeys);
+  }, [currentZoom, hasOverlays, maxOverlayZoom, minOverlayZoom, onZoomOutOfRange, onZoomValid, overlays]);
 
   return (
     <div className="relative">
       <MapContainer center={[center.lat, center.lon]} zoom={11} scrollWheelZoom={true} className="h-[520px] w-full rounded-lg">
+        <Recenter center={center} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -271,7 +292,8 @@ export default function HazardMapInner({
               .map((entry) => (
                 <HazardTileLayer
                   key={entry.tileId}
-                  url={entry.url.replace(/^http:\/\//i, 'https://')}
+                  // For normal layers (not proxied), ensure HTTPS. For proxied, it's already relative /api/...
+                  url={entry.url.startsWith('/api') ? entry.url : entry.url.replace(/^http:\/\//i, 'https://')}
                   scheme={entry.scheme}
                   opacity={0.7}
                   minZoom={entry.layer.minZoom}
@@ -290,6 +312,7 @@ export default function HazardMapInner({
                       const status = readErrorStatus((event as any)?.error);
                       const src = (event as any)?.tile?.src ?? (event as any)?.target?.src ?? null;
                       const knownDomain = isKnownHazardDomain(src ?? entry.url);
+                      // 404/410 are now benign (swallowed by proxy mostly, but just in case)
                       const benign = status === 404 || status === 410;
                       const fatal = status ? (status >= 500 || status === 401 || status === 403) : !knownDomain;
                       bumpStats(entry.layer.key, entry.url, 'error', fatal, {
@@ -305,6 +328,13 @@ export default function HazardMapInner({
                 />
               ))}
         </Pane>
+        {userLocation && (
+          <CircleMarker
+            center={[userLocation.lat, userLocation.lon]}
+            radius={8}
+            pathOptions={{ color: '#ffffff', fillColor: '#2563eb', fillOpacity: 0.9, weight: 2 }}
+          />
+        )}
       </MapContainer>
 
       {(overlayTileError ?? baseTileError) && (

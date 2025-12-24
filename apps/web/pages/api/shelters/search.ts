@@ -10,8 +10,67 @@ import {
   safeErrorMessage,
 } from 'lib/shelters/evacsiteCompat';
 
+import { normalizeMuniCode } from 'lib/muni-helper';
+
+// Force recompile: 2025-12-23T04:40
 function nowIso() {
   return new Date().toISOString();
+}
+
+// Prefecture centroids for fallback location-based search
+// Key: 2-digit prefCode, Value: approximate center coordinates
+const PREF_CENTROIDS: Record<string, { lat: number; lon: number }> = {
+  '01': { lat: 43.06417, lon: 141.34694 }, // 北海道 (札幌)
+  '02': { lat: 40.82444, lon: 140.74000 }, // 青森
+  '03': { lat: 39.70361, lon: 141.15250 }, // 岩手
+  '04': { lat: 38.26889, lon: 140.87194 }, // 宮城
+  '05': { lat: 39.71861, lon: 140.10250 }, // 秋田
+  '06': { lat: 38.24056, lon: 140.36333 }, // 山形
+  '07': { lat: 37.75000, lon: 140.46778 }, // 福島
+  '08': { lat: 36.34139, lon: 140.44667 }, // 茨城
+  '09': { lat: 36.56583, lon: 139.88361 }, // 栃木
+  '10': { lat: 36.39111, lon: 139.06083 }, // 群馬
+  '11': { lat: 35.85694, lon: 139.64889 }, // 埼玉
+  '12': { lat: 35.60472, lon: 140.12333 }, // 千葉
+  '13': { lat: 35.68944, lon: 139.69167 }, // 東京
+  '14': { lat: 35.44778, lon: 139.64250 }, // 神奈川
+  '15': { lat: 37.90222, lon: 139.02361 }, // 新潟
+  '16': { lat: 36.69528, lon: 137.21139 }, // 富山
+  '17': { lat: 36.59444, lon: 136.62556 }, // 石川
+  '18': { lat: 36.06528, lon: 136.22194 }, // 福井
+  '19': { lat: 35.66389, lon: 138.56833 }, // 山梨
+  '20': { lat: 36.65139, lon: 138.18111 }, // 長野
+  '21': { lat: 35.39111, lon: 136.72222 }, // 岐阜
+  '22': { lat: 34.97694, lon: 138.38306 }, // 静岡
+  '23': { lat: 35.18028, lon: 136.90667 }, // 愛知
+  '24': { lat: 34.73028, lon: 136.50861 }, // 三重
+  '25': { lat: 35.00444, lon: 135.86833 }, // 滋賀
+  '26': { lat: 35.02139, lon: 135.75556 }, // 京都
+  '27': { lat: 34.68639, lon: 135.52000 }, // 大阪
+  '28': { lat: 34.69139, lon: 135.18306 }, // 兵庫
+  '29': { lat: 34.68528, lon: 135.83278 }, // 奈良
+  '30': { lat: 34.22611, lon: 135.16750 }, // 和歌山
+  '31': { lat: 35.50361, lon: 134.23833 }, // 鳥取
+  '32': { lat: 35.47222, lon: 133.05056 }, // 島根
+  '33': { lat: 34.66167, lon: 133.93500 }, // 岡山
+  '34': { lat: 34.39639, lon: 132.45944 }, // 広島
+  '35': { lat: 34.18583, lon: 131.47139 }, // 山口
+  '36': { lat: 34.06583, lon: 134.55944 }, // 徳島
+  '37': { lat: 34.34028, lon: 134.04333 }, // 香川
+  '38': { lat: 33.84167, lon: 132.76611 }, // 愛媛
+  '39': { lat: 33.55972, lon: 133.53111 }, // 高知
+  '40': { lat: 33.60639, lon: 130.41806 }, // 福岡
+  '41': { lat: 33.24944, lon: 130.29889 }, // 佐賀
+  '42': { lat: 32.74472, lon: 129.87361 }, // 長崎
+  '43': { lat: 32.78972, lon: 130.74167 }, // 熊本
+  '44': { lat: 33.23806, lon: 131.61250 }, // 大分
+  '45': { lat: 31.91111, lon: 131.42389 }, // 宮崎
+  '46': { lat: 31.56028, lon: 130.55806 }, // 鹿児島
+  '47': { lat: 26.21250, lon: 127.68111 }, // 沖縄
+};
+
+function getPrefectureCentroid(prefCode: string): { lat: number; lon: number } | null {
+  return PREF_CENTROIDS[prefCode] ?? null;
 }
 
 type SearchMode = 'LOCATION' | 'AREA';
@@ -133,7 +192,7 @@ const SearchQuerySchema = z.object({
     .optional(),
   prefName: z.preprocess((v) => (Array.isArray(v) ? v[0] : v), z.string().min(1)).optional(),
   muniCode: z
-    .preprocess((v) => (Array.isArray(v) ? v[0] : v), z.string().regex(/^\d{6}$/))
+    .preprocess((v) => (Array.isArray(v) ? v[0] : v), z.string().regex(/^\d{5,6}$/))
     .optional(),
   cityText: z.preprocess((v) => (Array.isArray(v) ? v[0] : v), z.string().min(1)).optional(),
   q: z.preprocess((v) => (Array.isArray(v) ? v[0] : v), z.string().min(1).max(80)).optional(),
@@ -170,7 +229,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     mode,
     prefCode,
     prefName,
-    muniCode,
     cityText,
     q,
     limit,
@@ -183,13 +241,50 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     lon,
     radiusKm,
   } = parsed.data;
+
+  // 1) Normalize muniCode: Ensure we trust 5-digit mostly
+  const muniCodeRaw = parsed.data.muniCode ?? null;
+  const muniCode5 = normalizeMuniCode(muniCodeRaw);
+  // If raw was 6 digit, we now have 5. If raw was 5, we have 5.
+  // We will primarily search by this 5-digit code.
+
   const hazardFilters = (hazardTypes ?? []).filter(Boolean);
   const debugParam = Array.isArray(req.query.debug) ? req.query.debug[0] : req.query.debug;
   const debugEnabled = process.env.NODE_ENV !== 'production' || String(debugParam ?? '') === '1';
+
+  if (debugEnabled) {
+    console.log('[Search] Params:', { mode, prefCode, muniCodeRaw, muniCode5, hazardTypes });
+  }
+
   const debugTrace: Array<{ step: string; matchedCount: number }> = [];
   const recordTrace = (step: string, matchedCount: number) => {
-    if (debugEnabled) debugTrace.push({ step, matchedCount });
+    if (debugEnabled) {
+      debugTrace.push({ step, matchedCount });
+      console.log(`[Search][Trace] ${step}: ${matchedCount}`);
+    }
   };
+
+  let diagnostics: any = null;
+  if (debugEnabled) {
+    try {
+      const total = await prisma.evac_sites.count();
+      // Use type assertion for columns that may not be in Prisma types yet
+      const withPrefCode = await prisma.evac_sites.count({ where: { pref_code: { not: null } } as any });
+      const withMuniCode = await prisma.evac_sites.count({ where: { muni_code: { not: null } } as any });
+      const withPrefCity = await prisma.evac_sites.count({ where: { pref_city: { not: null } } });
+      const withAddr = await prisma.evac_sites.count({ where: { address: { not: null } } });
+      const sample = await prisma.evac_sites.findFirst({
+        select: { id: true, name: true, pref_city: true, address: true, common_id: true }
+      }) as any;
+      diagnostics = { total, withPrefCode, withMuniCode, withPrefCity, withAddr, sample };
+      console.log('[Search] Diagnostics:', JSON.stringify(diagnostics, null, 2));
+    } catch (e) {
+      console.error('[Search] Diagnostics failed', e);
+      diagnostics = { error: String(e) };
+    }
+  }
+
+
   const modeUsed: SearchMode = (mode ?? 'AREA') as SearchMode;
 
   if (mode === 'AREA' && !prefCode) {
@@ -204,8 +299,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const prefs = await listPrefectures();
     resolvedPrefName = prefs.find((p) => p.prefCode === prefCode)?.prefName ?? null;
   }
-  if (!resolvedPrefName && muniCode) {
-    const derivedPref = muniCode.slice(0, 2);
+  if (!resolvedPrefName && muniCode5) {
+    const derivedPref = muniCode5.slice(0, 2);
     const prefs = await listPrefectures();
     resolvedPrefName = prefs.find((p) => p.prefCode === derivedPref)?.prefName ?? null;
   }
@@ -213,10 +308,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   let resolvedMuniName: string | null = null;
   let usedMuniFallback = false;
   let usedPrefFallback = false;
-  if (muniCode) {
-    const derivedPref = muniCode.slice(0, 2);
+
+  if (muniCode5) {
+    const derivedPref = muniCode5.slice(0, 2);
     const candidates = await listMunicipalitiesByPref(derivedPref);
-    resolvedMuniName = candidates.find((m) => m.muniCode === muniCode)?.muniName ?? null;
+    // candidates are typically 6-digit in our ref, but our input is 5-digit. Match prefix.
+    resolvedMuniName = candidates.find((m) => m.muniCode === muniCode5 || m.muniCode.startsWith(muniCode5))?.muniName ?? null;
   }
 
   const baseWhere: any[] = [];
@@ -224,6 +321,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (resolvedPrefName) {
     baseWhere.push({
       OR: [
+        { pref_code: prefCode }, // New column
         { pref_city: { startsWith: resolvedPrefName, mode: 'insensitive' } },
         { address: { startsWith: resolvedPrefName, mode: 'insensitive' } },
         { address: { contains: resolvedPrefName, mode: 'insensitive' } },
@@ -231,22 +329,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
-  const muniCodeClause = muniCode
-    ? {
-        OR: [
-          { pref_city: { contains: muniCode, mode: 'insensitive' } },
-          { address: { contains: muniCode, mode: 'insensitive' } },
-          { common_id: { contains: muniCode, mode: 'insensitive' } },
-        ],
-      }
-    : null;
+  // Build municipality code clauses - try exact code match first
+  const muniCodeClauses: any[] = [];
+  if (muniCode5) {
+    muniCodeClauses.push({ muni_code: muniCode5 }); // Direct DB column match
+  }
+  const muniCodeClause = muniCodeClauses.length > 0 ? { OR: muniCodeClauses } : null;
+
+  // Build municipality NAME clauses - this is the primary text-based fallback
+  // Search by actual municipality name (e.g., "板橋区") in pref_city/address fields
   const muniNameClause = resolvedMuniName
     ? {
-        OR: [
-          { pref_city: { contains: resolvedMuniName, mode: 'insensitive' } },
-          { address: { contains: resolvedMuniName, mode: 'insensitive' } },
-        ],
-      }
+      OR: [
+        { pref_city: { contains: resolvedMuniName, mode: 'insensitive' } },
+        { address: { contains: resolvedMuniName, mode: 'insensitive' } },
+      ],
+    }
     : null;
 
   if (cityText) {
@@ -319,7 +417,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       recordTrace('location-raw', fallback.sites.length);
 
       const prefNeedle = resolvedPrefName ? resolvedPrefName.toLowerCase() : '';
-      const muniCodeNeedle = muniCode ? muniCode.toLowerCase() : '';
+      const muniCodeNeedle = muniCode5 ? muniCode5.toLowerCase() : '';
       const muniNameNeedle = resolvedMuniName ? resolvedMuniName.toLowerCase() : '';
       const cityNeedle = cityText ? cityText.toLowerCase() : '';
       const qNeedle = q ? q.toLowerCase() : '';
@@ -341,14 +439,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             textStartsWith(address, prefNeedle) ||
             textIncludes(address, prefNeedle);
           const matchesCity = !cityNeedle || textIncludes(prefCity, cityNeedle) || textIncludes(address, cityNeedle);
+
           let matchesMuni = true;
-          if (muniCodeNeedle) {
-            matchesMuni =
-              textIncludes(prefCity, muniCodeNeedle) ||
-              textIncludes(address, muniCodeNeedle) ||
-              textIncludes(commonId, muniCodeNeedle) ||
-              (muniNameNeedle && (textIncludes(prefCity, muniNameNeedle) || textIncludes(address, muniNameNeedle)));
+          // Updated in-memory filtering for muni code
+          if (muniCode5) {
+            const code = muniCode5;
+            const anyVariantMatch =
+              textIncludes(prefCity, code) ||
+              textIncludes(address, code) ||
+              textIncludes(commonId, code);
+
+            matchesMuni = anyVariantMatch || (Boolean(muniNameNeedle) && (textIncludes(prefCity, muniNameNeedle) || textIncludes(address, muniNameNeedle)));
           }
+
           const matchesQ =
             !qNeedle || textIncludes(name, qNeedle) || textIncludes(address, qNeedle) || textIncludes(notes, qNeedle);
 
@@ -371,7 +474,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         lastError: null,
         modeUsed,
         prefName: resolvedPrefName,
-        muniCode: muniCode ?? null,
+        muniCode: muniCode5,
+        muniCodeRaw,
         muniName: resolvedMuniName,
         usedMuniFallback: false,
         usedPrefFallback: false,
@@ -388,7 +492,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         lastError: message,
         modeUsed,
         prefName: resolvedPrefName,
-        muniCode: muniCode ?? null,
+        muniCode: muniCode5,
         muniName: resolvedMuniName,
         usedMuniFallback: false,
         usedPrefFallback: false,
@@ -421,6 +525,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           notes: true,
           source_updated_at: true,
           updated_at: true,
+          shelter_fields: true, // Required for designatedOnly filtering in applyFilters
         },
       });
 
@@ -431,47 +536,156 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         })
         .filter((v): v is NonNullable<typeof v> => Boolean(v));
 
-      return applyFilters(sites);
+      if (debugEnabled) {
+        console.log(`[Search] Raw Prisma returned ${rawSites.length}, after coord normalization: ${sites.length}`);
+        if (rawSites.length > 0 && sites.length === 0) {
+          console.log('[Search] Sample raw site:', JSON.stringify(rawSites[0], null, 2));
+        }
+      }
+
+      const filtered = applyFilters(sites);
+      if (debugEnabled && sites.length > 0 && filtered.length === 0) {
+        console.log(`[Search] applyFilters eliminated all ${sites.length} sites`);
+      }
+      return filtered;
     };
 
     const runQuery = async (whereClause: any, step: string) => {
+      if (debugEnabled) {
+        console.log(`[Search][${step}] WHERE clause:`, JSON.stringify(whereClause, null, 2));
+      }
       const results = await fetchSites(whereClause);
       recordTrace(step, results.length);
+      if (debugEnabled) {
+        console.log(`[Search][${step}] Returned ${results.length} results`);
+      }
       return results;
     };
 
     const baseClauses = baseWhere;
+    // Modified: use OR with all variants
     const whereMuniCode = buildWhere([...baseClauses, ...(muniCodeClause ? [muniCodeClause] : [])]);
     const whereMuniName = muniNameClause ? buildWhere([...baseClauses, muniNameClause]) : null;
     const wherePrefOnly = buildWhere(baseClauses);
 
     let filteredSites: any[] = [];
-    if (muniCode) {
-      filteredSites = await runQuery(whereMuniCode, 'muni-code');
+    let usedCentroidFallback = false;
+
+    if (muniCodeRaw) {
+      // Step 1: Try matching by muni_code column (most precise)
+      filteredSites = await runQuery(whereMuniCode, 'db:muniCode');
+
+      // Step 2: If no result, try matching by municipality NAME in text fields
       if (filteredSites.length === 0 && whereMuniName) {
         usedMuniFallback = true;
-        filteredSites = await runQuery(whereMuniName, 'muni-name');
+        filteredSites = await runQuery(whereMuniName, 'db:muniName');
       }
+
+      // Step 3: If still no result, try prefecture-only match
       if (filteredSites.length === 0) {
         usedPrefFallback = true;
-        filteredSites = await runQuery(wherePrefOnly, 'pref-only');
+        filteredSites = await runQuery(wherePrefOnly, 'db:prefOnly');
+      }
+
+      // Step 4: If still no results from Prisma queries, try raw SQL fallback
+      // This handles cases where pref_code/muni_code columns are null but address/pref_city contain the data
+      if (filteredSites.length === 0) {
+        recordTrace('fallback:rawSearch', 0);
+        if (debugEnabled) {
+          console.log(`[Search] Prisma AREA queries returned 0, trying raw SQL fallback with prefName=${resolvedPrefName}, muniName=${resolvedMuniName}`);
+        }
+        try {
+          const rawResults = await fallbackSearchShelters(prisma, {
+            prefCode: prefCode ?? null,
+            prefName: resolvedPrefName,
+            muniName: resolvedMuniName,
+            muniCode: muniCode5,
+            q: q ?? null,
+            limit: limit ?? 50,
+            offset: offset ?? 0,
+          });
+          filteredSites = applyFilters(rawResults);
+          recordTrace('fallback:rawSearch-results', filteredSites.length);
+          if (debugEnabled) {
+            console.log(`[Search] Raw SQL fallback returned ${filteredSites.length} results`);
+          }
+        } catch (e) {
+          if (debugEnabled) console.error('[Search] Raw SQL fallback failed:', e);
+        }
+      }
+
+      // Step 5: Last resort - if AREA search failed entirely, try LOCATION fallback
+      // using approximate centroid for the prefecture (hardcoded major cities)
+      if (filteredSites.length === 0 && prefCode) {
+        usedCentroidFallback = true;
+        const centroid = getPrefectureCentroid(prefCode);
+        if (centroid) {
+          recordTrace('fallback:centroid-location', 0);
+          if (debugEnabled) {
+            console.log(`[Search] AREA returned 0, falling back to LOCATION at centroid: ${JSON.stringify(centroid)}`);
+          }
+          try {
+            const locationFallback = await fallbackNearbyShelters(prisma, {
+              lat: centroid.lat,
+              lon: centroid.lon,
+              hazardTypes: hazardFilters,
+              limit: limit ?? 50,
+              radiusKm: 30,
+              hideIneligible,
+              includeDiagnostics: debugEnabled,
+            });
+            filteredSites = applyFilters(locationFallback.sites ?? []);
+            recordTrace('fallback:centroid-results', filteredSites.length);
+          } catch (e) {
+            if (debugEnabled) console.error('[Search] Centroid fallback failed:', e);
+          }
+        }
       }
     } else {
-      filteredSites = await runQuery(wherePrefOnly, 'pref-only');
+      filteredSites = await runQuery(wherePrefOnly, 'db:prefOnly');
+
+      // Also fallback for prefix-only query if 0 results
+      if (filteredSites.length === 0) {
+        recordTrace('fallback:rawSearch', 0);
+        if (debugEnabled) {
+          console.log(`[Search] Pref-only Prisma returned 0, trying raw SQL fallback`);
+        }
+        try {
+          const rawResults = await fallbackSearchShelters(prisma, {
+            prefCode: prefCode ?? null,
+            prefName: resolvedPrefName,
+            muniName: null,
+            muniCode: null,
+            q: q ?? null,
+            limit: limit ?? 50,
+            offset: offset ?? 0,
+          });
+          filteredSites = applyFilters(rawResults);
+          recordTrace('fallback:rawSearch-results', filteredSites.length);
+        } catch (e) {
+          if (debugEnabled) console.error('[Search] Raw SQL fallback failed:', e);
+        }
+      }
     }
 
     sortAreaSites(filteredSites);
 
+    // Check if DB is genuinely empty
+    const totalCount = diagnostics?.total ?? -1;
+    const fetchStatus = totalCount === 0 ? 'EMPTY_DB' : 'OK';
+
     const payload = {
-      fetchStatus: 'OK',
+      fetchStatus,
       updatedAt: nowIso(),
       lastError: null,
-      modeUsed,
+      modeUsed: usedCentroidFallback ? 'LOCATION' : modeUsed,
       prefName: resolvedPrefName,
-      muniCode: muniCode ?? null,
+      muniCode: muniCode5,
+      muniCodeRaw,
       muniName: resolvedMuniName,
       usedMuniFallback,
       usedPrefFallback,
+      usedCentroidFallback,
       sites: filteredSites,
       items: filteredSites,
     } as any;
@@ -486,7 +700,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         lastError: message,
         modeUsed,
         prefName: resolvedPrefName,
-        muniCode: muniCode ?? null,
+        muniCode: muniCode5,
         muniName: resolvedMuniName,
         usedMuniFallback,
         usedPrefFallback: false,
@@ -519,8 +733,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
 
       let filteredSites: any[] = [];
-      if (muniCode) {
-        filteredSites = await runFallback({ muniCode: muniCode ?? null, muniName: null }, 'muni-code');
+      if (muniCodeRaw) {
+        // Fallback supports one code. Pass primary (prefer 5 digit).
+        filteredSites = await runFallback({ muniCode: muniCode5, muniName: null }, 'muni-code');
         if (filteredSites.length === 0 && resolvedMuniName) {
           usedMuniFallback = true;
           filteredSites = await runFallback({ muniCode: null, muniName: resolvedMuniName }, 'muni-name');
@@ -541,7 +756,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         lastError: null,
         modeUsed,
         prefName: resolvedPrefName,
-        muniCode: muniCode ?? null,
+        muniCode: muniCode5,
         muniName: resolvedMuniName,
         usedMuniFallback,
         usedPrefFallback,
@@ -558,7 +773,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         lastError: message,
         modeUsed,
         prefName: resolvedPrefName,
-        muniCode: muniCode ?? null,
+        muniCode: muniCode5,
         muniName: resolvedMuniName,
         usedMuniFallback,
         usedPrefFallback: false,

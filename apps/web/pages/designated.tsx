@@ -3,7 +3,9 @@ import Link from 'next/link';
 import useSWR from 'swr';
 import { useMemo, useState } from 'react';
 import { hazardKeys, hazardLabels } from '@jp-evac/shared';
+import { normalizeMuniCode } from 'lib/muni-helper';
 import MapView from '../components/MapView';
+import { DataFetchDetails } from '../components/DataFetchDetails';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -50,24 +52,42 @@ export default function DesignatedPage() {
   const [cityText, setCityText] = useState('');
   const [q, setQ] = useState('');
 
+  const municipalitiesUrl = prefCode ? `/api/ref/municipalities?prefCode=${prefCode}` : null;
+  const { data: municipalitiesData } = useSWR(municipalitiesUrl, fetcher, { dedupingInterval: 60_000 });
+  const municipalities: Array<{ muniCode: string; muniName: string }> = municipalitiesData?.municipalities ?? [];
+
   const queryUrl = useMemo(() => {
     const params = new URLSearchParams();
     if (prefCode) params.set('prefCode', prefCode);
-    if (cityText.trim()) params.set('cityText', cityText.trim());
+
+    const trimmedCity = cityText.trim();
+    if (trimmedCity) {
+      // Try to find matching municipality to send strict code
+      const match = municipalities.find((m) => m.muniName === trimmedCity);
+      if (match) {
+        const normalized = normalizeMuniCode(match.muniCode);
+        if (normalized) params.set('muniCode', normalized);
+      } else {
+        params.set('cityText', trimmedCity);
+      }
+    }
+
     if (q.trim()) params.set('q', q.trim());
     params.set('designatedOnly', 'true');
     params.set('includeHazardless', 'true');
     params.set('limit', '50');
     if (params.toString().length === 0) return null;
     return `/api/shelters/search?${params.toString()}`;
-  }, [prefCode, cityText, q]);
+  }, [prefCode, cityText, q, municipalities]);
 
   const { data, isLoading } = useSWR(queryUrl, fetcher, { dedupingInterval: 10_000 });
   const items: ShelterListItem[] = data?.sites ?? [];
   const sitesWithCoords = items.filter((site) => Number.isFinite(site.lat) && Number.isFinite(site.lon));
   const noCoordCount = Math.max(0, items.length - sitesWithCoords.length);
   const { data: countsData } = useSWR(debugEnabled ? '/api/shelters/designated-counts' : null, fetcher, { dedupingInterval: 60_000 });
+  const countsError = countsData?.ok === false;
   const zeroPrefectures: Array<{ prefCode: string; prefName: string }> = countsData?.zeroPrefectures ?? [];
+
 
   return (
     <div className="space-y-6">
@@ -75,9 +95,15 @@ export default function DesignatedPage() {
         <title>指定避難所 | 全国避難場所ファインダー</title>
       </Head>
 
+      {countsError && (
+        <div className="rounded-lg border bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <span className="font-semibold">注意:</span> カウントデータの取得に失敗しました。一部の情報が表示されない場合があります。
+        </div>
+      )}
+
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">指定避難所（参考）</h1>
+          <h1 className="text-2xl font-bold">指定避難所一覧（参考）</h1>
           <div className="mt-1 text-sm text-gray-600">
             緊急時の最適化は行っていない参考リストです。詳細は自治体の公式情報をご確認ください。
           </div>
@@ -86,6 +112,19 @@ export default function DesignatedPage() {
           緊急時は避難場所検索へ
         </Link>
       </div>
+
+      {!isLoading && sitesWithCoords.length > 0 && (
+        <section className="rounded-lg bg-white p-2 shadow md:p-3">
+          <MapView
+            sites={sitesWithCoords as any}
+            center={{
+              lat: sitesWithCoords[0]?.lat ?? 35.681236,
+              lon: sitesWithCoords[0]?.lon ?? 139.767125,
+            }}
+            onSelect={() => { }}
+          />
+        </section>
+      )}
 
       <section className="rounded-2xl bg-white p-4 shadow">
         <div className="grid gap-3 md:grid-cols-3">
@@ -111,7 +150,13 @@ export default function DesignatedPage() {
               value={cityText}
               onChange={(e) => setCityText(e.target.value)}
               placeholder="例: 渋谷区"
+              list="muni-options"
             />
+            <datalist id="muni-options">
+              {municipalities.map((m) => (
+                <option key={m.muniCode} value={m.muniName} />
+              ))}
+            </datalist>
           </label>
           <label className="text-sm">
             <div className="mb-1 text-xs text-gray-600">キーワード（任意）</div>
@@ -139,18 +184,7 @@ export default function DesignatedPage() {
             0件の都道府県: {zeroPrefectures.map((p) => p.prefName).join('、')}
           </div>
         )}
-        {!isLoading && sitesWithCoords.length > 0 && (
-          <div className="mt-3">
-            <MapView
-              sites={sitesWithCoords as any}
-              center={{
-                lat: sitesWithCoords[0]?.lat ?? 35.681236,
-                lon: sitesWithCoords[0]?.lon ?? 139.767125,
-              }}
-              onSelect={() => {}}
-            />
-          </div>
-        )}
+
         {items.length > 0 && (
           <ul className="mt-3 space-y-2">
             {items.map((site) => {
@@ -182,6 +216,13 @@ export default function DesignatedPage() {
             })}
           </ul>
         )}
+      </section>
+
+      <section className="rounded-lg bg-white p-5 shadow">
+        <h2 className="text-lg font-semibold">条件検索</h2>
+        <div className="mt-3 rounded border bg-gray-100 p-4 text-center text-sm text-gray-600">
+          この条件検索は準備中です。現在は地図中心検索をご利用ください（<Link href="/list" className="text-blue-600 hover:underline">/list</Link>）。
+        </div>
       </section>
     </div>
   );

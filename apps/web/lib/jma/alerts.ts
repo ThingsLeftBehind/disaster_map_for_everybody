@@ -91,9 +91,50 @@ function groupByKind(items: WarningItem[]): Map<string, WarningItem[]> {
   return map;
 }
 
+
+// Helper for normalizing full-width chars
+function normalizeString(s: string | null | undefined): string {
+  if (!s) return '';
+  // Normalize full-width alphanumeric to half-width
+  const half = s.replace(/[！-～]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+  return half.trim().replace(/\s+/g, ' ');
+}
+
+export function uniqByKey<T>(items: T[], keyFn: (item: T) => string): T[] {
+  const m = new Map<string, T>();
+  for (const it of items) {
+    const k = keyFn(it);
+    if (!m.has(k)) m.set(k, it);
+  }
+  return Array.from(m.values());
+}
+
+export function deduplicateWarnings(items: WarningItem[], defaultAreaCode?: string | null): WarningItem[] {
+  return uniqByKey(items, (item) => {
+    // Stable key construction
+    const kindCode = (item as any).kindCode || (item as any).code || '';
+    const kind = normalizeString(item.kind);
+    const status = normalizeString(item.status);
+    const level = (item as any).level || '';
+
+    // key = `${areaCode}|${kindCode}|${kind}|${status}|${level}`
+    // If kindCode matches, we are confident. If not, we rely on kind string.
+    return `${defaultAreaCode ?? ''}|${kindCode}|${kind}|${status}|${level}`;
+  });
+}
+
+// Helper to dedupe purely by 'kind' label for display (e.g. chips)
+export function deduplicateKindsForDisplay(items: WarningItem[]): WarningItem[] {
+  return uniqByKey(items, (item) => normalizeString(item.kind));
+}
+
 export function buildWarningBuckets(items: WarningItem[]): WarningBuckets {
+  // Deduplicate first!
+  const prevCount = items.length;
+  const uniqueItems = deduplicateWarnings(items);
+
   const groups: WarningGroup[] = [];
-  const grouped = groupByKind(items);
+  const grouped = groupByKind(uniqueItems);
   for (const [kind, groupItems] of grouped.entries()) {
     if (groupItems.length === 0) continue;
     const representative = pickRepresentative(groupItems);

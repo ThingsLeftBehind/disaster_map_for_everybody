@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { nanoid } from 'nanoid';
 import { decodeTransferCode, encodeTransferCode } from '../../lib/client/transfer';
+import { loadSavedShelters, subscribeSavedShelters } from 'lib/shelters/savedShelters';
 
 type DeviceState = {
   deviceId: string;
@@ -213,6 +214,8 @@ export function DeviceProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+
+
   useEffect(() => {
     return () => {
       if (pendingCheckinTimerRef.current) window.clearTimeout(pendingCheckinTimerRef.current);
@@ -274,11 +277,31 @@ export function DeviceProvider({ children }: { children: React.ReactNode }) {
     void syncFromServer();
   }, [syncFromServer]);
 
+  const lastSyncTimeRef = useRef<number>(0);
+  const syncCooldownUntilRef = useRef<number>(0);
+  const hasInitialSyncRef = useRef<boolean>(false);
+
   const syncToServer = useCallback(
-    async (next: DeviceState) => {
+    async (next: DeviceState, force: boolean = false) => {
       if (!online) return;
+      const now = Date.now();
+
+      // Check cooldown (e.g. from previous 429)
+      if (now < syncCooldownUntilRef.current) {
+        // console.log('DeviceProvider: Sync suppressed by cooldown');
+        return;
+      }
+
+      // If not forced, check basic throttling (e.g. max once per 10s unless critical?)
+      // We want to avoid spamming on every small state change if they happen rapidly.
+      // But we do want to save. Let's rely on the fact that `device` update triggers this.
+      // We'll add a small debounce in the effect, but here we just check global frequency.
+      if (!force && now - lastSyncTimeRef.current < 2000) {
+        return;
+      }
+
       try {
-        await safeFetchJson('/api/store/device', {
+        const res = await fetch('/api/store/device', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
@@ -289,17 +312,38 @@ export function DeviceProvider({ children }: { children: React.ReactNode }) {
             recent: next.recent,
           }),
         });
-      } catch {
-        // ignore
+
+        if (res.status === 429) {
+          console.warn('DeviceProvider: 429 Rate Limited. Backing off for 60s.');
+          syncCooldownUntilRef.current = now + 60_000;
+          return;
+        }
+
+        if (!res.ok) {
+          // On other errors, back off briefly (10s)
+          syncCooldownUntilRef.current = now + 10_000;
+          return;
+        }
+
+        // Success
+        lastSyncTimeRef.current = now;
+        syncCooldownUntilRef.current = 0; // Clear cooldown on success
+      } catch (e) {
+        // Network error? Back off 10s
+        syncCooldownUntilRef.current = now + 10_000;
       }
     },
     [online]
   );
 
-  useEffect(() => {
-    if (!online || !device) return;
-    void syncToServer(device);
-  }, [device, online, syncToServer]);
+  // REMOVED: Redundant useEffect that triggered syncToServer on every device state change.
+  // This was causing potential infinite loops or double-posting.
+  // Verification: updateDevice() already calls syncToServer() explicitly.
+  // Initial sync from server is handled by syncFromServer().
+  // If external updates (like subscribeSavedShelters) occur, we should decide if we want to sync them.
+  // For now, we rely on user actions via updateDevice to persist.
+  // If truly needed, we would need a sophisticated debounce that doesn't trigger on server-echoed data.
+
 
   const updateDevice = useCallback(
     async (patch: Partial<DeviceState>) => {
@@ -329,6 +373,15 @@ export function DeviceProvider({ children }: { children: React.ReactNode }) {
     },
     [deviceId, persistLocal, syncToServer]
   );
+
+  useEffect(() => {
+    return subscribeSavedShelters(() => {
+      const latestIds = loadSavedShelters();
+      void updateDevice({
+        favorites: { shelterIds: latestIds },
+      });
+    });
+  }, [updateDevice]);
 
   const addSavedArea = useCallback(
     async (area: Omit<DeviceState['savedAreas'][number], 'id' | 'addedAt'>) => {

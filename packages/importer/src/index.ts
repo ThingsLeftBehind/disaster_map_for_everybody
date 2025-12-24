@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { parse } from 'csv-parse';
-import { prisma } from '@jp-evac/db';
+import { prisma, Prisma } from '@jp-evac/db';
 import { hazardKeys, HazardKey } from '@jp-evac/shared';
 import crypto from 'crypto';
 import { z } from 'zod';
@@ -93,10 +93,30 @@ const spaceSchema = z.object({
   source_updated_at: z.string().optional(),
 });
 
+const municipalitiesFile = path.join(baseDir, 'generated', 'municipalities.json');
+
+async function loadMunicipalitiesMap() {
+  try {
+    const content = await fs.promises.readFile(municipalitiesFile, 'utf-8');
+    const json = JSON.parse(content) as Array<{ prefCode: string; prefName: string; muniCode: string; muniName: string }>;
+    const map = new Map<string, { prefCode: string; muniCode: string }>();
+    for (const item of json) {
+      if (!item.prefName || !item.muniName) continue;
+      const key = `${item.prefName}${item.muniName}`;
+      map.set(key, { prefCode: item.prefCode, muniCode: item.muniCode.slice(0, 5) }); // ensure 5 digit
+    }
+    return map;
+  } catch (e) {
+    console.warn('Failed to load municipalities.json', e);
+    return new Map();
+  }
+}
+
 async function importData() {
-  const [spaceRows, shelterRows] = await Promise.all([
+  const [spaceRows, shelterRows, muniMap] = await Promise.all([
     readCsv(evacSpaceFile),
     readCsv(evacShelterFile),
+    loadMunicipalitiesMap(),
   ]);
 
   const sheltersByCommonId: Record<string, Record<string, string>> = {};
@@ -130,11 +150,27 @@ async function importData() {
     const existing = mapped.common_id
       ? await prisma.evac_sites.findUnique({ where: { common_id: mapped.common_id } })
       : await prisma.evac_sites.findFirst({
-          where: {
-            name: parsed.data.name,
-            address: parsed.data.address,
-          },
-        });
+        where: {
+          name: parsed.data.name,
+          address: parsed.data.address,
+        },
+      });
+
+    let pref_code = null;
+    let muni_code = null;
+    if (parsed.data.pref_city) {
+      // Direct lookup
+      const hit = muniMap.get(parsed.data.pref_city);
+      if (hit) {
+        pref_code = hit.prefCode;
+        muni_code = hit.muniCode;
+      } else {
+        // Try fallback if pref_city has extra chars?
+        // E.g. "東京都板橋区..." -> startswith check is too expensive for map.
+        // But maybe we iterate keys? No.
+        // Just rely on exact match for now as typical data matches.
+      }
+    }
 
     const data = {
       common_id: parsed.data.common_id,
@@ -146,8 +182,10 @@ async function importData() {
       is_same_address_as_shelter: !!parsed.data.is_same_address_as_shelter,
       hazards,
       notes: parsed.data.notes,
-      shelter_fields: shelter_fields ?? null,
+      shelter_fields: shelter_fields ?? Prisma.DbNull,
       source_updated_at: parseDate(parsed.data.source_updated_at),
+      pref_code,
+      muni_code,
     };
 
     if (existing) {

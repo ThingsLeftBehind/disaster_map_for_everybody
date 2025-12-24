@@ -51,6 +51,145 @@ const WARNING_CODE_SEVERITY: Record<string, '警報' | '注意報'> = {
   '21': '注意報',
 };
 
+// Improve AreaIndex to track types or just use logic
+// We'll modify readAreaIndex to return more info or just use raw JSON loading in helper
+// Actually modifying current global cache structure might be risky if used elsewhere (logic seems local though)
+// Let's create a new helper `getAreaHierarchy` that reuses the file read.
+
+async function getAreaConst(): Promise<AreaConst | null> {
+  return readJsonFile<AreaConst>(jmaAreaConstPath());
+}
+
+async function buildForecastAreaBreakdown(
+  area: string,
+  debug: boolean = false
+): Promise<{
+  breakdown: Record<string, { name: string; items: NormalizedWarningItem[] }>;
+  muniMap: Record<string, string>;
+} | null> {
+  // Only process for prefecture level
+  if (area.length !== 6 || !area.endsWith('0000')) return null;
+
+  const [warningJson, areaConst] = await Promise.all([
+    readJsonFile<any>(jmaWebJsonWarningPath(area)),
+    getAreaConst(),
+  ]);
+
+  if (!warningJson || !areaConst) return null;
+
+  // Build local index for hierarchy from this const file
+  const index = new Map<string, AreaNode>();
+  const class10s = new Set(Object.keys(areaConst.class10s ?? {}));
+  const class20s = new Set(Object.keys(areaConst.class20s ?? {}));
+
+  const push = (rec?: Record<string, AreaNode>) => {
+    if (!rec) return;
+    for (const [k, v] of Object.entries(rec)) index.set(k, v);
+  };
+  push(areaConst.offices);
+  push(areaConst.centers);
+  push(areaConst.class10s);
+  push(areaConst.class15s);
+  push(areaConst.class20s);
+
+  const breakdown: Record<string, { name: string; items: NormalizedWarningItem[] }> = {};
+  const muniMap: Record<string, string> = {};
+
+  // 1. Identify relevant Forecast Areas (Class10s that belong to this Pref)
+  const walk = (node: any) => {
+    if (!node) return;
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+    if (typeof node !== 'object') return;
+    const code = String((node as any).code);
+
+    // Check if this node is a Class10
+    if (class10s.has(code)) {
+      // Collect warnings
+      const rawItems: NormalizedWarningItem[] = [];
+      const warnings = (node as any).warnings;
+      if (Array.isArray(warnings)) {
+        for (const entry of warnings) {
+          const status = typeof (entry as any).status === 'string' ? String((entry as any).status).trim() : null;
+          if (shouldSkipWarningStatus(status)) continue;
+          const warningCodeRaw = (entry as any).code;
+          const warningCode = warningCodeRaw !== undefined && warningCodeRaw !== null ? String(warningCodeRaw).padStart(2, '0') : null;
+          const severity = inferWarningSeverity(entry, status, warningCode);
+          const hints = collectWarningHints(entry);
+          const base = inferWarningBase(warningCode, hints, severity);
+          const kind = buildWarningKind(base, severity);
+          const id = hashId(`${kind}|${status ?? ''}`);
+
+          rawItems.push({ id, kind, status, source: 'webjson' });
+        }
+      }
+
+      // Accumulate raw items; deduplication is done in final pass
+      if (!breakdown[code]) {
+        const name = index.get(code)?.name ?? code;
+        breakdown[code] = { name, items: [] };
+      }
+      breakdown[code].items.push(...rawItems);
+    }
+
+    for (const v of Object.values(node)) walk(v);
+  };
+
+  walk(warningJson);
+
+  // 2. Final Deduplication per Area Code
+  for (const code of Object.keys(breakdown)) {
+    const rawItems = breakdown[code].items;
+    const uniqueMap = new Map<string, NormalizedWarningItem>();
+    const duplicates: string[] = [];
+
+    for (const item of rawItems) {
+      // Key: Kind only (forcing single status per kind)
+      // This ensures "Wave Advisory" appears only once, whether "announced" or "continued".
+      const key = item.kind;
+      if (uniqueMap.has(key)) {
+        const existing = uniqueMap.get(key)!;
+        if (debug) duplicates.push(`${key} (${item.status}) vs existing (${existing.status})`);
+
+        // Prefer item with status over item without status
+        // e.g. "Advisory (Announced)" should replace "Advisory (null)"
+        if (!existing.status && item.status) {
+          uniqueMap.set(key, item);
+        }
+      } else {
+        uniqueMap.set(key, item);
+      }
+    }
+
+    const distinct = Array.from(uniqueMap.values());
+    if (debug && duplicates.length > 0) {
+      console.warn(`[JMA] Dedupe removed ${duplicates.length} items in area ${code}:`, duplicates.slice(0, 3));
+    }
+
+    breakdown[code].items = distinct;
+  }
+
+  // 2. Build Muni -> Forecast Area Map
+  const prefPrefix = area.slice(0, 2);
+  for (const c20 of class20s) {
+    if (!c20.startsWith(prefPrefix)) continue;
+    let cursor: string | undefined = c20;
+    while (cursor) {
+      if (class10s.has(cursor)) {
+        muniMap[c20] = cursor;
+        break;
+      }
+      const node = index.get(cursor);
+      cursor = node?.parent ? String(node.parent) : undefined;
+      if (cursor === area || !cursor) break;
+    }
+  }
+
+  return { breakdown, muniMap };
+}
+
 let cachedAreaIndex: Map<string, AreaNode> | null = null;
 let cachedAreaIndexAt = 0;
 
@@ -280,9 +419,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const data = await getJmaWarnings(parsed.data.area);
-    const tokyoGroups = await buildTokyoGroups(parsed.data.area);
-    const payload = { ...data, tokyoGroups: tokyoGroups?.groups ?? null };
+    const [data, tokyoGroups, subAreaInfo] = await Promise.all([
+      getJmaWarnings(parsed.data.area),
+      buildTokyoGroups(parsed.data.area),
+      buildForecastAreaBreakdown(parsed.data.area, process.env.NODE_ENV !== 'production' && req.query.debug === '1'),
+    ]);
+
+
+
+    const payload = {
+      ...data,
+      tokyoGroups: tokyoGroups?.groups ?? null,
+      breakdown: subAreaInfo?.breakdown ?? null,
+      muniMap: subAreaInfo?.muniMap ?? null
+    };
+
     setCached(parsed.data.area, payload);
     return res.status(200).json(payload);
   } catch (error) {
@@ -300,6 +451,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         confidenceNotes: ['internal error; serving last cached snapshot if available'],
         items: snap?.items ?? [],
         tokyoGroups: null,
+        breakdown: null,
+        muniMap: null,
       };
       setCached(parsed.data.area, payload);
       return res.status(200).json(payload);
@@ -314,9 +467,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         confidenceNotes: ['internal error'],
         items: [],
         tokyoGroups: null,
+        breakdown: null,
+        muniMap: null,
       };
       setCached(parsed.data.area, payload);
       return res.status(200).json(payload);
     }
   }
 }
+

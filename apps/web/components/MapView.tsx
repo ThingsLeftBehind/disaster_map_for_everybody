@@ -36,6 +36,8 @@ interface Props {
   checkinPins?: CheckinPin[] | null;
   checkinModerationPolicy?: { reportCautionThreshold: number; reportHideThreshold: number } | null;
   onReportCheckin?: ((pinId: string) => void) | null;
+  isFavorite?: (id: string) => boolean;
+  onToggleFavorite?: (id: string, isFavorite: boolean) => void;
 }
 
 export default function MapView({
@@ -51,6 +53,8 @@ export default function MapView({
   checkinPins,
   checkinModerationPolicy,
   onReportCheckin,
+  isFavorite,
+  onToggleFavorite,
 }: Props) {
   const sitesById = useMemo(() => new Map(sites.map((s) => [s.id, s])), [sites]);
   const markers = useMemo(
@@ -85,6 +89,8 @@ export default function MapView({
       checkinPins={checkinPins ?? null}
       checkinModerationPolicy={checkinModerationPolicy ?? null}
       onReportCheckin={onReportCheckin ?? null}
+      isFavorite={isFavorite}
+      onToggleFavorite={onToggleFavorite}
     />
   );
 }

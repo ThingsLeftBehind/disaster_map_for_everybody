@@ -1,75 +1,101 @@
+import { useState, useRef, useEffect } from 'react';
 import { buildLineShareUrl, buildThreadsShareUrl, buildXShareUrl } from '../lib/client/share';
+import classNames from 'classnames';
 
-export default function ShareMenu({
-  shareUrl,
-  getShareText,
-}: {
-  shareUrl: string | null;
-  getShareText: () => string;
-}) {
-  if (!shareUrl) return null;
+type ShareMenuProps = {
+    shareUrl: string | null;
+    getShareText: () => string;
+};
 
-  const open = (url: string) => {
-    if (typeof window === 'undefined') return;
-    window.open(url, '_blank', 'noopener,noreferrer');
-  };
+export default function ShareMenu({ shareUrl, getShareText }: ShareMenuProps) {
+    const [open, setOpen] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
 
-  const copy = async () => {
-    const text = getShareText();
-    try {
-      if (typeof navigator === 'undefined' || !navigator.clipboard) throw new Error('clipboard not available');
-      await navigator.clipboard.writeText(`${text}\n${shareUrl}`);
-      alert('コピーしました');
-    } catch {
-      alert('コピーに失敗しました');
-    }
-  };
+    // Close on outside click
+    useEffect(() => {
+        if (!open) return;
+        const handler = (e: MouseEvent | TouchEvent) => {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node) && !containerRef.current?.contains(e.target as Node)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        document.addEventListener('touchstart', handler);
+        return () => {
+            document.removeEventListener('mousedown', handler);
+            document.removeEventListener('touchstart', handler);
+        };
+    }, [open]);
 
-  const shareNative = async () => {
-    try {
-      if (typeof navigator === 'undefined') return;
-      const nav = navigator as Navigator & { share?: (data: { text?: string; url?: string }) => Promise<void> };
-      if (!nav.share) {
-        await copy();
-        return;
-      }
-      await nav.share({ text: getShareText(), url: shareUrl });
-    } catch {
-      // ignore
-    }
-  };
+    // Simple viewport awareness: if it overflows right, shift left. 
+    // (Usually right-aligned absolute positioning works well for right-side menus)
+    // We'll use right-0 by default.
 
-  return (
-    <details className="relative" onClick={(e) => e.stopPropagation()}>
-      <summary className="cursor-pointer list-none rounded bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-200">
-        共有
-      </summary>
-      <div className="absolute right-0 z-10 mt-2 w-52 rounded-xl border bg-white p-2 shadow">
-        <button
-          className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-gray-50"
-          onClick={() => open(buildLineShareUrl(shareUrl, getShareText()))}
-        >
-          LINE
-        </button>
-        <button
-          className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-gray-50"
-          onClick={() => open(buildXShareUrl(shareUrl, getShareText()))}
-        >
-          X（Twitter）
-        </button>
-        <button
-          className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-gray-50"
-          onClick={() => open(buildThreadsShareUrl(shareUrl, getShareText()))}
-        >
-          Threads
-        </button>
-        <button className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-gray-50" onClick={shareNative}>
-          Instagram（端末共有）
-        </button>
-        <button className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-gray-50" onClick={copy}>
-          コピー
-        </button>
-      </div>
-    </details>
-  );
+    const handleCopy = async () => {
+        if (!shareUrl) return;
+        try {
+            await navigator.clipboard.writeText(`${getShareText()}\n${shareUrl}`);
+            alert('コピーしました');
+            setOpen(false);
+        } catch {
+            alert('コピーできませんでした');
+        }
+    };
+
+    const shareText = getShareText();
+
+    return (
+        <div className="relative inline-block" ref={containerRef}>
+            <button
+                onClick={() => setOpen(!open)}
+                className="rounded bg-white px-2 py-1 text-[11px] font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-50"
+            >
+                共有
+            </button>
+            {open && shareUrl && (
+                <div
+                    ref={menuRef}
+                    className="absolute right-0 top-full mt-1 w-48 z-50 rounded-lg border bg-white p-2 shadow-lg"
+                    style={{ minWidth: 'max-content' }}
+                >
+                    <div className="flex flex-col gap-1">
+                        <a
+                            href={buildLineShareUrl(shareUrl, shareText)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block rounded px-3 py-2 text-sm hover:bg-green-50 text-gray-800"
+                            onClick={() => setOpen(false)}
+                        >
+                            LINEで送る
+                        </a>
+                        <a
+                            href={buildXShareUrl(shareUrl, shareText)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block rounded px-3 py-2 text-sm hover:bg-slate-50 text-gray-800"
+                            onClick={() => setOpen(false)}
+                        >
+                            X (Twitter)でポスト
+                        </a>
+                        <a
+                            href={buildThreadsShareUrl(shareUrl, shareText)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block rounded px-3 py-2 text-sm hover:bg-slate-50 text-gray-800"
+                            onClick={() => setOpen(false)}
+                        >
+                            Threadsでシェア
+                        </a>
+                        <button
+                            onClick={handleCopy}
+                            className="block w-full text-left rounded px-3 py-2 text-sm hover:bg-gray-50 text-gray-800"
+                        >
+                            コピー
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 }

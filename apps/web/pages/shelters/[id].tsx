@@ -6,11 +6,13 @@ import { useEffect, useMemo, useState } from 'react';
 import classNames from 'classnames';
 import { hazardKeys, hazardLabels } from '@jp-evac/shared';
 import { useDevice } from '../../components/device/DeviceProvider';
+import { HazardChips } from '../../components/HazardChips';
 import MapView from '../../components/MapView';
 import ShareMenu from '../../components/ShareMenu';
 import { buildUrl, formatShelterShareText } from '../../lib/client/share';
 import { loadLastLocation, type Coords } from '../../lib/client/location';
 import { formatPrefMuniLabel, useAreaName } from '../../lib/client/areaName';
+import { getShelterFromStorage, removeShelterFromStorage, saveShelterToStorage, type SavedShelter } from '../../lib/client/shelterStorage';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -21,9 +23,12 @@ function formatUpdatedAt(updatedAt: string | null | undefined): string {
   return new Date(t).toLocaleString();
 }
 
-function formatPrefCityLabel(value: string | null | undefined): string {
+function formatPrefCityLabel(value: string | null | undefined, address?: string | null): string {
+  const addr = (address ?? '').trim();
+  if (addr) return addr;
+
   const text = (value ?? '').trim();
-  if (!text) return '所在地不明';
+  if (!text) return '住所不明';
   const m = text.match(/^(.*?[都道府県])(.*)$/);
   if (!m) {
     const muniMatch = text.match(/^(.*?[市区町村])/);
@@ -147,7 +152,14 @@ export default function ShelterDetailPage() {
   const communityRefresh = device?.settings?.powerSaving || device?.settings?.lowBandwidth ? 0 : 30_000;
 
   const { data: siteData } = useSWR(id ? `/api/shelters/${id}` : null, fetcher, { dedupingInterval: 10_000 });
-  const site = siteData?.site as any;
+  const site: any = useMemo(() => {
+    if (siteData?.site) return siteData.site;
+    if (id && typeof id === 'string') {
+      const local = getShelterFromStorage(id);
+      if (local) return local;
+    }
+    return null;
+  }, [siteData, id]);
 
   const { data: community, mutate: mutateCommunity } = useSWR(id ? `/api/store/shelter?id=${id}` : null, fetcher, { refreshInterval: communityRefresh });
 
@@ -249,9 +261,9 @@ export default function ShelterDetailPage() {
             ← 一覧へ
           </Link>
           <h1 className="mt-2 text-2xl font-bold">{site?.name ?? '読み込み中...'}</h1>
-          <div className="mt-1 text-sm text-gray-700">{formatPrefCityLabel(site?.pref_city)}</div>
+          <div className="mt-1 text-sm text-gray-700">{formatPrefCityLabel(site?.pref_city, site?.address)}</div>
         </div>
-	        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => {
               if (!id) return;
@@ -262,115 +274,106 @@ export default function ShelterDetailPage() {
               }
               const next = isFavorite ? current.filter((s) => s !== id) : [id, ...current];
               void updateDevice({ favorites: { shelterIds: Array.from(new Set(next)).slice(0, 5) } as any } as any);
+
+              // Offline Storage
+              if (!isFavorite && site) { // Saving
+                saveShelterToStorage({
+                  id: id,
+                  name: site.name,
+                  address: site.address,
+                  pref_city: site.pref_city,
+                  lat: site.lat,
+                  lon: site.lon,
+                  hazards: site.hazards,
+                  updatedAt: new Date().toISOString(),
+                  is_same_address_as_shelter: Boolean(site.is_same_address_as_shelter),
+                  source_updated_at: site.source_updated_at,
+                  updated_at: site.updated_at,
+                  notes: site.notes,
+                } as any);
+              } else if (isFavorite) { // Removing
+                removeShelterFromStorage(id);
+              }
             }}
             className={classNames(
               'rounded px-3 py-2 text-sm font-semibold',
-              isFavorite ? 'bg-amber-600 text-white hover:bg-amber-700' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+              isFavorite ? 'bg-amber-500 text-white ring-amber-600 hover:bg-amber-600' : 'bg-white text-gray-800 ring-1 ring-gray-300 hover:bg-gray-50'
             )}
           >
             {isFavorite ? '★ 保存済み' : '☆ 保存'}
           </button>
-	          <ShareMenu
-	            shareUrl={shareUrl}
-	            getShareText={() =>
-	              formatShelterShareText({
-	                shelterName: site?.name ?? '避難場所',
-	                address: site?.pref_city ? formatPrefCityLabel(site.pref_city) : null,
-	                fromArea: shareFromArea,
-	                now: new Date(),
-	              })
-	            }
-	          />
-	        </div>
-	      </div>
-
-      <section className="rounded-lg bg-white p-5 shadow">
-        <h2 className="text-lg font-semibold">施設情報</h2>
-        <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
-          <div className="rounded border bg-gray-50 p-3">
-            <div className="text-xs text-gray-600">更新</div>
-            <div className="mt-1 text-xs text-gray-800">
-              source: {formatUpdatedAt(site?.source_updated_at)} / db: {formatUpdatedAt(site?.updated_at)}
-            </div>
-          </div>
-          <div className="rounded border bg-gray-50 p-3">
-            <div className="text-xs text-gray-600">注意</div>
-            <div className="mt-1 text-xs text-gray-800">
-              開設状況/受入可否は自治体情報が最優先です。不明な項目は「不明」と表示します。
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4">
-          <div className="text-sm font-semibold">対応ハザード（避難所データ）</div>
-          <div className="mt-2 flex flex-wrap gap-1">
-            {hazardKeys
-              .filter((k) => Boolean((site?.hazards as any)?.[k]))
-              .map((k) => (
-                <span key={k} className="rounded bg-emerald-100 px-2 py-1 text-[10px] text-emerald-800">
-                  {hazardLabels[k]}
-                </span>
-              ))}
-            {site && hazardKeys.filter((k) => Boolean((site?.hazards as any)?.[k])).length === 0 && (
-              <span className="text-xs text-gray-600">不明/未設定</span>
+          <a
+            href={googleMapsRouteUrl({ origin, dest: dest ?? { lat: 0, lon: 0 } })} // dest might be null but link only clickable if dest exists? Or we handle dest check inside.
+            target="_blank"
+            rel="noreferrer"
+            className={classNames(
+              "rounded px-3 py-2 text-sm font-semibold",
+              dest ? "bg-gray-900 text-white hover:bg-black" : "hidden" // Hide if no dest
             )}
-          </div>
-          <div className="mt-2 text-xs text-gray-600">
-            地図ハザード（洪水/土砂/津波/液状化）は <Link href="/hazard" className="text-blue-600 hover:underline">/hazard</Link> で表示（デフォルトOFF）。
-          </div>
+          >
+            Google Mapsで最短ルート
+          </a>
+          <ShareMenu
+            shareUrl={shareUrl}
+            getShareText={() =>
+              formatShelterShareText({
+                shelterName: site?.name ?? '避難場所',
+                address: site?.pref_city ? formatPrefCityLabel(site.pref_city) : null,
+                fromArea: shareFromArea,
+                now: new Date(),
+              })
+            }
+          />
         </div>
+      </div>
 
-        {site?.notes && (
-          <div className="mt-4 rounded border bg-gray-50 px-3 py-2 text-sm text-gray-800">
-            <div className="font-semibold">備考</div>
-            <div className="mt-1 whitespace-pre-wrap text-sm">{sanitizeNoteText(site.notes)}</div>
-          </div>
-        )}
+      {/* Hazard compatibility chips */}
+      {site?.hazards && (
+        <div className="mt-2">
+          <HazardChips hazards={site.hazards} showUnsupported={true} maxVisible={8} size="sm" />
+        </div>
+      )}
 
-        {eligibilityFields.length > 0 && (
-          <div className="mt-4 rounded border bg-gray-50 px-3 py-2 text-sm text-gray-800">
-            <div className="font-semibold">受入対象者/利用条件</div>
-            <div className="mt-2 grid gap-2 text-xs md:grid-cols-2">
-              {eligibilityFields.map((row) => (
-                <div key={row.label} className="rounded bg-white px-2 py-2">
-                  <div className="text-[11px] text-gray-600">{row.label}</div>
-                  <div className="mt-1 text-sm text-gray-900">{row.value}</div>
-                </div>
-              ))}
+      {!site?.notes && eligibilityFields.length === 0 && detailFields.length === 0 ? null : (
+        <section className="rounded-lg bg-white p-5 shadow">
+          {site?.notes && (
+            <div className="mb-4 rounded border bg-gray-50 px-3 py-2 text-sm text-gray-800">
+              <div className="font-semibold">備考</div>
+              <div className="mt-1 whitespace-pre-wrap text-sm">{sanitizeNoteText(site.notes)}</div>
             </div>
-          </div>
-        )}
-
-        {detailFields.length > 0 && (
-          <div className="mt-4 rounded border bg-gray-50 px-3 py-2 text-sm text-gray-800">
-            <div className="font-semibold">施設情報（詳細）</div>
-            <div className="mt-2 grid gap-2 text-xs md:grid-cols-2">
-              {detailFields.map((row) => (
-                <div key={row.label} className="rounded bg-white px-2 py-2">
-                  <div className="text-[11px] text-gray-600">{row.label}</div>
-                  <div className="mt-1 text-sm text-gray-900">{row.value}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="mt-4">
-          {dest ? (
-            <a
-              href={googleMapsRouteUrl({ origin, dest })}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center rounded bg-gray-900 px-4 py-2 text-sm text-white hover:bg-black"
-            >
-              Google Mapsで最短ルート
-            </a>
-          ) : (
-            <div className="text-sm text-gray-600">座標不明のためルート表示できません。</div>
           )}
-          <div className="mt-2 text-xs text-gray-600">現在地: {shareFromArea ?? 'エリア未確定'}</div>
-        </div>
-      </section>
+
+          {eligibilityFields.length > 0 && (
+            <div className="mb-4 rounded border bg-gray-50 px-3 py-2 text-sm text-gray-800">
+              <div className="font-semibold">受入対象者/利用条件</div>
+              <div className="mt-2 grid gap-2 text-xs md:grid-cols-2">
+                {eligibilityFields.map((row) => (
+                  <div key={row.label} className="rounded bg-white px-2 py-2">
+                    <div className="text-[11px] text-gray-600">{row.label}</div>
+                    <div className="mt-1 text-sm text-gray-900">{row.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {detailFields.length > 0 && (
+            <div className="mb-4 rounded border bg-gray-50 px-3 py-2 text-sm text-gray-800">
+              <div className="font-semibold">施設情報（詳細）</div>
+              <div className="mt-2 grid gap-2 text-xs md:grid-cols-2">
+                {detailFields.map((row) => (
+                  <div key={row.label} className="rounded bg-white px-2 py-2">
+                    <div className="text-[11px] text-gray-600">{row.label}</div>
+                    <div className="mt-1 text-sm text-gray-900">{row.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+
+        </section>
+      )}
 
       <section className="rounded-lg bg-white p-5 shadow">
         <h2 className="text-lg font-semibold">地図</h2>
@@ -394,25 +397,22 @@ export default function ShelterDetailPage() {
       <section className="rounded-lg bg-white p-5 shadow">
         <h2 className="text-lg font-semibold">混雑状況（投票/コメント）</h2>
         <div className="mt-2 text-xs text-gray-600">
-          個人情報は書かないでください。多数報告があるコメントは自動的に折りたたまれます（簡易モデレーション）。
+          個人情報は書かないでください。多数報告があるコメントは自動的に折りたたまれます。
         </div>
 
         {!community && <div className="mt-3 text-sm text-gray-600">読み込み中...</div>}
         {community && (
           <>
-            <div className="mt-3 grid gap-2 text-sm md:grid-cols-3">
-              <div className="rounded border bg-gray-50 p-3">
-                <div className="text-xs text-gray-600">updatedAt</div>
-                <div className="mt-1 text-xs text-gray-800">{formatUpdatedAt(community.updatedAt)}</div>
-              </div>
-              <div className="rounded border bg-gray-50 p-3">
-                <div className="text-xs text-gray-600">代表</div>
-                <div className="mt-1 font-semibold">{topVote ?? '不明'}</div>
-              </div>
-              <div className="rounded border bg-gray-50 p-3">
-                <div className="text-xs text-gray-600">コメント</div>
-                <div className="mt-1 text-xs text-gray-800">
-                  {community.commentsCollapsed ? '自動折りたたみ中' : `${community.commentCount}件`} / 非表示 {community.hiddenCount}件
+            <div className="mt-3 rounded border bg-gray-50 px-3 py-2 text-sm">
+              <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
+                <div>
+                  <span className="font-semibold text-gray-700">現在:</span>
+                  <span className="ml-1 text-lg font-bold">
+                    {topVote ? (voteOptions.find(o => o.value === topVote)?.label ?? topVote) : '情報なし'}
+                  </span>
+                </div>
+                <div className="text-gray-500 text-xs">
+                  最終更新: {formatUpdatedAt(community.updatedAt)}
                 </div>
               </div>
             </div>
@@ -463,66 +463,98 @@ export default function ShelterDetailPage() {
               </div>
 
               <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <button
-                  className="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-gray-300"
-                  disabled={!deviceId || submitBusy}
-                  onClick={async () => {
-                    setSubmitError(null);
-                    setSubmitNotice(null);
-                    if (!deviceId || !id) return;
-                    if (!selectedVote) {
-                      setSubmitError('投票状況は必須です');
-                      return;
-                    }
-                    const commentText = voteComment.trim() || 'コメントなし';
-                    setSubmitBusy(true);
-                    try {
-                      const voteRes = await fetch('/api/store/shelter/vote', {
-                        method: 'POST',
-                        headers: { 'content-type': 'application/json' },
-                        body: JSON.stringify({ shelterId: id, deviceId, value: selectedVote }),
-                      });
-                      const voteJson = await voteRes.json().catch(() => null);
-                      const voteCode = typeof voteJson?.errorCode === 'string' ? voteJson.errorCode : null;
-                      if (!voteRes.ok && voteCode !== 'DUPLICATE' && voteCode !== 'RATE_LIMITED') {
-                        setSubmitError(voteJson?.error ?? '送信できませんでした');
+                <div className="flex gap-2">
+                  <button
+                    className="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-gray-300"
+                    disabled={!deviceId || submitBusy}
+                    onClick={async () => {
+                      setSubmitError(null);
+                      setSubmitNotice(null);
+                      if (!deviceId || !id) return;
+                      if (!selectedVote) {
+                        setSubmitError('投票状況は必須です');
                         return;
                       }
+                      const commentText = voteComment.trim() || 'コメントなし';
+                      setSubmitBusy(true);
+                      try {
+                        const voteRes = await fetch('/api/store/shelter/vote', {
+                          method: 'POST',
+                          headers: { 'content-type': 'application/json' },
+                          body: JSON.stringify({ shelterId: id, deviceId, value: selectedVote }),
+                        });
+                        const voteJson = await voteRes.json().catch(() => null);
+                        const voteCode = typeof voteJson?.errorCode === 'string' ? voteJson.errorCode : null;
+                        if (!voteRes.ok && voteCode !== 'DUPLICATE' && voteCode !== 'RATE_LIMITED') {
+                          setSubmitError(voteJson?.error ?? '送信できませんでした');
+                          return;
+                        }
 
-                      const commentRes = await fetch('/api/store/shelter/comment', {
-                        method: 'POST',
-                        headers: { 'content-type': 'application/json' },
-                        body: JSON.stringify({ shelterId: id, deviceId, text: commentText }),
-                      });
-                      const commentJson = await commentRes.json().catch(() => null);
-                      const commentCode = typeof commentJson?.errorCode === 'string' ? commentJson.errorCode : null;
-                      if (!commentRes.ok && commentCode !== 'DUPLICATE' && commentCode !== 'RATE_LIMITED') {
-                        setSubmitError(commentJson?.error ?? '送信できませんでした');
-                        return;
+                        const commentRes = await fetch('/api/store/shelter/comment', {
+                          method: 'POST',
+                          headers: { 'content-type': 'application/json' },
+                          body: JSON.stringify({ shelterId: id, deviceId, text: commentText }),
+                        });
+                        const commentJson = await commentRes.json().catch(() => null);
+                        const commentCode = typeof commentJson?.errorCode === 'string' ? commentJson.errorCode : null;
+                        if (!commentRes.ok && commentCode !== 'DUPLICATE' && commentCode !== 'RATE_LIMITED') {
+                          setSubmitError(commentJson?.error ?? '送信できませんでした');
+                          return;
+                        }
+
+                        const entry: VoteHistoryEntry = {
+                          id: `${Date.now()}`,
+                          status: selectedVote,
+                          comment: commentText,
+                          createdAt: new Date().toISOString(),
+                        };
+                        setVoteHistory((prev) => {
+                          const nextHistory = [entry, ...prev].slice(0, 10);
+                          saveVoteHistory(id, nextHistory);
+                          return nextHistory;
+                        });
+                        setVoteComment('');
+                        setSelectedVote(null);
+                        setSubmitNotice('送信しました');
+                        await mutateCommunity();
+                      } finally {
+                        setSubmitBusy(false);
                       }
-
-                      const entry: VoteHistoryEntry = {
-                        id: `${Date.now()}`,
-                        status: selectedVote,
-                        comment: commentText,
-                        createdAt: new Date().toISOString(),
-                      };
-                      setVoteHistory((prev) => {
-                        const nextHistory = [entry, ...prev].slice(0, 10);
-                        saveVoteHistory(id, nextHistory);
-                        return nextHistory;
-                      });
-                      setVoteComment('');
-                      setSelectedVote(null);
-                      setSubmitNotice('送信しました');
-                      await mutateCommunity();
-                    } finally {
-                      setSubmitBusy(false);
-                    }
-                  }}
-                >
-                  送信
-                </button>
+                    }}
+                  >
+                    送信
+                  </button>
+                  <button
+                    className="rounded bg-white border border-gray-300 px-3 py-2 text-sm text-red-700 hover:bg-gray-50 disabled:opacity-50"
+                    disabled={!deviceId || submitBusy}
+                    onClick={async () => {
+                      if (!confirm('この避難所への自分の投稿（投票・コメント）を削除しますか？')) return;
+                      setSubmitError(null);
+                      setSubmitNotice(null);
+                      setSubmitBusy(true);
+                      try {
+                        const res = await fetch('/api/store/shelter/vote', {
+                          method: 'DELETE',
+                          headers: { 'content-type': 'application/json' },
+                          body: JSON.stringify({ shelterId: id, deviceId }),
+                        });
+                        if (!res.ok) {
+                          const j = await res.json().catch(() => null);
+                          setSubmitError(j?.error ?? '削除できませんでした');
+                          return;
+                        }
+                        setSubmitNotice('削除しました');
+                        setSelectedVote(null);
+                        setVoteComment('');
+                        await mutateCommunity();
+                      } finally {
+                        setSubmitBusy(false);
+                      }
+                    }}
+                  >
+                    解除
+                  </button>
+                </div>
                 <div className="text-xs text-gray-600">同じ避難所への連続投票は時間制限があります。</div>
               </div>
 
@@ -557,10 +589,7 @@ export default function ShelterDetailPage() {
         )}
       </section>
 
-      <section className="rounded-lg border bg-amber-50 p-4 text-sm text-amber-900">
-        <div className="font-semibold">注意</div>
-        <div className="mt-1">表示は参考情報です。現地判断と自治体・公式情報を優先してください。</div>
-      </section>
+
     </div>
   );
 }
@@ -575,7 +604,7 @@ function CommentThread({
   deviceId: string | null;
   community: any;
   onChanged: () => Promise<any>;
-  }) {
+}) {
   const cautionThreshold = typeof community?.moderationPolicy?.reportCautionThreshold === 'number' ? community.moderationPolicy.reportCautionThreshold : 3;
 
   return (

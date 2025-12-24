@@ -533,6 +533,35 @@ export async function submitComment(args: {
   return { ok: true, value };
 }
 
+export async function deleteShelterVoteAndComment(args: {
+  shelterId: string;
+  deviceId: string;
+}): Promise<StoreResult<ShelterCommunity>> {
+  const { value } = await runExclusive(`shelter:${args.shelterId}`, async () => {
+    const current = await getShelterCommunity(args.shelterId);
+
+    // Remove votes by this device
+    const nextVotes = current.votes.filter((v) => v.deviceId !== args.deviceId);
+
+    // Remove comments by this device (and any associated reports? user requesting "clear own vote/comment")
+    // If we remove the comment, reports targeting it might become orphans or we should just drop them?
+    // Let's just filter out the comment. The reports can stay or be filtered if we matched IDs, but simple is best for now.
+    const nextComments = current.comments.filter((c) => c.deviceId !== args.deviceId);
+
+    const next: ShelterCommunity = {
+      ...current,
+      updatedAt: nowIso(),
+      votes: nextVotes,
+      comments: nextComments,
+    };
+    await writeShelterCommunity(next);
+    return next;
+  });
+
+  if (!value) return { ok: false, code: 'NOT_FOUND', message: 'Failed to update.' };
+  return { ok: true, value };
+}
+
 export async function reportComment(args: {
   shelterId: string;
   deviceId: string;

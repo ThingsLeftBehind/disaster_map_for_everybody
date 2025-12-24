@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import useSWR from 'swr';
 import { useDevice } from './device/DeviceProvider';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { shapeAlertWarnings } from '../lib/jma/alerts';
 import { useRouter } from 'next/router';
 import { useAreaName } from '../lib/client/areaName';
@@ -47,7 +47,7 @@ function NavIcon({
   name: 'shelter' | 'alerts' | 'quakes' | 'hazard';
   active: boolean;
 }) {
-  const cls = `h-5 w-5 ${active ? 'text-gray-900' : 'text-gray-600'}`;
+  const cls = `h-5 w-5 ${active ? 'text-current' : 'text-gray-500'}`;
   switch (name) {
     case 'shelter':
       return (
@@ -87,6 +87,78 @@ function NavIcon({
   }
 }
 
+function HelpPopover({ online, jmaUpdatedAt }: { online: boolean; jmaUpdatedAt: string | null }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(e.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(e.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false);
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="relative">
+      <button
+        ref={buttonRef}
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-gray-100 text-sm font-bold text-gray-800 hover:bg-gray-200"
+        aria-label="ヘルプ"
+      >
+        ?
+      </button>
+      {isOpen && (
+        <div
+          ref={popoverRef}
+          className="fixed right-2 top-16 z-[9999] w-[280px] max-w-[calc(100vw-16px)] max-h-[70vh] overflow-auto rounded-xl border bg-white p-3 text-xs text-gray-800 shadow-lg sm:absolute sm:right-0 sm:top-auto sm:mt-2"
+        >
+          <div className="font-semibold">状態の見かた</div>
+          <ul className="mt-2 space-y-1 text-gray-700">
+            <li>
+              <span className="font-semibold text-emerald-700">OK</span>: 直近の取得に成功
+            </li>
+            <li>
+              <span className="font-semibold text-amber-800">DEGRADED</span>: 最新でない可能性（通信/取得失敗など）
+            </li>
+            <li>
+              <span className="font-semibold text-red-700">DOWN</span>: まだ一度も取得できていない
+            </li>
+            <li className="pt-1 text-gray-600">
+              {online
+                ? 'オンラインでも遅延・欠落があり得ます。公式情報も確認してください。'
+                : 'オフラインのためキャッシュ表示です。最新でない可能性があります。'}
+            </li>
+          </ul>
+          <div className="mt-2 rounded bg-gray-50 px-2 py-1 text-[11px] text-gray-700">
+            Last updated: {formatUpdatedAt(jmaUpdatedAt)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function NavItem({
   href,
   label,
@@ -101,9 +173,8 @@ function NavItem({
   return (
     <Link
       href={href}
-      className={`flex h-12 min-w-[110px] flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold ring-1 ring-inset transition ${
-        active ? 'bg-gray-900 text-white ring-gray-900' : 'bg-white text-gray-900 ring-gray-200 hover:bg-gray-50'
-      }`}
+      className={`flex h-10 w-full items-center justify-center gap-1 rounded-xl px-2 text-xs font-semibold ring-1 ring-inset transition sm:h-12 sm:min-w-[110px] sm:gap-2 sm:px-4 sm:text-sm ${active ? 'bg-gray-900 text-white ring-gray-900' : 'bg-white text-gray-900 ring-gray-200 hover:bg-gray-50'
+        }`}
     >
       <span className={`${active ? 'text-white' : ''}`}>{icon}</span>
       <span className="whitespace-nowrap">{label}</span>
@@ -224,57 +295,34 @@ export default function Layout({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <header className="border-b bg-white">
         <div className="mx-auto max-w-6xl px-4 py-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex flex-col gap-1">
-              <Link href="/main" className="text-lg font-bold tracking-tight">
-                全国避難場所ファインダー
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex min-w-0 flex-col gap-1">
+              <Link href="/main" className="group truncate transition-opacity hover:opacity-80">
+                <div className="truncate text-2xl font-bold tracking-tight text-gray-900">
+                  避難ナビ（HinaNavi）
+                </div>
+                <div className="truncate text-sm font-medium text-gray-600">災害から身を守る避難を</div>
               </Link>
-              <div className="text-xs text-gray-500">避難先を、すばやく</div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Link
                 href="/main"
-                className={`inline-flex h-9 items-center justify-center rounded-xl px-3 text-sm font-semibold ring-1 ring-inset transition ${
-                  router.pathname.startsWith('/main') ? 'bg-gray-900 text-white ring-gray-900' : 'bg-white text-gray-900 ring-gray-200 hover:bg-gray-50'
-                }`}
+                className={`inline-flex h-9 items-center justify-center rounded-xl px-4 text-sm font-semibold ring-1 ring-inset transition ${router.pathname === '/main' || router.pathname === '/'
+                  ? 'bg-blue-600 text-white ring-blue-600'
+                  : 'bg-white text-gray-900 ring-gray-200 hover:bg-gray-50'
+                  }`}
               >
                 メイン
               </Link>
               <Chip label="JMA" value={jmaStatusLabel} tone={jmaTone} />
               <Chip label={online ? 'Online' : 'Offline'} tone={online ? 'ok' : 'down'} />
 
-              <details className="relative">
-                <summary className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-full bg-gray-100 text-sm font-bold text-gray-800 hover:bg-gray-200">
-                  ?
-                </summary>
-                <div className="absolute right-0 mt-2 w-[300px] rounded-xl border bg-white p-3 text-xs text-gray-800 shadow-lg">
-                  <div className="font-semibold">状態の見かた</div>
-                  <ul className="mt-2 space-y-1 text-gray-700">
-                    <li>
-                      <span className="font-semibold text-emerald-700">OK</span>: 直近の取得に成功
-                    </li>
-                    <li>
-                      <span className="font-semibold text-amber-800">DEGRADED</span>: 最新でない可能性（通信/取得失敗など）
-                    </li>
-                    <li>
-                      <span className="font-semibold text-red-700">DOWN</span>: まだ一度も取得できていない
-                    </li>
-                    <li className="pt-1 text-gray-600">
-                      {online
-                        ? 'オンラインでも遅延・欠落があり得ます。公式情報も確認してください。'
-                        : 'オフラインのためキャッシュ表示です。最新でない可能性があります。'}
-                    </li>
-                  </ul>
-                  <div className="mt-2 rounded bg-gray-50 px-2 py-1 text-[11px] text-gray-700">
-                    Last updated: {formatUpdatedAt(jmaUpdatedAt)}
-                  </div>
-                </div>
-              </details>
+              <HelpPopover online={online} jmaUpdatedAt={jmaUpdatedAt} />
             </div>
           </div>
 
-          <nav className="mt-4 flex gap-3 overflow-x-auto overflow-y-visible pb-2 pt-1">
+          <nav className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3">
             <NavItem
               href="/list"
               label="避難場所"
@@ -295,7 +343,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             />
             <NavItem
               href="/hazard"
-              label="ハザードマップ"
+              label="ハザード"
               icon={<NavIcon name="hazard" active={router.pathname.startsWith('/hazard')} />}
               active={router.pathname.startsWith('/hazard')}
             />

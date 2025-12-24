@@ -1,12 +1,29 @@
 import Head from 'next/head';
 import useSWR from 'swr';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import classNames from 'classnames';
 import { useDevice } from '../components/device/DeviceProvider';
 import { reverseGeocodeGsi, saveLastLocation } from '../lib/client/location';
 import { formatPrefMuniLabel, useAreaName } from '../lib/client/areaName';
-import { shapeAlertWarnings, type WarningGroup } from '../lib/jma/alerts';
+import { shapeAlertWarnings, type WarningGroup, deduplicateWarnings, deduplicateKindsForDisplay } from '../lib/jma/alerts';
 import { type TokyoGroupKey } from '../lib/alerts/tokyoScope';
+import { DataFetchDetails } from '../components/DataFetchDetails';
+
+// Tokyo island municipality codes (5-digit format)
+const TOKYO_ISLAND_MUNI_CODES = new Set([
+  '13361', '13362', '13363', '13364', '13381', '13382', '13401', '13402', '13421',
+]);
+import { MyAreaWarningsSection } from '../components/MyAreaWarningsSection';
+
+function isTokyoIslandMuni(muniCode: string | null | undefined): boolean {
+  if (!muniCode) return false;
+  const code5 = muniCode.length === 6 ? muniCode.slice(0, 5) : muniCode;
+  return TOKYO_ISLAND_MUNI_CODES.has(code5);
+}
+
+function isIslandAreaName(name: string): boolean {
+  return name.includes('伊豆諸島') || name.includes('小笠原');
+}
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -21,7 +38,30 @@ function sanitizeFetchError(message: string | null | undefined): string {
   return message ? '取得エラー' : 'なし';
 }
 
+
+
+import { useRouter } from 'next/router';
+
 export default function AlertsPage() {
+  const router = useRouter();
+
+  // 0) CRITICAL: Stop infinite refresh / flashing
+  // Guard against /alerts/<areaCode> or other dynamic paths.
+  // The page must ALWAYS be at /alerts.
+  useEffect(() => {
+    if (!router.isReady) return;
+    // We only care if we are strictly under /alerts/ something
+    // router.pathname might be "/alerts" even if asPath is "/alerts/130000" depending on Next.js config,
+    // but usually if no dynamic route exists, it hits 404.
+    // However, if we are erroneously on a path starting with /alerts/..., force back.
+    const path = router.asPath.split('?')[0];
+    if (path.startsWith('/alerts/') && path !== '/alerts') {
+      console.warn('AlertsPage: Detect invalid path, forcing replace to /alerts', path);
+      // Use shallow replace to avoid server roundtrip if possible, though we want to reset state.
+      router.replace('/alerts', undefined, { shallow: true });
+    }
+  }, [router, router.isReady, router.asPath]);
+
   const { device, selectedArea, selectedJmaAreaCode, currentJmaAreaCode, coarseArea, setSelectedAreaId, setCoarseArea } = useDevice();
   const refreshMs = device?.settings?.powerSaving ? 180_000 : 60_000;
   const { label: coarseAreaLabel } = useAreaName({ prefCode: coarseArea?.prefCode ?? null, muniCode: coarseArea?.muniCode ?? null });
@@ -30,7 +70,7 @@ export default function AlertsPage() {
 
   const [useCurrent, setUseCurrent] = useState(true);
   const [manualPrefCode, setManualPrefCode] = useState('');
-  const [showReference, setShowReference] = useState(false);
+
   const [actionBusy, setActionBusy] = useState(false);
   const lastActionRef = useRef(0);
 
@@ -95,10 +135,22 @@ export default function AlertsPage() {
   const isTokyoArea = warningShape.isTokyoArea;
   const primaryTokyoGroup: TokyoGroupKey = warningShape.tokyoGroup ?? 'mainland';
 
-  const formatTokyoLabel = (key: TokyoGroupKey) => {
-    if (key === 'mainland') return '東京都（島しょ除く）';
-    if (key === 'izu') return '東京都（伊豆諸島）';
-    return '東京都（小笠原諸島）';
+  // Automatic Tokyo Scope Logic
+  // We no longer allow manual toggle. We deduce the scope from the effective municipality code.
+  // If user selects "Tokyo" (pref 13) without a specific municipality (or just "Tokyo"), we default to 'mainland'.
+  // If user selects/is in a specific Island municipality, we switch to 'islands'.
+
+  const effectivePrefCode = areaContext.prefCode;
+  const effectiveMuniCode = areaContext.muniCode;
+  const showTokyoToggle = effectivePrefCode === '13'; // Kept variable name for logic consistency, though we don't show a toggle.
+
+  const isTokyoIsland = showTokyoToggle && isTokyoIslandMuni(effectiveMuniCode);
+  const tokyoScope: 'mainland' | 'islands' = isTokyoIsland ? 'islands' : 'mainland';
+
+  const formatTokyoScopeLabel = () => {
+    // If mainland, just "Tokyo". If islands, "Tokyo (Islands)".
+    // User requested NO "Mainland" (本土) text.
+    return tokyoScope === 'mainland' ? '東京都' : '東京都（島しょ）';
   };
 
   const targetLabel = useCurrent
@@ -113,10 +165,104 @@ export default function AlertsPage() {
         ? `手動: ${manualPrefLabel}`
         : 'エリア未確定';
 
-  const confidenceNotes: string[] = Array.isArray(warnings?.confidenceNotes) ? warnings.confidenceNotes : [];
-  const hasPrefOnlyNote = confidenceNotes.some((n) => /prefecture-level/i.test(n));
-  const hasTitleFallbackNote = confidenceNotes.some((n) => /Atom entry titles/i.test(n));
-  const showAccuracyNote = Boolean(warningsUrl && (hasPrefOnlyNote || hasTitleFallbackNote));
+  const breakdown = (warnings as any)?.breakdown as Record<string, { name: string; items: any[] }> | null;
+  const muniMap = (warnings as any)?.muniMap as Record<string, string> | null;
+
+  const activeMuniCode = useCurrent ? coarseArea?.muniCode : selectedArea?.muniCode;
+  const targetForecastCode = activeMuniCode && muniMap ? muniMap[activeMuniCode] : null;
+
+  const activeAreas = useMemo(() => {
+    if (!breakdown) return [];
+    return Object.entries(breakdown)
+      .map(([code, data]) => {
+        // Apply Tokyo scope filtering
+        if (showTokyoToggle) {
+          const isIsland = isIslandAreaName(data.name);
+          if (tokyoScope === 'mainland' && isIsland) return null;
+          if (tokyoScope === 'islands' && !isIsland) return null;
+        }
+        const activeItems = data.items.filter((i: any) => {
+          const s = i.status || '';
+          return !s.includes('解除') && !s.includes('なし') && !s.includes('ありません');
+        });
+        const items = deduplicateWarnings(activeItems);
+        return { code, ...data, items };
+      })
+      .filter((area): area is NonNullable<typeof area> => area !== null && area.items.length > 0)
+      .sort((a, b) => b.items.length - a.items.length || a.code.localeCompare(b.code));
+  }, [breakdown, showTokyoToggle, tokyoScope]);
+
+  // Compute filtered counts for Tokyo scope
+  const filteredCounts = useMemo(() => {
+    if (!showTokyoToggle) {
+      return { urgent: urgentCount, advisory: advisoryCount, total: primaryWarningCount };
+    }
+    // Extract unique kinds from activeAreas with deduplication
+    const uniqueKinds = new Set<string>();
+    let urgent = 0;
+    let advisory = 0;
+    for (const area of activeAreas) {
+      for (const item of area.items) {
+        const kind = item.kind;
+        if (uniqueKinds.has(kind)) continue;
+        uniqueKinds.add(kind);
+        // Categorize based on kind name
+        if (kind.includes('警報') && !kind.includes('注意報')) {
+          urgent++;
+        } else if (kind.includes('注意報')) {
+          advisory++;
+        }
+      }
+    }
+    return { urgent, advisory, total: urgent + advisory };
+  }, [showTokyoToggle, urgentCount, advisoryCount, primaryWarningCount, activeAreas]);
+
+  // Compute filtered buckets for Tokyo scope from activeAreas
+  const filteredBuckets = useMemo((): { urgent: WarningGroup[]; advisory: WarningGroup[] } => {
+    if (!showTokyoToggle) {
+      return { urgent: primaryBuckets.urgent, advisory: primaryBuckets.advisory };
+    }
+    // Build buckets from activeAreas items
+    const urgentMap = new Map<string, WarningGroup>();
+    const advisoryMap = new Map<string, WarningGroup>();
+
+    for (const area of activeAreas) {
+      for (const item of area.items) {
+        const kind = item.kind;
+        const status = item.status || '';
+        const isUrgent = kind.includes('警報') && !kind.includes('注意報');
+        const isAdvisory = kind.includes('注意報');
+
+        const targetMap = isUrgent ? urgentMap : isAdvisory ? advisoryMap : null;
+        if (!targetMap) continue;
+
+        if (targetMap.has(kind)) {
+          const existing = targetMap.get(kind)!;
+          if (status && !existing.statuses.includes(status)) {
+            existing.statuses.push(status);
+          }
+          existing.count++;
+        } else {
+          targetMap.set(kind, {
+            key: kind,
+            kind,
+            count: 1,
+            statuses: status ? [status] : [],
+            priority: isUrgent ? 'URGENT' : 'ADVISORY',
+          });
+        }
+      }
+    }
+
+    return {
+      urgent: Array.from(urgentMap.values()),
+      advisory: Array.from(advisoryMap.values()),
+    };
+  }, [showTokyoToggle, primaryBuckets, activeAreas]);
+
+  const activeAreaNames = activeAreas.slice(0, 3).map(a => a.name);
+  if (activeAreas.length > 3) activeAreaNames.push('ほか');
+
   const errorLabel = sanitizeFetchError(warnings?.lastError ?? status?.lastError);
 
   const beginAction = () => {
@@ -137,66 +283,131 @@ export default function AlertsPage() {
 
       <section className="rounded-2xl bg-white p-5 shadow">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">警報・注意報</h1>
-            <div className="mt-1 text-sm text-gray-600">重要なものを上から表示します（可能性・定時などはデフォルト非表示）。</div>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">警報・注意報</h1>
+            </div>
+            {/* Mobile: Counts on right, same row if possible? Header is flex-col on mobile?
+                    User said: "Mobile layout: move counts to header’s right side, same row"
+                    The current structure has `flex-col` for mobile wrapper.
+                    To put counts on RIGHT of header on mobile, we need valid flex row.
+                 */}
+            <div className="flex flex-col items-end gap-1 md:hidden">
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <span
+                  className={classNames(
+                    'rounded-full px-3 py-1 text-xs font-bold ring-1',
+                    filteredCounts.urgent > 0 ? 'bg-red-50 text-red-800 ring-red-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
+                  )}
+                >
+                  警報 {filteredCounts.urgent}
+                </span>
+                <span
+                  className={classNames(
+                    'rounded-full px-3 py-1 text-xs font-bold ring-1',
+                    filteredCounts.advisory > 0 ? 'bg-amber-50 text-amber-900 ring-amber-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
+                  )}
+                >
+                  注意報 {filteredCounts.advisory}
+                </span>
+              </div>
+            </div>
           </div>
-          <div className="flex flex-col items-end gap-1">
+
+          <div className="hidden md:flex flex-col items-end gap-1">
             <div className="flex flex-wrap items-center gap-2">
               <span
                 className={classNames(
                   'rounded-full px-3 py-1 text-xs font-bold ring-1',
-                  urgentCount > 0 ? 'bg-red-50 text-red-800 ring-red-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
+                  filteredCounts.urgent > 0 ? 'bg-red-50 text-red-800 ring-red-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
                 )}
               >
-                警報 {urgentCount}種類
+                警報 {filteredCounts.urgent}種類
               </span>
               <span
                 className={classNames(
                   'rounded-full px-3 py-1 text-xs font-bold ring-1',
-                  advisoryCount > 0 ? 'bg-amber-50 text-amber-900 ring-amber-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
+                  filteredCounts.advisory > 0 ? 'bg-amber-50 text-amber-900 ring-amber-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
                 )}
               >
-                注意報 {advisoryCount}種類
+                注意報 {filteredCounts.advisory}種類
               </span>
             </div>
-            {isTokyoArea && <div className="text-[11px] text-gray-600">対象: {formatTokyoLabel(primaryTokyoGroup)}</div>}
+            {showTokyoToggle && <div className="text-[11px] text-gray-600">対象: {formatTokyoScopeLabel()}</div>}
+            {activeAreas.length > 0 && (
+              <div className="text-[11px] text-gray-600">
+                発表区域: {activeAreas.length}区域 ({activeAreaNames.join('、')})
+              </div>
+            )}
           </div>
         </div>
 
         <div className="mt-4 grid gap-3 text-sm md:grid-cols-3">
           <div className="rounded-2xl border bg-gray-50 p-4">
-            <div className="text-xs text-gray-600">対象エリア</div>
-            <div className="mt-1 font-semibold">{targetLabel}</div>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs text-gray-600">対象エリア</div>
+                <div className="mt-1 font-semibold">{targetLabel}</div>
+              </div>
+              {useCurrent ? (
+                <button
+                  className="rounded-lg bg-gray-200 px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-300"
+                  onClick={() => {
+                    if (useCurrent) {
+                      setUseCurrent(false);
+                      return;
+                    }
+                  }}
+                  disabled={actionBusy}
+                >
+                  現在地を解除
+                </button>
+              ) : (
+                <button
+                  className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700"
+                  onClick={() => {
+                    if (!beginAction()) return;
+                    navigator.geolocation.getCurrentPosition(
+                      async (pos) => {
+                        const next = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+                        saveLastLocation(next);
+                        try {
+                          const r = await reverseGeocodeGsi(next);
+                          setCoarseArea({ prefCode: r.prefCode, muniCode: r.muniCode, address: r.address });
+                          setUseCurrent(true);
+                          endAction();
+                        } catch {
+                          setCoarseArea(null);
+                          endAction();
+                          alert('現在地（行政区）の取得に失敗しました');
+                        }
+                      },
+                      () => {
+                        endAction();
+                        alert('位置情報の取得に失敗しました');
+                      }
+                    );
+                  }}
+                  disabled={actionBusy}
+                >
+                  現在地で表示
+                </button>
+              )}
+            </div>
+
             <div className="mt-2 text-xs text-gray-600">位置情報は端末内でのみ利用されます。</div>
           </div>
 
           <div className="rounded-2xl border bg-gray-50 p-4 md:col-span-2">
             <div className="text-xs text-gray-600">エリア選択</div>
-            <div className="mt-2 flex flex-col gap-2 md:flex-row md:items-center">
-              {(device?.savedAreas ?? []).length > 0 ? (
-                <select
-                  className="w-full rounded border px-3 py-2 md:w-auto"
-                  value={selectedArea?.id ?? ''}
-                  onChange={(e) => {
-                    setUseCurrent(false);
-                    setSelectedAreaId(e.target.value || null);
-                  }}
-                >
-                  {(device?.savedAreas ?? []).map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.label ? `${a.label} / ` : ''}
-                      {a.prefName}
-                      {a.muniName ? ` ${a.muniName}` : ''}
-                    </option>
-                  ))}
-                </select>
-              ) : (
+            <div className="mt-2 space-y-3">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center">
                 <select
                   className="w-full rounded border px-3 py-2 md:w-auto"
                   value={manualPrefCode}
                   onChange={(e) => {
                     setUseCurrent(false);
+                    setSelectedAreaId(null); // Clear myarea selection if pref selected manual
                     setManualPrefCode(e.target.value);
                   }}
                 >
@@ -207,158 +418,113 @@ export default function AlertsPage() {
                     </option>
                   ))}
                 </select>
-              )}
 
-              <button
-                className="rounded-xl bg-white px-4 py-2 font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-50"
-                onClick={async () => {
-                  if (!beginAction()) return;
-                  if (!selectedArea && !manualPrefCode) {
-                    alert('都道府県を選択してください');
-                    endAction();
-                    return;
-                  }
-                  const wasCurrent = useCurrent;
-                  setUseCurrent(false);
-                  try {
-                    if (!wasCurrent && warningsUrl) await mutateWarnings();
-                  } finally {
-                    endAction();
-                  }
-                }}
-                disabled={actionBusy}
-              >
-                検索
-              </button>
-
-              <button
-                className={classNames(
-                  'rounded-xl px-4 py-2 font-semibold ring-1',
-                  useCurrent
-                    ? 'bg-emerald-600 text-white ring-emerald-500 hover:bg-emerald-700'
-                    : 'bg-gray-900 text-white ring-gray-900 hover:bg-black'
-                )}
-                aria-pressed={useCurrent}
-                onClick={() => {
-                  if (!beginAction()) return;
-                  if (useCurrent) {
-                    setUseCurrent(false);
-                    endAction();
-                    return;
-                  }
-                  navigator.geolocation.getCurrentPosition(
-                    async (pos) => {
-          const next = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-          saveLastLocation(next);
-          try {
-            const r = await reverseGeocodeGsi(next);
-            setCoarseArea({ prefCode: r.prefCode, muniCode: r.muniCode, address: r.address });
-            setUseCurrent(true);
-                        endAction();
-                      } catch {
-                        setCoarseArea(null);
-                        endAction();
-                        alert('現在地（行政区）の取得に失敗しました');
-                      }
-                    },
-                    () => {
+                <button
+                  className="rounded-xl bg-white px-4 py-2 font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-50"
+                  onClick={async () => {
+                    if (!beginAction()) return;
+                    if (!selectedArea && !manualPrefCode) {
+                      alert('都道府県を選択してください');
                       endAction();
-                      alert('位置情報の取得に失敗しました');
+                      return;
                     }
-                  );
-                }}
-                disabled={actionBusy}
-              >
-                {useCurrent ? '現在地を解除' : '現在地で表示'}
-              </button>
-            </div>
-
-            {!warningsUrl && (
-              <div className="mt-3 rounded-xl border bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                <div className="font-semibold">エリア未確定</div>
-                <div className="mt-1 text-xs">保存エリアを選ぶか、手動で都道府県を選択してください（誤った都道府県に自動設定しません）。</div>
+                    const wasCurrent = useCurrent;
+                    setUseCurrent(false);
+                    try {
+                      if (!wasCurrent && warningsUrl) await mutateWarnings();
+                    } finally {
+                      endAction();
+                    }
+                  }}
+                  disabled={actionBusy}
+                >
+                  検索
+                </button>
               </div>
-            )}
+
+              {/* Message removed per requirement */}
+            </div>
           </div>
         </div>
 
-        {showAccuracyNote && (
-          <div className="mt-3 rounded-xl border bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            <div className="font-semibold">精度に注意</div>
-            <div className="mt-1 text-xs">
-              {hasPrefOnlyNote && <span>都道府県単位の取得です（市区町村レベルの一致ではありません）。 </span>}
-              {hasTitleFallbackNote && <span>一部は見出し情報からの簡易抽出です（詳細は公式情報を確認）。</span>}
+        {/* Note moved to bottom */}
+      </section >
+
+      <section className="space-y-6">
+        <MyAreaWarningsSection />
+
+        <div className="rounded-2xl bg-white p-5 shadow">
+
+          {warningsUrl && !warnings && <div className="mt-3 text-sm text-gray-600">読み込み中...</div>}
+          {!warningsUrl && <div className="mt-3 text-sm text-gray-600">エリアを確定すると表示されます。</div>}
+
+          {warnings?.fetchStatus && warnings.fetchStatus !== 'OK' && (
+            <div className="mt-3 rounded-xl border bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              <div className="font-semibold">取得が不安定</div>
+              <div className="mt-1 text-xs">通信状況により遅延/欠落の可能性があります。直近のデータを表示中です。</div>
             </div>
-          </div>
-        )}
-      </section>
+          )}
 
-      <section className="rounded-2xl bg-white p-5 shadow">
-        <h2 className="text-lg font-semibold">いま出ている情報</h2>
-        {warningsUrl && !warnings && <div className="mt-3 text-sm text-gray-600">読み込み中...</div>}
-        {!warningsUrl && <div className="mt-3 text-sm text-gray-600">エリアを確定すると表示されます。</div>}
+          {warnings && (
+            <>
+              <div className="mt-2 text-sm text-gray-700">
+                {filteredCounts.total > 0
+                  ? `${filteredCounts.total}種類`
+                  : '該当なし'}
+              </div>
 
-        {warnings?.fetchStatus && warnings.fetchStatus !== 'OK' && (
-          <div className="mt-3 rounded-xl border bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            <div className="font-semibold">取得が不安定</div>
-            <div className="mt-1 text-xs">通信状況により遅延/欠落の可能性があります。直近のデータを表示中です。</div>
-          </div>
-        )}
+              {/* Checkbox removed per request */}
 
-        {warnings && (
-          <>
-            <div className="mt-2 text-sm text-gray-700">
-              {primaryWarningCount > 0
-                ? `${primaryWarningCount}種類`
-                : '該当なし'}
-              {!showReference && primaryBuckets.reference.length > 0 && (
-                <span className="ml-2 text-xs text-gray-500">（参考 {primaryBuckets.reference.length}種類を非表示）</span>
+              <div className="mt-4 space-y-4">
+                <WarningGroupSection title="緊急（警報/特別警報）" groups={filteredBuckets.urgent} />
+                <WarningGroupSection title="注意報" groups={filteredBuckets.advisory} />
+                {/* Reference info always hidden or removed? User said remove checkbox. 
+                  But also 'Dedupe per area card...'. 
+                  If we want to show reference (possibility etc), user didn't explicitly say "Show reference always".
+                  They said "Remove '参考情報も表示する' checkbox entirely".
+                  Usually implies default behavior or always visible?
+                  "Important things top... (possibility etc default hidden)" text at line 294 suggests hidden.
+                  Task says "Remove checkbox entirely". 
+                  Implementation: I will omit Reference section unless it was intended to be always shown.
+                  Given "行動の目安 must ALWAYS be expanded", maybe reference info too?
+                  Use judgement: The checkbox toggled visibility. If removed, we either never show or always show.
+                  Given it's "Reference" (Series/Potential), usually clutter. I'll hide it.
+              */}
+              </div>
+
+              {breakdown && (
+                <div className="mt-6 border-t pt-4">
+                  <SubAreaBreakdown
+                    breakdown={breakdown}
+                    highlightCode={targetForecastCode}
+                    manualOrSaved={Boolean(activeMuniCode)}
+                    tokyoScope={tokyoScope}
+                    showTokyoFilter={showTokyoToggle}
+                  />
+                </div>
               )}
-            </div>
 
-            {primaryBuckets.reference.length > 0 && (
-              <label className="mt-2 flex items-center gap-2 text-sm text-gray-700">
-                <input type="checkbox" checked={showReference} onChange={(e) => setShowReference(e.target.checked)} />
-                <span>参考情報も表示する（可能性・定時など）</span>
-              </label>
-            )}
-
-            <div className="mt-4 space-y-4">
-              <WarningGroupSection title="緊急（警報/特別警報）" groups={primaryBuckets.urgent} />
-              <WarningGroupSection title="注意報" groups={primaryBuckets.advisory} />
-              <WarningGroupSection title="参考/可能性/定時" groups={primaryBuckets.reference} hidden={!showReference} />
-            </div>
-
-          </>
-        )}
-      </section>
-
-      <section className="rounded-2xl bg-white p-5 shadow">
-        <h2 className="text-lg font-semibold">データの取得</h2>
-        <div className="mt-3 grid gap-2 text-sm md:grid-cols-3">
-          <div className="rounded-xl border bg-gray-50 p-3">
-            <div className="text-xs text-gray-600">全体</div>
-            <div className="mt-1 font-semibold">{status?.fetchStatus ?? 'DEGRADED'}</div>
-            <div className="mt-1 text-xs text-gray-600">更新: {formatUpdatedAt(status?.updatedAt)}</div>
-          </div>
-          <div className="rounded-xl border bg-gray-50 p-3">
-            <div className="text-xs text-gray-600">対象エリア</div>
-            <div className="mt-1 font-semibold">{warnings?.fetchStatus ?? 'DEGRADED'}</div>
-            <div className="mt-1 text-xs text-gray-600">更新: {formatUpdatedAt(warnings?.updatedAt)}</div>
-          </div>
-          <div className="rounded-xl border bg-gray-50 p-3">
-            <div className="text-xs text-gray-600">エラー</div>
-            <div className="mt-1 text-xs text-gray-700">{errorLabel}</div>
-          </div>
+            </>
+          )}
         </div>
-        <div className="mt-2 text-xs text-gray-600">取得に失敗しても、直近のデータがあれば表示します（ネットワーク状況により遅延/欠落があり得ます）。</div>
       </section>
 
-      <section className="rounded-2xl border bg-amber-50 p-4 text-sm text-amber-900">
-        <div className="font-semibold">注意</div>
-        <div className="mt-1">表示は遅延や欠落があり得ます。避難判断は必ず自治体・気象庁など公式情報を優先してください。</div>
-      </section>
-    </div>
+      <GuidanceSection urgent={filteredBuckets.urgent} advisory={filteredBuckets.advisory} />
+
+      <div className="rounded-xl border bg-gray-50 px-3 py-2 text-sm text-gray-700">
+        <div className="font-semibold">発表区域について</div>
+        <div className="mt-1 text-xs leading-relaxed">
+          気象庁の警報・注意報は『予報区（一次細分区域）』などの区域単位で発表されます。市区町村の境界と一致しない場合があります。
+        </div>
+      </div>
+
+      <DataFetchDetails
+        status={status?.fetchStatus ?? 'DEGRADED'}
+        updatedAt={status?.updatedAt}
+        fetchStatus={warnings?.fetchStatus ?? 'DEGRADED'}
+        error={warnings?.lastError ?? status?.lastError}
+      />
+    </div >
   );
 }
 
@@ -388,12 +554,273 @@ function WarningGroupSection({
       </div>
       <ul className="mt-2 space-y-2">
         {sorted.map((g) => (
-          <li key={g.key} className="rounded-2xl border bg-gray-50 px-3 py-2 text-sm">
-            <div className="font-semibold">{g.kind}</div>
-            {g.statuses.length > 0 && <div className="mt-1 text-xs text-gray-600">状態: {g.statuses.join(' / ')}</div>}
+          <li key={g.key} className="rounded-2xl border bg-gray-50 px-3 py-2 text-sm break-words">
+            <div className="font-semibold break-words">{g.kind}</div>
+            {g.statuses.length > 0 && <div className="mt-1 text-xs text-gray-600 break-words">状態: {g.statuses.join(' / ')}</div>}
           </li>
         ))}
       </ul>
     </section>
+  );
+}
+
+function GuidanceSection({ urgent, advisory }: { urgent: WarningGroup[]; advisory: WarningGroup[] }) {
+  // const [isOpen, setIsOpen] = useState(false); // Removed per request
+
+  const activeKinds = new Set([...urgent, ...advisory].map((g) => g.kind));
+  const TIPS = [
+    { keys: ['津波'], text: '海岸から離れ、高台や高いビルへ避難してください。' },
+    { keys: ['大雨', '浸水'], text: '崖や川に近づかないでください。低い土地の浸水に注意してください。' },
+    { keys: ['洪水'], text: '川が増水しています。川から離れ、建物の2階以上など高い場所へ。' },
+    { keys: ['土砂'], text: '崖崩れの危険があります。崖から離れた部屋や2階へ移動してください。' },
+    { keys: ['雷'], text: '頑丈な建物内に避難してください。木の下は危険です。' },
+    { keys: ['大雪', '暴風雪'], text: '不要な外出は控えてください。停電や交通障害に備えてください。' },
+    { keys: ['暴風', '強風'], text: '屋外の飛来物に注意し、建物内で窓から離れてください。' },
+    { keys: ['高潮'], text: '海岸や河口から離れ、浸水想定区域外へ避難してください。' },
+  ];
+
+  const matchedTips = TIPS.filter((tip) => tip.keys.some((k) => Array.from(activeKinds).some((kind) => kind.includes(k))));
+  // Always expanded
+  // const hasMatches = matchedTips.length > 0;
+  // const show = hasMatches || isOpen;  
+
+  return (
+    <section className="rounded-2xl bg-white p-5 shadow">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">行動の目安</h2>
+      </div>
+
+      <div className="mt-4 space-y-4">
+        <div className="rounded-xl bg-gray-50 p-4 text-sm space-y-2">
+          <div><span className="font-bold text-gray-900 border-b-2 border-amber-300">注意報</span>: 災害が起こるおそれがある場合に発表されます。</div>
+          <div><span className="font-bold text-red-800 border-b-2 border-red-300">警報</span>: 重大な災害が起こるおそれがある場合に発表されます。</div>
+          <div><span className="font-bold text-purple-900 border-b-2 border-purple-300">特別警報</span>: 予想をはるかに超える現象です。直ちに命を守る行動をとってください。</div>
+        </div>
+
+        {matchedTips.length > 0 && (
+          <div className="space-y-2">
+            <div className="font-semibold text-sm text-gray-700">発令中の注意点</div>
+            <ul className="list-disc pl-5 text-sm space-y-1 text-gray-800">
+              {matchedTips.map((tip, i) => (
+                <li key={i}><span className="font-semibold">{tip.keys[0]}</span>: {tip.text}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function SubAreaBreakdown({
+  breakdown,
+  highlightCode,
+  manualOrSaved,
+  tokyoScope,
+  showTokyoFilter,
+}: {
+  breakdown: Record<string, { name: string; items: any[] }>;
+  highlightCode?: string | null;
+  manualOrSaved: boolean;
+  tokyoScope?: 'mainland' | 'islands';
+  showTokyoFilter?: boolean;
+}) {
+  // Sort: highlighted first, then by code
+  // Also filter by Tokyo scope if applicable
+  const items = Object.entries(breakdown)
+    .filter(([, data]) => {
+      if (!showTokyoFilter) return true;
+      const isIsland = isIslandAreaName(data.name);
+      if (tokyoScope === 'mainland' && isIsland) return false;
+      if (tokyoScope === 'islands' && !isIsland) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      if (highlightCode) {
+        if (a[0] === highlightCode) return -1;
+        if (b[0] === highlightCode) return 1;
+      }
+      return a[0].localeCompare(b[0]);
+    });
+
+  const [isOpen, setIsOpen] = useState(false);
+
+  const hasContent = items.some(([, d]) => d.items.length > 0);
+  if (!hasContent) return null;
+
+  return (
+    <div>
+      <button
+        className="flex w-full items-center justify-between group"
+        onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+      >
+        <h3 className="font-bold text-gray-800 group-hover:text-blue-700 transition-colors">発表区域（予報区）ごとの内訳</h3>
+        <span className={classNames("text-gray-400 transition-transform", isOpen ? "rotate-180" : "rotate-0")}>
+          ▼
+        </span>
+      </button>
+
+      {isOpen && (
+        <div className="mt-3 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+          {highlightCode && (
+            <div className="text-xs text-blue-800 bg-blue-50 px-2 py-1 rounded inline-block">
+              選択した市区町村に対応する発表区域を強調表示しています（境界は一致しない場合あり）。
+            </div>
+          )}
+
+          <div className="grid gap-2 md:grid-cols-2">
+            {items.map(([code, data]) => {
+              const isHighlighted = code === highlightCode;
+              const activeItems = data.items.filter((i: any) => {
+                const s = i.status || '';
+                return !s.includes('解除') && !s.includes('なし') && !s.includes('ありません');
+              });
+
+              // Robust deduplication
+              const dedupedItems = deduplicateWarnings(activeItems);
+              const hasActive = dedupedItems.length > 0;
+
+              if (!hasActive && !isHighlighted) return null;
+
+              return (
+                <div
+                  key={code}
+                  className={classNames(
+                    'rounded-lg border p-3 text-sm',
+                    isHighlighted ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-300' : 'bg-white'
+                  )}
+                >
+                  <div className="font-bold flex items-center justify-between">
+                    <span>{data.name}</span>
+                    {hasActive ? (
+                      <span className="text-xs font-normal bg-red-100 text-red-800 px-1.5 py-0.5 rounded-full">
+                        {dedupedItems.length}
+                      </span>
+                    ) : (
+                      <span className="text-xs font-normal text-gray-400">発表なし</span>
+                    )}
+                  </div>
+                  {hasActive && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {dedupedItems.map((it: any) => (
+                        <span key={it.id ?? it.kind} className="text-xs border px-1.5 py-0.5 rounded bg-white text-gray-700">
+                          {it.kind}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SubAreaBreakdownDeprecated({
+  breakdown,
+  highlightCode,
+  manualOrSaved
+}: {
+  breakdown: Record<string, { name: string; items: any[] }>;
+  highlightCode?: string | null;
+  manualOrSaved: boolean;
+}) {
+  // Sort: highlighted first, then by code
+  const items = Object.entries(breakdown).sort((a, b) => {
+    if (highlightCode) {
+      if (a[0] === highlightCode) return -1;
+      if (b[0] === highlightCode) return 1;
+    }
+    return a[0].localeCompare(b[0]);
+  });
+
+  const [open, setOpen] = useState(false);
+  const hasContent = items.some(([, d]) => d.items.length > 0);
+
+  // Auto-open if specific area is highlighted
+  useEffect(() => {
+    if (highlightCode) setOpen(true);
+  }, [highlightCode]);
+
+  if (!hasContent) return null;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <h3 className="font-bold text-gray-800">発表区域（予報区）ごとの内訳</h3>
+        <button onClick={() => setOpen(!open)} className="text-sm font-semibold text-blue-600 hover:underline">
+          {open ? 'とじる' : 'すべて見る'}
+        </button>
+      </div>
+
+      {open && (
+        <div className="mt-3 space-y-3">
+          {highlightCode && (
+            <div className="text-xs text-blue-800 bg-blue-50 px-2 py-1 rounded inline-block">
+              選択した市区町村に対応する発表区域を強調表示しています（境界は一致しない場合あり）。
+            </div>
+          )}
+
+          <div className="grid gap-2 md:grid-cols-2">
+            {items.map(([code, data]) => {
+              const isHighlighted = code === highlightCode;
+              const activeItems = data.items.filter((i: any) => {
+                const s = i.status || '';
+                return !s.includes('解除') && !s.includes('なし') && !s.includes('ありません');
+              });
+
+              const hasActive = activeItems.length > 0;
+              if (!hasActive && !isHighlighted) return null;
+
+              const dedupedItems = (() => {
+                const map = new Map<string, any>();
+                for (const it of activeItems) {
+                  // Key by kind + status to allow distinct statuses (e.g., Released vs Active)
+                  const key = `${it.kind}|${it.status ?? ''}`;
+                  if (!map.has(key)) {
+                    map.set(key, it);
+                  }
+                }
+                return Array.from(map.values());
+              })();
+
+              return (
+                <div
+                  key={code}
+                  className={classNames(
+                    'rounded-lg border p-3 text-sm',
+                    isHighlighted ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-300' : 'bg-white'
+                  )}
+                >
+                  <div className="font-bold flex items-center justify-between">
+                    <span>{data.name}</span>
+                    {activeItems.length > 0 ? (
+                      <span className="text-xs font-normal bg-red-100 text-red-800 px-1.5 py-0.5 rounded-full">
+                        {activeItems.length}
+                      </span>
+                    ) : (
+                      <span className="text-xs font-normal text-gray-400">発表なし</span>
+                    )}
+                  </div>
+                  {activeItems.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {dedupedItems.map((it: any) => (
+                        <span key={it.id ?? it.kind} className="text-xs border px-1.5 py-0.5 rounded bg-white text-gray-700">
+                          {it.kind}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

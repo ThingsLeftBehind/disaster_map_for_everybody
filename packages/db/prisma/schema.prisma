@@ -23,7 +23,14 @@ model evac_sites {
   source_updated_at       DateTime?
   created_at              DateTime       @default(now())
   updated_at              DateTime       @updatedAt
+  
+  pref_code               String?        // JIS 2-digit
+  muni_code               String?        // JIS 5-digit normalized
+  
   crowd_reports           crowd_reports[]
+
+  @@index([pref_code])
+  @@index([pref_code, muni_code])
 }
 
 model crowd_reports {

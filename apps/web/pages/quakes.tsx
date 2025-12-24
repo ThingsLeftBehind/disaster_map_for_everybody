@@ -1,7 +1,8 @@
 import Head from 'next/head';
 import useSWR from 'swr';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useDevice } from '../components/device/DeviceProvider';
+import { DataFetchDetails } from '../components/DataFetchDetails';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -147,6 +148,81 @@ export default function QuakesPage() {
     return picks.slice(0, 3);
   }, [recentItems]);
 
+  // Retention logic for Strong Shaking
+  const [persistedStrong, setPersistedStrong] = useState<(typeof strongPicks)>([]);
+
+  useEffect(() => {
+    // Load from local storage
+    try {
+      const raw = localStorage.getItem('jp_evac_quakes_strong');
+      if (raw) {
+        const stored = JSON.parse(raw);
+        setPersistedStrong(stored);
+      }
+    } catch { }
+  }, []);
+
+  useEffect(() => {
+    // Merge new strongPicks with persisted, filter > 7 days, limit to Top 3
+    if (strongPicks.length === 0 && persistedStrong.length === 0) return;
+
+    // We already compute 'strongPicks' from the API data in this render.
+    // However, the requirement is "7 days retention". API might only return recent ones (e.g. 24h).
+    // So we need to keep older ones in local storage.
+
+    // 1. Combine persisted + current API strong picks
+    // Deduplicate by ID
+    const combined = [...persistedStrong, ...strongPicks];
+    const uniqueMap = new Map();
+    for (const item of combined) {
+      if (!item || !item.q || !item.q.id) continue;
+      // If doublet, keep the one with more data or just latest? 
+      // We trust the API 'strongPicks' are fresh.
+      // We just overwrite key.
+      uniqueMap.set(item.q.id, item);
+    }
+
+    const now = Date.now();
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+
+    const candidates = Array.from(uniqueMap.values()).filter(item => {
+      // Filter out > 7 days
+      // item.timeMs is the event time
+      if (!item.timeMs) return false;
+      return (now - item.timeMs) < sevenDaysMs;
+    });
+
+    // Sort by severity (desc), then time (desc)
+    candidates.sort((a, b) => b.severityScore - a.severityScore || b.timeMs - a.timeMs);
+
+    // Top 3
+    const nextTop3 = candidates.slice(0, 3);
+
+    // Just saving to local storage isn't enough, we need to RENDER them.
+    // So we should use `nextTop3` for rendering the section.
+    // And update local storage if changed.
+
+    const nextJson = JSON.stringify(nextTop3);
+    if (localStorage.getItem('jp_evac_quakes_strong') !== nextJson) {
+      localStorage.setItem('jp_evac_quakes_strong', nextJson);
+      setPersistedStrong(nextTop3);
+    }
+  }, [strongPicks]); // Runs when API data updates
+
+  // Merge for display: actually `persistedStrong` is the source of truth for display now, 
+  // because it includes both historical (retained) and fresh API data (merged in effect above).
+  // Wait, if API updates, `strongPicks` changes -> effect runs -> `persistedStrong` updates -> re-render.
+  // So we can use `persistedStrong` for rendering.
+  const displayStrong = persistedStrong;
+
+
+  // Pagination for Recent Quakes
+  const [visibleCount, setVisibleCount] = useState(10);
+  const visibleRecentItems = recentItems.slice(0, visibleCount);
+  const handleLoadMore = () => {
+    setVisibleCount(prev => Math.min(prev + 10, 50));
+  };
+
   return (
     <div className="space-y-6">
       <Head>
@@ -169,10 +245,10 @@ export default function QuakesPage() {
 
       <section className="rounded-lg bg-white p-5 shadow">
         <h2 className="text-lg font-semibold">最近の強い揺れ</h2>
-        <div className="mt-2 text-xs text-gray-600">最大震度（震度）に基づいて表示します。</div>
+        <div className="mt-2 text-xs text-gray-600">過去7日間の最大震度上位3件を表示します。</div>
 
         <div className="mt-3 grid gap-2 md:grid-cols-3">
-          {(strongPicks.length > 0 ? strongPicks : [null, null, null]).slice(0, 3).map((v, idx) => {
+          {(displayStrong.length > 0 ? displayStrong : [null, null, null]).slice(0, 3).map((v, idx) => {
             if (!v) {
               return (
                 <div key={`empty-${idx}`} className="rounded border bg-gray-50 px-3 py-3 text-sm text-gray-600">
@@ -189,7 +265,7 @@ export default function QuakesPage() {
                   <div className="text-sm font-bold">{summary}</div>
                   <span className="rounded bg-white/70 px-2 py-1 text-[11px] font-semibold">{formatEventTime(v.rawTime)}</span>
                 </div>
-                <div className="mt-2 text-sm font-semibold text-gray-900">{v.q.epicenter ?? v.q.title}</div>
+                <div className="mt-2 text-sm font-semibold text-gray-900 break-words">{v.q.epicenter ?? v.q.title}</div>
                 {v.q.link && (
                   <div className="mt-2">
                     <a href={v.q.link} target="_blank" rel="noreferrer" className="text-xs text-blue-700 hover:underline">
@@ -208,60 +284,103 @@ export default function QuakesPage() {
         <div className="mt-2 text-xs text-gray-600">「震源・震度情報」と「顕著な地震の震源要素更新のお知らせ」のみ表示します。</div>
 
         {!data && <div className="mt-3 text-sm text-gray-600">読み込み中...</div>}
-        {data && recentItems.length === 0 && <div className="mt-3 text-sm text-gray-600">表示できる地震情報がありません。</div>}
+        {data && visibleRecentItems.length === 0 && <div className="mt-3 text-sm text-gray-600">表示できる地震情報がありません。</div>}
 
         <ul className="mt-3 space-y-2">
-          {recentItems.map((q) => {
+          {visibleRecentItems.map((q) => {
             const intensity = parseMaxIntensityRaw(q.maxIntensity) ?? parseMaxIntensityFromTitle(q.title);
             const magnitudeNum = parseMagnitude(q.magnitude);
             const tone = severityTone({ intensityScore: intensity?.score ?? null, magnitude: magnitudeNum });
             return (
-            <li key={q.id} className={`rounded border px-3 py-2 text-sm ${toneClasses(tone)}`}>
-              <div className="font-semibold">{q.title}</div>
-              <div className="mt-1 flex flex-wrap gap-2 text-xs text-gray-700">
-                <span>時刻: {formatEventTime(q.time)}</span>
-                <span>震源: {q.epicenter ?? '不明'}</span>
-                <span>最大震度: {intensity?.label ?? '不明'}</span>
-                <span>M: {q.magnitude ?? '不明'}</span>
-              </div>
-              {q.link && (
-                <div className="mt-2">
-                  <a href={q.link} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
-                    気象庁（詳細）
-                  </a>
+              <li key={q.id} className={`rounded border px-3 py-2 text-sm ${toneClasses(tone)}`}>
+                <div className="font-semibold break-words">{q.title}</div>
+                <div className="mt-1 flex flex-wrap gap-2 text-xs">
+                  <span>時刻: {formatEventTime(q.time)}</span>
+                  <span>震源: {q.epicenter ?? '不明'}</span>
+                  <span>最大震度: {intensity?.label ?? '不明'}</span>
+                  <span>M: {q.magnitude ?? '不明'}</span>
                 </div>
-              )}
-            </li>
+                {q.link && (
+                  <div className="mt-2">
+                    <a href={q.link} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
+                      気象庁（詳細）
+                    </a>
+                  </div>
+                )}
+              </li>
             );
           })}
         </ul>
+        {recentItems.length > visibleCount && visibleCount < 50 && (
+          <div className="mt-4 text-center">
+            <button
+              onClick={handleLoadMore}
+              className="rounded-full bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200"
+            >
+              もっと見る ({Math.min(recentItems.length - visibleCount, 10)}件)
+            </button>
+          </div>
+        )}
       </section>
 
-      <section className="rounded-lg border bg-amber-50 p-4 text-sm text-amber-900">
-        <div className="font-semibold">注意</div>
-        <div className="mt-1">
-          本表示は速報目的です。必ず気象庁等の公式情報を確認してください。リアルタイム地震モニタは外部リンクのみです（埋め込み/再配布しません）。
-          <div className="mt-1 text-xs">環境によってはアクセスできない場合があります（ネットワーク設定等）。</div>
-        </div>
-      </section>
+      <IntensityGuide />
 
-      <section className="rounded-lg bg-white p-5 shadow">
-        <h2 className="text-lg font-semibold">取得状況</h2>
-        <div className="mt-3 grid gap-2 text-sm md:grid-cols-3">
-          <div className="rounded border bg-gray-50 p-3">
-            <div className="text-xs text-gray-600">fetchStatus</div>
-            <div className="mt-1 font-semibold">{data?.fetchStatus ?? 'DEGRADED'}</div>
-          </div>
-          <div className="rounded border bg-gray-50 p-3">
-            <div className="text-xs text-gray-600">updatedAt</div>
-            <div className="mt-1 text-xs text-gray-700">{formatUpdatedAt(data?.updatedAt)}</div>
-          </div>
-          <div className="rounded border bg-gray-50 p-3">
-            <div className="text-xs text-gray-600">lastError</div>
-            <div className="mt-1 text-xs text-gray-700">{lastErrorLabel}</div>
-          </div>
-        </div>
-      </section>
+      <DataFetchDetails
+        status={data?.fetchStatus ?? 'DEGRADED'}
+        updatedAt={data?.updatedAt}
+        fetchStatus={data?.fetchStatus ?? 'DEGRADED'}
+        error={data?.lastError}
+      />
     </div>
+  );
+}
+
+const INTENSITY_DATA = [
+  { level: '0〜2', color: 'bg-green-500', feel: 'ほとんど感じない〜揺れを感じる', action: '特に行動不要。' },
+  { level: '3', color: 'bg-lime-500', feel: '家にいる人のほとんどが揺れを感じる', action: '棚や照明器具に注意。' },
+  { level: '4', color: 'bg-yellow-400', feel: '吊り下げ物が大きく揺れる', action: '火の元を確認、安全な場所へ。' },
+  { level: '5弱', color: 'bg-orange-400', feel: '物が落ちる、家具が動く', action: 'テーブル下など安全な場所へ避難。' },
+  { level: '5強', color: 'bg-orange-600', feel: '家具が倒れる、窓ガラスが割れる', action: '頭を守り、揺れが収まるまで待機。' },
+  { level: '6弱', color: 'bg-red-500', feel: '立っていられない、ブロック塀が崩れる', action: '建物倒壊に注意、屋外へ逃げる際は落下物注意。' },
+  { level: '6強', color: 'bg-red-700', feel: '這わないと動けない、多くの建物が損壊', action: '周囲の安全確認、津波や土砂災害にも警戒。' },
+  { level: '7', color: 'bg-purple-900', feel: '極めて激しい揺れ、壁や柱が崩れる', action: '命を守る行動。直ちに海岸・崖から離れる。' },
+];
+
+function IntensityGuide() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <section className="rounded-lg bg-white p-5 shadow">
+      <button
+        className="flex w-full items-center justify-between text-left"
+        onClick={() => setOpen(!open)}
+      >
+        <h2 className="text-lg font-semibold">震度の目安と行動</h2>
+        <span className="text-sm text-blue-600">{open ? 'とじる' : '開く'}</span>
+      </button>
+
+      {open && (
+        <div className="mt-4">
+          <div className="text-xs text-gray-600">気象庁震度階級に基づく目安です。実際の被害は震源の深さや地盤で異なります。</div>
+
+          <div className="mt-3 space-y-2">
+            {INTENSITY_DATA.map((row) => (
+              <div key={row.level} className="flex items-start gap-3 rounded border bg-gray-50 p-2 text-sm">
+                <div className={`mt-1 h-4 w-4 flex-shrink-0 rounded ${row.color}`} title={`震度${row.level}`} />
+                <div className="flex-1">
+                  <div className="font-semibold">震度 {row.level}</div>
+                  <div className="mt-0.5 text-xs text-gray-700">{row.feel}</div>
+                  <div className="mt-0.5 text-xs text-gray-800 font-medium">{row.action}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-3 rounded border-l-2 border-amber-400 bg-amber-50 px-2 py-1 text-[11px] text-amber-900">
+            <strong>重要:</strong> 震度5弱以上では家具転倒・建物損壊の可能性があります。事前に家具固定や避難経路確認を。
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
