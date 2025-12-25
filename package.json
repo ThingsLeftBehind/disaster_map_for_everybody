@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "npm --workspace apps/web run dev",
     "build": "npm --workspace apps/web run build",
+    "postinstall": "npm run prisma:generate",
     "lint": "npm --workspace apps/web run lint",
     "test:jma": "node --test apps/web/lib/jma/__tests__/*.test.mjs",
     "test:store": "node --test apps/web/lib/store/__tests__/*.test.mjs",
