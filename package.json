@@ -5,6 +5,9 @@
   "packageManager": "npm@10.8.1",
   "scripts": {
     "dev": "npm --workspace apps/web run dev",
+    "dev:web": "npm --workspace apps/web run dev",
+    "dev:mobile": "npm --workspace apps/mobile run start",
+    "dev:all": "npm run dev:web & npm run dev:mobile",
     "build": "npm --workspace apps/web run build",
     "lint": "npm --workspace apps/web run lint",
     "test:jma": "node --test apps/web/lib/jma/__tests__/*.test.mjs",
@@ -19,11 +22,15 @@
   },
   "workspaces": [
     "apps/web",
+    "apps/mobile",
     "packages/db",
     "packages/importer",
     "packages/shared"
   ],
   "devDependencies": {
     "tsx": "^4.16.2"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
   }
 }

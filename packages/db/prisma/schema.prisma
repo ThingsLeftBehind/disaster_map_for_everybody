@@ -81,3 +81,41 @@ enum SafetyStatus {
   INJURED
   ISOLATED
 }
+
+// Push notification tables (privacy-first: no raw GPS stored)
+
+model push_devices {
+  id          String   @id @default(cuid())
+  push_token  String   @unique
+  platform    String   // 'ios' | 'android' | 'expo'
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  subscriptions push_subscriptions[]
+  dedup_states  push_dedup_states[]
+}
+
+model push_subscriptions {
+  id         String       @id @default(cuid())
+  device     push_devices @relation(fields: [device_id], references: [id], onDelete: Cascade)
+  device_id  String
+  cell_id    String       // JMA area code (e.g., "130000") - NO raw GPS
+  created_at DateTime     @default(now())
+
+  @@unique([device_id, cell_id])
+  @@index([cell_id])
+}
+
+model push_dedup_states {
+  id           String       @id @default(cuid())
+  device       push_devices @relation(fields: [device_id], references: [id], onDelete: Cascade)
+  device_id    String
+  cell_id      String
+  event_key    String       // e.g., "130000|大雨警報"
+  severity     Int          // 1=注意報, 2=警報, 3=特別警報
+  last_sent_at DateTime
+
+  @@unique([device_id, cell_id, event_key])
+  @@index([last_sent_at])
+}
+

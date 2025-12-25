@@ -7,9 +7,16 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "resolveJsonModule": true,
     "baseUrl": "."
   },
-  "include": ["packages", "apps", "scripts"]
+  "include": [
+    "packages",
+    "apps",
+    "scripts"
+  ],
+  "extends": "expo/tsconfig.base"
 }
