@@ -1,0 +1,5 @@
+[33meac45e0[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m fix: unblock Vercel build
+[33m891614e[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Harden production behavior: disable diagnostics, fix check-in retries, bound rate-limit store, and secure GET device reads
+[33mdf19ebc[m Harden production behavior: disable diagnostics, fix check-in retries, bound rate-limit store, and secure GET device reads
+[33mb6fd2ed[m Update README.md
+[33ma672edc[m Update AGENT.md
