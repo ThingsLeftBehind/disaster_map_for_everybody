@@ -12,6 +12,8 @@ import {
 
 import { normalizeMuniCode } from 'lib/muni-helper';
 
+export const config = { runtime: 'nodejs' };
+
 // Force recompile: 2025-12-23T04:40
 function nowIso() {
   return new Date().toISOString();

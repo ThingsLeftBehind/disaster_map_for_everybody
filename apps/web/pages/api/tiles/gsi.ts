@@ -6,14 +6,17 @@ const ALLOWED_TEMPLATES = [
 ];
 
 const TRANSPARENT_PNG_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=';
+const ERROR_PNG_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAC0lEQVR4nGNgQAcAABIAAXfx+gAAAAAASUVORK5CYII=';
 const TRANSPARENT_PNG = Buffer.from(TRANSPARENT_PNG_B64, 'base64');
+const ERROR_PNG = Buffer.from(ERROR_PNG_B64, 'base64');
 const CACHE_CONTROL_PASS = 'public, max-age=86400';
 const CACHE_CONTROL_BLANK = 'public, max-age=3600';
+const CACHE_CONTROL_ERROR = 'public, max-age=300';
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 function setDebugHeaders(
   res: NextApiResponse,
-  args: { upstreamUrl: string; upstreamStatus: string; mode: 'pass' | 'blank' }
+  args: { upstreamUrl: string; upstreamStatus: string; mode: 'pass' | 'blank' | 'error' }
 ) {
   res.setHeader('x-upstream-url', args.upstreamUrl);
   res.setHeader('x-upstream-status', args.upstreamStatus);
@@ -33,6 +36,13 @@ function sendBlank(res: NextApiResponse, upstreamUrl: string, upstreamStatus: st
   res.setHeader('Cache-Control', CACHE_CONTROL_BLANK);
   setDebugHeaders(res, { upstreamUrl, upstreamStatus, mode: 'blank' });
   res.status(200).send(TRANSPARENT_PNG);
+}
+
+function sendErrorTile(res: NextApiResponse, upstreamUrl: string, upstreamStatus: string) {
+  res.setHeader('Content-Type', 'image/png');
+  res.setHeader('Cache-Control', CACHE_CONTROL_ERROR);
+  setDebugHeaders(res, { upstreamUrl, upstreamStatus, mode: 'error' });
+  res.status(200).send(ERROR_PNG);
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -64,14 +74,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const status = response.status;
         const contentType = response.headers.get('content-type') ?? '';
-        if (status === 404 || status === 204) {
+        if (status === 404 || status === 204 || status === 410) {
             return sendBlank(res, url, String(status));
+        }
+        if (status >= 400) {
+            return sendErrorTile(res, url, String(status));
         }
 
         const buffer = Buffer.from(await response.arrayBuffer());
         const isImage = isImageContentType(contentType) || isPngBuffer(buffer);
         if (!isImage || buffer.length === 0) {
-            return sendBlank(res, url, String(status));
+            return sendErrorTile(res, url, String(status));
         }
 
         res.setHeader('Content-Type', contentType || 'image/png');
@@ -83,6 +96,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             // eslint-disable-next-line no-console
             console.error('Proxy error:', err);
         }
-        return sendBlank(res, url, 'ERR');
+        return sendErrorTile(res, url, 'ERR');
     }
 }

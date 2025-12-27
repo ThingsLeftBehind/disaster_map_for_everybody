@@ -38,10 +38,14 @@ export function inferTokyoGroup(args: {
   muniCode?: string | null;
   label?: string | null;
 }): TokyoGroupKey | null {
-  const muniCode = typeof args.muniCode === 'string' ? args.muniCode : null;
-  if (muniCode && /^\d{6}$/.test(muniCode) && muniCode.startsWith('13')) {
-    const class20Code = `${muniCode}00`;
-    return TOKYO_ISLAND_CLASS20_GROUPS[class20Code] ?? 'mainland';
+  const muniCodeRaw = typeof args.muniCode === 'string' ? args.muniCode : null;
+  const muniDigits = muniCodeRaw ? muniCodeRaw.replace(/\D/g, '') : null;
+  if (muniDigits && muniDigits.length >= 5) {
+    const base5 = muniDigits.slice(0, 5);
+    if (base5.startsWith('13')) {
+      const class20Code = `${base5}00`;
+      return TOKYO_ISLAND_CLASS20_GROUPS[class20Code] ?? 'mainland';
+    }
   }
 
   const label = typeof args.label === 'string' ? args.label.trim() : '';

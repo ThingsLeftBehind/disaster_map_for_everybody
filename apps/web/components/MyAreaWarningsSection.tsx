@@ -5,23 +5,17 @@ import { useDevice } from './device/DeviceProvider';
 import { reverseGeocodeGsi, type Coords } from '../lib/client/location';
 import { formatPrefMuniLabel, useAreaName } from '../lib/client/areaName';
 import { getJmaWarningPriority } from '../lib/jma/filters';
+import { inferTokyoGroup, type TokyoGroupKey } from '../lib/alerts/tokyoScope';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 type WarningItem = { id: string; kind: string; status: string | null; source: string };
-type TokyoGroupKey = 'mainland' | 'izu' | 'ogasawara';
 
 const TOKYO_LABELS: Record<TokyoGroupKey, string> = {
     mainland: '東京都（島しょ除く）',
     izu: '東京都（伊豆諸島）',
     ogasawara: '東京都（小笠原諸島）',
 };
-
-function inferTokyoGroupFromLabel(label: string | null | undefined): TokyoGroupKey {
-    if (label?.includes('小笠原')) return 'ogasawara';
-    if (label?.includes('伊豆')) return 'izu';
-    return 'mainland';
-}
 
 function summarizeWarningItems(items: WarningItem[]) {
     const urgentCounts = new Map<string, number>();
@@ -230,7 +224,12 @@ export function MyAreaWarningsSection() {
                 let targetItems = items;
                 let tokyoLabel: string | null = null;
                 if (areaCode === '130000' && tokyoGroups) {
-                    const group = inferTokyoGroupFromLabel(area.muniName ?? area.label ?? null);
+                    const group =
+                        inferTokyoGroup({
+                            prefCode: area.prefCode ?? null,
+                            muniCode: area.muniCode ?? null,
+                            label: area.muniName ?? area.label ?? null,
+                        }) ?? 'mainland';
                     targetItems = tokyoGroups[group]?.items ?? [];
                     tokyoLabel = TOKYO_LABELS[group];
                 }

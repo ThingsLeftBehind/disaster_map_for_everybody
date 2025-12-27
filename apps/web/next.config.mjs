@@ -9,9 +9,7 @@ const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
   transpilePackages: ['@jp-evac/shared'],
-  experimental: {
-    serverExternalPackages: ['@prisma/client', 'prisma'],
-  },
+  serverExternalPackages: ['@prisma/client', 'prisma'],
   outputFileTracingRoot: path.join(__dirname, '../..'),
   outputFileTracingIncludes: {
     '/api/**/*': [

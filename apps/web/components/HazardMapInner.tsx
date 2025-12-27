@@ -48,13 +48,22 @@ const JAPAN_BOUNDS: L.LatLngBoundsExpression = [
 ];
 const TRANSPARENT_PNG =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=';
+const NO_DATA_TILE_SIZE = 1;
+const ERROR_TILE_SIZE = 2;
+const LANDSLIDE_LAYER_KEY = 'landslide';
+const LANDSLIDE_SOFT_MESSAGE = '土砂災害: データなし/未提供';
+const LANDSLIDE_HARD_MESSAGE = '土砂災害レイヤーの取得に失敗しました。通信環境をご確認ください。';
 
 function overlayTiles(layer: HazardLayer): Array<{ url: string; scheme: 'xyz' | 'tms' }> {
+  if (layer.key === 'landslide') {
+    const tiles = layer.tiles && layer.tiles.length > 0 ? layer.tiles : LANDSLIDE_TILE_URLS.map((url) => ({ url }));
+    return tiles.map((tile) => ({
+      url: tile.url.startsWith('/api/tiles/gsi') ? tile.url : toProxyUrl(tile.url),
+      scheme: tile.scheme ?? layer.scheme ?? 'xyz',
+    }));
+  }
   if (layer.tiles && layer.tiles.length > 0) {
     return layer.tiles.map((tile) => ({ url: tile.url, scheme: tile.scheme ?? layer.scheme ?? 'xyz' }));
-  }
-  if (layer.key === 'landslide') {
-    return LANDSLIDE_TILE_URLS.map((url) => ({ url: toProxyUrl(url), scheme: layer.scheme ?? 'xyz' }));
   }
   return [{ url: layer.tileUrl, scheme: layer.scheme ?? 'xyz' }];
 }
@@ -179,14 +188,97 @@ export default function HazardMapInner({
   const [currentZoom, setCurrentZoom] = useState(11);
   const [baseTileError, setBaseTileError] = useState<string | null>(null);
   const [overlayTileError, setOverlayTileError] = useState<string | null>(null);
+  const [landslideNotice, setLandslideNotice] = useState<{ level: 'soft' | 'hard'; message: string } | null>(null);
   const statsRef = useRef<Record<string, { urls: Set<string>; loaded: number; errors: number; fatalErrors: number; errorSamples: TileErrorSample[] }>>({});
   const diagTimerRef = useRef<number | null>(null);
+  const landslideTimerRef = useRef<number | null>(null);
+  const landslideStateRef = useRef<{
+    enabled: boolean;
+    hasSuccess: boolean;
+    consecutiveNon404: number;
+    non404Total: number;
+    seen404: number;
+    firstNon404AtMs: number;
+  }>({
+    enabled: false,
+    hasSuccess: false,
+    consecutiveNon404: 0,
+    non404Total: 0,
+    seen404: 0,
+    firstNon404AtMs: 0,
+  });
   const diagnosticsEnabled = Boolean(onDiagnostics) && process.env.NODE_ENV !== 'production';
 
   const safeTileOptions = {
     bounds: JAPAN_BOUNDS,
     noWrap: true,
     errorTileUrl: TRANSPARENT_PNG,
+  };
+  const landslideEnabled = enabledKeys.includes(LANDSLIDE_LAYER_KEY);
+
+  const clearLandslideTimer = () => {
+    if (landslideTimerRef.current !== null) {
+      window.clearTimeout(landslideTimerRef.current);
+      landslideTimerRef.current = null;
+    }
+  };
+
+  const evaluateLandslideNotice = (nowMs: number) => {
+    const state = landslideStateRef.current;
+    if (!state.enabled) {
+      setLandslideNotice(null);
+      return;
+    }
+    const elapsedMs = state.firstNon404AtMs ? nowMs - state.firstNon404AtMs : 0;
+    const hardByStreak = state.consecutiveNon404 >= 8;
+    const hardByTimeout = !state.hasSuccess && state.non404Total >= 8 && elapsedMs >= 12_000;
+    if (hardByStreak || hardByTimeout) {
+      setLandslideNotice({ level: 'hard', message: LANDSLIDE_HARD_MESSAGE });
+      return;
+    }
+    if (!state.hasSuccess && state.non404Total === 0 && state.seen404 > 0) {
+      setLandslideNotice({ level: 'soft', message: LANDSLIDE_SOFT_MESSAGE });
+      return;
+    }
+    setLandslideNotice(null);
+  };
+
+  const scheduleLandslideTimer = () => {
+    if (landslideTimerRef.current !== null) return;
+    landslideTimerRef.current = window.setTimeout(() => {
+      landslideTimerRef.current = null;
+      evaluateLandslideNotice(Date.now());
+    }, 12_000);
+  };
+
+  const recordLandslideSuccess = () => {
+    const state = landslideStateRef.current;
+    if (!state.enabled) return;
+    state.hasSuccess = true;
+    state.consecutiveNon404 = 0;
+    state.non404Total = 0;
+    state.seen404 = 0;
+    state.firstNon404AtMs = 0;
+    clearLandslideTimer();
+    setLandslideNotice(null);
+  };
+
+  const recordLandslideNoData = (nowMs: number) => {
+    const state = landslideStateRef.current;
+    if (!state.enabled) return;
+    state.seen404 += 1;
+    state.consecutiveNon404 = 0;
+    evaluateLandslideNotice(nowMs);
+  };
+
+  const recordLandslideFailure = (nowMs: number) => {
+    const state = landslideStateRef.current;
+    if (!state.enabled) return;
+    state.non404Total += 1;
+    state.consecutiveNon404 += 1;
+    if (!state.firstNon404AtMs) state.firstNon404AtMs = nowMs;
+    if (!state.hasSuccess) scheduleLandslideTimer();
+    evaluateLandslideNotice(nowMs);
   };
 
   useEffect(() => setReady(true), []);
@@ -200,6 +292,22 @@ export default function HazardMapInner({
   useEffect(() => {
     setOverlayTileError(null);
   }, [enabledKeys.join('|')]);
+
+  useEffect(() => {
+    if (landslideTimerRef.current !== null) {
+      window.clearTimeout(landslideTimerRef.current);
+      landslideTimerRef.current = null;
+    }
+    landslideStateRef.current = {
+      enabled: landslideEnabled,
+      hasSuccess: false,
+      consecutiveNon404: 0,
+      non404Total: 0,
+      seen404: 0,
+      firstNon404AtMs: 0,
+    };
+    setLandslideNotice(null);
+  }, [landslideEnabled]);
 
   useEffect(() => {
     statsRef.current = {};
@@ -267,6 +375,8 @@ export default function HazardMapInner({
     if (validKeys.length > 0 && onZoomValid) onZoomValid(validKeys);
   }, [currentZoom, hasOverlays, maxOverlayZoom, minOverlayZoom, onZoomOutOfRange, onZoomValid, overlays]);
 
+  const tileBannerMessage = overlayTileError ?? landslideNotice?.message ?? baseTileError;
+
   return (
     <div className="relative">
       <MapContainer
@@ -311,15 +421,62 @@ export default function HazardMapInner({
                   zIndex={200}
                   attribution='&copy; <a href="https://disaportal.gsi.go.jp/">GSI Hazard Map</a>'
                   eventHandlers={{
-                    tileload: () => {
+                    tileload: (event) => {
+                      if (entry.layer.key === LANDSLIDE_LAYER_KEY) {
+                        const tile = (event as any)?.tile ?? (event as any)?.target ?? null;
+                        const width = typeof tile?.naturalWidth === 'number' ? tile.naturalWidth : null;
+                        const height = typeof tile?.naturalHeight === 'number' ? tile.naturalHeight : null;
+                        const size = width && height ? Math.min(width, height) : null;
+                        const nowMs = Date.now();
+
+                        if (size === NO_DATA_TILE_SIZE) {
+                          recordLandslideNoData(nowMs);
+                          bumpStats(entry.layer.key, entry.url, 'error', false, {
+                            at: new Date().toISOString(),
+                            status: 404,
+                            url: tile?.src ?? entry.url,
+                          });
+                          return;
+                        }
+
+                        if (size === ERROR_TILE_SIZE) {
+                          recordLandslideFailure(nowMs);
+                          bumpStats(entry.layer.key, entry.url, 'error', true, {
+                            at: new Date().toISOString(),
+                            status: 503,
+                            url: tile?.src ?? entry.url,
+                          });
+                          return;
+                        }
+
+                        recordLandslideSuccess();
+                        bumpStats(entry.layer.key, entry.url, 'load', false);
+                        return;
+                      }
+
                       bumpStats(entry.layer.key, entry.url, 'load', false);
                     },
                     tileerror: (event) => {
                       const status = readErrorStatus((event as any)?.error);
                       const src = (event as any)?.tile?.src ?? (event as any)?.target?.src ?? null;
+                      if (entry.layer.key === LANDSLIDE_LAYER_KEY) {
+                        const nowMs = Date.now();
+                        const noData = status === 404 || status === 410;
+                        if (noData) {
+                          recordLandslideNoData(nowMs);
+                        } else {
+                          recordLandslideFailure(nowMs);
+                        }
+                        bumpStats(entry.layer.key, entry.url, 'error', !noData, {
+                          at: new Date().toISOString(),
+                          status,
+                          url: src ?? entry.url,
+                        });
+                        return;
+                      }
+
                       const knownDomain = isKnownHazardDomain(src ?? entry.url);
-                      // 404/410 are now benign (swallowed by proxy mostly, but just in case)
-                      const benign = status === 404 || status === 410;
+                      const benign = false;
                       const fatal = status ? (status >= 500 || status === 401 || status === 403) : !knownDomain;
                       bumpStats(entry.layer.key, entry.url, 'error', fatal, {
                         at: new Date().toISOString(),
@@ -343,9 +500,9 @@ export default function HazardMapInner({
         )}
       </MapContainer>
 
-      {(overlayTileError ?? baseTileError) && (
+      {tileBannerMessage && (
         <div className="pointer-events-none absolute left-3 top-3 z-[1000] max-w-[85%] rounded-xl border bg-white/90 px-3 py-2 text-xs font-semibold text-amber-900 ring-1 ring-amber-200">
-          {overlayTileError ?? baseTileError}
+          {tileBannerMessage}
         </div>
       )}
     </div>

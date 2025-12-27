@@ -6,20 +6,10 @@ import { useDevice } from '../components/device/DeviceProvider';
 import { reverseGeocodeGsi, saveLastLocation } from '../lib/client/location';
 import { formatPrefMuniLabel, useAreaName } from '../lib/client/areaName';
 import { shapeAlertWarnings, type WarningGroup, deduplicateWarnings, deduplicateKindsForDisplay } from '../lib/jma/alerts';
-import { type TokyoGroupKey } from '../lib/alerts/tokyoScope';
+import { inferTokyoGroup, type TokyoGroupKey } from '../lib/alerts/tokyoScope';
 import { DataFetchDetails } from '../components/DataFetchDetails';
 
-// Tokyo island municipality codes (5-digit format)
-const TOKYO_ISLAND_MUNI_CODES = new Set([
-  '13361', '13362', '13363', '13364', '13381', '13382', '13401', '13402', '13421',
-]);
 import { MyAreaWarningsSection } from '../components/MyAreaWarningsSection';
-
-function isTokyoIslandMuni(muniCode: string | null | undefined): boolean {
-  if (!muniCode) return false;
-  const code5 = muniCode.length === 6 ? muniCode.slice(0, 5) : muniCode;
-  return TOKYO_ISLAND_MUNI_CODES.has(code5);
-}
 
 function isIslandAreaName(name: string): boolean {
   return name.includes('伊豆諸島') || name.includes('小笠原');
@@ -144,8 +134,13 @@ export default function AlertsPage() {
   const effectiveMuniCode = areaContext.muniCode;
   const showTokyoToggle = effectivePrefCode === '13'; // Kept variable name for logic consistency, though we don't show a toggle.
 
-  const isTokyoIsland = showTokyoToggle && isTokyoIslandMuni(effectiveMuniCode);
-  const tokyoScope: 'mainland' | 'islands' = isTokyoIsland ? 'islands' : 'mainland';
+  const inferredTokyoGroup = inferTokyoGroup({
+    prefCode: effectivePrefCode ?? null,
+    muniCode: effectiveMuniCode ?? null,
+    label: areaContext.label ?? null,
+  });
+  const tokyoScope: 'mainland' | 'islands' =
+    showTokyoToggle && (inferredTokyoGroup === 'izu' || inferredTokyoGroup === 'ogasawara') ? 'islands' : 'mainland';
 
   const formatTokyoScopeLabel = () => {
     // If mainland, just "Tokyo". If islands, "Tokyo (Islands)".

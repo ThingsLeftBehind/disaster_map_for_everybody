@@ -7,6 +7,8 @@ import { getEvacSitesCoordScales, normalizeLatLon } from 'lib/shelters/coords';
 import { isEvacSitesTableMismatchError, safeErrorMessage } from 'lib/shelters/evacsiteCompat';
 import { DEFAULT_MAIN_LIMIT } from 'lib/constants';
 
+export const config = { runtime: 'nodejs' };
+
 const BASE_SCALE_FACTORS = [1, 1e7, 1e6, 1e5, 1e4, 1e3, 1e2] as const;
 
 function nowIso() {
