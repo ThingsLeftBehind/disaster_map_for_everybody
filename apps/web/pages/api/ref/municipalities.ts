@@ -8,12 +8,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     | string
     | undefined;
 
-  if (!prefCode) {
-    const prefectures = await listPrefectures();
-    return res.status(200).json({ prefectures });
+  try {
+    if (!prefCode) {
+      const prefectures = await listPrefectures();
+      return res.status(200).json({ prefectures });
+    }
+
+    const municipalities = await listMunicipalitiesByPref(prefCode);
+    return res.status(200).json({ municipalities });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!prefCode) return res.status(200).json({ prefectures: [], lastError: message });
+    return res.status(200).json({ municipalities: [], lastError: message });
   }
-
-  const municipalities = await listMunicipalitiesByPref(prefCode);
-  return res.status(200).json({ municipalities });
 }
-

@@ -1,6 +1,4 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { getRepoRootDir } from '../store/paths';
+import municipalitiesData from '../../data/generated/municipalities.json';
 
 export type MunicipalityRef = {
   prefCode: string;
@@ -15,9 +13,7 @@ let cachedByPref: Map<string, string> | null = null;
 
 async function loadAll(): Promise<MunicipalityRef[]> {
   if (cached) return cached;
-  const filePath = path.join(getRepoRootDir(), 'data', 'generated', 'municipalities.json');
-  const text = await fs.readFile(filePath, 'utf8');
-  const json = JSON.parse(text) as MunicipalityRef[];
+  const json = municipalitiesData as MunicipalityRef[];
   cached = Array.isArray(json) ? json : [];
   cachedByMuni = null;
   cachedByPref = null;

@@ -1,8 +1,26 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
   transpilePackages: ['@jp-evac/shared'],
+  experimental: {
+    serverExternalPackages: ['@prisma/client', 'prisma'],
+  },
+  outputFileTracingRoot: path.join(__dirname, '../..'),
+  outputFileTracingIncludes: {
+    '/api/**/*': [
+      'packages/db/node_modules/.prisma/client/**',
+      'packages/db/node_modules/@prisma/client/**',
+      'apps/web/node_modules/.prisma/client/**',
+      'apps/web/node_modules/@prisma/client/**',
+    ],
+  },
   async headers() {
     const isProd = process.env.NODE_ENV === 'production';
     const securityHeaders = [

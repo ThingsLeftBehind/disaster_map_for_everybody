@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { getWritableDataDir } from '../server/writable-data';
 
 let cachedRepoRoot: string | null = null;
 
@@ -28,7 +29,7 @@ export function getRepoRootDir(): string {
 }
 
 export function localStoreRootDir(): string {
-  return path.join(getRepoRootDir(), 'data', 'local_store');
+  return path.join(getWritableDataDir(), 'local_store');
 }
 
 export function localStoreLocksDir(): string {

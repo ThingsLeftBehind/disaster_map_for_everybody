@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { atomicWriteJson, readJsonFile } from '../jma/cache';
-import { getRepoRootDir } from '../store/paths';
+import { getWritableDataDir } from '../server/writable-data';
 
 export type HazardLayerKey = 'flood' | 'landslide' | 'tsunami' | 'liquefaction';
 export type TileScheme = 'xyz' | 'tms';
@@ -41,8 +41,8 @@ const METADATA_URL =
   'https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/metadata_light.xml';
 const PORTAL_URL = 'https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/';
 
-const CACHE_PATH = path.join(getRepoRootDir(), 'data', 'cache', 'gsi', 'hazard_layers.json');
-const LOCK_PATH = path.join(getRepoRootDir(), 'data', 'cache', 'gsi', 'hazard_layers.lock');
+const CACHE_PATH = path.join(getWritableDataDir(), 'cache', 'gsi', 'hazard_layers.json');
+const LOCK_PATH = path.join(getWritableDataDir(), 'cache', 'gsi', 'hazard_layers.lock');
 
 const STALE_MS = 24 * 60 * 60_000;
 

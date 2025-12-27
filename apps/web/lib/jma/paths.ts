@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { JmaFeedKey } from './types';
+import { getWritableDataDir } from '../server/writable-data';
 
 let cachedRepoRoot: string | null = null;
 
@@ -29,7 +30,7 @@ export function getRepoRootDir(): string {
 }
 
 export function jmaCacheRootDir(): string {
-  return path.join(getRepoRootDir(), 'data', 'cache', 'jma');
+  return path.join(getWritableDataDir(), 'cache', 'jma');
 }
 
 export function jmaFeedsDir(): string {
@@ -92,4 +93,3 @@ export function jmaLockFilePath(key: string): string {
 export function jmaAreaConstPath(): string {
   return path.join(getRepoRootDir(), 'data', 'ref', 'jma', 'const', 'area.json');
 }
-

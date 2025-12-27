@@ -3,7 +3,11 @@ import { getAdminState } from 'lib/store/adapter';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
-  const admin = await getAdminState();
-  return res.status(200).json({ banner: admin.banner });
+  try {
+    const admin = await getAdminState();
+    return res.status(200).json({ banner: admin.banner });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return res.status(200).json({ banner: { text: null, updatedAt: null }, lastError: message });
+  }
 }
-

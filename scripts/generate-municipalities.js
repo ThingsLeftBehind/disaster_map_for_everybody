@@ -476,6 +476,7 @@ async function main() {
   const adminDir = path.join(repoRoot, 'data/ref/admin');
   const gsiMuniPath = path.join(repoRoot, 'data/ref/gsi/muni.js');
   const outPath = path.join(repoRoot, 'data/generated/municipalities.json');
+  const webOutPath = path.join(repoRoot, 'apps/web/data/generated/municipalities.json');
 
   let municipalities = await loadMunicipalitiesFromAdminXlsx(adminDir);
 
@@ -491,8 +492,11 @@ async function main() {
   municipalities.sort((a, b) => a.muniCode.localeCompare(b.muniCode));
   const { recordCount, prefCount } = validateMunicipalities(municipalities);
 
-  await atomicWriteFile(outPath, `${JSON.stringify(municipalities, null, 2)}\n`);
+  const payload = `${JSON.stringify(municipalities, null, 2)}\n`;
+  await atomicWriteFile(outPath, payload);
+  await atomicWriteFile(webOutPath, payload);
   console.log(`Wrote: ${path.relative(repoRoot, outPath)} (${recordCount} records, ${prefCount} prefectures) [source: ${source}]`);
+  console.log(`Wrote: ${path.relative(repoRoot, webOutPath)}`);
 }
 
 main().catch((err) => {

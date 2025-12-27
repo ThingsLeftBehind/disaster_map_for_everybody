@@ -17,7 +17,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const parsed = QuerySchema.safeParse(req.query);
   if (!parsed.success) return res.status(400).json({ error: 'Invalid query' });
 
-  const area = await lookupAreaName({ prefCode: parsed.data.prefCode ?? null, muniCode: parsed.data.muniCode ?? null });
-  return res.status(200).json({ area });
+  try {
+    const area = await lookupAreaName({ prefCode: parsed.data.prefCode ?? null, muniCode: parsed.data.muniCode ?? null });
+    return res.status(200).json({ area });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return res.status(200).json({
+      area: { prefCode: null, prefName: null, muniCode: parsed.data.muniCode ?? null, muniName: null },
+      lastError: message,
+    });
+  }
 }
-
