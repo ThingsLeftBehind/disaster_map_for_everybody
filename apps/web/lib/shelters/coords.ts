@@ -1,5 +1,9 @@
-type CoordScaleClient = { $queryRaw: (...args: any[]) => Promise<any> };
-
+type CoordScaleClient = {
+  $queryRaw: (...args: any[]) => Promise<any>;
+  evac_sites: {
+    findMany: (args: { select: { lat: true; lon: true }; take: number }) => Promise<Array<{ lat: unknown; lon: unknown }>>;
+  };
+};
 type EvacCoordScaleCache = { factor: number; checkedAtMs: number; ranked: number[] };
 
 let cachedScale: EvacCoordScaleCache | null = null;
