@@ -41,8 +41,16 @@ function sendBlank(
   res.status(200).send(TRANSPARENT_PNG);
 }
 
+function normalizeTileParam(value: string): string {
+  return value.replace(/(?:\.png)+$/i, '');
+}
+
 function isPngBuffer(buf: Buffer): boolean {
   return buf.length >= 8 && buf.subarray(0, 8).equals(PNG_SIGNATURE);
+}
+
+function isImageContentType(contentType: string): boolean {
+  return contentType.toLowerCase().startsWith('image/');
 }
 
 function sha256Hex16(buf: Buffer): string {
@@ -63,7 +71,7 @@ function proxyTile(req: NextApiRequest, res: NextApiResponse, upstreamUrl: strin
       const contentType = String(upstreamRes.headers['content-type'] ?? '');
       const lengthHeader = String(upstreamRes.headers['content-length'] ?? '0');
 
-      if (status !== 200 || !contentType.startsWith('image/')) {
+      if (status === 404 || status === 204) {
         upstreamRes.resume();
         return sendBlank(res, upstreamUrl, String(status || 'ERR'), contentType || 'unknown', lengthHeader, 'ERR');
       }
@@ -75,15 +83,17 @@ function proxyTile(req: NextApiRequest, res: NextApiResponse, upstreamUrl: strin
       upstreamRes.on('end', () => {
         const buf = Buffer.concat(chunks);
         const sha = buf.length > 0 ? sha256Hex16(buf) : 'ERR';
-        if (!isPngBuffer(buf) || buf.length < 8) {
-          return sendBlank(res, upstreamUrl, String(status), contentType || 'unknown', String(buf.length), sha);
+        const isImage = isImageContentType(contentType) || isPngBuffer(buf);
+        if (!isImage || buf.length === 0) {
+          return sendBlank(res, upstreamUrl, String(status || 'ERR'), contentType || 'unknown', String(buf.length), sha);
         }
+        const responseContentType = contentType || 'image/png';
         res.statusCode = 200;
-        res.setHeader('Content-Type', 'image/png');
+        res.setHeader('Content-Type', responseContentType);
         res.setHeader('Cache-Control', CACHE_CONTROL);
         setDebugHeaders(res, {
           upstreamUrl,
-          upstreamStatus: String(status),
+          upstreamStatus: String(status || 'ERR'),
           mode: 'pass',
           contentType: contentType || 'unknown',
           length: String(buf.length),
@@ -109,15 +119,35 @@ function proxyTile(req: NextApiRequest, res: NextApiResponse, upstreamUrl: strin
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'GET') return res.status(405).end('Method not allowed');
+  if (req.method !== 'GET') {
+    setDebugHeaders(res, {
+      upstreamUrl: 'invalid',
+      upstreamStatus: 'ERR',
+      mode: 'blank',
+      contentType: 'ERR',
+      length: '0',
+      sha256: 'ERR',
+    });
+    return res.status(405).end('Method not allowed');
+  }
 
   const zRaw = String(Array.isArray(req.query.z) ? req.query.z[0] : req.query.z ?? '');
   const xRaw = String(Array.isArray(req.query.x) ? req.query.x[0] : req.query.x ?? '');
   const yRaw = String(Array.isArray(req.query.y) ? req.query.y[0] : req.query.y ?? '');
-  const z = zRaw.replace(/\.png$/i, '');
-  const x = xRaw.replace(/\.png$/i, '');
-  const y = yRaw.replace(/\.png$/i, '');
-  if (!z || !x || !y) return res.status(400).end('Bad request');
+  const z = normalizeTileParam(zRaw);
+  const x = normalizeTileParam(xRaw);
+  const y = normalizeTileParam(yRaw);
+  if (!z || !x || !y) {
+    setDebugHeaders(res, {
+      upstreamUrl: 'invalid',
+      upstreamStatus: 'ERR',
+      mode: 'blank',
+      contentType: 'ERR',
+      length: '0',
+      sha256: 'ERR',
+    });
+    return res.status(400).end('Bad request');
+  }
 
   const upstreamUrl = `${UPSTREAM_BASE}/${z}/${x}/${y}.png`;
   return proxyTile(req, res, upstreamUrl);

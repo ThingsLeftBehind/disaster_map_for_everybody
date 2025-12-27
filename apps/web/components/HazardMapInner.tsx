@@ -269,7 +269,13 @@ export default function HazardMapInner({
 
   return (
     <div className="relative">
-      <MapContainer center={[center.lat, center.lon]} zoom={11} scrollWheelZoom={true} className="h-[520px] w-full rounded-lg">
+      <MapContainer
+        center={[center.lat, center.lon]}
+        zoom={11}
+        scrollWheelZoom={true}
+        maxBounds={JAPAN_BOUNDS}
+        className="h-[520px] w-full rounded-lg"
+      >
         <Recenter center={center} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

@@ -89,14 +89,19 @@ function forceHttps(url: string): string {
   return url.replace(/^http:\/\//i, 'https://');
 }
 
+function normalizeTileUrl(url: string): string {
+  const https = forceHttps(url);
+  return https.replace(/(?:\.png)+(?=$|\?)/i, '.png');
+}
+
 function normalizeTiles(tiles: HazardLayerTile[]): HazardLayerTile[] {
-  return tiles.map((t) => ({ ...t, url: forceHttps(t.url), scheme: t.scheme ?? 'xyz' }));
+  return tiles.map((t) => ({ ...t, url: normalizeTileUrl(t.url), scheme: t.scheme ?? 'xyz' }));
 }
 
 function normalizeLayer(layer: HazardLayer): HazardLayer {
   const tiles = layer.tiles && layer.tiles.length > 0 ? normalizeTiles(layer.tiles) : undefined;
   const scheme = layer.scheme ?? tiles?.[0]?.scheme ?? 'xyz';
-  const normalizedTileUrl = tiles?.[0]?.url ?? forceHttps(layer.tileUrl);
+  const normalizedTileUrl = tiles?.[0]?.url ?? normalizeTileUrl(layer.tileUrl);
   return {
     ...layer,
     tileUrl: normalizedTileUrl,
@@ -206,7 +211,7 @@ function stabilizeSnapshot(snapshot: HazardLayersSnapshot): { snapshot: HazardLa
 
 function normalizeTemplate(raw: string): string | null {
   if (!raw) return null;
-  const normalized = forceHttps(raw.trim()).replace(/\$\{([xyz])\}/g, '{$1}');
+  const normalized = normalizeTileUrl(raw.trim()).replace(/\$\{([xyz])\}/g, '{$1}');
   if (!normalized.startsWith('https://')) return null;
   const lower = normalized.toLowerCase();
   if (!(lower.includes('{z}') && lower.includes('{x}') && lower.includes('{y}'))) return null;
