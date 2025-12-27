@@ -3,12 +3,15 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createLayerComponent, updateGridLayer } from '@react-leaflet/core';
 import L from 'leaflet';
 
+type TileScheme = 'xyz' | 'tms';
+type TileSpec = { url: string; scheme?: string };
+
 export type HazardLayer = {
   key: string;
   jaName: string;
   tileUrl: string;
-  scheme?: 'xyz' | 'tms';
-  tiles?: Array<{ url: string; scheme?: 'xyz' | 'tms' }>;
+  scheme?: TileScheme;
+  tiles?: TileSpec[];
   minZoom: number;
   maxZoom: number;
 };
@@ -54,18 +57,23 @@ const LANDSLIDE_LAYER_KEY = 'landslide';
 const LANDSLIDE_SOFT_MESSAGE = '土砂災害: データなし/未提供';
 const LANDSLIDE_HARD_MESSAGE = '土砂災害レイヤーの取得に失敗しました。通信環境をご確認ください。';
 
-function overlayTiles(layer: HazardLayer): Array<{ url: string; scheme: 'xyz' | 'tms' }> {
+function resolveScheme(tile: TileSpec | undefined, layer: HazardLayer): TileScheme {
+  const raw = tile?.scheme ?? layer.scheme ?? 'xyz';
+  return raw === 'tms' ? 'tms' : 'xyz';
+}
+
+function overlayTiles(layer: HazardLayer): Array<{ url: string; scheme: TileScheme }> {
   if (layer.key === 'landslide') {
-    const tiles = layer.tiles && layer.tiles.length > 0 ? layer.tiles : LANDSLIDE_TILE_URLS.map((url) => ({ url }));
+    const tiles: TileSpec[] = layer.tiles && layer.tiles.length > 0 ? layer.tiles : LANDSLIDE_TILE_URLS.map((url) => ({ url }));
     return tiles.map((tile) => ({
       url: tile.url.startsWith('/api/tiles/gsi') ? tile.url : toProxyUrl(tile.url),
-      scheme: tile.scheme ?? layer.scheme ?? 'xyz',
+      scheme: resolveScheme(tile, layer),
     }));
   }
   if (layer.tiles && layer.tiles.length > 0) {
-    return layer.tiles.map((tile) => ({ url: tile.url, scheme: tile.scheme ?? layer.scheme ?? 'xyz' }));
+    return layer.tiles.map((tile) => ({ url: tile.url, scheme: resolveScheme(tile, layer) }));
   }
-  return [{ url: layer.tileUrl, scheme: layer.scheme ?? 'xyz' }];
+  return [{ url: layer.tileUrl, scheme: resolveScheme(undefined, layer) }];
 }
 
 function readErrorStatus(error: unknown): number | null {
@@ -87,7 +95,7 @@ function isKnownHazardDomain(url: string | null): boolean {
 
 type HazardTileLayerProps = {
   url: string;
-  scheme: 'xyz' | 'tms';
+  scheme: TileScheme;
   errorTileUrl?: string;
   opacity?: number;
   minZoom?: number;
