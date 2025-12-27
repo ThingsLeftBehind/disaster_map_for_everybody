@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+type CoordScaleClient = { $queryRaw: (...args: any[]) => Promise<any> };
 
 type EvacCoordScaleCache = { factor: number; checkedAtMs: number; ranked: number[] };
 
@@ -48,12 +48,12 @@ export function normalizeLatLon(args: { lat: unknown; lon: unknown; factor: numb
   return { lat, lon };
 }
 
-export async function getEvacSitesCoordScale(prisma: PrismaClient): Promise<number> {
+export async function getEvacSitesCoordScale(prisma: CoordScaleClient): Promise<number> {
   const ranked = await getEvacSitesCoordScales(prisma);
   return ranked[0] ?? 1;
 }
 
-export async function getEvacSitesCoordScales(prisma: PrismaClient): Promise<number[]> {
+export async function getEvacSitesCoordScales(prisma: CoordScaleClient): Promise<number[]> {
   const now = Date.now();
   if (cachedScale && now - cachedScale.checkedAtMs < 5 * 60_000) return cachedScale.ranked;
 
