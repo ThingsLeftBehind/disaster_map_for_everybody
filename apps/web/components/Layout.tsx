@@ -6,6 +6,7 @@ import { shapeAlertWarnings } from '../lib/jma/alerts';
 import { useRouter } from 'next/router';
 import { useAreaName } from '../lib/client/areaName';
 import { toDisplayFetchStatus } from '../lib/ui/fetchStatusLabel';
+import { Footer } from './Footer';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -143,7 +144,7 @@ function HelpPopover({ online, jmaUpdatedAt }: { online: boolean; jmaUpdatedAt: 
               <span className="font-semibold text-amber-800">OUTDATED</span>: 最新でない可能性（通信/取得遅延など）
             </li>
             <li>
-              <span className="font-semibold text-red-700">DOWN</span>: まだ一度も取得できていない
+              <span className="font-semibold text-red-700">UNAVAILABLE</span>: まだ一度も取得できていない
             </li>
             <li className="pt-1 text-gray-600">
               {online
@@ -392,17 +393,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
 
-      <footer className="mt-10 border-t bg-white">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-5 text-sm text-gray-700 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-1">
-            <div>データは遅延・誤差があり得ます。必ず自治体・公式発表を優先してください。</div>
-            <Link href="/sources" className="text-blue-600 hover:underline">
-              出典・注意事項
-            </Link>
-          </div>
-          <div className="text-xs text-gray-500">DBは参照のみ / 端末データはローカル保存</div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

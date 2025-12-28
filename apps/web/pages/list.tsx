@@ -2,7 +2,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import useSWR from 'swr';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import classNames from 'classnames';
 import { hazardKeys, hazardLabels } from '@jp-evac/shared';
 import { HazardChipsCompact } from '../components/HazardChips';
@@ -182,6 +182,7 @@ export default function ListPage() {
   const [draftMode, setDraftMode] = useState<SearchMode>('LOCATION');
   const [modeLocked, setModeLocked] = useState(false);
   const [reverse, setReverse] = useState<{ prefCode: string | null; muniCode: string | null; address: string | null } | null>(null);
+  const [useCurrentLocation, setUseCurrentLocation] = useState(false);
   const [hazards, setHazards] = useState<string[]>([]);
   const [limit, setLimit] = useState(10);
   const [radiusKm, setRadiusKm] = useState(10);
@@ -192,7 +193,6 @@ export default function ListPage() {
   const [hideIneligible, setHideIneligible] = useState(true);
   const [mapCenterCoords, setMapCenterCoords] = useState<Coords | null>(null);
   const [savedNearbyOpen, setSavedNearbyOpen] = useState(false);
-  const locationAutoFetchedRef = useRef(false);
 
   // Share helpers
   const [originUrl, setOriginUrl] = useState<string | null>(null);
@@ -250,6 +250,7 @@ export default function ListPage() {
       setCoordsFromLink(fromLink);
       setDraftMode('LOCATION');
       setModeLocked(true);
+      setUseCurrentLocation(true);
       // Auto-apply search immediately for location mode
       setAppliedQuery({
         mode: 'LOCATION',
@@ -431,28 +432,7 @@ export default function ListPage() {
   const warningsActive =
     Array.isArray(warnings?.items) && warnings.items.some((it: any) => !isJmaLowPriorityWarning(it?.kind));
 
-  const disableLocationMode = () => {
-    setCoords(null);
-    setCoordsFromLink(false);
-    setReverse(null);
-    setDraftMode('LOCATION'); // Keep location mode
-    setModeLocked(true);
-    // Clear applied query to exit location mode strictly
-    // setAppliedQuery(null); // Actually, we probably want to stay in map center mode?
-    // "Remove '現在地を解除'" button logic? 
-    // The user said: "Correct the logic in list.tsx to ensure the '現在地を解除' ... label accurately reflects".
-    // But now we are replacing with Map Center Search. 
-    // The "Current Location" button might still be useful to JUMP to current location?
-    // User said "Replace /list with 'search by map center'".
-    // I should probably remove disableLocationMode if mode is always LOCATION.
-  };
-
-  // Location button state
-  const isUsingLocation = appliedQuery?.mode === 'LOCATION';
-
-  const applySearch = () => {
-    const center = mapCenterCoords ?? coords ?? mapCenter;
-    if (!center) return;
+  const applySearchWithCoords = (center: Coords) => {
     setAppliedQuery({
       mode: 'LOCATION',
       prefCode: '',
@@ -467,12 +447,18 @@ export default function ListPage() {
       hideIneligible,
     });
   };
+  const applySearchFromMode = () => {
+    const center = useCurrentLocation && coords ? coords : mapCenterCoords ?? mapCenter;
+    if (!center) return;
+    applySearchWithCoords(center);
+  };
 
   const toggleHazard = (hazard: string) => {
     setHazards((prev) => (prev.includes(hazard) ? prev.filter((h) => h !== hazard) : [...prev, hazard]));
   };
 
   const handleLocate = async () => {
+    setUseCurrentLocation(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const next = { lat: pos.coords.latitude, lon: pos.coords.longitude };
@@ -499,21 +485,10 @@ export default function ListPage() {
         // Now useEffect is removed. We should trigger a search if desired.
         // But for safety, let's just set mode and let user click Search if they want, 
         // OR better: auto-search because it's an explicit action.
-        setAppliedQuery({
-          mode: 'LOCATION',
-          prefCode: '',
-          muniCode: '',
-          q: pendingTrimmedQ,
-          hazards: [...hazards],
-          limit,
-          radiusKm,
-          lat: next.lat,
-          lon: next.lon,
-          offset: 0,
-          hideIneligible,
-        });
+        applySearchWithCoords(next);
       },
       () => {
+        setUseCurrentLocation(false);
         alert('位置情報の取得に失敗しました');
       },
       {
@@ -555,7 +530,7 @@ export default function ListPage() {
         </div>
       )}
 
-      {draftMode === 'LOCATION' && coords && (
+      {useCurrentLocation && coords && (
         <div className="rounded border bg-gray-50 px-3 py-2 text-xs text-gray-700">
           現在地: {reverseAreaLabel ?? 'エリア未確定'}
           {coordsFromLink && <div className="mt-1 text-[11px] text-gray-600">共有リンクの位置（概算）を表示中</div>}
@@ -571,23 +546,31 @@ export default function ListPage() {
           <h2 className="text-lg font-semibold">地図</h2>
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={applySearch}
+              onClick={() => {
+                const center = mapCenterCoords ?? mapCenter;
+                if (!center) return;
+                setUseCurrentLocation(false);
+                applySearchWithCoords(center);
+              }}
               className="rounded bg-blue-600 px-3 py-2 text-sm font-bold text-white shadow hover:bg-blue-700"
             >
               地図の中心で検索
             </button>
             <button
-              onClick={async () => {
-                if (isUsingLocation) {
-                  disableLocationMode();
+              onClick={() => {
+                if (useCurrentLocation) {
+                  const center = mapCenterCoords ?? mapCenter;
+                  if (!center) return;
+                  setUseCurrentLocation(false);
+                  applySearchWithCoords(center);
                   return;
                 }
-                await handleLocate();
+                void handleLocate();
               }}
               title={locationTooltip}
               className="rounded bg-emerald-600 px-3 py-2 text-sm text-white hover:bg-emerald-700"
             >
-              {isUsingLocation ? '現在地を解除' : '現在地を使う'}
+              {useCurrentLocation ? '現在地を解除' : '現在地で表示'}
             </button>
           </div>
         </div>
@@ -674,7 +657,7 @@ export default function ListPage() {
                 </select>
               </div>
               <button
-                onClick={applySearch}
+                onClick={applySearchFromMode}
                 className="ml-auto rounded bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 md:hidden"
               >
                 フィルタ適用
@@ -692,7 +675,7 @@ export default function ListPage() {
               <span>不適合（ハザード未対応等の場所）も含めて表示</span>
             </label>
             <button
-              onClick={applySearch}
+              onClick={applySearchFromMode}
               className="hidden rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 md:block"
             >
               フィルタ適用
