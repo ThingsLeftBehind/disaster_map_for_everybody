@@ -5,15 +5,16 @@ import classNames from 'classnames';
 import { useDevice } from '../components/device/DeviceProvider';
 import { reverseGeocodeGsi, saveLastLocation } from '../lib/client/location';
 import { formatPrefMuniLabel, useAreaName } from '../lib/client/areaName';
-import { shapeAlertWarnings, type WarningGroup, deduplicateWarnings, deduplicateKindsForDisplay } from '../lib/jma/alerts';
-import { inferTokyoGroup, type TokyoGroupKey } from '../lib/alerts/tokyoScope';
+import { shapeAlertWarnings, type WarningGroup, deduplicateWarnings } from '../lib/jma/alerts';
+import {
+  getTokyoContextFromGroup,
+  getTokyoContextFromMuniCode,
+  getTokyoGroupFromAreaCode,
+  type TokyoGroupKey,
+} from '../lib/alerts/tokyoScope';
 import { DataFetchDetails } from '../components/DataFetchDetails';
 
 import { MyAreaWarningsSection } from '../components/MyAreaWarningsSection';
-
-function isIslandAreaName(name: string): boolean {
-  return name.includes('伊豆諸島') || name.includes('小笠原');
-}
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -26,6 +27,11 @@ function formatUpdatedAt(updatedAt: string | null | undefined): string {
 
 function sanitizeFetchError(message: string | null | undefined): string {
   return message ? '取得エラー' : 'なし';
+}
+
+function matchesTokyoGroup(areaCode: string, group: TokyoGroupKey | null): boolean {
+  if (!group) return true;
+  return getTokyoGroupFromAreaCode(areaCode) === group;
 }
 
 
@@ -118,35 +124,12 @@ export default function AlertsPage() {
     [areaContext.label, areaContext.muniCode, areaContext.prefCode, warnings]
   );
 
-  const primaryBuckets = warningShape.buckets;
-  const urgentCount = warningShape.counts.urgent;
-  const advisoryCount = warningShape.counts.advisory;
-  const primaryWarningCount = warningShape.counts.total;
-  const isTokyoArea = warningShape.isTokyoArea;
-  const primaryTokyoGroup: TokyoGroupKey = warningShape.tokyoGroup ?? 'mainland';
-
-  // Automatic Tokyo Scope Logic
-  // We no longer allow manual toggle. We deduce the scope from the effective municipality code.
-  // If user selects "Tokyo" (pref 13) without a specific municipality (or just "Tokyo"), we default to 'mainland'.
-  // If user selects/is in a specific Island municipality, we switch to 'islands'.
-
-  const effectivePrefCode = areaContext.prefCode;
-  const effectiveMuniCode = areaContext.muniCode;
-  const showTokyoToggle = effectivePrefCode === '13'; // Kept variable name for logic consistency, though we don't show a toggle.
-
-  const inferredTokyoGroup = inferTokyoGroup({
-    prefCode: effectivePrefCode ?? null,
-    muniCode: effectiveMuniCode ?? null,
-    label: areaContext.label ?? null,
-  });
-  const tokyoScope: 'mainland' | 'islands' =
-    showTokyoToggle && (inferredTokyoGroup === 'izu' || inferredTokyoGroup === 'ogasawara') ? 'islands' : 'mainland';
-
-  const formatTokyoScopeLabel = () => {
-    // If mainland, just "Tokyo". If islands, "Tokyo (Islands)".
-    // User requested NO "Mainland" (本土) text.
-    return tokyoScope === 'mainland' ? '東京都' : '東京都（島しょ）';
-  };
+  const warningBuckets = warningShape.buckets;
+  const warningCounts = warningShape.counts;
+  const tokyoGroupFilter = warningShape.isTokyoArea ? warningShape.tokyoGroup : null;
+  const tokyoContextFromMuni = getTokyoContextFromMuniCode(areaContext.muniCode ?? null);
+  const tokyoContext = tokyoGroupFilter ? getTokyoContextFromGroup(tokyoGroupFilter) : tokyoContextFromMuni;
+  const tokyoScopeLabel = tokyoContext === 'MAINLAND' ? '東京都' : tokyoContext === 'ISLANDS' ? '東京都（島しょ）' : null;
 
   const targetLabel = useCurrent
     ? currentJmaAreaCode
@@ -170,12 +153,7 @@ export default function AlertsPage() {
     if (!breakdown) return [];
     return Object.entries(breakdown)
       .map(([code, data]) => {
-        // Apply Tokyo scope filtering
-        if (showTokyoToggle) {
-          const isIsland = isIslandAreaName(data.name);
-          if (tokyoScope === 'mainland' && isIsland) return null;
-          if (tokyoScope === 'islands' && !isIsland) return null;
-        }
+        if (!matchesTokyoGroup(code, tokyoGroupFilter)) return null;
         const activeItems = data.items.filter((i: any) => {
           const s = i.status || '';
           return !s.includes('解除') && !s.includes('なし') && !s.includes('ありません');
@@ -185,75 +163,7 @@ export default function AlertsPage() {
       })
       .filter((area): area is NonNullable<typeof area> => area !== null && area.items.length > 0)
       .sort((a, b) => b.items.length - a.items.length || a.code.localeCompare(b.code));
-  }, [breakdown, showTokyoToggle, tokyoScope]);
-
-  // Compute filtered counts for Tokyo scope
-  const filteredCounts = useMemo(() => {
-    if (!showTokyoToggle) {
-      return { urgent: urgentCount, advisory: advisoryCount, total: primaryWarningCount };
-    }
-    // Extract unique kinds from activeAreas with deduplication
-    const uniqueKinds = new Set<string>();
-    let urgent = 0;
-    let advisory = 0;
-    for (const area of activeAreas) {
-      for (const item of area.items) {
-        const kind = item.kind;
-        if (uniqueKinds.has(kind)) continue;
-        uniqueKinds.add(kind);
-        // Categorize based on kind name
-        if (kind.includes('警報') && !kind.includes('注意報')) {
-          urgent++;
-        } else if (kind.includes('注意報')) {
-          advisory++;
-        }
-      }
-    }
-    return { urgent, advisory, total: urgent + advisory };
-  }, [showTokyoToggle, urgentCount, advisoryCount, primaryWarningCount, activeAreas]);
-
-  // Compute filtered buckets for Tokyo scope from activeAreas
-  const filteredBuckets = useMemo((): { urgent: WarningGroup[]; advisory: WarningGroup[] } => {
-    if (!showTokyoToggle) {
-      return { urgent: primaryBuckets.urgent, advisory: primaryBuckets.advisory };
-    }
-    // Build buckets from activeAreas items
-    const urgentMap = new Map<string, WarningGroup>();
-    const advisoryMap = new Map<string, WarningGroup>();
-
-    for (const area of activeAreas) {
-      for (const item of area.items) {
-        const kind = item.kind;
-        const status = item.status || '';
-        const isUrgent = kind.includes('警報') && !kind.includes('注意報');
-        const isAdvisory = kind.includes('注意報');
-
-        const targetMap = isUrgent ? urgentMap : isAdvisory ? advisoryMap : null;
-        if (!targetMap) continue;
-
-        if (targetMap.has(kind)) {
-          const existing = targetMap.get(kind)!;
-          if (status && !existing.statuses.includes(status)) {
-            existing.statuses.push(status);
-          }
-          existing.count++;
-        } else {
-          targetMap.set(kind, {
-            key: kind,
-            kind,
-            count: 1,
-            statuses: status ? [status] : [],
-            priority: isUrgent ? 'URGENT' : 'ADVISORY',
-          });
-        }
-      }
-    }
-
-    return {
-      urgent: Array.from(urgentMap.values()),
-      advisory: Array.from(advisoryMap.values()),
-    };
-  }, [showTokyoToggle, primaryBuckets, activeAreas]);
+  }, [breakdown, tokyoGroupFilter]);
 
   const activeAreaNames = activeAreas.slice(0, 3).map(a => a.name);
   if (activeAreas.length > 3) activeAreaNames.push('ほか');
@@ -292,18 +202,18 @@ export default function AlertsPage() {
                 <span
                   className={classNames(
                     'rounded-full px-3 py-1 text-xs font-bold ring-1',
-                    filteredCounts.urgent > 0 ? 'bg-red-50 text-red-800 ring-red-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
+                    warningCounts.urgent > 0 ? 'bg-red-50 text-red-800 ring-red-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
                   )}
                 >
-                  警報 {filteredCounts.urgent}
+                  警報 {warningCounts.urgent}
                 </span>
                 <span
                   className={classNames(
                     'rounded-full px-3 py-1 text-xs font-bold ring-1',
-                    filteredCounts.advisory > 0 ? 'bg-amber-50 text-amber-900 ring-amber-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
+                    warningCounts.advisory > 0 ? 'bg-amber-50 text-amber-900 ring-amber-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
                   )}
                 >
-                  注意報 {filteredCounts.advisory}
+                  注意報 {warningCounts.advisory}
                 </span>
               </div>
             </div>
@@ -314,21 +224,21 @@ export default function AlertsPage() {
               <span
                 className={classNames(
                   'rounded-full px-3 py-1 text-xs font-bold ring-1',
-                  filteredCounts.urgent > 0 ? 'bg-red-50 text-red-800 ring-red-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
+                  warningCounts.urgent > 0 ? 'bg-red-50 text-red-800 ring-red-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
                 )}
               >
-                警報 {filteredCounts.urgent}種類
+                警報 {warningCounts.urgent}種類
               </span>
               <span
                 className={classNames(
                   'rounded-full px-3 py-1 text-xs font-bold ring-1',
-                  filteredCounts.advisory > 0 ? 'bg-amber-50 text-amber-900 ring-amber-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
+                  warningCounts.advisory > 0 ? 'bg-amber-50 text-amber-900 ring-amber-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
                 )}
               >
-                注意報 {filteredCounts.advisory}種類
+                注意報 {warningCounts.advisory}種類
               </span>
             </div>
-            {showTokyoToggle && <div className="text-[11px] text-gray-600">対象: {formatTokyoScopeLabel()}</div>}
+            {tokyoScopeLabel && <div className="text-[11px] text-gray-600">対象: {tokyoScopeLabel}</div>}
             {activeAreas.length > 0 && (
               <div className="text-[11px] text-gray-600">
                 発表区域: {activeAreas.length}区域 ({activeAreaNames.join('、')})
@@ -463,16 +373,16 @@ export default function AlertsPage() {
           {warnings && (
             <>
               <div className="mt-2 text-sm text-gray-700">
-                {filteredCounts.total > 0
-                  ? `${filteredCounts.total}種類`
+                {warningCounts.total > 0
+                  ? `${warningCounts.total}種類`
                   : '該当なし'}
               </div>
 
               {/* Checkbox removed per request */}
 
               <div className="mt-4 space-y-4">
-                <WarningGroupSection title="緊急（警報/特別警報）" groups={filteredBuckets.urgent} />
-                <WarningGroupSection title="注意報" groups={filteredBuckets.advisory} />
+                <WarningGroupSection title="緊急（警報/特別警報）" groups={warningBuckets.urgent} />
+                <WarningGroupSection title="注意報" groups={warningBuckets.advisory} />
                 {/* Reference info always hidden or removed? User said remove checkbox. 
                   But also 'Dedupe per area card...'. 
                   If we want to show reference (possibility etc), user didn't explicitly say "Show reference always".
@@ -493,8 +403,7 @@ export default function AlertsPage() {
                     breakdown={breakdown}
                     highlightCode={targetForecastCode}
                     manualOrSaved={Boolean(activeMuniCode)}
-                    tokyoScope={tokyoScope}
-                    showTokyoFilter={showTokyoToggle}
+                    tokyoGroup={tokyoGroupFilter}
                   />
                 </div>
               )}
@@ -504,7 +413,7 @@ export default function AlertsPage() {
         </div>
       </section>
 
-      <GuidanceSection urgent={filteredBuckets.urgent} advisory={filteredBuckets.advisory} />
+      <GuidanceSection urgent={warningBuckets.urgent} advisory={warningBuckets.advisory} />
 
       <div className="rounded-xl border bg-gray-50 px-3 py-2 text-sm text-gray-700">
         <div className="font-semibold">発表区域について</div>
@@ -720,25 +629,17 @@ function SubAreaBreakdown({
   breakdown,
   highlightCode,
   manualOrSaved,
-  tokyoScope,
-  showTokyoFilter,
+  tokyoGroup,
 }: {
   breakdown: Record<string, { name: string; items: any[] }>;
   highlightCode?: string | null;
   manualOrSaved: boolean;
-  tokyoScope?: 'mainland' | 'islands';
-  showTokyoFilter?: boolean;
+  tokyoGroup?: TokyoGroupKey | null;
 }) {
   // Sort: highlighted first, then by code
   // Also filter by Tokyo scope if applicable
   const items = Object.entries(breakdown)
-    .filter(([, data]) => {
-      if (!showTokyoFilter) return true;
-      const isIsland = isIslandAreaName(data.name);
-      if (tokyoScope === 'mainland' && isIsland) return false;
-      if (tokyoScope === 'islands' && !isIsland) return false;
-      return true;
-    })
+    .filter(([code]) => matchesTokyoGroup(code, tokyoGroup ?? null))
     .sort((a, b) => {
       if (highlightCode) {
         if (a[0] === highlightCode) return -1;

@@ -164,11 +164,13 @@ function NavItem({
   label,
   icon,
   active,
+  indicator,
 }: {
   href: string;
   label: string;
   icon: ReactNode;
   active: boolean;
+  indicator?: boolean;
 }) {
   return (
     <Link
@@ -176,7 +178,10 @@ function NavItem({
       className={`flex h-10 w-full items-center justify-center gap-1 rounded-xl px-2 text-xs font-semibold ring-1 ring-inset transition sm:h-12 sm:min-w-[110px] sm:gap-2 sm:px-4 sm:text-sm ${active ? 'bg-gray-900 text-white ring-gray-900' : 'bg-white text-gray-900 ring-gray-200 hover:bg-gray-50'
         }`}
     >
-      <span className={`${active ? 'text-white' : ''}`}>{icon}</span>
+      <span className={`relative ${active ? 'text-white' : ''}`}>
+        {icon}
+        {indicator ? <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-red-600 ring-2 ring-white" /> : null}
+      </span>
       <span className="whitespace-nowrap">{label}</span>
     </Link>
   );
@@ -334,6 +339,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               label="警報"
               icon={<NavIcon name="alerts" active={router.pathname.startsWith('/alerts')} />}
               active={router.pathname.startsWith('/alerts')}
+              indicator={warningCount > 0}
             />
             <NavItem
               href="/quakes"

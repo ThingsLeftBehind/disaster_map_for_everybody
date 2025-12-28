@@ -10,14 +10,24 @@ const nextConfig = {
   output: 'standalone',
   transpilePackages: ['@jp-evac/shared'],
   serverExternalPackages: ['@prisma/client', 'prisma'],
-  outputFileTracingRoot: path.join(__dirname, '../..'),
-  outputFileTracingIncludes: {
-    '/api/**/*': [
-      'packages/db/node_modules/.prisma/client/**',
-      'packages/db/node_modules/@prisma/client/**',
-      'apps/web/node_modules/.prisma/client/**',
-      'apps/web/node_modules/@prisma/client/**',
-    ],
+  experimental: {
+    outputFileTracingRoot: path.join(__dirname, '../..'),
+    outputFileTracingIncludes: {
+      '/api/shelters/nearby': [
+        './node_modules/.prisma/**',
+        './node_modules/@prisma/**',
+        '../../packages/db/node_modules/.prisma/**',
+        '../../packages/db/node_modules/@prisma/**',
+        '../../packages/db/node_modules/@prisma/client/**',
+      ],
+      '/api/shelters/search': [
+        './node_modules/.prisma/**',
+        './node_modules/@prisma/**',
+        '../../packages/db/node_modules/.prisma/**',
+        '../../packages/db/node_modules/@prisma/**',
+        '../../packages/db/node_modules/@prisma/client/**',
+      ],
+    },
   },
   async headers() {
     const isProd = process.env.NODE_ENV === 'production';

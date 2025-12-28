@@ -5,6 +5,7 @@ import { JmaWarningsQuerySchema, type NormalizedWarningItem } from 'lib/jma/type
 import { readCachedWarnings } from 'lib/jma/normalize';
 import { readJsonFile } from 'lib/jma/cache';
 import { jmaAreaConstPath, jmaWebJsonWarningPath } from 'lib/jma/paths';
+import { TOKYO_GROUP_AREA_CODES, type TokyoGroupKey } from 'lib/alerts/tokyoScope';
 
 const CACHE_TTL_MS = 120_000;
 const memoryCache = new Map<string, { expiresAt: number; payload: any }>();
@@ -24,12 +25,6 @@ const TOKYO_GROUP_LABELS = {
   izu: '伊豆諸島',
   ogasawara: '小笠原諸島',
 } as const;
-
-const TOKYO_GROUP_CODES: Record<keyof typeof TOKYO_GROUP_LABELS, Set<string>> = {
-  mainland: new Set(['130010']),
-  izu: new Set(['130020', '130030']),
-  ogasawara: new Set(['130040']),
-};
 
 const WARNING_CODE_BASE: Record<string, string> = {
   '05': '暴風',
@@ -230,10 +225,10 @@ async function readAreaIndex(): Promise<Map<string, AreaNode> | null> {
   return index;
 }
 
-function resolveTokyoGroup(code: string, index: Map<string, AreaNode>): keyof typeof TOKYO_GROUP_LABELS | null {
+function resolveTokyoGroup(code: string, index: Map<string, AreaNode>): TokyoGroupKey | null {
   let cursor: string | undefined = code;
   for (let i = 0; i < 10 && cursor; i += 1) {
-    for (const [group, codes] of Object.entries(TOKYO_GROUP_CODES) as Array<[keyof typeof TOKYO_GROUP_LABELS, Set<string>]>) {
+    for (const [group, codes] of Object.entries(TOKYO_GROUP_AREA_CODES) as Array<[TokyoGroupKey, Set<string>]>) {
       if (codes.has(cursor)) return group;
     }
     const node = index.get(cursor);
@@ -475,4 +470,3 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   }
 }
-

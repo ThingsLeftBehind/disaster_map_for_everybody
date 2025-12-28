@@ -2,6 +2,13 @@ import { isJmaLowPriorityWarning } from '../jma/filters';
 export type WarningItem = { id: string; kind: string; status: string | null; source?: string };
 export type TokyoGroupKey = 'mainland' | 'izu' | 'ogasawara';
 export type TokyoGroups = Partial<Record<TokyoGroupKey, { label: string; items: WarningItem[] }>>;
+export type TokyoContext = 'MAINLAND' | 'ISLANDS' | 'OTHER';
+
+export const TOKYO_GROUP_AREA_CODES: Record<TokyoGroupKey, Set<string>> = {
+  mainland: new Set(['130010']),
+  izu: new Set(['130020', '130030']),
+  ogasawara: new Set(['130040']),
+};
 
 const TOKYO_ISLAND_CLASS20_GROUPS: Record<string, TokyoGroupKey> = {
   '1336100': 'izu',
@@ -33,6 +40,20 @@ const TOKYO_ISLAND_MUNI_GROUPS: Record<string, TokyoGroupKey> = {
   小笠原村: 'ogasawara',
 };
 
+export function getTokyoGroupFromAreaCode(code?: string | null): TokyoGroupKey | null {
+  const raw = typeof code === 'string' ? code.trim() : '';
+  if (!raw) return null;
+  for (const [group, codes] of Object.entries(TOKYO_GROUP_AREA_CODES) as Array<[TokyoGroupKey, Set<string>]>) {
+    if (codes.has(raw)) return group;
+  }
+  return null;
+}
+
+export function getTokyoContextFromGroup(group: TokyoGroupKey | null | undefined): TokyoContext {
+  if (!group) return 'OTHER';
+  return group === 'mainland' ? 'MAINLAND' : 'ISLANDS';
+}
+
 export function inferTokyoGroup(args: {
   prefCode?: string | null;
   muniCode?: string | null;
@@ -62,6 +83,18 @@ export function inferTokyoGroup(args: {
   if (prefCode === '13') return 'mainland';
 
   return null;
+}
+
+export function getTokyoContext(args: {
+  prefCode?: string | null;
+  muniCode?: string | null;
+  label?: string | null;
+}): TokyoContext {
+  return getTokyoContextFromGroup(inferTokyoGroup(args));
+}
+
+export function getTokyoContextFromMuniCode(muniCode?: string | null): TokyoContext {
+  return getTokyoContext({ muniCode });
 }
 
 export function countWarningItems(items: WarningItem[]): number {
