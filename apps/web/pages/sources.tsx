@@ -1,4 +1,4 @@
-import Head from 'next/head';
+import { SeoHead } from '../components/SeoHead';
 import useSWR from 'swr';
 import { useDevice } from '../components/device/DeviceProvider';
 import { DataFetchDetails } from '../components/DataFetchDetails';
@@ -20,9 +20,10 @@ export default function SourcesPage() {
 
   return (
     <div className="space-y-6">
-      <Head>
-        <title>出典・免責事項 | 全国避難場所ファインダー</title>
-      </Head>
+      <SeoHead
+        title="注意・免責事項"
+        description="注意・免責事項とデータ出典をまとめたページ。警報・注意報、地震、ハザードマップ、避難場所データの参照元や更新頻度、利用上の注意点を確認できます。"
+      />
 
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">出典・免責事項</h1>
@@ -113,4 +114,3 @@ export default function SourcesPage() {
     </div>
   );
 }
-

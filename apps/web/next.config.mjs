@@ -24,6 +24,27 @@ const nextConfig = {
   experimental: {
     outputFileTracingRoot: repoRoot,
   },
+  async redirects() {
+    return [
+      {
+        source: '/',
+        has: [{ type: 'host', value: 'hinanavi.com' }],
+        destination: 'https://www.hinanavi.com/main',
+        permanent: true,
+      },
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'hinanavi.com' }],
+        destination: 'https://www.hinanavi.com/:path*',
+        permanent: true,
+      },
+      {
+        source: '/',
+        destination: '/main',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

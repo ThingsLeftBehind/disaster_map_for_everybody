@@ -1,4 +1,4 @@
-import Head from 'next/head';
+import { SeoHead } from '../components/SeoHead';
 import Link from 'next/link';
 import useSWR from 'swr';
 import { useMemo, useState } from 'react';
@@ -91,9 +91,7 @@ export default function DesignatedPage() {
 
   return (
     <div className="space-y-6">
-      <Head>
-        <title>指定避難所 | 全国避難場所ファインダー</title>
-      </Head>
+      <SeoHead title="指定避難所" />
 
       {countsError && (
         <div className="rounded-lg border bg-amber-50 px-4 py-3 text-sm text-amber-900">

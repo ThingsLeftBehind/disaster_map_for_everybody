@@ -1,4 +1,4 @@
-import Head from 'next/head';
+import { SeoHead } from '../components/SeoHead';
 import Link from 'next/link';
 import useSWR from 'swr';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -105,9 +105,10 @@ export default function HazardPage() {
 
   return (
     <div className="space-y-6">
-      <Head>
-        <title>ハザード（地図） | 全国避難場所ファインダー</title>
-      </Head>
+      <SeoHead
+        title="ハザード"
+        description="洪水・土砂・津波・液状化などのハザードマップを重ねて確認できるページ。現在地周辺のリスク把握や避難経路の検討に役立ちます。低帯域環境でも必要情報を確認できるよう配慮しています。"
+      />
 
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         {/* H1 removed per requirement */}

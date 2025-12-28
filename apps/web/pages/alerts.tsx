@@ -1,4 +1,4 @@
-import Head from 'next/head';
+import { SeoHead } from '../components/SeoHead';
 import useSWR from 'swr';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import classNames from 'classnames';
@@ -201,9 +201,10 @@ export default function AlertsPage() {
 
   return (
     <div className="space-y-6">
-      <Head>
-        <title>警報・注意報 | 全国避難場所ファインダー</title>
-      </Head>
+      <SeoHead
+        title="警報・注意報"
+        description="気象庁の警報・注意報・特別警報をエリア別に確認できるページ。発表区域の内訳や東京本土/島しょの区分にも対応し、最新の警戒レベル把握と避難判断を支援します。"
+      />
 
       <section className="rounded-2xl bg-white p-5 shadow">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">

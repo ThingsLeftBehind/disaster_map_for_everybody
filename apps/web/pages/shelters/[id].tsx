@@ -1,4 +1,4 @@
-import Head from 'next/head';
+import { SeoHead } from '../../components/SeoHead';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import useSWR from 'swr';
@@ -251,9 +251,7 @@ export default function ShelterDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Head>
-        <title>{site?.name ? `${site.name} | 避難場所` : '避難場所'} | 全国避難場所ファインダー</title>
-      </Head>
+      <SeoHead title={site?.name ? `${site.name}（避難場所）` : '避難場所'} />
 
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>

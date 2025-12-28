@@ -1,4 +1,4 @@
-import Head from 'next/head';
+import { SeoHead } from '../components/SeoHead';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import useSWR from 'swr';
@@ -511,9 +511,10 @@ export default function ListPage() {
 
   return (
     <div className="space-y-6">
-      <Head>
-        <title>避難場所 | 全国避難場所ファインダー</title>
-      </Head>
+      <SeoHead
+        title="避難場所"
+        description="地図の中心や現在地から周辺の避難所を検索し、距離順で比較できます。ハザード対応や不適合も含めた絞り込み、保存・共有に対応し、災害時の判断を支援します。"
+      />
 
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>

@@ -1,15 +1,5 @@
-import type { GetServerSideProps } from 'next';
-
-export const getServerSideProps: GetServerSideProps = async () => {
-  return {
-    redirect: {
-      destination: '/main',
-      permanent: false,
-    },
-  };
-};
+import { SeoHead } from '../components/SeoHead';
 
 export default function IndexRedirect() {
-  return null;
+  return <SeoHead canonicalPath="/" />;
 }
-

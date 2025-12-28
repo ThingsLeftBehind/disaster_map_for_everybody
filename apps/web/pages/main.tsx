@@ -1,4 +1,4 @@
-import Head from 'next/head';
+import { SeoHead } from '../components/SeoHead';
 import dynamic from 'next/dynamic';
 import useSWR from 'swr';
 import { useEffect, useMemo, useState } from 'react';
@@ -372,9 +372,10 @@ export default function MainPage() {
 
   return (
     <div className="space-y-6">
-      <Head>
-        <title>メイン | 全国避難場所ファインダー</title>
-      </Head>
+      <SeoHead
+        title="メイン"
+        description="避難ナビ（HinaNavi）のメイン画面。現在地周辺の避難所を地図で確認し、距離順の一覧やハザード対応の目安を把握できます。警報・注意報や地震情報への導線も備え、災害時の行動判断を支援します。"
+      />
 
       <section className="rounded-2xl bg-white p-5 shadow">
         <div className="flex flex-row flex-wrap items-center justify-between gap-2">
