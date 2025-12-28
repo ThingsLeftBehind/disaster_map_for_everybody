@@ -2,7 +2,7 @@
   "name": "jp-nationwide-evacuation-finder",
   "private": true,
   "version": "0.1.0",
-  "packageManager": "npm@10.8.1",
+  "packageManager": "pnpm@9.12.0",
   "scripts": {
     "dev": "pnpm --filter @jp-evac/web dev",
     "build": "pnpm --filter @jp-evac/db prisma:generate && pnpm --filter @jp-evac/web build",
