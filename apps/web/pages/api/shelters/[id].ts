@@ -1,3 +1,4 @@
+import { Prisma, prisma } from 'lib/db/prisma';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@jp-evac/db';
 import { fallbackFindShelterById } from 'lib/db/sheltersFallback';
@@ -8,7 +9,6 @@ import {
   safeErrorMessage,
 } from 'lib/shelters/evacsiteCompat';
 export const config = { runtime: 'nodejs' };
-
 function nowIso() {
   return new Date().toISOString();
 }

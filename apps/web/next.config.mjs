@@ -23,13 +23,6 @@ const nextConfig = {
   },
   experimental: {
     outputFileTracingRoot: repoRoot,
-    outputFileTracingIncludes: {
-      '/api/shelters/nearby': prismaTracingIncludes,
-      '/api/shelters/search': prismaTracingIncludes,
-      '/api/shelters/[id]': prismaTracingIncludes,
-      '/api/shelters/batch': prismaTracingIncludes,
-      '/api/shelters/designated-counts': prismaTracingIncludes,
-    },
   },
 };
 

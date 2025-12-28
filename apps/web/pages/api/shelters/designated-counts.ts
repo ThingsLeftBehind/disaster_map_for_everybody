@@ -1,9 +1,8 @@
+import { Prisma, prisma } from 'lib/db/prisma';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { Prisma } from '@prisma/client';
 import { prisma } from '@jp-evac/db';
 import { listPrefectures } from 'lib/ref/municipalities';
 export const config = { runtime: 'nodejs' };
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // if (process.env.NODE_ENV === 'production') return res.status(404).end('Not found');
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });

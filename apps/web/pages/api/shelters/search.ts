@@ -1,5 +1,5 @@
+import { Prisma, prisma } from 'lib/db/prisma';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { Prisma } from '@prisma/client';
 import { sqltag as sql, join, raw } from '@prisma/client/runtime/library';
 import { prisma } from '@jp-evac/db';
 import { z } from 'zod';
@@ -11,7 +11,6 @@ import {
   isEvacSitesTableMismatchError,
   safeErrorMessage,
 } from 'lib/shelters/evacsiteCompat';
-
 import { normalizeMuniCode } from 'lib/muni-helper';
 export const config = { runtime: 'nodejs' };
 

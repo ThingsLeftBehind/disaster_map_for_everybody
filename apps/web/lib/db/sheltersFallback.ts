@@ -1,7 +1,5 @@
+import { Prisma, prisma } from 'lib/db/prisma';
 
-import type { PrismaClient } from '@jp-evac/db';
-import { Prisma } from '@prisma/client';
-import type { Sql } from '@prisma/client/runtime/library';
 import { sqltag as sql, join, raw } from '@prisma/client/runtime/library';
 import { haversineDistance } from '@jp-evac/shared';
 import {
@@ -19,7 +17,6 @@ import {
   rawSearchEvacSites,
   type EvacSiteNormalized,
 } from 'lib/shelters/evacsiteCompat';
-
 type EvacSiteMeta = Awaited<ReturnType<typeof getEvacSiteMeta>>;
 type EvacSiteHazardMeta = Awaited<ReturnType<typeof getEvacSiteHazardMeta>>;
 
@@ -142,7 +139,7 @@ function buildDiagnostics(items: Array<{ distanceKm: number }>): NearbyFallbackD
   return { minDistanceKm, countWithin1Km, countWithin5Km };
 }
 
-async function getFallbackContext(prisma: PrismaClient): Promise<ShelterFallbackContext> {
+async function getFallbackContext(prisma: import('@prisma/client').PrismaClient): Promise<ShelterFallbackContext> {
   const meta = await getEvacSiteMeta(prisma);
   const hazardMeta = await getEvacSiteHazardMeta(prisma);
   const factors = await getEvacSiteCoordFactors(prisma, meta);
@@ -151,7 +148,7 @@ async function getFallbackContext(prisma: PrismaClient): Promise<ShelterFallback
 }
 
 async function applyHazardCaps(
-  prisma: PrismaClient,
+  prisma: import('@prisma/client').PrismaClient,
   hazardMeta: EvacSiteHazardMeta,
   sites: EvacSiteNormalized[]
 ): Promise<EvacSiteNormalized[]> {
@@ -167,7 +164,7 @@ async function applyHazardCaps(
   }));
 }
 
-export async function fallbackFindShelterById(prisma: PrismaClient, id: string): Promise<ShelterByIdFallback> {
+export async function fallbackFindShelterById(prisma: import('@prisma/client').PrismaClient, id: string): Promise<ShelterByIdFallback> {
   const context = await getFallbackContext(prisma);
   const row = await rawFindById(prisma, context.meta, id);
   if (!row) return { site: null, found: false };
@@ -181,7 +178,7 @@ export async function fallbackFindShelterById(prisma: PrismaClient, id: string):
   };
 }
 
-export async function fallbackFindSheltersByIds(prisma: PrismaClient, ids: string[]): Promise<EvacSiteNormalized[]> {
+export async function fallbackFindSheltersByIds(prisma: import('@prisma/client').PrismaClient, ids: string[]): Promise<EvacSiteNormalized[]> {
   const context = await getFallbackContext(prisma);
   const rows = await rawFindByIds(prisma, context.meta, ids);
   const normalized = rows
@@ -192,7 +189,7 @@ export async function fallbackFindSheltersByIds(prisma: PrismaClient, ids: strin
 }
 
 export async function fallbackSearchShelters(
-  prisma: PrismaClient,
+  prisma: import('@prisma/client').PrismaClient,
   args: {
     prefCode?: string | null;
     prefName?: string | null;
@@ -213,7 +210,7 @@ export async function fallbackSearchShelters(
 }
 
 export async function fallbackNearbyShelters(
-  prisma: PrismaClient,
+  prisma: import('@prisma/client').PrismaClient,
   args: {
     lat: number;
     lon: number;
@@ -309,7 +306,7 @@ export async function fallbackNearbyShelters(
 }
 
 export async function fallbackShelterHealth(
-  prisma: PrismaClient,
+  prisma: import('@prisma/client').PrismaClient,
   args: { lat: number; lon: number; radiusKm: number }
 ): Promise<ShelterHealthFallback> {
   const context = await getFallbackContext(prisma);

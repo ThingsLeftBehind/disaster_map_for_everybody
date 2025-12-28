@@ -1,7 +1,6 @@
+import { Prisma, prisma } from 'lib/db/prisma';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { Prisma } from '@prisma/client';
 import { prisma } from '@jp-evac/db';
-import type { Sql } from '@prisma/client/runtime/library';
 import { fallbackNearbyShelters } from 'lib/db/sheltersFallback';
 import { NearbyQuerySchema } from 'lib/validators';
 import { haversineDistance, hazardKeys } from '@jp-evac/shared';
@@ -9,7 +8,6 @@ import { getEvacSitesCoordScales, normalizeLatLon } from 'lib/shelters/coords';
 import { isEvacSitesTableMismatchError, safeErrorMessage } from 'lib/shelters/evacsiteCompat';
 import { DEFAULT_MAIN_LIMIT } from 'lib/constants';
 export const config = { runtime: 'nodejs' };
-
 
 const BASE_SCALE_FACTORS = [1, 1e7, 1e6, 1e5, 1e4, 1e3, 1e2] as const;
 

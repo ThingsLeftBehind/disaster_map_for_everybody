@@ -1,10 +1,8 @@
-import { type PrismaClient } from '@jp-evac/db';
-import { Prisma } from '@prisma/client';
-import type { Sql } from '@prisma/client/runtime/library';
+import { Prisma, prisma } from 'lib/db/prisma';
+import { type import('@prisma/client').PrismaClient } from '@jp-evac/db';
 import { sqltag as sql, join, raw } from '@prisma/client/runtime/library';
 import { hazardKeys, hazardLabels, type HazardKey } from '@jp-evac/shared';
 import { normalizeLatLon } from './coords';
-
 const TABLE_SCHEMA = 'public';
 const TABLE_NAME = 'EvacSite';
 const TABLE_REF = `"${TABLE_SCHEMA}"."${TABLE_NAME}"`;
@@ -262,7 +260,7 @@ export function safeErrorMessage(error: unknown): string {
 }
 
 async function readInformationSchemaColumnInfo(
-  prisma: PrismaClient,
+  prisma: import('@prisma/client').PrismaClient,
   args: { schema: string; table: string }
 ): Promise<ColumnInfo[] | null> {
   try {
@@ -284,14 +282,14 @@ async function readInformationSchemaColumnInfo(
 }
 
 async function readInformationSchemaColumns(
-  prisma: PrismaClient,
+  prisma: import('@prisma/client').PrismaClient,
   args: { schema: string; table: string }
 ): Promise<string[] | null> {
   const info = await readInformationSchemaColumnInfo(prisma, args);
   return info ? info.map((c) => c.name) : null;
 }
 
-export async function getEvacSiteMeta(prisma: PrismaClient): Promise<EvacSiteMeta> {
+export async function getEvacSiteMeta(prisma: import('@prisma/client').PrismaClient): Promise<EvacSiteMeta> {
   const now = nowMs();
   if (cachedMeta && now - cachedMeta.checkedAtMs < META_TTL_MS) return cachedMeta.meta;
 
@@ -370,7 +368,7 @@ export async function getEvacSiteMeta(prisma: PrismaClient): Promise<EvacSiteMet
   return meta;
 }
 
-export async function getEvacSiteHazardMeta(prisma: PrismaClient): Promise<EvacSiteHazardMeta | null> {
+export async function getEvacSiteHazardMeta(prisma: import('@prisma/client').PrismaClient): Promise<EvacSiteHazardMeta | null> {
   const now = nowMs();
   if (cachedHazardMeta && now - cachedHazardMeta.checkedAtMs < META_TTL_MS) return cachedHazardMeta.meta;
 
@@ -428,7 +426,7 @@ export async function getEvacSiteHazardMeta(prisma: PrismaClient): Promise<EvacS
   return meta;
 }
 
-export async function getEvacSiteCoordFactors(prisma: PrismaClient, meta: EvacSiteMeta): Promise<number[]> {
+export async function getEvacSiteCoordFactors(prisma: import('@prisma/client').PrismaClient, meta: EvacSiteMeta): Promise<number[]> {
   const now = nowMs();
   if (cachedScale && now - cachedScale.checkedAtMs < SCALE_TTL_MS) return cachedScale.factors;
 
@@ -459,7 +457,7 @@ export async function getEvacSiteCoordFactors(prisma: PrismaClient, meta: EvacSi
   return ranked;
 }
 
-export async function rawCountEvacSites(prisma: PrismaClient, meta: EvacSiteMeta): Promise<number> {
+export async function rawCountEvacSites(prisma: import('@prisma/client').PrismaClient, meta: EvacSiteMeta): Promise<number> {
   const table = raw(meta.tableRef);
   const rows = (await prisma.$queryRaw(
     Prisma.sql`SELECT COUNT(*)::bigint AS count FROM ${table}`
@@ -468,7 +466,7 @@ export async function rawCountEvacSites(prisma: PrismaClient, meta: EvacSiteMeta
   return typeof count === 'bigint' ? Number(count) : Number(count ?? 0);
 }
 
-export async function rawCountEvacSiteHazardCaps(prisma: PrismaClient, meta: EvacSiteHazardMeta): Promise<number> {
+export async function rawCountEvacSiteHazardCaps(prisma: import('@prisma/client').PrismaClient, meta: EvacSiteHazardMeta): Promise<number> {
   const table = raw(meta.tableRef);
   const rows = (await prisma.$queryRaw(
     Prisma.sql`SELECT COUNT(*)::bigint AS count FROM ${table}`
@@ -478,7 +476,7 @@ export async function rawCountEvacSiteHazardCaps(prisma: PrismaClient, meta: Eva
 }
 
 export async function rawCountEvacSiteInvalidCoords(
-  prisma: PrismaClient,
+  prisma: import('@prisma/client').PrismaClient,
   meta: EvacSiteMeta,
   factor: number
 ): Promise<{ nullCount: number; invalidCount: number }> {
@@ -519,7 +517,7 @@ function buildHaversineSql(args: { latExpr: Sql; lonExpr: Sql; lat: number; lon:
 }
 
 export async function rawCountNearbyEvacSites(
-  prisma: PrismaClient,
+  prisma: import('@prisma/client').PrismaClient,
   meta: EvacSiteMeta,
   args: { lat: number; lon: number; radiusKm: number; factor: number }
 ): Promise<number> {
@@ -562,7 +560,7 @@ export async function rawCountNearbyEvacSites(
 }
 
 export async function rawNearestDistanceKm(
-  prisma: PrismaClient,
+  prisma: import('@prisma/client').PrismaClient,
   meta: EvacSiteMeta,
   args: { lat: number; lon: number; radiusKm: number; factor: number }
 ): Promise<number | null> {
@@ -608,7 +606,7 @@ export async function rawNearestDistanceKm(
 }
 
 export async function rawSampleShelter(
-  prisma: PrismaClient,
+  prisma: import('@prisma/client').PrismaClient,
   meta: EvacSiteMeta
 ): Promise<{ id: string; name: string } | null> {
   const table = raw(meta.tableRef);
@@ -625,7 +623,7 @@ export async function rawSampleShelter(
   return { id: String(rows[0].id), name: typeof rows[0].name === 'string' ? rows[0].name : '' };
 }
 
-export async function rawFindById(prisma: PrismaClient, meta: EvacSiteMeta, id: string): Promise<Record<string, unknown> | null> {
+export async function rawFindById(prisma: import('@prisma/client').PrismaClient, meta: EvacSiteMeta, id: string): Promise<Record<string, unknown> | null> {
   const table = raw(meta.tableRef);
   const idCol = raw(qIdent(meta.idCol));
   const idParam = buildParamForColumn(id, meta.idColType);
@@ -640,7 +638,7 @@ export async function rawFindById(prisma: PrismaClient, meta: EvacSiteMeta, id: 
   return rows[0] ?? null;
 }
 
-export async function rawFindByIds(prisma: PrismaClient, meta: EvacSiteMeta, ids: string[]): Promise<Array<Record<string, unknown>>> {
+export async function rawFindByIds(prisma: import('@prisma/client').PrismaClient, meta: EvacSiteMeta, ids: string[]): Promise<Array<Record<string, unknown>>> {
   const unique = Array.from(new Set(ids)).filter(Boolean).slice(0, 50);
   if (unique.length === 0) return [];
   const table = raw(meta.tableRef);
@@ -656,7 +654,7 @@ export async function rawFindByIds(prisma: PrismaClient, meta: EvacSiteMeta, ids
   return rows;
 }
 
-export async function rawFindInBoundingBox(prisma: PrismaClient, meta: EvacSiteMeta, args: { latMin: number; latMax: number; lonMin: number; lonMax: number; take: number }): Promise<Array<Record<string, unknown>>> {
+export async function rawFindInBoundingBox(prisma: import('@prisma/client').PrismaClient, meta: EvacSiteMeta, args: { latMin: number; latMax: number; lonMin: number; lonMax: number; take: number }): Promise<Array<Record<string, unknown>>> {
   const table = raw(meta.tableRef);
   const latCol = raw(qIdent(meta.latCol));
   const lonCol = raw(qIdent(meta.lonCol));
@@ -676,7 +674,7 @@ export async function rawFindInBoundingBox(prisma: PrismaClient, meta: EvacSiteM
   return rows;
 }
 
-export async function rawFindAny(prisma: PrismaClient, meta: EvacSiteMeta, take: number): Promise<Array<Record<string, unknown>>> {
+export async function rawFindAny(prisma: import('@prisma/client').PrismaClient, meta: EvacSiteMeta, take: number): Promise<Array<Record<string, unknown>>> {
   const table = raw(meta.tableRef);
   const orderCol = raw(qIdent(meta.updatedAtCol ?? meta.createdAtCol ?? meta.idCol));
   const isActiveCol = meta.isActiveCol ? raw(qIdent(meta.isActiveCol)) : null;
@@ -694,7 +692,7 @@ export async function rawFindAny(prisma: PrismaClient, meta: EvacSiteMeta, take:
 }
 
 export async function rawLoadHazardCapsBySiteIds(
-  prisma: PrismaClient,
+  prisma: import('@prisma/client').PrismaClient,
   meta: EvacSiteHazardMeta | null,
   siteIds: string[]
 ): Promise<Map<string, Record<string, boolean>>> {
@@ -755,7 +753,7 @@ export async function rawLoadHazardCapsBySiteIds(
 }
 
 export async function rawSearchEvacSites(
-  prisma: PrismaClient,
+  prisma: import('@prisma/client').PrismaClient,
   meta: EvacSiteMeta,
   args: {
     prefCode?: string | null;
@@ -892,7 +890,7 @@ export async function rawSearchEvacSites(
 }
 
 export async function getEvacSiteDbDiagnostics(
-  prisma: PrismaClient
+  prisma: import('@prisma/client').PrismaClient
 ): Promise<{
   evacSite: { columns: string[] | null; count: number; nullCoords: number; invalidCoords: number };
   hazardCaps: { columns: string[] | null; count: number };
