@@ -18,6 +18,25 @@ import { MyAreaWarningsSection } from '../components/MyAreaWarningsSection';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
+const STALE_MS = 10 * 60 * 1000;
+
+type FetchStatusPayload = {
+  fetchStatus?: string | null;
+  lastError?: string | null;
+  updatedAt?: string | null;
+};
+
+function shouldShowUnstable({ status, warnings }: { status?: FetchStatusPayload | null; warnings?: FetchStatusPayload | null }): boolean {
+  if (status?.lastError || warnings?.lastError) return true;
+  if (status?.fetchStatus === 'DOWN' || warnings?.fetchStatus === 'DOWN') return true;
+  if (!warnings) return false;
+  const updatedAt = warnings.updatedAt;
+  if (!updatedAt) return true;
+  const parsed = Date.parse(updatedAt);
+  if (Number.isNaN(parsed)) return true;
+  return Date.now() - parsed > STALE_MS;
+}
+
 function formatUpdatedAt(updatedAt: string | null | undefined): string {
   if (!updatedAt) return '未取得';
   const t = Date.parse(updatedAt);
@@ -363,7 +382,7 @@ export default function AlertsPage() {
           {warningsUrl && !warnings && <div className="mt-3 text-sm text-gray-600">読み込み中...</div>}
           {!warningsUrl && <div className="mt-3 text-sm text-gray-600">エリアを確定すると表示されます。</div>}
 
-          {warnings?.fetchStatus && warnings.fetchStatus !== 'OK' && (
+          {shouldShowUnstable({ status, warnings }) && (
             <div className="mt-3 rounded-xl border bg-amber-50 px-3 py-2 text-sm text-amber-900">
               <div className="font-semibold">取得が不安定</div>
               <div className="mt-1 text-xs">通信状況により遅延/欠落の可能性があります。直近のデータを表示中です。</div>
@@ -547,18 +566,6 @@ function GuidanceSection({ urgent, advisory }: { urgent: WarningGroup[]; advisor
   // const [isOpen, setIsOpen] = useState(false); // Removed per request
 
   const activeKinds = new Set([...urgent, ...advisory].map((g) => g.kind));
-  const TIPS = [
-    { keys: ['津波'], text: '海岸から離れ、高台や高いビルへ避難してください。' },
-    { keys: ['大雨', '浸水'], text: '崖や川に近づかないでください。低い土地の浸水に注意してください。' },
-    { keys: ['洪水'], text: '川が増水しています。川から離れ、建物の2階以上など高い場所へ。' },
-    { keys: ['土砂'], text: '崖崩れの危険があります。崖から離れた部屋や2階へ移動してください。' },
-    { keys: ['雷'], text: '頑丈な建物内に避難してください。木の下は危険です。' },
-    { keys: ['大雪', '暴風雪'], text: '不要な外出は控えてください。停電や交通障害に備えてください。' },
-    { keys: ['暴風', '強風'], text: '屋外の飛来物に注意し、建物内で窓から離れてください。' },
-    { keys: ['高潮'], text: '海岸や河口から離れ、浸水想定区域外へ避難してください。' },
-  ];
-
-  const matchedTips = TIPS.filter((tip) => tip.keys.some((k) => Array.from(activeKinds).some((kind) => kind.includes(k))));
 
   // Extract unique phenomena from active alerts, preserving order of appearance
   const activePhenomena = useMemo(() => {
@@ -610,16 +617,6 @@ function GuidanceSection({ urgent, advisory }: { urgent: WarningGroup[]; advisor
           )}
         </div>
 
-        {matchedTips.length > 0 && (
-          <div className="space-y-2">
-            <div className="font-semibold text-sm text-gray-700">発令中の注意点</div>
-            <ul className="list-disc pl-5 text-sm space-y-1 text-gray-800">
-              {matchedTips.map((tip, i) => (
-                <li key={i}><span className="font-semibold">{tip.keys[0]}</span>: {tip.text}</li>
-              ))}
-            </ul>
-          </div>
-        )}
       </div>
     </section>
   );

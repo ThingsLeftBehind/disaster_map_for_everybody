@@ -139,7 +139,7 @@ function HelpPopover({ online, jmaUpdatedAt }: { online: boolean; jmaUpdatedAt: 
               <span className="font-semibold text-emerald-700">OK</span>: 直近の取得に成功
             </li>
             <li>
-              <span className="font-semibold text-amber-800">DEGRADED</span>: 最新でない可能性（通信/取得失敗など）
+              <span className="font-semibold text-amber-800">最新でない可能性</span>（通信/取得遅延など）
             </li>
             <li>
               <span className="font-semibold text-red-700">DOWN</span>: まだ一度も取得できていない
