@@ -337,7 +337,7 @@ export default function ListPage() {
   const sheltersUnavailable = dbConnected === false || sheltersCount === 0;
   const sheltersFetchStatus: string | null = searchData?.fetchStatus ?? null;
   const sheltersLastError: string | null = searchData?.lastError ?? null;
-  const sheltersErrorLabel = sheltersLastError ? 'DB_DEGRADED' : null;
+  const sheltersErrorLabel = sheltersLastError ? 'DB_OUTDATED' : null;
   const { label: reverseAreaLabel } = useAreaName({ prefCode: reverse?.prefCode ?? null, muniCode: reverse?.muniCode ?? null });
   const selectedAreaLabel = useMemo(
     () => formatPrefMuniLabel(selectedArea ? { prefName: selectedArea.prefName, muniName: selectedArea.muniName ?? null } : null),
@@ -933,4 +933,3 @@ function SavedAreaResults({ area, isLoc, lat, lon }: { area: any; isLoc: boolean
     </ul>
   );
 }
-

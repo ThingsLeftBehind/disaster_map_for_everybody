@@ -13,6 +13,7 @@ import { formatPrefMuniLabel, useAreaName } from '../lib/client/areaName';
 import { getJmaWarningPriority } from '../lib/jma/filters';
 import { DEFAULT_MAIN_LIMIT, MAP_DEFAULT_ZOOM } from '../lib/constants';
 import { getAllSavedShelters, removeShelterFromStorage, saveShelterToStorage, type SavedShelter } from '../lib/client/shelterStorage';
+import { toDisplayFetchStatus } from '../lib/ui/fetchStatusLabel';
 
 const MapView = dynamic(() => import('../components/MapView'), {
   ssr: false,
@@ -46,7 +47,7 @@ function formatAt(iso: string | null | undefined): string {
   return new Date(t).toLocaleString();
 }
 
-function sanitizeUiError(value: unknown, code = 'DB_DEGRADED'): string {
+function sanitizeUiError(value: unknown, code = 'DB_OUTDATED'): string {
   return value ? code : 'なし';
 }
 
@@ -618,7 +619,7 @@ export default function MainPage() {
           <div className="mt-3 rounded-xl border bg-gray-50 px-3 py-2 text-xs text-gray-800">
             <div className="font-semibold">データ接続（dev）</div>
             <div className="mt-1">
-              nearby: {nearbyData?.fetchStatus ?? 'unknown'} / 件数: {sites.length} / 先頭距離: {firstDistanceKm !== null ? `${firstDistanceKm.toFixed(2)}km` : '不明'} / 更新:{' '}
+              nearby: {toDisplayFetchStatus(nearbyData?.fetchStatus)} / 件数: {sites.length} / 先頭距離: {firstDistanceKm !== null ? `${firstDistanceKm.toFixed(2)}km` : '不明'} / 更新:{' '}
               {formatAt(nearbyData?.updatedAt)} / err: {sanitizeUiError(nearbyData?.lastError)}
             </div>
             <div className="mt-1">

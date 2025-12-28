@@ -1,4 +1,5 @@
 import React from 'react';
+import { toDisplayFetchStatus } from '../lib/ui/fetchStatusLabel';
 
 type Props = {
     status?: string;
@@ -33,8 +34,6 @@ export function DataFetchDetails({
     children?: React.ReactNode;
 }) {
     const errorLabel = error ? '取得エラー' : 'なし';
-    const statusLabel = error ? 'エラーあり' : '正常';
-    void status;
 
     return (
         <details className="group rounded-2xl bg-white shadow overflow-hidden">
@@ -61,13 +60,13 @@ export function DataFetchDetails({
                 <div className="grid gap-2 text-sm md:grid-cols-3">
                     <div className="rounded-xl border bg-gray-50 p-3">
                         <div className="text-xs text-gray-600">全体</div>
-                        <div className="mt-1 font-semibold">{statusLabel}</div>
+                        <div className="mt-1 font-semibold">{toDisplayFetchStatus(status)}</div>
                         <div className="mt-1 text-xs text-gray-600">更新: {formatUpdatedAt(updatedAt)}</div>
                     </div>
                     {fetchStatus && (
                         <div className="rounded-xl border bg-gray-50 p-3">
                             <div className="text-xs text-gray-600">対象エリア</div>
-                            <div className="mt-1 font-semibold">{statusLabel}</div>
+                            <div className="mt-1 font-semibold">{toDisplayFetchStatus(fetchStatus)}</div>
                         </div>
                     )}
                     <div className="rounded-xl border bg-gray-50 p-3">

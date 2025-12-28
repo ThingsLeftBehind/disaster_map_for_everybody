@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { shapeAlertWarnings } from '../lib/jma/alerts';
 import { useRouter } from 'next/router';
 import { useAreaName } from '../lib/client/areaName';
+import { toDisplayFetchStatus } from '../lib/ui/fetchStatusLabel';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -139,7 +140,7 @@ function HelpPopover({ online, jmaUpdatedAt }: { online: boolean; jmaUpdatedAt: 
               <span className="font-semibold text-emerald-700">OK</span>: 直近の取得に成功
             </li>
             <li>
-              <span className="font-semibold text-amber-800">最新でない可能性</span>（通信/取得遅延など）
+              <span className="font-semibold text-amber-800">OUTDATED</span>: 最新でない可能性（通信/取得遅延など）
             </li>
             <li>
               <span className="font-semibold text-red-700">DOWN</span>: まだ一度も取得できていない
@@ -295,6 +296,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   }, [jmaClientHealth.consecutiveFailures, jmaClientHealth.firstSeenAtMs, jmaClientHealth.lastFailureAtMs, jmaUpdatedAt, rawJmaFetchStatus, refreshMs]);
 
   const jmaTone: 'ok' | 'warn' | 'down' = jmaStatusLabel === 'OK' ? 'ok' : jmaStatusLabel === 'DEGRADED' ? 'warn' : 'down';
+  const jmaStatusDisplay = toDisplayFetchStatus(jmaStatusLabel);
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -320,7 +322,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               >
                 メイン
               </Link>
-              <Chip label="JMA" value={jmaStatusLabel} tone={jmaTone} />
+              <Chip label="JMA" value={jmaStatusDisplay} tone={jmaTone} />
               <Chip label={online ? 'Online' : 'Offline'} tone={online ? 'ok' : 'down'} />
 
               <HelpPopover online={online} jmaUpdatedAt={jmaUpdatedAt} />
