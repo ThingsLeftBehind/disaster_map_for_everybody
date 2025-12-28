@@ -1,4 +1,5 @@
-import { Prisma, type PrismaClient } from '@jp-evac/db';
+import { type PrismaClient } from '@jp-evac/db';
+import { Prisma } from '@prisma/client';
 import type { Sql } from '@prisma/client/runtime/library';
 import { hazardKeys, hazardLabels, type HazardKey } from '@jp-evac/shared';
 import { normalizeLatLon } from './coords';

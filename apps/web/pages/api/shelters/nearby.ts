@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { Prisma, prisma, sql, type Sql } from '@jp-evac/db';
+import { Prisma } from '@prisma/client';
+import { prisma, sql, type Sql } from '@jp-evac/db';
 import type { Sql } from '@prisma/client/runtime/library';
 import { fallbackNearbyShelters } from 'lib/db/sheltersFallback';
 import { NearbyQuerySchema } from 'lib/validators';

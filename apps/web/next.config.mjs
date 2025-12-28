@@ -5,30 +5,54 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /** @type {import('next').NextConfig} */
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const repoRoot = path.resolve(__dirname, '../..');
 const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
   transpilePackages: ['@jp-evac/shared'],
+  
   experimental: {
-    outputFileTracingRoot: path.join(__dirname, '../..'),
+    outputFileTracingRoot: repoRoot,
     outputFileTracingIncludes: {
       '/api/shelters/nearby': [
-        './.prisma/**',
-        './node_modules/.prisma/**',
-        './node_modules/@prisma/**',
-        '../../packages/db/node_modules/.prisma/**',
-        '../../packages/db/node_modules/@prisma/**',
-        '../../packages/db/node_modules/@prisma/client/**',
-      ],
+  "./node_modules/.prisma/**",
+  "./node_modules/@prisma/**",
+  "../../packages/db/node_modules/.prisma/**",
+  "../../packages/db/node_modules/@prisma/**",
+  "../../packages/db/node_modules/@prisma/client/**"
+],
       '/api/shelters/search': [
-        './.prisma/**',
-        './node_modules/.prisma/**',
-        './node_modules/@prisma/**',
-        '../../packages/db/node_modules/.prisma/**',
-        '../../packages/db/node_modules/@prisma/**',
-        '../../packages/db/node_modules/@prisma/client/**',
-      ],
-    },
+  "./node_modules/.prisma/**",
+  "./node_modules/@prisma/**",
+  "../../packages/db/node_modules/.prisma/**",
+  "../../packages/db/node_modules/@prisma/**",
+  "../../packages/db/node_modules/@prisma/client/**"
+],
+      '/api/shelters/[id]': [
+  "./node_modules/.prisma/**",
+  "./node_modules/@prisma/**",
+  "../../packages/db/node_modules/.prisma/**",
+  "../../packages/db/node_modules/@prisma/**",
+  "../../packages/db/node_modules/@prisma/client/**"
+],
+      '/api/shelters/batch': [
+  "./node_modules/.prisma/**",
+  "./node_modules/@prisma/**",
+  "../../packages/db/node_modules/.prisma/**",
+  "../../packages/db/node_modules/@prisma/**",
+  "../../packages/db/node_modules/@prisma/client/**"
+],
+      '/api/shelters/designated-counts': [
+  "./node_modules/.prisma/**",
+  "./node_modules/@prisma/**",
+  "../../packages/db/node_modules/.prisma/**",
+  "../../packages/db/node_modules/@prisma/**",
+  "../../packages/db/node_modules/@prisma/client/**"
+]
+    }
+  },
   },
   async headers() {
     const isProd = process.env.NODE_ENV === 'production';
