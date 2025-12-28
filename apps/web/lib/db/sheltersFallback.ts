@@ -1,5 +1,5 @@
 import { Prisma, type PrismaClient } from '@jp-evac/db';
-import type { Sql } from '@prisma/client/runtime/library';
+import { sql, join, type Sql } from '@prisma/client/runtime/library';
 import { haversineDistance } from '@jp-evac/shared';
 import {
   getEvacSiteCoordFactors,
@@ -75,7 +75,7 @@ function toFiniteNumber(value: unknown): number | null {
 }
 
 function buildHaversineSql(args: { latExpr: Sql; lonExpr: Sql; lat: number; lon: number }): Sql {
-  return Prisma.sql`
+  return sql`
     (2 * 6371 * asin(sqrt(
       pow(sin((radians(${args.latExpr}) - radians(${args.lat})) / 2), 2) +
       cos(radians(${args.lat})) * cos(radians(${args.latExpr})) *
@@ -115,15 +115,15 @@ function buildScaleClauses(args: {
     const latDeltaDb = latDelta * factor;
     const lonDeltaDb = lonDelta * factor;
 
-    const bbox = Prisma.sql`
+    const bbox = sql`
       ${args.latCol} >= ${latDb - latDeltaDb} AND ${args.latCol} <= ${latDb + latDeltaDb}
       AND ${args.lonCol} >= ${lonDb - lonDeltaDb} AND ${args.lonCol} <= ${lonDb + lonDeltaDb}
     `;
 
     const latExpr =
-      factor === 1 ? Prisma.sql`${args.latCol}::double precision` : Prisma.sql`(${args.latCol}::double precision / ${factor})`;
+      factor === 1 ? sql`${args.latCol}::double precision` : sql`(${args.latCol}::double precision / ${factor})`;
     const lonExpr =
-      factor === 1 ? Prisma.sql`${args.lonCol}::double precision` : Prisma.sql`(${args.lonCol}::double precision / ${factor})`;
+      factor === 1 ? sql`${args.lonCol}::double precision` : sql`(${args.lonCol}::double precision / ${factor})`;
     const distanceExpr = buildHaversineSql({ latExpr, lonExpr, lat: args.lat, lon: args.lon });
 
     return { bbox, distanceExpr };
@@ -233,7 +233,7 @@ export async function fallbackNearbyShelters(
   const latColRaw = Prisma.raw(qIdent(context.meta.latCol));
   const lonColRaw = Prisma.raw(qIdent(context.meta.lonCol));
   const activeColRaw = context.meta.isActiveCol ? Prisma.raw(qIdent(context.meta.isActiveCol)) : null;
-  const activeClause = activeColRaw ? Prisma.sql`AND ${activeColRaw} = true` : Prisma.sql``;
+  const activeClause = activeColRaw ? sql`AND ${activeColRaw} = true` : sql``;
 
   const scaleClauses = buildScaleClauses({
     latCol: latColRaw,
@@ -243,14 +243,14 @@ export async function fallbackNearbyShelters(
     radiusKm: requestedRadiusKm,
     factors: factorCandidates,
   });
-  const bboxOr = Prisma.join(scaleClauses.map((c) => Prisma.sql`(${c.bbox})`), ' OR ');
-  const distanceCase = Prisma.sql`CASE ${Prisma.join(
-    scaleClauses.map((c) => Prisma.sql`WHEN ${c.bbox} THEN ${c.distanceExpr}`),
+  const bboxOr = join(scaleClauses.map((c) => sql`(${c.bbox})`), ' OR ');
+  const distanceCase = sql`CASE ${join(
+    scaleClauses.map((c) => sql`WHEN ${c.bbox} THEN ${c.distanceExpr}`),
     ' '
   )} ELSE NULL END`;
 
   const rows = (await prisma.$queryRaw(
-    Prisma.sql`
+    sql`
       SELECT *
       FROM (
         SELECT *, ${distanceCase} AS distance_km

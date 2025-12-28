@@ -1,3 +1,5 @@
+export { sql } from '@prisma/client/runtime/library';
+export type { Sql } from '@prisma/client/runtime/library';
 import { PrismaClient } from '@prisma/client';
 
 declare global {
