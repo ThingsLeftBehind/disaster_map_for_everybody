@@ -1,5 +1,5 @@
 import type { GetServerSideProps } from 'next';
-import { SeoHead } from '../components/SeoHead';
+import { Seo } from '../components/Seo';
 import { useEffect, useState } from 'react';
 
 export const getServerSideProps: GetServerSideProps = async () => {
@@ -59,7 +59,7 @@ export default function OpsPage({ adminEnabled }: { adminEnabled: boolean }) {
 
   return (
     <div className="space-y-6">
-      <SeoHead title="Ops" />
+      <Seo title="Ops" />
 
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Ops（最小管理）</h1>

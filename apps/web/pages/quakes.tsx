@@ -1,4 +1,4 @@
-import { SeoHead } from '../components/SeoHead';
+import { Seo } from '../components/Seo';
 import useSWR from 'swr';
 import { useMemo, useState, useEffect } from 'react';
 import { useDevice } from '../components/device/DeviceProvider';
@@ -229,7 +229,7 @@ export default function QuakesPage() {
 
   return (
     <div className="space-y-6">
-      <SeoHead
+      <Seo
         title="地震"
         description="地震情報の一覧と最近の強い揺れを表示します。震源・震度・発生時刻を確認し、過去の揺れの傾向を把握できます。震度の目安解説も掲載し、防災行動の判断に役立ちます。"
       />

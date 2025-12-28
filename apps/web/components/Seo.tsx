@@ -17,7 +17,7 @@ function normalizePath(path: string): string {
   return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
 }
 
-export function SeoHead({ title, description, canonicalPath }: Props) {
+export function Seo({ title, description, canonicalPath }: Props) {
   const router = useRouter();
   const path = canonicalPath ?? router.asPath ?? '/';
   const canonical = `https://www.hinanavi.com${normalizePath(path)}`;
@@ -28,14 +28,14 @@ export function SeoHead({ title, description, canonicalPath }: Props) {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: SITE_NAME,
-    alternateName: ['HinaNavi', '避難ナビ', '避難ナビ HinaNavi'],
+    alternateName: ['避難ナビ', 'HinaNavi'],
     url: 'https://www.hinanavi.com/',
   };
 
   const organizationJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: SITE_NAME,
+    name: 'HinaNavi',
     url: 'https://www.hinanavi.com/',
     contactPoint: [
       {

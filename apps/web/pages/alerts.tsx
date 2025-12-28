@@ -1,4 +1,4 @@
-import { SeoHead } from '../components/SeoHead';
+import { Seo } from '../components/Seo';
 import useSWR from 'swr';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import classNames from 'classnames';
@@ -201,7 +201,7 @@ export default function AlertsPage() {
 
   return (
     <div className="space-y-6">
-      <SeoHead
+      <Seo
         title="警報・注意報"
         description="気象庁の警報・注意報・特別警報をエリア別に確認できるページ。発表区域の内訳や東京本土/島しょの区分にも対応し、最新の警戒レベル把握と避難判断を支援します。"
       />

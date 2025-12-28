@@ -1,4 +1,4 @@
-import { SeoHead } from '../components/SeoHead';
+import { Seo } from '../components/Seo';
 import Link from 'next/link';
 import useSWR from 'swr';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -105,7 +105,7 @@ export default function HazardPage() {
 
   return (
     <div className="space-y-6">
-      <SeoHead
+      <Seo
         title="ハザード"
         description="洪水・土砂・津波・液状化などのハザードマップを重ねて確認できるページ。現在地周辺のリスク把握や避難経路の検討に役立ちます。低帯域環境でも必要情報を確認できるよう配慮しています。"
       />

@@ -1,5 +1,5 @@
-import { SeoHead } from '../components/SeoHead';
+import { Seo } from '../components/Seo';
 
 export default function IndexRedirect() {
-  return <SeoHead canonicalPath="/" />;
+  return <Seo canonicalPath="/" />;
 }
