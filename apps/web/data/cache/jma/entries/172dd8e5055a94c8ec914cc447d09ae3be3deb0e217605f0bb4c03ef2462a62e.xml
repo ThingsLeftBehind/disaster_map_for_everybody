@@ -1,0 +1,480 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_add="http://xml.kishou.go.jp/jmaxml1/addition1/">
+<Control>
+<Title>地方海上警報（Ｈ２８）</Title>
+<DateTime>2025-12-27T20:35:01Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>札幌管区気象台</EditorialOffice>
+<PublishingOffice>札幌管区気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>札幌海上気象</Title>
+<ReportDateTime>2025-12-28T05:35:00+09:00</ReportDateTime>
+<TargetDateTime>2025-12-28T05:35:00+09:00</TargetDateTime>
+<ValidDateTime>2025-12-29T03:00:00+09:00</ValidDateTime>
+<EventID/>
+<InfoType>発表</InfoType>
+<Serial/>
+<InfoKind>地方海上警報</InfoKind>
+<InfoKindVersion>1.0_2</InfoKindVersion>
+<Headline>
+<Text/>
+<Information type="地方海上警報">
+<Item>
+<Kind>
+<Name>海上強風警報</Name>
+<Code>21</Code>
+</Kind>
+<Areas codeType="地方海上予報区">
+<Area>
+<Name>サハリン東方海上</Name>
+<Code>1010</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>海上強風警報</Name>
+<Code>21</Code>
+</Kind>
+<Areas codeType="地方海上予報区">
+<Area>
+<Name>網走沖</Name>
+<Code>1030</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>海上強風警報</Name>
+<Code>21</Code>
+</Kind>
+<Areas codeType="地方海上予報区">
+<Area>
+<Name>宗谷海峡</Name>
+<Code>1040</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>海上強風警報</Name>
+<Code>21</Code>
+</Kind>
+<Areas codeType="地方海上予報区">
+<Area>
+<Name>北海道西方海上</Name>
+<Code>1050</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>海上風警報</Name>
+<Code>20</Code>
+</Kind>
+<Areas codeType="地方海上予報区">
+<Area>
+<Name>サハリン西方海上</Name>
+<Code>1020</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>海上濃霧警報</Name>
+<Code>11</Code>
+</Kind>
+<Areas codeType="地方海上予報区">
+<Area>
+<Name>サハリン東方海上</Name>
+<Code>1010</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>海上濃霧警報</Name>
+<Code>11</Code>
+</Kind>
+<Areas codeType="地方海上予報区">
+<Area>
+<Name>網走沖</Name>
+<Code>1030</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>海上着氷警報</Name>
+<Code>10</Code>
+</Kind>
+<Areas codeType="地方海上予報区">
+<Area>
+<Name>日本海北部及びオホーツク海南部</Name>
+<Code>1000</Code>
+</Area>
+</Areas>
+</Item>
+</Information>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/" xmlns:jmx_eb="http://xml.kishou.go.jp/jmaxml1/elementBasis1/">
+<Warning type="地方海上警報">
+<Item>
+<Kind>
+<Name>海上強風警報</Name>
+<Code>21</Code>
+</Kind>
+<Kind>
+<Property>
+<Type>風</Type>
+<WindPart>
+<SubArea>
+<Sentence>サハリン東方海上では  南西の風が強く  最大風速は  ３５ノット（１８メートル）  ２８日２１時までに  次第に弱まる見込み</Sentence>
+<Base>
+<jmx_eb:WindDirection type="風向" unit="８方位漢字">南西</jmx_eb:WindDirection>
+<jmx_eb:WindSpeed type="最大風速" unit="ノット" description="３５ノット">35</jmx_eb:WindSpeed>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" description="１８メートル">18</jmx_eb:WindSpeed>
+</Base>
+<Becoming>
+<TimeModifier>２８日２１時までに</TimeModifier>
+<jmx_eb:WindSpeed type="風速" condition="次第に弱まる" description="次第に弱まる"/>
+</Becoming>
+</SubArea>
+</WindPart>
+</Property>
+</Kind>
+<Area>
+<Name>サハリン東方海上</Name>
+<Code>1010</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Name>海上強風警報</Name>
+<Code>21</Code>
+</Kind>
+<Kind>
+<Property>
+<Type>風</Type>
+<WindPart>
+<SubArea>
+<Sentence>網走沖では  南西の風が強く  最大風速は  ３５ノット（１８メートル）  ２９日０３時までに  次第に弱まる見込み</Sentence>
+<Base>
+<jmx_eb:WindDirection type="風向" unit="８方位漢字">南西</jmx_eb:WindDirection>
+<jmx_eb:WindSpeed type="最大風速" unit="ノット" description="３５ノット">35</jmx_eb:WindSpeed>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" description="１８メートル">18</jmx_eb:WindSpeed>
+</Base>
+<Becoming>
+<TimeModifier>２９日０３時までに</TimeModifier>
+<jmx_eb:WindSpeed type="風速" condition="次第に弱まる" description="次第に弱まる"/>
+</Becoming>
+</SubArea>
+</WindPart>
+</Property>
+</Kind>
+<Area>
+<Name>網走沖</Name>
+<Code>1030</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Name>海上強風警報</Name>
+<Code>21</Code>
+</Kind>
+<Kind>
+<Property>
+<Type>風</Type>
+<WindPart>
+<SubArea>
+<Sentence>宗谷海峡では  西の風が強く  最大風速は  ３５ノット（１８メートル）  ２８日２１時までに  次第に弱まる見込み</Sentence>
+<Base>
+<jmx_eb:WindDirection type="風向" unit="８方位漢字">西</jmx_eb:WindDirection>
+<jmx_eb:WindSpeed type="最大風速" unit="ノット" description="３５ノット">35</jmx_eb:WindSpeed>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" description="１８メートル">18</jmx_eb:WindSpeed>
+</Base>
+<Becoming>
+<TimeModifier>２８日２１時までに</TimeModifier>
+<jmx_eb:WindSpeed type="風速" condition="次第に弱まる" description="次第に弱まる"/>
+</Becoming>
+</SubArea>
+</WindPart>
+</Property>
+</Kind>
+<Area>
+<Name>宗谷海峡</Name>
+<Code>1040</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Name>海上強風警報</Name>
+<Code>21</Code>
+</Kind>
+<Kind>
+<Property>
+<Type>風</Type>
+<WindPart>
+<SubArea>
+<Sentence>北海道西方海上では  西の風が強く  最大風速は  ３５ノット（１８メートル）  ２８日２１時までに  次第に弱まる見込み</Sentence>
+<Base>
+<jmx_eb:WindDirection type="風向" unit="８方位漢字">西</jmx_eb:WindDirection>
+<jmx_eb:WindSpeed type="最大風速" unit="ノット" description="３５ノット">35</jmx_eb:WindSpeed>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" description="１８メートル">18</jmx_eb:WindSpeed>
+</Base>
+<Becoming>
+<TimeModifier>２８日２１時までに</TimeModifier>
+<jmx_eb:WindSpeed type="風速" condition="次第に弱まる" description="次第に弱まる"/>
+</Becoming>
+</SubArea>
+</WindPart>
+</Property>
+</Kind>
+<Area>
+<Name>北海道西方海上</Name>
+<Code>1050</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Name>海上風警報</Name>
+<Code>20</Code>
+</Kind>
+<Kind>
+<Property>
+<Type>風</Type>
+<WindPart>
+<SubArea>
+<Sentence>サハリン西方海上では  西の風が強く  最大風速は  ３０ノット（１５メートル）  ２８日１５時までに  次第に弱まる見込み</Sentence>
+<Base>
+<jmx_eb:WindDirection type="風向" unit="８方位漢字">西</jmx_eb:WindDirection>
+<jmx_eb:WindSpeed type="最大風速" unit="ノット" description="３０ノット">30</jmx_eb:WindSpeed>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" description="１５メートル">15</jmx_eb:WindSpeed>
+</Base>
+<Becoming>
+<TimeModifier>２８日１５時までに</TimeModifier>
+<jmx_eb:WindSpeed type="風速" condition="次第に弱まる" description="次第に弱まる"/>
+</Becoming>
+</SubArea>
+</WindPart>
+</Property>
+</Kind>
+<Area>
+<Name>サハリン西方海上</Name>
+<Code>1020</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Name>海上濃霧警報</Name>
+<Code>11</Code>
+</Kind>
+<Kind>
+<Property>
+<Type>濃霧</Type>
+<VisibilityPart>
+<SubArea>
+<Sentence>サハリン東方海上では  所々で濃い霧のため見通しが悪く  視程は  ０．３海里（０．５キロ）以下</Sentence>
+<Base>
+<jmx_eb:Visibility type="視程" unit="海里" condition="以下" description="０．３海里以下">0.3</jmx_eb:Visibility>
+<jmx_eb:Visibility type="視程" unit="km" condition="以下" description="０．５キロ以下">0.5</jmx_eb:Visibility>
+</Base>
+</SubArea>
+</VisibilityPart>
+</Property>
+</Kind>
+<Area>
+<Name>サハリン東方海上</Name>
+<Code>1010</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Name>海上濃霧警報</Name>
+<Code>11</Code>
+</Kind>
+<Kind>
+<Property>
+<Type>濃霧</Type>
+<VisibilityPart>
+<SubArea>
+<Sentence>網走沖では  所々で濃い霧のため見通しが次第に悪くなり  ２９日０３時までに  視程は  ０．３海里（０．５キロ）以下になる見込み</Sentence>
+<Base>
+<jmx_eb:Visibility type="視程" condition="次第に悪くなる" description="次第に悪くなる"/>
+</Base>
+<Becoming>
+<TimeModifier>２９日０３時までに</TimeModifier>
+<jmx_eb:Visibility type="視程" unit="海里" condition="以下" description="０．３海里以下">0.3</jmx_eb:Visibility>
+<jmx_eb:Visibility type="視程" unit="km" condition="以下" description="０．５キロ以下">0.5</jmx_eb:Visibility>
+</Becoming>
+</SubArea>
+</VisibilityPart>
+</Property>
+</Kind>
+<Area>
+<Name>網走沖</Name>
+<Code>1030</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Name>海上着氷警報</Name>
+<Code>10</Code>
+</Kind>
+<Kind>
+<Property>
+<Type>着氷</Type>
+<IcingPart>
+<SubArea>
+<Sentence>サハリン東方海上では  強い着氷の恐れがあるが  ２９日０３時までに  次第に弱まる見込み</Sentence>
+<Base>
+<jmx_eb:Icing type="着氷の程度" description="強い着氷">強い</jmx_eb:Icing>
+</Base>
+<Becoming>
+<TimeModifier>２９日０３時までに</TimeModifier>
+<jmx_eb:Icing type="着氷の程度" condition="次第に弱まる" description="次第に弱まる"/>
+</Becoming>
+</SubArea>
+</IcingPart>
+</Property>
+</Kind>
+<Area>
+<Name>サハリン東方海上</Name>
+<Code>1010</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Name>海上着氷警報</Name>
+<Code>10</Code>
+</Kind>
+<Kind>
+<Property>
+<Type>着氷</Type>
+<IcingPart>
+<SubArea>
+<Sentence>サハリン西方海上では  強い着氷の恐れがあるが  ２９日０３時までに  次第に弱まる見込み</Sentence>
+<Base>
+<jmx_eb:Icing type="着氷の程度" description="強い着氷">強い</jmx_eb:Icing>
+</Base>
+<Becoming>
+<TimeModifier>２９日０３時までに</TimeModifier>
+<jmx_eb:Icing type="着氷の程度" condition="次第に弱まる" description="次第に弱まる"/>
+</Becoming>
+</SubArea>
+</IcingPart>
+</Property>
+</Kind>
+<Area>
+<Name>サハリン西方海上</Name>
+<Code>1020</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Name>海上着氷警報</Name>
+<Code>10</Code>
+</Kind>
+<Kind>
+<Property>
+<Type>着氷</Type>
+<IcingPart>
+<SubArea>
+<Sentence>網走沖では  弱い着氷の恐れがあるが  ２８日２１時までに  次第に弱まる見込み</Sentence>
+<Base>
+<jmx_eb:Icing type="着氷の程度" description="弱い着氷">弱い</jmx_eb:Icing>
+</Base>
+<Becoming>
+<TimeModifier>２８日２１時までに</TimeModifier>
+<jmx_eb:Icing type="着氷の程度" condition="次第に弱まる" description="次第に弱まる"/>
+</Becoming>
+</SubArea>
+</IcingPart>
+</Property>
+</Kind>
+<Area>
+<Name>網走沖</Name>
+<Code>1030</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Name>海上着氷警報</Name>
+<Code>10</Code>
+</Kind>
+<Kind>
+<Property>
+<Type>着氷</Type>
+<IcingPart>
+<SubArea>
+<Sentence>宗谷海峡では  弱い着氷の恐れがあるが  ２８日１５時までに  次第に弱まる見込み</Sentence>
+<Base>
+<jmx_eb:Icing type="着氷の程度" description="弱い着氷">弱い</jmx_eb:Icing>
+</Base>
+<Becoming>
+<TimeModifier>２８日１５時までに</TimeModifier>
+<jmx_eb:Icing type="着氷の程度" condition="次第に弱まる" description="次第に弱まる"/>
+</Becoming>
+</SubArea>
+</IcingPart>
+</Property>
+</Kind>
+<Area>
+<Name>宗谷海峡</Name>
+<Code>1040</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Name>海上着氷警報</Name>
+<Code>10</Code>
+</Kind>
+<Kind>
+<Property>
+<Type>着氷</Type>
+<IcingPart>
+<SubArea>
+<Sentence>北海道西方海上では  弱い着氷の恐れがあるが  ２８日１５時までに  次第に弱まる見込み</Sentence>
+<Base>
+<jmx_eb:Icing type="着氷の程度" description="弱い着氷">弱い</jmx_eb:Icing>
+</Base>
+<Becoming>
+<TimeModifier>２８日１５時までに</TimeModifier>
+<jmx_eb:Icing type="着氷の程度" condition="次第に弱まる" description="次第に弱まる"/>
+</Becoming>
+</SubArea>
+</IcingPart>
+</Property>
+</Kind>
+<Area>
+<Name>北海道西方海上</Name>
+<Code>1050</Code>
+</Area>
+</Item>
+</Warning>
+<MeteorologicalInfos type="気象要因">
+<MeteorologicalInfo>
+<DateTime>2025-12-28T03:00:00+09:00</DateTime>
+<Name>２８日０３時</Name>
+<Item>
+<Kind>
+<Property>
+<Type>概況</Type>
+<SynopsisPart>
+<jmx_eb:Synopsis type="気象要因">発達した低  ９８２  北緯５９度  東経１４２度  ゆっくり  西北西
+低  １００４  北緯５０度  東経１５８度  北北東
+２５ノット（４５キロ）</jmx_eb:Synopsis>
+</SynopsisPart>
+</Property>
+</Kind>
+<Area>
+<Name>日本海北部及びオホーツク海南部</Name>
+<Code>1000</Code>
+</Area>
+</Item>
+</MeteorologicalInfo>
+</MeteorologicalInfos>
+</Body>
+</Report>

@@ -4,17 +4,17 @@
     "regular": {
       "url": "https://www.data.jma.go.jp/developer/xml/feed/regular.xml",
       "intervalMs": 180000,
-      "lastAttemptTime": "2025-12-28T08:18:07.346Z",
-      "lastSuccessfulUpdateTime": "2025-12-28T08:18:08.063Z",
+      "lastAttemptTime": "2025-12-28T08:26:25.515Z",
+      "lastSuccessfulUpdateTime": "2025-12-28T08:26:26.069Z",
       "lastError": null,
-      "etag": "W/\"8597e31c1e1821b198731883951bb36b\"",
-      "lastModified": "Sun, 28 Dec 2025 08:15:05 GMT"
+      "etag": "W/\"a7e704ea16db0c9533e22305270ad40d\"",
+      "lastModified": "Sun, 28 Dec 2025 08:18:25 GMT"
     },
     "extra": {
       "url": "https://www.data.jma.go.jp/developer/xml/feed/extra.xml",
       "intervalMs": 60000,
-      "lastAttemptTime": "2025-12-28T08:19:14.818Z",
-      "lastSuccessfulUpdateTime": "2025-12-28T08:19:15.006Z",
+      "lastAttemptTime": "2025-12-28T08:26:27.492Z",
+      "lastSuccessfulUpdateTime": "2025-12-28T08:26:27.562Z",
       "lastError": null,
       "etag": "W/\"f03635e9215606a3a0a73c3099b96cda\"",
       "lastModified": "Sun, 28 Dec 2025 07:31:03 GMT"
@@ -22,8 +22,8 @@
     "eqvol": {
       "url": "https://www.data.jma.go.jp/developer/xml/feed/eqvol.xml",
       "intervalMs": 60000,
-      "lastAttemptTime": "2025-12-28T08:19:16.456Z",
-      "lastSuccessfulUpdateTime": "2025-12-28T08:19:16.505Z",
+      "lastAttemptTime": "2025-12-28T08:26:28.781Z",
+      "lastSuccessfulUpdateTime": "2025-12-28T08:26:28.852Z",
       "lastError": null,
       "etag": "W/\"71aad6b304ecb21da4af524b698cdbb8\"",
       "lastModified": "Sun, 28 Dec 2025 08:01:29 GMT"
@@ -31,8 +31,8 @@
     "other": {
       "url": "https://www.data.jma.go.jp/developer/xml/feed/other.xml",
       "intervalMs": 180000,
-      "lastAttemptTime": "2025-12-28T08:18:16.307Z",
-      "lastSuccessfulUpdateTime": "2025-12-28T08:18:16.448Z",
+      "lastAttemptTime": "2025-12-28T08:26:28.861Z",
+      "lastSuccessfulUpdateTime": "2025-12-28T08:26:29.048Z",
       "lastError": null,
       "etag": "W/\"e564ba705836ebb038cd9f4d3125fe0d\"",
       "lastModified": "Sun, 28 Dec 2025 02:35:57 GMT"
@@ -48,8 +48,8 @@
     },
     "warningsByArea": {
       "130000": {
-        "lastAttemptTime": "2025-12-28T08:18:11.235Z",
-        "lastSuccessfulUpdateTime": "2025-12-28T08:18:11.811Z",
+        "lastAttemptTime": "2025-12-28T08:26:33.915Z",
+        "lastSuccessfulUpdateTime": "2025-12-28T08:26:34.188Z",
         "lastError": null,
         "etag": "W/\"d164fb88203465de8fc1d3fad8068a9c\"",
         "lastModified": "Sun, 28 Dec 2025 07:02:54 GMT"

@@ -2,8 +2,8 @@
 <feed xmlns="http://www.w3.org/2005/Atom" lang="ja">
   <title>高頻度（定時）</title>
   <subtitle>JMAXML publishing feed</subtitle>
-  <updated>2025-12-28T17:14:47+09:00</updated>
-  <id>https://www.data.jma.go.jp/developer/xml/feed/regular.xml#short_1766909687</id>
+  <updated>2025-12-28T17:18:08+09:00</updated>
+  <id>https://www.data.jma.go.jp/developer/xml/feed/regular.xml#short_1766909888</id>
   <link rel="related" href="https://www.jma.go.jp/"/>
   <link rel="self" href="https://www.data.jma.go.jp/developer/xml/feed/regular.xml"/>
   <link rel="hub" href="http://alert-hub.appspot.com/"/>
@@ -11,6 +11,16 @@
 <a href="https://www.jma.go.jp/jma/kishou/info/coment.html">利用規約</a>,
 <a href="https://www.jma.go.jp/jma/en/copyright.html">Terms of Use</a>
 ]]></rights>
+  <entry>
+    <title>大雨危険度通知</title>
+    <id>https://www.data.jma.go.jp/developer/xml/data/20251228081750_0_VPRN50_010000.xml</id>
+    <updated>2025-12-28T08:17:31Z</updated>
+    <author>
+      <name>気象庁</name>
+    </author>
+    <link type="application/xml" href="https://www.data.jma.go.jp/developer/xml/data/20251228081750_0_VPRN50_010000.xml"/>
+    <content type="text">【大雨危険度通知】</content>
+  </entry>
   <entry>
     <title>地上実況図</title>
     <id>https://www.data.jma.go.jp/developer/xml/data/20251228081431_0_VZSA50_010000.xml</id>
@@ -6400,15 +6410,5 @@
     </author>
     <link type="application/xml" href="https://www.data.jma.go.jp/developer/xml/data/20251227222129_0_VPFD51_280000.xml"/>
     <content type="text">【兵庫県府県天気予報】</content>
-  </entry>
-  <entry>
-    <title>大雨危険度通知</title>
-    <id>https://www.data.jma.go.jp/developer/xml/data/20251227221751_0_VPRN50_010000.xml</id>
-    <updated>2025-12-27T22:17:30Z</updated>
-    <author>
-      <name>気象庁</name>
-    </author>
-    <link type="application/xml" href="https://www.data.jma.go.jp/developer/xml/data/20251227221751_0_VPRN50_010000.xml"/>
-    <content type="text">【大雨危険度通知】</content>
   </entry>
 </feed>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_add="http://xml.kishou.go.jp/jmaxml1/addition1/">
+<Control>
+<Title>地方気象情報</Title>
+<DateTime>2025-12-28T06:51:15Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>広島地方気象台</EditorialOffice>
+<PublishingOffice>広島地方気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>突風と落雷に関する中国地方気象情報</Title>
+<ReportDateTime>2025-12-28T15:51:00+09:00</ReportDateTime>
+<TargetDateTime>2025-12-28T15:51:00+09:00</TargetDateTime>
+<EventID>JPHR250165</EventID>
+<InfoType>発表</InfoType>
+<Serial>1</Serial>
+<InfoKind>同一現象用平文情報</InfoKind>
+<InfoKindVersion>1.0_0</InfoKindVersion>
+<Headline>
+<Text>山陰では、２９日昼前から夜遅くにかけて、竜巻などの激しい突風や落雷、急な強い雨に注意してください。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/">
+<Notice/>
+<Comment>
+<Text type="本文">［気象概況］
+　山陰では上空の寒気や南からの暖かく湿った空気が流れ込む影響で、２９日昼前から夜遅くにかけて大気の状態が非常に不安定となり、局地的に雷雲が発達する見込みです。
+
+［防災事項］
+竜巻などの激しい突風や落雷、急な強い雨に注意してください。
+発達した積乱雲の近づく兆しがある場合には、建物内に移動するなど、安全確保に努めてください。
+
+［補足事項］
+今後発表する防災気象情報に留意してください。
+「突風と落雷に関する中国地方気象情報」は、本号限りです。</Text>
+</Comment>
+</Body>
+</Report>

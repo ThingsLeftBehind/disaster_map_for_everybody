@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_add="http://xml.kishou.go.jp/jmaxml1/addition1/">
+<Control>
+<Title>地方海上警報（Ｈ２８）</Title>
+<DateTime>2025-12-27T20:35:04Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>大阪管区気象台（舞鶴）</EditorialOffice>
+<PublishingOffice>大阪管区気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>舞鶴海上気象</Title>
+<ReportDateTime>2025-12-28T05:35:00+09:00</ReportDateTime>
+<TargetDateTime>2025-12-28T05:35:00+09:00</TargetDateTime>
+<ValidDateTime>2025-12-29T03:00:00+09:00</ValidDateTime>
+<EventID/>
+<InfoType>発表</InfoType>
+<Serial/>
+<InfoKind>地方海上警報</InfoKind>
+<InfoKindVersion>1.0_2</InfoKindVersion>
+<Headline>
+<Text/>
+<Information type="地方海上警報">
+<Item>
+<Kind>
+<Name>海上風警報</Name>
+<Code>20</Code>
+</Kind>
+<Areas codeType="地方海上予報区">
+<Area>
+<Name>日本海北西部</Name>
+<Code>4110</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>海上風警報</Name>
+<Code>20</Code>
+</Kind>
+<Areas codeType="地方海上予報区">
+<Area>
+<Name>山陰沖西部</Name>
+<Code>4130</Code>
+</Area>
+</Areas>
+</Item>
+</Information>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/" xmlns:jmx_eb="http://xml.kishou.go.jp/jmaxml1/elementBasis1/">
+<Warning type="地方海上警報">
+<Item>
+<Kind>
+<Name>海上風警報</Name>
+<Code>20</Code>
+</Kind>
+<Kind>
+<Property>
+<Type>風</Type>
+<WindPart>
+<SubArea>
+<Sentence>日本海北西部では  西の風が強く  最大風速は  ３０ノット（１５メートル）</Sentence>
+<Base>
+<jmx_eb:WindDirection type="風向" unit="８方位漢字">西</jmx_eb:WindDirection>
+<jmx_eb:WindSpeed type="最大風速" unit="ノット" description="３０ノット">30</jmx_eb:WindSpeed>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" description="１５メートル">15</jmx_eb:WindSpeed>
+</Base>
+</SubArea>
+</WindPart>
+</Property>
+</Kind>
+<Area>
+<Name>日本海北西部</Name>
+<Code>4110</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Name>海上風警報</Name>
+<Code>20</Code>
+</Kind>
+<Kind>
+<Property>
+<Type>風</Type>
+<WindPart>
+<SubArea>
+<Sentence>山陰沖西部では  南西の風が次第に強まり  ２９日０３時までに  最大風速は  ３０ノット（１５メートル）  に達する見込み</Sentence>
+<Base>
+<jmx_eb:WindDirection type="風向" unit="８方位漢字">南西</jmx_eb:WindDirection>
+<jmx_eb:WindSpeed type="風速" condition="次第に強まる" description="次第に強まる"/>
+</Base>
+<Becoming>
+<TimeModifier>２９日０３時までに</TimeModifier>
+<jmx_eb:WindSpeed type="最大風速" unit="ノット" description="３０ノット">30</jmx_eb:WindSpeed>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" description="１５メートル">15</jmx_eb:WindSpeed>
+</Becoming>
+</SubArea>
+</WindPart>
+</Property>
+</Kind>
+<Area>
+<Name>山陰沖西部</Name>
+<Code>4130</Code>
+</Area>
+</Item>
+</Warning>
+<MeteorologicalInfos type="気象要因">
+<MeteorologicalInfo>
+<DateTime>2025-12-28T03:00:00+09:00</DateTime>
+<Name>２８日０３時</Name>
+<Item>
+<Kind>
+<Property>
+<Type>概況</Type>
+<SynopsisPart>
+<jmx_eb:Synopsis type="気象要因">気圧の傾きが急になっている</jmx_eb:Synopsis>
+</SynopsisPart>
+</Property>
+</Kind>
+<Area>
+<Name>日本海西部</Name>
+<Code>4100</Code>
+</Area>
+</Item>
+</MeteorologicalInfo>
+</MeteorologicalInfos>
+</Body>
+</Report>

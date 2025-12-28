@@ -34,6 +34,10 @@ function quoteIdent(value: string): string {
   return `"${value.replaceAll('"', '""')}"`;
 }
 
+function escapeLiteral(value: string): string {
+  return `'${value.replace(/'/g, "''")}'`;
+}
+
 function redactErrorMessage(message: string): string {
   return message.replace(/postgres(?:ql)?:\/\/\S+/gi, 'postgresql://***');
 }
@@ -109,14 +113,29 @@ function decideFactorMode(samples: Array<{ lat: number; lon: number }>): FactorM
   return null;
 }
 
+async function queryRawUnsafeWithRetry<T>(sql: string): Promise<T> {
+  try {
+    return (await prisma.$queryRawUnsafe(sql)) as T;
+  } catch (error) {
+    const code = (error as any)?.code ?? (error as any)?.meta?.code;
+    if (code === '42P05') {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      return (await prisma.$queryRawUnsafe(sql)) as T;
+    }
+    throw error;
+  }
+}
+
 async function readRelationCandidates(): Promise<Array<{ schema: string; relation: string; relkind: string }>> {
-  const rows = (await prisma.$queryRaw`
+  const relationList = RELATION_CANDIDATES.map((name) => escapeLiteral(name)).join(', ');
+  const sql = `
     SELECT n.nspname AS schema, c.relname AS relation, c.relkind AS relkind
     FROM pg_class c
     JOIN pg_namespace n ON n.oid = c.relnamespace
-    WHERE c.relname = ANY(${RELATION_CANDIDATES}::text[])
+    WHERE c.relname IN (${relationList})
       AND c.relkind IN ('r', 'v', 'm', 'p', 'f')
-  `) as Array<{ schema: unknown; relation: unknown; relkind: unknown }>;
+  `;
+  const rows = await queryRawUnsafeWithRetry<Array<{ schema: unknown; relation: unknown; relkind: unknown }>>(sql);
 
   return rows
     .map((row) => ({
@@ -138,12 +157,13 @@ function pickRelation(rows: Array<{ schema: string; relation: string }>): { sche
 }
 
 async function readColumns(schema: string, relation: string): Promise<string[]> {
-  const rows = (await prisma.$queryRaw`
+  const sql = `
     SELECT column_name
     FROM information_schema.columns
-    WHERE table_schema = ${schema} AND table_name = ${relation}
+    WHERE table_schema = ${escapeLiteral(schema)} AND table_name = ${escapeLiteral(relation)}
     ORDER BY ordinal_position
-  `) as Array<{ column_name: unknown }>;
+  `;
+  const rows = await queryRawUnsafeWithRetry<Array<{ column_name: unknown }>>(sql);
 
   return rows.map((row) => String(row.column_name ?? '')).filter(Boolean);
 }
@@ -159,7 +179,7 @@ async function readSampleCoords(args: { schema: string; relation: string; latCol
     WHERE ${latIdent} IS NOT NULL AND ${lonIdent} IS NOT NULL
     LIMIT 25
   `;
-  const rows = (await prisma.$queryRawUnsafe(sql)) as Array<{ lat: unknown; lon: unknown }>;
+  const rows = await queryRawUnsafeWithRetry<Array<{ lat: unknown; lon: unknown }>>(sql);
   return rows
     .map((row) => {
       const lat = toFiniteNumber(row.lat);
