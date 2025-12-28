@@ -9,11 +9,11 @@ const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
   transpilePackages: ['@jp-evac/shared'],
-  serverExternalPackages: ['@prisma/client', 'prisma'],
   experimental: {
     outputFileTracingRoot: path.join(__dirname, '../..'),
     outputFileTracingIncludes: {
       '/api/shelters/nearby': [
+        './.prisma/**',
         './node_modules/.prisma/**',
         './node_modules/@prisma/**',
         '../../packages/db/node_modules/.prisma/**',
@@ -21,6 +21,7 @@ const nextConfig = {
         '../../packages/db/node_modules/@prisma/client/**',
       ],
       '/api/shelters/search': [
+        './.prisma/**',
         './node_modules/.prisma/**',
         './node_modules/@prisma/**',
         '../../packages/db/node_modules/.prisma/**',

@@ -5,8 +5,8 @@
   "packageManager": "pnpm@9.12.0",
   "scripts": {
     "dev": "pnpm --filter @jp-evac/web dev",
-    "build": "pnpm --filter @jp-evac/db prisma:generate && pnpm --filter @jp-evac/web build",
-    "postinstall": "pnpm --filter @jp-evac/db prisma:generate",
+    "build": "pnpm --filter @jp-evac/db prisma:generate && node scripts/ensure-prisma-engine.mjs && pnpm --filter @jp-evac/web build",
+    "postinstall": "pnpm --filter @jp-evac/db prisma:generate && node scripts/ensure-prisma-engine.mjs",
     "lint": "pnpm --filter @jp-evac/web lint",
     "test:jma": "node --test apps/web/lib/jma/__tests__/*.test.mjs",
     "test:store": "node --test apps/web/lib/store/__tests__/*.test.mjs",

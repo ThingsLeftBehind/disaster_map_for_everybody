@@ -1,7 +1,7 @@
 {
   "functions": {
     "api/**": {
-      "includeFiles": "{apps/web,packages/db}/node_modules/{.prisma,@prisma}/**"
+      "includeFiles": "{apps/web/.prisma/**,apps/web/node_modules/@prisma/**,packages/db/node_modules/.prisma/**,packages/db/node_modules/@prisma/**,packages/db/node_modules/@prisma/client/**,node_modules/prisma/**}"
     }
   }
 }
