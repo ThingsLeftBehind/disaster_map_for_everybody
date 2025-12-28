@@ -1,4 +1,5 @@
 import { Prisma, type PrismaClient } from '@jp-evac/db';
+import type { Sql } from '@prisma/client/runtime/library';
 import { hazardKeys, hazardLabels, type HazardKey } from '@jp-evac/shared';
 import { normalizeLatLon } from './coords';
 
@@ -154,11 +155,11 @@ function isUuidType(type: string | null): boolean {
   return normalized.includes('uuid');
 }
 
-function buildParamForColumn(value: string, columnType: string | null): Prisma.Sql {
+function buildParamForColumn(value: string, columnType: string | null): Sql {
   return isUuidType(columnType) ? Prisma.sql`${value}::uuid` : Prisma.sql`${value}`;
 }
 
-function buildParamListForColumn(values: string[], columnType: string | null): Prisma.Sql {
+function buildParamListForColumn(values: string[], columnType: string | null): Sql {
   return Prisma.join(values.map((value) => buildParamForColumn(value, columnType)));
 }
 
@@ -505,7 +506,7 @@ export async function rawCountEvacSiteInvalidCoords(
   };
 }
 
-function buildHaversineSql(args: { latExpr: Prisma.Sql; lonExpr: Prisma.Sql; lat: number; lon: number }): Prisma.Sql {
+function buildHaversineSql(args: { latExpr: Sql; lonExpr: Sql; lat: number; lon: number }): Sql {
   return Prisma.sql`
     (2 * 6371 * asin(sqrt(
       pow(sin((radians(${args.latExpr}) - radians(${args.lat})) / 2), 2) +
@@ -767,7 +768,7 @@ export async function rawSearchEvacSites(
   const table = Prisma.raw(meta.tableRef);
   const orderCol = Prisma.raw(qIdent(meta.updatedAtCol ?? meta.createdAtCol ?? meta.idCol));
 
-  const conditions: Prisma.Sql[] = [];
+  const conditions: Sql[] = [];
 
   const prefCodeRaw = typeof args.prefCode === 'string' ? args.prefCode.trim() : '';
   const prefCodeFromMuni =
@@ -778,7 +779,7 @@ export async function rawSearchEvacSites(
   if (prefName) {
     const patternStart = `${prefName}%`;
     const patternContains = `%${prefName}%`;
-    const ors: Prisma.Sql[] = [];
+    const ors: Sql[] = [];
     if (meta.prefCityCol) {
       const c = Prisma.raw(qIdent(meta.prefCityCol));
       ors.push(Prisma.sql`${c} ILIKE ${patternStart}`);
@@ -798,7 +799,7 @@ export async function rawSearchEvacSites(
   const muniName = (args.muniName ?? '').trim();
   if (muniName) {
     const patternContains = `%${muniName}%`;
-    const ors: Prisma.Sql[] = [];
+    const ors: Sql[] = [];
     if (meta.prefCityCol) {
       const c = Prisma.raw(qIdent(meta.prefCityCol));
       ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
@@ -821,7 +822,7 @@ export async function rawSearchEvacSites(
         // If an explicit municipality code column exists, prefer exact filtering (fast, reliable).
       } else {
         const patternContains = `%${muniCode}%`;
-        const ors: Prisma.Sql[] = [];
+        const ors: Sql[] = [];
         if (meta.prefCityCol) {
           const c = Prisma.raw(qIdent(meta.prefCityCol));
           ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
@@ -847,7 +848,7 @@ export async function rawSearchEvacSites(
   const q = (args.q ?? '').trim();
   if (q) {
     const patternContains = `%${q}%`;
-    const ors: Prisma.Sql[] = [];
+    const ors: Sql[] = [];
     if (meta.nameCol) {
       const c = Prisma.raw(qIdent(meta.nameCol));
       ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);

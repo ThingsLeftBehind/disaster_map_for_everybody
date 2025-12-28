@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Prisma, prisma } from '@jp-evac/db';
+import type { Sql } from '@prisma/client/runtime/library';
 import { fallbackNearbyShelters } from 'lib/db/sheltersFallback';
 import { NearbyQuerySchema } from 'lib/validators';
 import { haversineDistance, hazardKeys } from '@jp-evac/shared';
@@ -30,7 +31,7 @@ function toFiniteNumber(value: unknown): number | null {
   }
 }
 
-function buildHaversineSql(args: { latExpr: Prisma.Sql; lonExpr: Prisma.Sql; lat: number; lon: number }): Prisma.Sql {
+function buildHaversineSql(args: { latExpr: Sql; lonExpr: Sql; lat: number; lon: number }): Sql {
   return Prisma.sql`
     (2 * 6371 * asin(sqrt(
       pow(sin((radians(${args.latExpr}) - radians(${args.lat})) / 2), 2) +
@@ -52,11 +53,11 @@ function mergeScaleCandidates(primary: number[]): number[] {
   return merged.length > 0 ? merged : [1];
 }
 
-type ScaleClause = { bbox: Prisma.Sql; distanceExpr: Prisma.Sql };
+type ScaleClause = { bbox: Sql; distanceExpr: Sql };
 
 function buildScaleClauses(args: {
-  latCol: Prisma.Sql;
-  lonCol: Prisma.Sql;
+  latCol: Sql;
+  lonCol: Sql;
   lat: number;
   lon: number;
   radiusKm: number;
