@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Prisma } from '@prisma/client';
-import { prisma, sql, type Sql } from '@jp-evac/db';
+import { prisma } from '@jp-evac/db';
 import type { Sql } from '@prisma/client/runtime/library';
 import { fallbackNearbyShelters } from 'lib/db/sheltersFallback';
 import { NearbyQuerySchema } from 'lib/validators';
@@ -8,8 +8,8 @@ import { haversineDistance, hazardKeys } from '@jp-evac/shared';
 import { getEvacSitesCoordScales, normalizeLatLon } from 'lib/shelters/coords';
 import { isEvacSitesTableMismatchError, safeErrorMessage } from 'lib/shelters/evacsiteCompat';
 import { DEFAULT_MAIN_LIMIT } from 'lib/constants';
-
 export const config = { runtime: 'nodejs' };
+
 
 const BASE_SCALE_FACTORS = [1, 1e7, 1e6, 1e5, 1e4, 1e3, 1e2] as const;
 
@@ -33,7 +33,7 @@ function toFiniteNumber(value: unknown): number | null {
 }
 
 function buildHaversineSql(args: { latExpr: Sql; lonExpr: Sql; lat: number; lon: number }): Sql {
-  return sql`
+  return Prisma.sql`
     (2 * 6371 * asin(sqrt(
       pow(sin((radians(${args.latExpr}) - radians(${args.lat})) / 2), 2) +
       cos(radians(${args.lat})) * cos(radians(${args.latExpr})) *
@@ -67,21 +67,21 @@ function buildScaleClauses(args: {
   const latDelta = args.radiusKm / 111.32;
   const lonDelta = args.radiusKm / (111.32 * Math.max(0.2, Math.cos((args.lat * Math.PI) / 180)));
 
-  return args.factors.map((factor) => {
+  return args.factors.map((factor: any) => {
     const latDb = args.lat * factor;
     const lonDb = args.lon * factor;
     const latDeltaDb = latDelta * factor;
     const lonDeltaDb = lonDelta * factor;
 
-    const bbox = sql`
+    const bbox = Prisma.sql`
       ${args.latCol} >= ${latDb - latDeltaDb} AND ${args.latCol} <= ${latDb + latDeltaDb}
       AND ${args.lonCol} >= ${lonDb - lonDeltaDb} AND ${args.lonCol} <= ${lonDb + lonDeltaDb}
     `;
 
     const latExpr =
-      factor === 1 ? sql`${args.latCol}::double precision` : sql`(${args.latCol}::double precision / ${factor})`;
+      factor === 1 ? Prisma.sql`${args.latCol}::double precision` : Prisma.sql`(${args.latCol}::double precision / ${factor})`;
     const lonExpr =
-      factor === 1 ? sql`${args.lonCol}::double precision` : sql`(${args.lonCol}::double precision / ${factor})`;
+      factor === 1 ? Prisma.sql`${args.lonCol}::double precision` : Prisma.sql`(${args.lonCol}::double precision / ${factor})`;
     const distanceExpr = buildHaversineSql({ latExpr, lonExpr, lat: args.lat, lon: args.lon });
 
     return { bbox, distanceExpr };
@@ -89,17 +89,17 @@ function buildScaleClauses(args: {
 }
 
 function buildDiagnostics(items: Array<{ distanceKm: number }>): { minDistanceKm: number | null; countWithin1Km: number; countWithin5Km: number } {
-  const distances = items.map((s) => s.distanceKm).filter((v) => Number.isFinite(v));
+  const distances = items.map((s: any) => s.distanceKm).filter((v: any) => Number.isFinite(v));
   const topDistances = distances.slice(0, 50);
   const minDistanceKm = topDistances.length > 0 ? Math.min(...topDistances) : null;
-  const countWithin1Km = distances.filter((d) => d <= 1).length;
-  const countWithin5Km = distances.filter((d) => d <= 5).length;
+  const countWithin1Km = distances.filter((d: any) => d <= 1).length;
+  const countWithin5Km = distances.filter((d: any) => d <= 5).length;
   return { minDistanceKm, countWithin1Km, countWithin5Km };
 }
 
 function hazardCount(hazards: Record<string, boolean> | null | undefined): number {
   if (!hazards) return 0;
-  return hazardKeys.reduce((acc, key) => acc + (hazards[key] ? 1 : 0), 0);
+  return hazardKeys.reduce((acc: any, key: any) => acc + (hazards[key] ? 1 : 0), 0);
 }
 
 function hasAnyHazard(hazards: Record<string, boolean> | null | undefined): boolean {
@@ -214,14 +214,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       radiusKm: requestedRadiusKm,
       factors: factorCandidates,
     });
-    const bboxOr = Prisma.join(scaleClauses.map((c) => sql`(${c.bbox})`), ' OR ');
-    const distanceCase = sql`CASE ${Prisma.join(
-      scaleClauses.map((c) => sql`WHEN ${c.bbox} THEN ${c.distanceExpr}`),
+    const bboxOr = Prisma.join(scaleClauses.map((c: any) => Prisma.sql`(${c.bbox})`), ' OR ');
+    const distanceCase = Prisma.sql`CASE ${Prisma.join(
+      scaleClauses.map((c: any) => Prisma.sql`WHEN ${c.bbox} THEN ${c.distanceExpr}`),
       ' '
     )} ELSE NULL END`;
 
     const rows = (await prisma.$queryRaw(
-      sql`
+      Prisma.sql`
         SELECT *
         FROM (
           SELECT
@@ -251,13 +251,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const enriched = rows
       .map((site: any) => {
         const coords =
-          factorCandidates.map((f) => normalizeLatLon({ lat: site.lat, lon: site.lon, factor: f })).find(Boolean) ??
+          factorCandidates.map((f: any) => normalizeLatLon({ lat: site.lat, lon: site.lon, factor: f })).find(Boolean) ??
           null;
         if (!coords) return null;
         const distanceKm = toFiniteNumber(site.distance_km) ?? haversineDistance(lat, lon, coords.lat, coords.lon);
         const flags = (site.hazards ?? {}) as Record<string, boolean>;
-        const matches = hazardFilters.length === 0 ? true : hazardFilters.every((key) => Boolean(flags?.[key]));
-        const missing = hazardFilters.filter((key) => !Boolean(flags?.[key]));
+        const matches = hazardFilters.length === 0 ? true : hazardFilters.every((key: any) => Boolean(flags?.[key]));
+        const missing = hazardFilters.filter((key: any) => !Boolean(flags?.[key]));
         return {
           ...site,
           hazards: flags,
@@ -269,22 +269,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           missingHazards: missing,
         };
       })
-      .filter((site): site is NonNullable<typeof site> => Boolean(site))
-      .filter((site) => typeof site.distanceKm === 'number' && Number.isFinite(site.distanceKm) && site.distanceKm <= requestedRadiusKm)
-      .sort((a, b) => a.distanceKm - b.distanceKm || String(a.id).localeCompare(String(b.id)));
+      .filter((site: any): site is NonNullable<typeof site> => Boolean(site))
+      .filter((site: any) => typeof site.distanceKm === 'number' && Number.isFinite(site.distanceKm) && site.distanceKm <= requestedRadiusKm)
+      .sort((a: any, b: any) => a.distanceKm - b.distanceKm || String(a.id).localeCompare(String(b.id)));
 
     const devDiagnostics = isDev ? buildDiagnostics(enriched) : null;
     const deduped = dedupeSites(enriched);
-    const hazardFiltered = deduped.filter((site) => hasAnyHazard(site.hazards));
+    const hazardFiltered = deduped.filter((site: any) => hasAnyHazard(site.hazards));
     const filtered = hazardFiltered
-      .filter((site) => {
+      .filter((site: any) => {
         if (!textQuery) return true;
         const name = String(site.name ?? '').toLowerCase();
         const address = String(site.address ?? '').toLowerCase();
         const notes = String(site.notes ?? '').toLowerCase();
         return name.includes(textQuery) || address.includes(textQuery) || notes.includes(textQuery);
       })
-      .filter((site) => (hideIneligible ? Boolean(site.matchesHazards) : true))
+      .filter((site: any) => (hideIneligible ? Boolean(site.matchesHazards) : true))
       .slice(0, requestedLimit);
 
     return res.status(200).json({
@@ -327,16 +327,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       const textQuery = typeof q === 'string' ? q.trim().toLowerCase() : '';
       const dedupedFallback = dedupeSites(fallback.sites ?? []);
-      const hazardFilteredFallback = dedupedFallback.filter((site) => hasAnyHazard(site.hazards));
+      const hazardFilteredFallback = dedupedFallback.filter((site: any) => hasAnyHazard(site.hazards));
       const fallbackSites = hazardFilteredFallback
-        .filter((site) => {
+        .filter((site: any) => {
           if (!textQuery) return true;
           const name = String(site.name ?? '').toLowerCase();
           const address = String(site.address ?? '').toLowerCase();
           const notes = String(site.notes ?? '').toLowerCase();
           return name.includes(textQuery) || address.includes(textQuery) || notes.includes(textQuery);
         })
-        .filter((site) => (hideIneligible ? Boolean(site.matchesHazards) : true))
+        .filter((site: any) => (hideIneligible ? Boolean(site.matchesHazards) : true))
         .slice(0, requestedLimit);
 
       return res.status(200).json({

@@ -1,5 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { Prisma, prisma } from '@jp-evac/db';
+import { Prisma } from '@prisma/client';
+import { sqltag as sql, join, raw } from '@prisma/client/runtime/library';
+import { prisma } from '@jp-evac/db';
 import { z } from 'zod';
 import { hazardKeys } from '@jp-evac/shared';
 import { listMunicipalitiesByPref, listPrefectures } from 'lib/ref/municipalities';
@@ -11,8 +13,8 @@ import {
 } from 'lib/shelters/evacsiteCompat';
 
 import { normalizeMuniCode } from 'lib/muni-helper';
-
 export const config = { runtime: 'nodejs' };
+
 
 // Force recompile: 2025-12-23T04:40
 function nowIso() {
@@ -93,7 +95,7 @@ function textStartsWith(value: unknown, needle: string): boolean {
 
 function hazardCount(hazards: Record<string, boolean> | null | undefined): number {
   if (!hazards) return 0;
-  return hazardKeys.reduce((acc, key) => acc + (hazards[key] ? 1 : 0), 0);
+  return hazardKeys.reduce((acc: any, key: any) => acc + (hazards[key] ? 1 : 0), 0);
 }
 
 function hasAnyHazard(hazards: Record<string, boolean> | null | undefined): boolean {
@@ -206,7 +208,7 @@ const SearchQuerySchema = z.object({
       if (Array.isArray(value)) return value;
       return value.split(',').filter(Boolean);
     })
-    .transform((values) => values.filter((v) => hazardKeys.includes(v as any))),
+    .transform((values) => values.filter((v: any) => hazardKeys.includes(v as any))),
   hideIneligible: z
     .preprocess((v) => (v === '1' || v === 'true' ? true : v === '0' || v === 'false' ? false : false), z.boolean())
     .optional(),
@@ -299,12 +301,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   let resolvedPrefName: string | null = prefName ?? null;
   if (!resolvedPrefName && prefCode) {
     const prefs = await listPrefectures();
-    resolvedPrefName = prefs.find((p) => p.prefCode === prefCode)?.prefName ?? null;
+    resolvedPrefName = prefs.find((p: any) => p.prefCode === prefCode)?.prefName ?? null;
   }
   if (!resolvedPrefName && muniCode5) {
     const derivedPref = muniCode5.slice(0, 2);
     const prefs = await listPrefectures();
-    resolvedPrefName = prefs.find((p) => p.prefCode === derivedPref)?.prefName ?? null;
+    resolvedPrefName = prefs.find((p: any) => p.prefCode === derivedPref)?.prefName ?? null;
   }
 
   let resolvedMuniName: string | null = null;
@@ -315,7 +317,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const derivedPref = muniCode5.slice(0, 2);
     const candidates = await listMunicipalitiesByPref(derivedPref);
     // candidates are typically 6-digit in our ref, but our input is 5-digit. Match prefix.
-    resolvedMuniName = candidates.find((m) => m.muniCode === muniCode5 || m.muniCode.startsWith(muniCode5))?.muniName ?? null;
+    resolvedMuniName = candidates.find((m: any) => m.muniCode === muniCode5 || m.muniCode.startsWith(muniCode5))?.muniName ?? null;
   }
 
   const baseWhere: any[] = [];
@@ -375,21 +377,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const buildWhere = (clauses: any[]) => (clauses.length > 0 ? { AND: clauses } : {});
 
   const applyFilters = (sites: any[]) => {
-    const enriched = sites.map((site) => {
+    const enriched = sites.map((site: any) => {
       const flags = (site.hazards ?? {}) as Record<string, boolean>;
-      const matches = hazardFilters.length === 0 ? true : hazardFilters.every((key) => Boolean(flags?.[key]));
-      const missing = hazardFilters.filter((key) => !Boolean(flags?.[key]));
+      const matches = hazardFilters.length === 0 ? true : hazardFilters.every((key: any) => Boolean(flags?.[key]));
+      const missing = hazardFilters.filter((key: any) => !Boolean(flags?.[key]));
       return { ...site, hazards: flags, matchesHazards: matches, missingHazards: missing };
     });
 
     const deduped = dedupeSites(enriched);
-    const designatedFiltered = designatedOnly ? deduped.filter((site) => Boolean(site.shelter_fields)) : deduped;
-    const hazardFiltered = includeHazardless ? designatedFiltered : designatedFiltered.filter((site) => hasAnyHazard(site.hazards));
-    return hideIneligible ? hazardFiltered.filter((site) => site.matchesHazards) : hazardFiltered;
+    const designatedFiltered = designatedOnly ? deduped.filter((site: any) => Boolean(site.shelter_fields)) : deduped;
+    const hazardFiltered = includeHazardless ? designatedFiltered : designatedFiltered.filter((site: any) => hasAnyHazard(site.hazards));
+    return hideIneligible ? hazardFiltered.filter((site: any) => site.matchesHazards) : hazardFiltered;
   };
 
   const sortAreaSites = (sites: any[]) => {
-    sites.sort((a, b) => {
+    sites.sort((a: any, b: any) => {
       const prefA = String(a.pref_city ?? '');
       const prefB = String(b.pref_city ?? '');
       const prefCmp = prefA.localeCompare(prefB);
@@ -428,7 +430,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       recordTrace('location-filtered', filteredSites.length);
 
       if (prefNeedle || muniCodeNeedle || muniNameNeedle || cityNeedle || qNeedle) {
-        filteredSites = filteredSites.filter((site) => {
+        filteredSites = filteredSites.filter((site: any) => {
           const prefCity = normalizeText(site.pref_city);
           const address = normalizeText(site.address);
           const name = normalizeText(site.name);
@@ -462,7 +464,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       recordTrace('location-final', filteredSites.length);
-      filteredSites.sort((a, b) => {
+      filteredSites.sort((a: any, b: any) => {
         const aDist = typeof a.distanceKm === 'number' ? a.distanceKm : typeof a.distance === 'number' ? a.distance : Number.POSITIVE_INFINITY;
         const bDist = typeof b.distanceKm === 'number' ? b.distanceKm : typeof b.distance === 'number' ? b.distance : Number.POSITIVE_INFINITY;
         if (aDist !== bDist) return aDist - bDist;
@@ -532,11 +534,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
       const sites = rawSites
-        .map((site) => {
+        .map((site: any) => {
           const coords = normalizeLatLon({ lat: site.lat, lon: site.lon, factor });
           return coords ? { ...site, lat: coords.lat, lon: coords.lon } : null;
         })
-        .filter((v): v is NonNullable<typeof v> => Boolean(v));
+        .filter((v: any): v is NonNullable<typeof v> => Boolean(v));
 
       if (debugEnabled) {
         console.log(`[Search] Raw Prisma returned ${rawSites.length}, after coord normalization: ${sites.length}`);

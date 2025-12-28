@@ -1,6 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { Prisma, prisma } from '@jp-evac/db';
+import { Prisma } from '@prisma/client';
+import { prisma } from '@jp-evac/db';
 import { listPrefectures } from 'lib/ref/municipalities';
+export const config = { runtime: 'nodejs' };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // if (process.env.NODE_ENV === 'production') return res.status(404).end('Not found');
@@ -34,8 +36,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     );
 
-    const total = counts.reduce((acc, cur) => acc + cur.count, 0);
-    const zeroPrefectures = counts.filter((c) => c.count === 0).map((c) => ({ prefCode: c.prefCode, prefName: c.prefName }));
+    const total = counts.reduce((acc: any, cur: any) => acc + cur.count, 0);
+    const zeroPrefectures = counts.filter((c: any) => c.count === 0).map((c: any) => ({ prefCode: c.prefCode, prefName: c.prefName }));
 
     return res.status(200).json({
       ok: true,

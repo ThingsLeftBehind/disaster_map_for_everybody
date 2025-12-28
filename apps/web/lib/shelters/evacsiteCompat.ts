@@ -1,6 +1,7 @@
 import { type PrismaClient } from '@jp-evac/db';
 import { Prisma } from '@prisma/client';
 import type { Sql } from '@prisma/client/runtime/library';
+import { sqltag as sql, join, raw } from '@prisma/client/runtime/library';
 import { hazardKeys, hazardLabels, type HazardKey } from '@jp-evac/shared';
 import { normalizeLatLon } from './coords';
 
@@ -431,9 +432,9 @@ export async function getEvacSiteCoordFactors(prisma: PrismaClient, meta: EvacSi
   const now = nowMs();
   if (cachedScale && now - cachedScale.checkedAtMs < SCALE_TTL_MS) return cachedScale.factors;
 
-  const latCol = Prisma.raw(qIdent(meta.latCol));
-  const lonCol = Prisma.raw(qIdent(meta.lonCol));
-  const table = Prisma.raw(meta.tableRef);
+  const latCol = raw(qIdent(meta.latCol));
+  const lonCol = raw(qIdent(meta.lonCol));
+  const table = raw(meta.tableRef);
 
   const rows = (await prisma.$queryRaw(
     Prisma.sql`
@@ -459,7 +460,7 @@ export async function getEvacSiteCoordFactors(prisma: PrismaClient, meta: EvacSi
 }
 
 export async function rawCountEvacSites(prisma: PrismaClient, meta: EvacSiteMeta): Promise<number> {
-  const table = Prisma.raw(meta.tableRef);
+  const table = raw(meta.tableRef);
   const rows = (await prisma.$queryRaw(
     Prisma.sql`SELECT COUNT(*)::bigint AS count FROM ${table}`
   )) as Array<{ count: unknown }>;
@@ -468,7 +469,7 @@ export async function rawCountEvacSites(prisma: PrismaClient, meta: EvacSiteMeta
 }
 
 export async function rawCountEvacSiteHazardCaps(prisma: PrismaClient, meta: EvacSiteHazardMeta): Promise<number> {
-  const table = Prisma.raw(meta.tableRef);
+  const table = raw(meta.tableRef);
   const rows = (await prisma.$queryRaw(
     Prisma.sql`SELECT COUNT(*)::bigint AS count FROM ${table}`
   )) as Array<{ count: unknown }>;
@@ -481,9 +482,9 @@ export async function rawCountEvacSiteInvalidCoords(
   meta: EvacSiteMeta,
   factor: number
 ): Promise<{ nullCount: number; invalidCount: number }> {
-  const table = Prisma.raw(meta.tableRef);
-  const latCol = Prisma.raw(qIdent(meta.latCol));
-  const lonCol = Prisma.raw(qIdent(meta.lonCol));
+  const table = raw(meta.tableRef);
+  const latCol = raw(qIdent(meta.latCol));
+  const lonCol = raw(qIdent(meta.lonCol));
   const f = Number.isFinite(factor) && factor > 0 ? factor : 1;
   const latExpr = f === 1 ? Prisma.sql`${latCol}::double precision` : Prisma.sql`(${latCol}::double precision / ${f})`;
   const lonExpr = f === 1 ? Prisma.sql`${lonCol}::double precision` : Prisma.sql`(${lonCol}::double precision / ${f})`;
@@ -533,10 +534,10 @@ export async function rawCountNearbyEvacSites(
   const latDeltaDb = latDelta * factor;
   const lonDeltaDb = lonDelta * factor;
 
-  const table = Prisma.raw(meta.tableRef);
-  const latColRaw = Prisma.raw(qIdent(meta.latCol));
-  const lonColRaw = Prisma.raw(qIdent(meta.lonCol));
-  const activeColRaw = meta.isActiveCol ? Prisma.raw(qIdent(meta.isActiveCol)) : null;
+  const table = raw(meta.tableRef);
+  const latColRaw = raw(qIdent(meta.latCol));
+  const lonColRaw = raw(qIdent(meta.lonCol));
+  const activeColRaw = meta.isActiveCol ? raw(qIdent(meta.isActiveCol)) : null;
   const activeClause = activeColRaw ? Prisma.sql`AND ${activeColRaw} = true` : Prisma.sql``;
 
   const latExpr = factor === 1 ? Prisma.sql`${latColRaw}::double precision` : Prisma.sql`(${latColRaw}::double precision / ${factor})`;
@@ -576,10 +577,10 @@ export async function rawNearestDistanceKm(
   const latDeltaDb = latDelta * factor;
   const lonDeltaDb = lonDelta * factor;
 
-  const table = Prisma.raw(meta.tableRef);
-  const latColRaw = Prisma.raw(qIdent(meta.latCol));
-  const lonColRaw = Prisma.raw(qIdent(meta.lonCol));
-  const activeColRaw = meta.isActiveCol ? Prisma.raw(qIdent(meta.isActiveCol)) : null;
+  const table = raw(meta.tableRef);
+  const latColRaw = raw(qIdent(meta.latCol));
+  const lonColRaw = raw(qIdent(meta.lonCol));
+  const activeColRaw = meta.isActiveCol ? raw(qIdent(meta.isActiveCol)) : null;
   const activeClause = activeColRaw ? Prisma.sql`AND ${activeColRaw} = true` : Prisma.sql``;
 
   const latExpr = factor === 1 ? Prisma.sql`${latColRaw}::double precision` : Prisma.sql`(${latColRaw}::double precision / ${factor})`;
@@ -610,12 +611,12 @@ export async function rawSampleShelter(
   prisma: PrismaClient,
   meta: EvacSiteMeta
 ): Promise<{ id: string; name: string } | null> {
-  const table = Prisma.raw(meta.tableRef);
-  const idCol = Prisma.raw(qIdent(meta.idCol));
-  const nameCol = meta.nameCol ? Prisma.raw(qIdent(meta.nameCol)) : null;
+  const table = raw(meta.tableRef);
+  const idCol = raw(qIdent(meta.idCol));
+  const nameCol = meta.nameCol ? raw(qIdent(meta.nameCol)) : null;
   const rows = (await prisma.$queryRaw(
     Prisma.sql`
-      SELECT ${idCol} AS id, ${nameCol ?? Prisma.raw('NULL')} AS name
+      SELECT ${idCol} AS id, ${nameCol ?? raw('NULL')} AS name
       FROM ${table}
       LIMIT 1
     `
@@ -625,8 +626,8 @@ export async function rawSampleShelter(
 }
 
 export async function rawFindById(prisma: PrismaClient, meta: EvacSiteMeta, id: string): Promise<Record<string, unknown> | null> {
-  const table = Prisma.raw(meta.tableRef);
-  const idCol = Prisma.raw(qIdent(meta.idCol));
+  const table = raw(meta.tableRef);
+  const idCol = raw(qIdent(meta.idCol));
   const idParam = buildParamForColumn(id, meta.idColType);
   const rows = (await prisma.$queryRaw(
     Prisma.sql`
@@ -642,8 +643,8 @@ export async function rawFindById(prisma: PrismaClient, meta: EvacSiteMeta, id: 
 export async function rawFindByIds(prisma: PrismaClient, meta: EvacSiteMeta, ids: string[]): Promise<Array<Record<string, unknown>>> {
   const unique = Array.from(new Set(ids)).filter(Boolean).slice(0, 50);
   if (unique.length === 0) return [];
-  const table = Prisma.raw(meta.tableRef);
-  const idCol = Prisma.raw(qIdent(meta.idCol));
+  const table = raw(meta.tableRef);
+  const idCol = raw(qIdent(meta.idCol));
   const idParams = buildParamListForColumn(unique, meta.idColType);
   const rows = (await prisma.$queryRaw(
     Prisma.sql`
@@ -656,11 +657,11 @@ export async function rawFindByIds(prisma: PrismaClient, meta: EvacSiteMeta, ids
 }
 
 export async function rawFindInBoundingBox(prisma: PrismaClient, meta: EvacSiteMeta, args: { latMin: number; latMax: number; lonMin: number; lonMax: number; take: number }): Promise<Array<Record<string, unknown>>> {
-  const table = Prisma.raw(meta.tableRef);
-  const latCol = Prisma.raw(qIdent(meta.latCol));
-  const lonCol = Prisma.raw(qIdent(meta.lonCol));
+  const table = raw(meta.tableRef);
+  const latCol = raw(qIdent(meta.latCol));
+  const lonCol = raw(qIdent(meta.lonCol));
   const take = Math.max(1, Math.min(args.take, 5000));
-  const isActiveCol = meta.isActiveCol ? Prisma.raw(qIdent(meta.isActiveCol)) : null;
+  const isActiveCol = meta.isActiveCol ? raw(qIdent(meta.isActiveCol)) : null;
   const isActiveClause = isActiveCol ? Prisma.sql`AND ${isActiveCol} = true` : Prisma.sql``;
   const rows = (await prisma.$queryRaw(
     Prisma.sql`
@@ -676,9 +677,9 @@ export async function rawFindInBoundingBox(prisma: PrismaClient, meta: EvacSiteM
 }
 
 export async function rawFindAny(prisma: PrismaClient, meta: EvacSiteMeta, take: number): Promise<Array<Record<string, unknown>>> {
-  const table = Prisma.raw(meta.tableRef);
-  const orderCol = Prisma.raw(qIdent(meta.updatedAtCol ?? meta.createdAtCol ?? meta.idCol));
-  const isActiveCol = meta.isActiveCol ? Prisma.raw(qIdent(meta.isActiveCol)) : null;
+  const table = raw(meta.tableRef);
+  const orderCol = raw(qIdent(meta.updatedAtCol ?? meta.createdAtCol ?? meta.idCol));
+  const isActiveCol = meta.isActiveCol ? raw(qIdent(meta.isActiveCol)) : null;
   const isActiveClause = isActiveCol ? Prisma.sql`WHERE ${isActiveCol} = true` : Prisma.sql``;
   const rows = (await prisma.$queryRaw(
     Prisma.sql`
@@ -701,8 +702,8 @@ export async function rawLoadHazardCapsBySiteIds(
   const out = new Map<string, Record<string, boolean>>();
   if (!meta || ids.length === 0) return out;
 
-  const table = Prisma.raw(meta.tableRef);
-  const siteIdCol = Prisma.raw(qIdent(meta.siteIdCol));
+  const table = raw(meta.tableRef);
+  const siteIdCol = raw(qIdent(meta.siteIdCol));
   const idParams = buildParamListForColumn(ids, meta.siteIdColType);
 
   const rows = (await prisma.$queryRaw(
@@ -766,8 +767,8 @@ export async function rawSearchEvacSites(
     offset: number;
   }
 ): Promise<Array<Record<string, unknown>>> {
-  const table = Prisma.raw(meta.tableRef);
-  const orderCol = Prisma.raw(qIdent(meta.updatedAtCol ?? meta.createdAtCol ?? meta.idCol));
+  const table = raw(meta.tableRef);
+  const orderCol = raw(qIdent(meta.updatedAtCol ?? meta.createdAtCol ?? meta.idCol));
 
   const conditions: Sql[] = [];
 
@@ -782,16 +783,16 @@ export async function rawSearchEvacSites(
     const patternContains = `%${prefName}%`;
     const ors: Sql[] = [];
     if (meta.prefCityCol) {
-      const c = Prisma.raw(qIdent(meta.prefCityCol));
+      const c = raw(qIdent(meta.prefCityCol));
       ors.push(Prisma.sql`${c} ILIKE ${patternStart}`);
     }
     if (meta.addressCol) {
-      const c = Prisma.raw(qIdent(meta.addressCol));
+      const c = raw(qIdent(meta.addressCol));
       ors.push(Prisma.sql`${c} ILIKE ${patternStart}`);
       ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
     }
     if (meta.prefectureCol) {
-      const c = Prisma.raw(qIdent(meta.prefectureCol));
+      const c = raw(qIdent(meta.prefectureCol));
       ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
     }
     if (ors.length > 0) conditions.push(Prisma.sql`(${Prisma.join(ors, ' OR ')})`);
@@ -802,15 +803,15 @@ export async function rawSearchEvacSites(
     const patternContains = `%${muniName}%`;
     const ors: Sql[] = [];
     if (meta.prefCityCol) {
-      const c = Prisma.raw(qIdent(meta.prefCityCol));
+      const c = raw(qIdent(meta.prefCityCol));
       ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
     }
     if (meta.addressCol) {
-      const c = Prisma.raw(qIdent(meta.addressCol));
+      const c = raw(qIdent(meta.addressCol));
       ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
     }
     if (meta.cityCol) {
-      const c = Prisma.raw(qIdent(meta.cityCol));
+      const c = raw(qIdent(meta.cityCol));
       ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
     }
     if (ors.length > 0) conditions.push(Prisma.sql`(${Prisma.join(ors, ' OR ')})`);
@@ -818,22 +819,22 @@ export async function rawSearchEvacSites(
     const muniCode = (args.muniCode ?? '').trim();
     if (muniCode) {
       if (meta.municipalityCodeCol) {
-        const c = Prisma.raw(qIdent(meta.municipalityCodeCol));
+        const c = raw(qIdent(meta.municipalityCodeCol));
         conditions.push(Prisma.sql`${c} = ${muniCode}`);
         // If an explicit municipality code column exists, prefer exact filtering (fast, reliable).
       } else {
         const patternContains = `%${muniCode}%`;
         const ors: Sql[] = [];
         if (meta.prefCityCol) {
-          const c = Prisma.raw(qIdent(meta.prefCityCol));
+          const c = raw(qIdent(meta.prefCityCol));
           ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
         }
         if (meta.addressCol) {
-          const c = Prisma.raw(qIdent(meta.addressCol));
+          const c = raw(qIdent(meta.addressCol));
           ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
         }
         if (meta.commonIdCol) {
-          const c = Prisma.raw(qIdent(meta.commonIdCol));
+          const c = raw(qIdent(meta.commonIdCol));
           ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
         }
         if (ors.length > 0) conditions.push(Prisma.sql`(${Prisma.join(ors, ' OR ')})`);
@@ -842,7 +843,7 @@ export async function rawSearchEvacSites(
   }
 
   if (prefCode && meta.municipalityCodeCol) {
-    const c = Prisma.raw(qIdent(meta.municipalityCodeCol));
+    const c = raw(qIdent(meta.municipalityCodeCol));
     conditions.push(Prisma.sql`${c} LIKE ${`${prefCode}%`}`);
   }
 
@@ -851,15 +852,15 @@ export async function rawSearchEvacSites(
     const patternContains = `%${q}%`;
     const ors: Sql[] = [];
     if (meta.nameCol) {
-      const c = Prisma.raw(qIdent(meta.nameCol));
+      const c = raw(qIdent(meta.nameCol));
       ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
     }
     if (meta.addressCol) {
-      const c = Prisma.raw(qIdent(meta.addressCol));
+      const c = raw(qIdent(meta.addressCol));
       ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
     }
     if (meta.notesCol) {
-      const c = Prisma.raw(qIdent(meta.notesCol));
+      const c = raw(qIdent(meta.notesCol));
       ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
     }
     if (ors.length > 0) conditions.push(Prisma.sql`(${Prisma.join(ors, ' OR ')})`);
@@ -869,7 +870,7 @@ export async function rawSearchEvacSites(
   const limit = Math.max(1, Math.min(args.limit, 100));
   const offset = Math.max(0, Math.min(args.offset, 10_000));
 
-  const isActiveCol = meta.isActiveCol ? Prisma.raw(qIdent(meta.isActiveCol)) : null;
+  const isActiveCol = meta.isActiveCol ? raw(qIdent(meta.isActiveCol)) : null;
   const isActiveClause = isActiveCol
     ? conditions.length > 0
       ? Prisma.sql`AND ${isActiveCol} = true`

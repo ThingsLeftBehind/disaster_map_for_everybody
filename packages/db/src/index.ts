@@ -15,6 +15,4 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 export * from '@prisma/client';
-export type { evac_sites } from '@prisma/client';
 
-export type { evac_sites } from './node_modules/.prisma/client';

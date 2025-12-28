@@ -6,6 +6,7 @@ import {
   isEvacSitesTableMismatchError,
   safeErrorMessage,
 } from 'lib/shelters/evacsiteCompat';
+export const config = { runtime: 'nodejs' };
 
 function nowIso() {
   return new Date().toISOString();
@@ -17,8 +18,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const raw = (Array.isArray(req.query.ids) ? req.query.ids[0] : req.query.ids) as string | undefined;
   const ids = (raw ?? '')
     .split(',')
-    .map((v) => v.trim())
-    .filter((v) => v && v.length < 200)
+    .map((v: any) => v.trim())
+    .filter((v: any) => v && v.length < 200)
     .slice(0, 5);
 
   const uniqueIds = Array.from(new Set(ids));
@@ -44,14 +45,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const normalized = rows
-      .map((r) => {
+      .map((r: any) => {
         const coords = normalizeLatLon({ lat: r.lat, lon: r.lon, factor });
         return coords ? { ...r, lat: coords.lat, lon: coords.lon } : null;
       })
-      .filter((v): v is NonNullable<typeof v> => Boolean(v));
+      .filter((v: any): v is NonNullable<typeof v> => Boolean(v));
 
-    const byId = new Map(normalized.map((r) => [r.id, r]));
-    const ordered = ids.map((id) => byId.get(id)).filter(Boolean);
+    const byId = new Map(normalized.map((r: any) => [r.id, r]));
+    const ordered = ids.map((id: any) => byId.get(id)).filter(Boolean);
 
     return res.status(200).json({ fetchStatus: 'OK', updatedAt: nowIso(), lastError: null, sites: ordered, items: ordered });
   } catch (error) {
@@ -63,8 +64,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const withHazards = await fallbackFindSheltersByIds(prisma, uniqueIds);
 
-      const byId = new Map(withHazards.map((r) => [r.id, r]));
-      const ordered = ids.map((id) => byId.get(id)).filter(Boolean);
+      const byId = new Map(withHazards.map((r: any) => [r.id, r]));
+      const ordered = ids.map((id: any) => byId.get(id)).filter(Boolean);
       return res.status(200).json({ fetchStatus: 'OK', updatedAt: nowIso(), lastError: null, sites: ordered, items: ordered });
     } catch (fallbackError) {
       const message = safeErrorMessage(fallbackError);

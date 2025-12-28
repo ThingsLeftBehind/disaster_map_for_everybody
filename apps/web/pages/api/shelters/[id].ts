@@ -7,6 +7,7 @@ import {
   isEvacSitesTableMismatchError,
   safeErrorMessage,
 } from 'lib/shelters/evacsiteCompat';
+export const config = { runtime: 'nodejs' };
 
 function nowIso() {
   return new Date().toISOString();
@@ -14,7 +15,7 @@ function nowIso() {
 
 function hazardCount(hazards: Record<string, boolean> | null | undefined): number {
   if (!hazards) return 0;
-  return hazardKeys.reduce((acc, key) => acc + (hazards[key] ? 1 : 0), 0);
+  return hazardKeys.reduce((acc: any, key: any) => acc + (hazards[key] ? 1 : 0), 0);
 }
 
 function hasAnyHazard(hazards: Record<string, boolean> | null | undefined): boolean {
@@ -94,12 +95,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
         enrichment =
           siblings
-            .filter((s) => !hasAnyHazard(s.hazards as any) && (s.shelter_fields || s.notes))
-            .map((s) => {
+            .filter((s: any) => !hasAnyHazard(s.hazards as any) && (s.shelter_fields || s.notes))
+            .map((s: any) => {
               const c = normalizeLatLon({ lat: s.lat, lon: s.lon, factor });
               return c ? { ...s, lat: c.lat, lon: c.lon } : s;
             })
-            .sort((a, b) => hazardCount(a.hazards as any) - hazardCount(b.hazards as any))[0] ?? null;
+            .sort((a: any, b: any) => hazardCount(a.hazards as any) - hazardCount(b.hazards as any))[0] ?? null;
       }
 
       if (!enrichment && coords) {
@@ -134,12 +135,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
         enrichment =
           siblings
-            .filter((s) => !hasAnyHazard(s.hazards as any) && (s.shelter_fields || s.notes))
-            .map((s) => {
+            .filter((s: any) => !hasAnyHazard(s.hazards as any) && (s.shelter_fields || s.notes))
+            .map((s: any) => {
               const c = normalizeLatLon({ lat: s.lat, lon: s.lon, factor });
               return c ? { ...s, lat: c.lat, lon: c.lon } : s;
             })
-            .sort((a, b) => hazardCount(a.hazards as any) - hazardCount(b.hazards as any))[0] ?? null;
+            .sort((a: any, b: any) => hazardCount(a.hazards as any) - hazardCount(b.hazards as any))[0] ?? null;
       }
     } catch {
       enrichment = null;
