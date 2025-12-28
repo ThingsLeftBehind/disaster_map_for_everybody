@@ -1,7 +1,6 @@
 import { Prisma, prisma } from 'lib/db/prisma';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { sqltag as sql, join, raw } from '@prisma/client/runtime/library';
-import { prisma } from '@jp-evac/db';
 import { z } from 'zod';
 import { hazardKeys } from '@jp-evac/shared';
 import { listMunicipalitiesByPref, listPrefectures } from 'lib/ref/municipalities';

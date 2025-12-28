@@ -1,6 +1,5 @@
 import { Prisma, prisma } from 'lib/db/prisma';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '@jp-evac/db';
 import { fallbackNearbyShelters } from 'lib/db/sheltersFallback';
 import { NearbyQuerySchema } from 'lib/validators';
 import { haversineDistance, hazardKeys } from '@jp-evac/shared';

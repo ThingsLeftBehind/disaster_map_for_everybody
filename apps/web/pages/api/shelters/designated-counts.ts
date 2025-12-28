@@ -1,6 +1,5 @@
 import { Prisma, prisma } from 'lib/db/prisma';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '@jp-evac/db';
 import { listPrefectures } from 'lib/ref/municipalities';
 export const config = { runtime: 'nodejs' };
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

@@ -1,6 +1,5 @@
 import { Prisma, prisma } from 'lib/db/prisma';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '@jp-evac/db';
 import { fallbackFindShelterById } from 'lib/db/sheltersFallback';
 import { getEvacSitesCoordScale, normalizeLatLon } from 'lib/shelters/coords';
 import { hazardKeys } from '@jp-evac/shared';
