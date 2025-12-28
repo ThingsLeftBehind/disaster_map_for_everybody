@@ -1,0 +1,33 @@
+{
+  "updatedAt": "2025-12-28T08:19:16.505Z",
+  "fetchStatus": "OK",
+  "feeds": {
+    "regular": {
+      "fetchStatus": "OK",
+      "updatedAt": "2025-12-28T08:18:08.063Z",
+      "lastError": null
+    },
+    "extra": {
+      "fetchStatus": "OK",
+      "updatedAt": "2025-12-28T08:19:15.006Z",
+      "lastError": null
+    },
+    "eqvol": {
+      "fetchStatus": "OK",
+      "updatedAt": "2025-12-28T08:19:16.505Z",
+      "lastError": null
+    },
+    "other": {
+      "fetchStatus": "OK",
+      "updatedAt": "2025-12-28T08:18:16.448Z",
+      "lastError": null
+    }
+  },
+  "webjson": {
+    "quakeList": {
+      "fetchStatus": "DEGRADED",
+      "updatedAt": null,
+      "lastError": null
+    }
+  }
+}

@@ -1,10 +1,14 @@
-import { Prisma, prisma } from 'lib/db/prisma';
+import { prisma } from 'lib/db/prisma';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { fallbackFindShelterById } from 'lib/db/sheltersFallback';
 import { getEvacSitesCoordScale, normalizeLatLon } from 'lib/shelters/coords';
 import { hazardKeys } from '@jp-evac/shared';
 import {
+  getEvacSiteMeta,
   isEvacSitesTableMismatchError,
+  normalizeEvacSiteRow,
+  rawFindByIds,
+  rawFindInBoundingBox,
   safeErrorMessage,
 } from 'lib/shelters/evacsiteCompat';
 export const config = { runtime: 'nodejs' };
@@ -45,6 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const factor = await getEvacSitesCoordScale(prisma);
+    const evacMeta = await getEvacSiteMeta(prisma);
     const site = await prisma.evac_sites.findUnique({
       where: { id },
       select: {
@@ -53,8 +58,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         pref_city: true,
         name: true,
         address: true,
-        lat: true,
-        lon: true,
         hazards: true,
         is_same_address_as_shelter: true,
         shelter_fields: true,
@@ -66,7 +69,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     if (!site) return res.status(404).json({ error: 'Not found' });
-    const coords = normalizeLatLon({ lat: site.lat, lon: site.lon, factor });
+    const siteRow = (await rawFindByIds(prisma, evacMeta, [id]))[0] ?? null;
+    const coords = siteRow
+      ? normalizeLatLon({ lat: siteRow[evacMeta.latCol], lon: siteRow[evacMeta.lonCol], factor })
+      : null;
     const normalized = coords ? { ...site, lat: coords.lat, lon: coords.lon } : site;
 
     let enrichment: typeof normalized | null = null;
@@ -80,8 +86,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             pref_city: true,
             name: true,
             address: true,
-            lat: true,
-            lon: true,
             hazards: true,
             is_same_address_as_shelter: true,
             shelter_fields: true,
@@ -92,11 +96,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           },
           take: 5,
         });
+        const siblingIds = siblings.map((s: any) => s.id).filter(Boolean);
+        const siblingRows = siblingIds.length > 0 ? await rawFindByIds(prisma, evacMeta, siblingIds) : [];
+        const siblingCoords = new Map<string, { lat: number; lon: number }>();
+        for (const row of siblingRows) {
+          const idRaw = row[evacMeta.idCol];
+          if (idRaw === null || idRaw === undefined) continue;
+          const coords = normalizeLatLon({ lat: row[evacMeta.latCol], lon: row[evacMeta.lonCol], factor });
+          if (!coords) continue;
+          siblingCoords.set(String(idRaw), coords);
+        }
         enrichment =
           siblings
             .filter((s: any) => !hasAnyHazard(s.hazards as any) && (s.shelter_fields || s.notes))
             .map((s: any) => {
-              const c = normalizeLatLon({ lat: s.lat, lon: s.lon, factor });
+              const c = siblingCoords.get(String(s.id));
               return c ? { ...s, lat: c.lat, lon: c.lon } : s;
             })
             .sort((a: any, b: any) => hazardCount(a.hazards as any) - hazardCount(b.hazards as any))[0] ?? null;
@@ -104,41 +118,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (!enrichment && coords) {
         const delta = 0.002;
-        const latDb = coords.lat * factor;
-        const lonDb = coords.lon * factor;
+        const latDb = factor === 1 ? coords.lat : Math.round(coords.lat * factor);
+        const lonDb = factor === 1 ? coords.lon : Math.round(coords.lon * factor);
         const deltaDb = delta * factor;
-        const siblings = await prisma.evac_sites.findMany({
-          where: {
-            id: { not: id },
-            name: site.name ?? undefined,
-            lat: { gte: latDb - deltaDb, lte: latDb + deltaDb },
-            lon: { gte: lonDb - deltaDb, lte: lonDb + deltaDb },
-          },
-          select: {
-            id: true,
-            common_id: true,
-            pref_city: true,
-            name: true,
-            address: true,
-            lat: true,
-            lon: true,
-            hazards: true,
-            is_same_address_as_shelter: true,
-            shelter_fields: true,
-            notes: true,
-            source_updated_at: true,
-            updated_at: true,
-            created_at: true,
-          },
+        const bboxMeta = evacMeta.isActiveCol ? { ...evacMeta, isActiveCol: null } : evacMeta;
+        const rows = await rawFindInBoundingBox(prisma, bboxMeta, {
+          latMin: latDb - deltaDb,
+          latMax: latDb + deltaDb,
+          lonMin: lonDb - deltaDb,
+          lonMax: lonDb + deltaDb,
           take: 5,
         });
+        const siblings = rows
+          .map((row) => normalizeEvacSiteRow(row, evacMeta, [factor]))
+          .filter((v): v is NonNullable<typeof v> => Boolean(v))
+          .filter((s) => s.id !== id)
+          .filter((s) => (site.name ? s.name === site.name : true));
         enrichment =
           siblings
             .filter((s: any) => !hasAnyHazard(s.hazards as any) && (s.shelter_fields || s.notes))
-            .map((s: any) => {
-              const c = normalizeLatLon({ lat: s.lat, lon: s.lon, factor });
-              return c ? { ...s, lat: c.lat, lon: c.lon } : s;
-            })
             .sort((a: any, b: any) => hazardCount(a.hazards as any) - hazardCount(b.hazards as any))[0] ?? null;
       }
     } catch {

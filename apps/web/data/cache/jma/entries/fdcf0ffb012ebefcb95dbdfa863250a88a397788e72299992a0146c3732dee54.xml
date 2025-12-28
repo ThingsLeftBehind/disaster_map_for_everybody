@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_add="http://xml.kishou.go.jp/jmaxml1/addition1/">
+<Control>
+<Title>地方海上警報（Ｈ２８）</Title>
+<DateTime>2025-12-28T02:35:04Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>名古屋地方気象台</EditorialOffice>
+<PublishingOffice>名古屋地方気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>名古屋海上気象</Title>
+<ReportDateTime>2025-12-28T11:35:00+09:00</ReportDateTime>
+<TargetDateTime>2025-12-28T11:35:00+09:00</TargetDateTime>
+<EventID/>
+<InfoType>発表</InfoType>
+<Serial/>
+<InfoKind>地方海上警報</InfoKind>
+<InfoKindVersion>1.0_2</InfoKindVersion>
+<Headline>
+<Text/>
+<Information type="地方海上警報">
+<Item>
+<Kind>
+<Name>海上警報解除</Name>
+<Code>00</Code>
+</Kind>
+<Areas codeType="地方海上予報区">
+<Area>
+<Name>東海海域</Name>
+<Code>3200</Code>
+</Area>
+</Areas>
+</Item>
+</Information>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/" xmlns:jmx_eb="http://xml.kishou.go.jp/jmaxml1/elementBasis1/">
+<Warning type="地方海上警報">
+<Item>
+<Kind>
+<Name>海上警報解除</Name>
+<Code>00</Code>
+</Kind>
+<Area>
+<Name>東海海域</Name>
+<Code>3200</Code>
+</Area>
+</Item>
+</Warning>
+<MeteorologicalInfos type="気象要因">
+<MeteorologicalInfo>
+<DateTime>2025-12-28T09:00:00+09:00</DateTime>
+<Name>２８日０９時</Name>
+<Item>
+<Kind>
+<Property>
+<Type>概況</Type>
+<SynopsisPart>
+<jmx_eb:Synopsis type="気象要因"/>
+</SynopsisPart>
+</Property>
+</Kind>
+<Area>
+<Name>東海海域</Name>
+<Code>3200</Code>
+</Area>
+</Item>
+</MeteorologicalInfo>
+</MeteorologicalInfos>
+</Body>
+</Report>

@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "feeds": {
+    "regular": {
+      "url": "https://www.data.jma.go.jp/developer/xml/feed/regular.xml",
+      "intervalMs": 180000,
+      "lastAttemptTime": "2025-12-28T08:18:07.346Z",
+      "lastSuccessfulUpdateTime": "2025-12-28T08:18:08.063Z",
+      "lastError": null,
+      "etag": "W/\"8597e31c1e1821b198731883951bb36b\"",
+      "lastModified": "Sun, 28 Dec 2025 08:15:05 GMT"
+    },
+    "extra": {
+      "url": "https://www.data.jma.go.jp/developer/xml/feed/extra.xml",
+      "intervalMs": 60000,
+      "lastAttemptTime": "2025-12-28T08:19:14.818Z",
+      "lastSuccessfulUpdateTime": "2025-12-28T08:19:15.006Z",
+      "lastError": null,
+      "etag": "W/\"f03635e9215606a3a0a73c3099b96cda\"",
+      "lastModified": "Sun, 28 Dec 2025 07:31:03 GMT"
+    },
+    "eqvol": {
+      "url": "https://www.data.jma.go.jp/developer/xml/feed/eqvol.xml",
+      "intervalMs": 60000,
+      "lastAttemptTime": "2025-12-28T08:19:16.456Z",
+      "lastSuccessfulUpdateTime": "2025-12-28T08:19:16.505Z",
+      "lastError": null,
+      "etag": "W/\"71aad6b304ecb21da4af524b698cdbb8\"",
+      "lastModified": "Sun, 28 Dec 2025 08:01:29 GMT"
+    },
+    "other": {
+      "url": "https://www.data.jma.go.jp/developer/xml/feed/other.xml",
+      "intervalMs": 180000,
+      "lastAttemptTime": "2025-12-28T08:18:16.307Z",
+      "lastSuccessfulUpdateTime": "2025-12-28T08:18:16.448Z",
+      "lastError": null,
+      "etag": "W/\"e564ba705836ebb038cd9f4d3125fe0d\"",
+      "lastModified": "Sun, 28 Dec 2025 02:35:57 GMT"
+    }
+  },
+  "webjson": {
+    "quakeList": {
+      "lastAttemptTime": null,
+      "lastSuccessfulUpdateTime": null,
+      "lastError": null,
+      "etag": null,
+      "lastModified": null
+    },
+    "warningsByArea": {
+      "130000": {
+        "lastAttemptTime": "2025-12-28T08:18:11.235Z",
+        "lastSuccessfulUpdateTime": "2025-12-28T08:18:11.811Z",
+        "lastError": null,
+        "etag": "W/\"d164fb88203465de8fc1d3fad8068a9c\"",
+        "lastModified": "Sun, 28 Dec 2025 07:02:54 GMT"
+      }
+    }
+  }
+}

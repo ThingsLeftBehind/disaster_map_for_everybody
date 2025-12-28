@@ -1,0 +1,30 @@
+{
+  "updatedAt": "2025-12-28T08:18:11.811Z",
+  "areas": {
+    "130000": {
+      "updatedAt": "2025-12-28T08:18:11.811Z",
+      "area": "130000",
+      "areaName": "東京都",
+      "items": [
+        {
+          "id": "85a49f44732cfaaa",
+          "kind": "雷注意報",
+          "status": "発表",
+          "source": "webjson"
+        },
+        {
+          "id": "5dc76bb10ebbc1ad",
+          "kind": "雷注意報",
+          "status": "継続",
+          "source": "webjson"
+        },
+        {
+          "id": "7bb8661bd9de800a",
+          "kind": "雷注意報",
+          "status": null,
+          "source": "webjson"
+        }
+      ]
+    }
+  }
+}

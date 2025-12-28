@@ -1,13 +1,15 @@
 import { Prisma, prisma } from 'lib/db/prisma';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { sqltag as sql, join, raw } from '@prisma/client/runtime/library';
 import { z } from 'zod';
 import { hazardKeys } from '@jp-evac/shared';
 import { listMunicipalitiesByPref, listPrefectures } from 'lib/ref/municipalities';
 import { fallbackNearbyShelters, fallbackSearchShelters } from 'lib/db/sheltersFallback';
-import { getEvacSitesCoordScale, normalizeLatLon } from 'lib/shelters/coords';
+import { normalizeLatLon } from 'lib/shelters/coords';
+import { factorModeToScale, getEvacSitesSchema } from 'lib/shelters/evacSitesSchema';
 import {
+  getEvacSiteMeta,
   isEvacSitesTableMismatchError,
+  rawFindByIds,
   safeErrorMessage,
 } from 'lib/shelters/evacsiteCompat';
 import { normalizeMuniCode } from 'lib/muni-helper';
@@ -244,6 +246,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     radiusKm,
   } = parsed.data;
 
+  const schemaResult = await getEvacSitesSchema();
+  if (!schemaResult.ok) {
+    return res.status(200).json({
+      fetchStatus: 'DOWN',
+      updatedAt: null,
+      lastError: schemaResult.lastError,
+      sites: [],
+      items: [],
+    });
+  }
+  const factor = factorModeToScale(schemaResult.factorMode);
+  const canUsePrismaEvacSites = schemaResult.schema === 'public' && schemaResult.relation === 'evac_sites';
+
   // 1) Normalize muniCode: Ensure we trust 5-digit mostly
   const muniCodeRaw = parsed.data.muniCode ?? null;
   const muniCode5 = normalizeMuniCode(muniCodeRaw);
@@ -267,7 +282,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   };
 
   let diagnostics: any = null;
-  if (debugEnabled) {
+  if (debugEnabled && canUsePrismaEvacSites) {
     try {
       const total = await prisma.evac_sites.count();
       // Use type assertion for columns that may not be in Prisma types yet
@@ -507,7 +522,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const factor = await getEvacSitesCoordScale(prisma);
+    const evacMeta = await getEvacSiteMeta(prisma);
     const fetchSites = async (whereClause: any) => {
       const rawSites = await prisma.evac_sites.findMany({
         where: whereClause,
@@ -520,8 +535,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           pref_city: true,
           name: true,
           address: true,
-          lat: true,
-          lon: true,
           hazards: true,
           is_same_address_as_shelter: true,
           notes: true,
@@ -531,9 +544,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
       });
 
+      const ids = rawSites.map((site: any) => site.id).filter(Boolean);
+      const rows = ids.length > 0 ? await rawFindByIds(prisma, evacMeta, ids) : [];
+      const coordsById = new Map<string, { lat: number; lon: number }>();
+      for (const row of rows) {
+        const idRaw = row[evacMeta.idCol];
+        if (idRaw === null || idRaw === undefined) continue;
+        const coords = normalizeLatLon({ lat: row[evacMeta.latCol], lon: row[evacMeta.lonCol], factor });
+        if (!coords) continue;
+        coordsById.set(String(idRaw), coords);
+      }
+
       const sites = rawSites
         .map((site: any) => {
-          const coords = normalizeLatLon({ lat: site.lat, lon: site.lon, factor });
+          const coords = coordsById.get(String(site.id));
           return coords ? { ...site, lat: coords.lat, lon: coords.lon } : null;
         })
         .filter((v: any): v is NonNullable<typeof v> => Boolean(v));

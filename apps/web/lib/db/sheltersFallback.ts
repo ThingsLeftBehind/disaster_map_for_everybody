@@ -1,6 +1,7 @@
-import { Prisma, prisma } from 'lib/db/prisma';
+import { Prisma } from 'lib/db/prisma';
 
-import { sqltag as sql, join, raw } from '@prisma/client/runtime/library';
+import { raw } from '@prisma/client/runtime/library';
+import type { Sql } from '@prisma/client/runtime/library';
 import { haversineDistance } from '@jp-evac/shared';
 import {
   getEvacSiteCoordFactors,
@@ -19,8 +20,6 @@ import {
 } from 'lib/shelters/evacsiteCompat';
 type EvacSiteMeta = Awaited<ReturnType<typeof getEvacSiteMeta>>;
 type EvacSiteHazardMeta = Awaited<ReturnType<typeof getEvacSiteHazardMeta>>;
-
-const BASE_SCALE_FACTORS = [1, 1e7, 1e6, 1e5, 1e4, 1e3, 1e2] as const;
 
 export type ShelterFallbackContext = {
   meta: EvacSiteMeta;
@@ -87,7 +86,7 @@ function buildHaversineSql(args: { latExpr: Sql; lonExpr: Sql; lat: number; lon:
 function mergeScaleCandidates(primary: number[]): number[] {
   const merged: number[] = [];
   const seen = new Set<number>();
-  for (const factor of [...primary, ...BASE_SCALE_FACTORS]) {
+  for (const factor of primary) {
     if (!Number.isFinite(factor) || factor <= 0) continue;
     if (seen.has(factor)) continue;
     seen.add(factor);
@@ -110,8 +109,8 @@ function buildScaleClauses(args: {
   const lonDelta = args.radiusKm / (111.32 * Math.max(0.2, Math.cos((args.lat * Math.PI) / 180)));
 
   return args.factors.map((factor) => {
-    const latDb = args.lat * factor;
-    const lonDb = args.lon * factor;
+    const latDb = factor === 1 ? args.lat : Math.round(args.lat * factor);
+    const lonDb = factor === 1 ? args.lon : Math.round(args.lon * factor);
     const latDeltaDb = latDelta * factor;
     const lonDeltaDb = lonDelta * factor;
 

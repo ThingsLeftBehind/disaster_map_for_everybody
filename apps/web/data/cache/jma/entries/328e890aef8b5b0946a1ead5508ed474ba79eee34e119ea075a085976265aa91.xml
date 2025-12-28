@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/">
+<Control>
+<Title>降灰予報（定時）</Title>
+<DateTime>2025-12-28T05:00:00Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>気象庁本庁</EditorialOffice>
+<PublishingOffice>気象庁</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>火山名　諏訪之瀬島　降灰予報（定時）</Title>
+<ReportDateTime>2025-12-28T14:00:00+09:00</ReportDateTime>
+<TargetDateTime>2025-12-28T15:00:00+09:00</TargetDateTime>
+<ValidDateTime>2025-12-29T09:00:00+09:00</ValidDateTime>
+<EventID>511</EventID>
+<InfoType>発表</InfoType>
+<Serial>1</Serial>
+<InfoKind>降灰予報</InfoKind>
+<InfoKindVersion>1.1_0</InfoKindVersion>
+<Headline>
+<Text>　現在、諏訪之瀬島は噴火警戒レベル２（火口周辺規制）です。諏訪之瀬島で噴火が発生した場合には、２８日２１時から２４時までは火口から南方向に降灰が予想されます。</Text>
+<Information type="降灰予報（対象火山）">
+<Item>
+<Kind>
+<Name>降灰予報（定時）</Name>
+<Code>06</Code>
+</Kind>
+<Areas codeType="火山名">
+<Area>
+<Name>諏訪之瀬島</Name>
+<Code>511</Code>
+</Area>
+</Areas>
+</Item>
+</Information>
+<Information type="降灰予報（対象市町村等）">
+<Item>
+<Kind>
+<Name>降灰</Name>
+<Code>70</Code>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県十島村</Name>
+<Code>4630400</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>小さな噴石の落下</Name>
+<Code>75</Code>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県十島村</Name>
+<Code>4630400</Code>
+</Area>
+</Areas>
+</Item>
+</Information>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/volcanology1/" xmlns:jmx_eb="http://xml.kishou.go.jp/jmaxml1/elementBasis1/">
+<VolcanoInfo type="降灰予報（対象火山）">
+<Item>
+<Kind>
+<Name>降灰予報（定時）</Name>
+<Code>06</Code>
+</Kind>
+<Areas codeType="火山名">
+<Area>
+<Name>諏訪之瀬島</Name>
+<Code>511</Code>
+<Coordinate description="北緯２９度３８．３０分　東経１２９度４２．８３分　標高７９６ｍ">+2938.30+12942.83+796/</Coordinate>
+</Area>
+</Areas>
+</Item>
+</VolcanoInfo>
+<VolcanoInfo type="降灰予報（対象市町村等）">
+<Item>
+<Kind>
+<Name>降灰</Name>
+<Code>70</Code>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県十島村</Name>
+<Code>4630400</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>小さな噴石の落下</Name>
+<Code>75</Code>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県十島村</Name>
+<Code>4630400</Code>
+</Area>
+</Areas>
+</Item>
+</VolcanoInfo>
+<AshInfos type="降灰予報（定時）">
+<AshInfo type="予報　３時間後">
+<StartTime>2025-12-28T15:00:00+09:00</StartTime>
+<EndTime>2025-12-28T18:00:00+09:00</EndTime>
+<Item>
+<Kind>
+<Name>降灰</Name>
+<Code>70</Code>
+<Property>
+<jmx_eb:Polygon type="位置（度）">+29.6600+129.7000/+29.6600+129.7200/+29.6400+129.7400/+29.6200+129.7399/+29.6000+129.7394/+29.5800+129.7383/+29.5600+129.7366/+29.5400+129.7338/+29.5200+129.7301/+29.5000+129.7300/+29.4800+129.7237/+29.4673+129.7200/+29.4600+129.7175/+29.4400+129.7090/+29.4275+129.7000/+29.4267+129.6800/+29.4218+129.6600/+29.4289+129.6400/+29.4377+129.6200/+29.4362+129.6000/+29.4400+129.5967/+29.4462+129.6000/+29.4600+129.6055/+29.4800+129.6056/+29.5000+129.6054/+29.5200+129.6098/+29.5363+129.6200/+29.5400+129.6208/+29.5600+129.6255/+29.5780+129.6400/+29.5800+129.6404/+29.6000+129.6464/+29.6139+129.6600/+29.6200+129.6606/+29.6397+129.6800/+29.6400+129.6800/+29.6600+129.7000/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="降灰の方向" unit="漢字" description="南">南</jmx_eb:PlumeDirection>
+<Distance type="降灰の到達距離" unit="km">20</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県十島村</Name>
+<Code>4630400</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>小さな噴石の落下</Name>
+<Code>75</Code>
+<Property>
+<Size type="小さな噴石の大きさ" unit="cm">1</Size>
+<jmx_eb:Polygon type="位置（度）">+29.6495+129.7000/+29.6588+129.7200/+29.6400+129.7388/+29.6207+129.7200/+29.6284+129.7000/+29.6400+129.6905/+29.6495+129.7000/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="小さな噴石の落下方向" unit="漢字" description="南西">南西</jmx_eb:PlumeDirection>
+<Distance type="小さな噴石の到達距離" unit="km">1</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県十島村</Name>
+<Code>4630400</Code>
+</Area>
+</Areas>
+</Item>
+</AshInfo>
+<AshInfo type="予報　６時間後">
+<StartTime>2025-12-28T18:00:00+09:00</StartTime>
+<EndTime>2025-12-28T21:00:00+09:00</EndTime>
+<Item>
+<Kind>
+<Name>降灰</Name>
+<Code>70</Code>
+<Property>
+<jmx_eb:Polygon type="位置（度）">+29.6633+129.7000/+29.6711+129.7200/+29.6600+129.7311/+29.6400+129.7400/+29.6200+129.7400/+29.6051+129.7400/+29.6000+129.7424/+29.5800+129.7466/+29.5600+129.7477/+29.5400+129.7400/+29.5200+129.7366/+29.5000+129.7306/+29.4815+129.7200/+29.4800+129.7179/+29.4699+129.7000/+29.4651+129.6800/+29.4600+129.6649/+29.4573+129.6600/+29.4600+129.6446/+29.4617+129.6400/+29.4636+129.6200/+29.4800+129.6120/+29.5000+129.6067/+29.5200+129.6022/+29.5400+129.6051/+29.5600+129.6120/+29.5714+129.6200/+29.5800+129.6219/+29.6000+129.6398/+29.6002+129.6400/+29.6200+129.6548/+29.6252+129.6600/+29.6400+129.6647/+29.6553+129.6800/+29.6600+129.6967/+29.6633+129.7000/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="降灰の方向" unit="漢字" description="南">南</jmx_eb:PlumeDirection>
+<Distance type="降灰の到達距離" unit="km">20</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県十島村</Name>
+<Code>4630400</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>小さな噴石の落下</Name>
+<Code>75</Code>
+<Property>
+<Size type="小さな噴石の大きさ" unit="cm">1</Size>
+<jmx_eb:Polygon type="位置（度）">+29.6509+129.7000/+29.6588+129.7200/+29.6400+129.7388/+29.6209+129.7200/+29.6280+129.7000/+29.6400+129.6891/+29.6509+129.7000/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="小さな噴石の落下方向" unit="漢字" description="南西">南西</jmx_eb:PlumeDirection>
+<Distance type="小さな噴石の到達距離" unit="km">1</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県十島村</Name>
+<Code>4630400</Code>
+</Area>
+</Areas>
+</Item>
+</AshInfo>
+<AshInfo type="予報　９時間後">
+<StartTime>2025-12-28T21:00:00+09:00</StartTime>
+<EndTime>2025-12-29T00:00:00+09:00</EndTime>
+<Item>
+<Kind>
+<Name>降灰</Name>
+<Code>70</Code>
+<Property>
+<jmx_eb:Polygon type="位置（度）">+29.6780+129.7000/+29.6790+129.7200/+29.6600+129.7396/+29.6590+129.7400/+29.6400+129.7590/+29.6200+129.7598/+29.6138+129.7600/+29.6000+129.7636/+29.5876+129.7600/+29.5800+129.7590/+29.5600+129.7531/+29.5437+129.7400/+29.5400+129.7368/+29.5200+129.7247/+29.5165+129.7200/+29.5179+129.7000/+29.5094+129.6800/+29.5115+129.6600/+29.5200+129.6486/+29.5241+129.6400/+29.5368+129.6200/+29.5400+129.6161/+29.5600+129.6070/+29.5800+129.6156/+29.5874+129.6200/+29.6000+129.6227/+29.6188+129.6400/+29.6200+129.6405/+29.6389+129.6600/+29.6400+129.6604/+29.6589+129.6800/+29.6600+129.6818/+29.6780+129.7000/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="降灰の方向" unit="漢字" description="南">南</jmx_eb:PlumeDirection>
+<Distance type="降灰の到達距離" unit="km">10</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県十島村</Name>
+<Code>4630400</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>小さな噴石の落下</Name>
+<Code>75</Code>
+<Property>
+<Size type="小さな噴石の大きさ" unit="cm">1</Size>
+<jmx_eb:Polygon type="位置（度）">+29.6485+129.7000/+29.6589+129.7200/+29.6400+129.7389/+29.6210+129.7200/+29.6307+129.7000/+29.6400+129.6914/+29.6485+129.7000/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="小さな噴石の落下方向" unit="漢字" description="南西">南西</jmx_eb:PlumeDirection>
+<Distance type="小さな噴石の到達距離" unit="km">1</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県十島村</Name>
+<Code>4630400</Code>
+</Area>
+</Areas>
+</Item>
+</AshInfo>
+<AshInfo type="予報　１２時間後">
+<StartTime>2025-12-29T00:00:00+09:00</StartTime>
+<EndTime>2025-12-29T03:00:00+09:00</EndTime>
+<Item>
+<Kind>
+<Name>降灰</Name>
+<Code>70</Code>
+<Property>
+<jmx_eb:Polygon type="位置（度）">+29.7209+129.6600/+29.7326+129.6800/+29.7352+129.7000/+29.7327+129.7200/+29.7221+129.7400/+29.7200+129.7428/+29.7000+129.7587/+29.6970+129.7600/+29.6800+129.7727/+29.6600+129.7685/+29.6504+129.7600/+29.6400+129.7567/+29.6241+129.7400/+29.6200+129.7334/+29.6080+129.7200/+29.6026+129.7000/+29.6067+129.6800/+29.6200+129.6640/+29.6224+129.6600/+29.6400+129.6418/+29.6535+129.6400/+29.6600+129.6362/+29.6800+129.6365/+29.6885+129.6400/+29.7000+129.6433/+29.7200+129.6589/+29.7209+129.6600/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="降灰の方向" unit="漢字" description="北">北</jmx_eb:PlumeDirection>
+<Distance type="降灰の到達距離" unit="km">10</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県十島村</Name>
+<Code>4630400</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>小さな噴石の落下</Name>
+<Code>75</Code>
+<Property>
+<Size type="小さな噴石の大きさ" unit="cm">1</Size>
+<jmx_eb:Polygon type="位置（度）">+29.6443+129.7000/+29.6591+129.7200/+29.6400+129.7389/+29.6211+129.7200/+29.6362+129.7000/+29.6400+129.6961/+29.6443+129.7000/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="小さな噴石の落下方向" unit="漢字" description="南西">南西</jmx_eb:PlumeDirection>
+<Distance type="小さな噴石の到達距離" unit="km">1</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県十島村</Name>
+<Code>4630400</Code>
+</Area>
+</Areas>
+</Item>
+</AshInfo>
+<AshInfo type="予報　１５時間後">
+<StartTime>2025-12-29T03:00:00+09:00</StartTime>
+<EndTime>2025-12-29T06:00:00+09:00</EndTime>
+<Item>
+<Kind>
+<Name>降灰</Name>
+<Code>70</Code>
+<Property>
+<jmx_eb:Polygon type="位置（度）">+29.7909+129.6800/+29.7953+129.7000/+29.7868+129.7200/+29.7800+129.7273/+29.7651+129.7400/+29.7600+129.7432/+29.7400+129.7476/+29.7200+129.7477/+29.7000+129.7459/+29.6800+129.7434/+29.6760+129.7400/+29.6600+129.7399/+29.6400+129.7400/+29.6200+129.7200/+29.6200+129.7000/+29.6216+129.6800/+29.6400+129.6612/+29.6431+129.6600/+29.6600+129.6429/+29.6735+129.6400/+29.6800+129.6342/+29.7000+129.6292/+29.7200+129.6306/+29.7400+129.6357/+29.7479+129.6400/+29.7600+129.6500/+29.7720+129.6600/+29.7800+129.6677/+29.7909+129.6800/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="降灰の方向" unit="漢字" description="北">北</jmx_eb:PlumeDirection>
+<Distance type="降灰の到達距離" unit="km">20</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県十島村</Name>
+<Code>4630400</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>小さな噴石の落下</Name>
+<Code>75</Code>
+<Property>
+<Size type="小さな噴石の大きさ" unit="cm">1</Size>
+<jmx_eb:Polygon type="位置（度）">+29.6507+129.7000/+29.6592+129.7200/+29.6400+129.7388/+29.6212+129.7200/+29.6308+129.7000/+29.6400+129.6907/+29.6507+129.7000/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="小さな噴石の落下方向" unit="漢字" description="南西">南西</jmx_eb:PlumeDirection>
+<Distance type="小さな噴石の到達距離" unit="km">1</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県十島村</Name>
+<Code>4630400</Code>
+</Area>
+</Areas>
+</Item>
+</AshInfo>
+<AshInfo type="予報　１８時間後">
+<StartTime>2025-12-29T06:00:00+09:00</StartTime>
+<EndTime>2025-12-29T09:00:00+09:00</EndTime>
+<Item>
+<Kind>
+<Name>降灰</Name>
+<Code>70</Code>
+<Property>
+<jmx_eb:Polygon type="位置（度）">+29.8035+129.6800/+29.8000+129.6877/+29.7955+129.7000/+29.7847+129.7200/+29.7800+129.7246/+29.7600+129.7353/+29.7400+129.7394/+29.7200+129.7389/+29.7000+129.7393/+29.6800+129.7393/+29.6600+129.7399/+29.6400+129.7400/+29.6200+129.7200/+29.6200+129.7000/+29.6235+129.6800/+29.6400+129.6632/+29.6531+129.6600/+29.6600+129.6532/+29.6800+129.6426/+29.6930+129.6400/+29.7000+129.6342/+29.7200+129.6261/+29.7400+129.6282/+29.7600+129.6322/+29.7725+129.6400/+29.7800+129.6465/+29.7935+129.6600/+29.8000+129.6720/+29.8035+129.6800/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="降灰の方向" unit="漢字" description="北">北</jmx_eb:PlumeDirection>
+<Distance type="降灰の到達距離" unit="km">20</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県十島村</Name>
+<Code>4630400</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>小さな噴石の落下</Name>
+<Code>75</Code>
+<Property>
+<Size type="小さな噴石の大きさ" unit="cm">1</Size>
+<jmx_eb:Polygon type="位置（度）">+29.6548+129.7000/+29.6592+129.7200/+29.6400+129.7388/+29.6212+129.7200/+29.6269+129.7000/+29.6400+129.6868/+29.6548+129.7000/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="小さな噴石の落下方向" unit="漢字" description="南西">南西</jmx_eb:PlumeDirection>
+<Distance type="小さな噴石の到達距離" unit="km">1</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県十島村</Name>
+<Code>4630400</Code>
+</Area>
+</Areas>
+</Item>
+</AshInfo>
+</AshInfos>
+<VolcanoInfoContent>
+<VolcanoHeadline>　現在、諏訪之瀬島は噴火警戒レベル２（火口周辺規制）です。諏訪之瀬島で噴火が発生した場合には、２８日２１時から２４時までは火口から南方向に降灰が予想されます。</VolcanoHeadline>
+<VolcanoActivity>　２８日１５時から２９日９時までに噴火が発生した場合には、以下の方向・距離に降灰及び小さな噴石の落下が予想されます。
+　
+　時刻　　　　　　　　　　　　火口からの方向　降灰の距離　小さな噴石の距離
+　２８日１５時から１８時まで　南　　　　　　　２０ｋｍ　　１ｋｍ　　　　　
+　２８日１８時から２１時まで　南　　　　　　　２０ｋｍ　　１ｋｍ　　　　　
+　２８日２１時から２４時まで　南　　　　　　　１０ｋｍ　　１ｋｍ　　　　　
+　２９日００時から０３時まで　北　　　　　　　１０ｋｍ　　１ｋｍ　　　　　
+　２９日０３時から０６時まで　北　　　　　　　２０ｋｍ　　１ｋｍ　　　　　
+　２９日０６時から０９時まで　北　　　　　　　２０ｋｍ　　１ｋｍ　　　　　
+
+　
+　期間中に噴火が発生した場合には、以下の市町村に降灰が予想されます。
+　鹿児島県：十島村
+　</VolcanoActivity>
+<VolcanoPrevention>　噴煙が火口縁上１０００ｍまで上がった場合の火山灰及び小さな噴石の落下範囲を示しています。
+　噴火発生時、小さな噴石の落下が予想される範囲内では、屋内や頑丈な屋根の下などに移動してください。
+　</VolcanoPrevention>
+</VolcanoInfoContent>
+</Body>
+</Report>

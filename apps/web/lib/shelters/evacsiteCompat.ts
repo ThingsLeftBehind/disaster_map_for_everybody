@@ -1,11 +1,10 @@
-import { Prisma, prisma } from 'lib/db/prisma';
-import type { PrismaClient } from '@jp-evac/db';
-import { sqltag as sql, join, raw } from '@prisma/client/runtime/library';
+import { Prisma } from 'lib/db/prisma';
+import { raw } from '@prisma/client/runtime/library';
+import type { Sql } from '@prisma/client/runtime/library';
 import { hazardKeys, hazardLabels, type HazardKey } from '@jp-evac/shared';
 import { normalizeLatLon } from './coords';
+import { factorModeToScale, getEvacSitesSchema } from './evacSitesSchema';
 const TABLE_SCHEMA = 'public';
-const TABLE_NAME = 'EvacSite';
-const TABLE_REF = `"${TABLE_SCHEMA}"."${TABLE_NAME}"`;
 
 const HAZARD_TABLE_NAME = 'EvacSiteHazardCapability';
 const HAZARD_TABLE_REF = `"${TABLE_SCHEMA}"."${HAZARD_TABLE_NAME}"`;
@@ -293,25 +292,20 @@ export async function getEvacSiteMeta(prisma: import('@prisma/client').PrismaCli
   const now = nowMs();
   if (cachedMeta && now - cachedMeta.checkedAtMs < META_TTL_MS) return cachedMeta.meta;
 
-  const columnInfo = await readInformationSchemaColumnInfo(prisma, { schema: TABLE_SCHEMA, table: TABLE_NAME });
-  const columns = columnInfo ? columnInfo.map((c) => c.name) : null;
+  const schemaResult = await getEvacSitesSchema();
+  if (!schemaResult.ok) throw new Error(schemaResult.lastError);
 
-  const cols = columns ?? [
-    'id',
-    'common_id',
-    'pref_city',
-    'name',
-    'address',
-    'lat',
-    'lon',
-    'hazards',
-    'is_same_address_as_shelter',
-    'shelter_fields',
-    'notes',
-    'source_updated_at',
-    'created_at',
-    'updated_at',
-  ];
+  const columnInfo = await readInformationSchemaColumnInfo(prisma, {
+    schema: schemaResult.schema,
+    table: schemaResult.relation,
+  });
+  const columns = columnInfo ? columnInfo.map((c) => c.name) : schemaResult.discoveredColumns;
+
+  if (!columns || columns.length === 0) {
+    throw new Error(`Evac sites columns not found. discoveredColumns=${JSON.stringify(schemaResult.discoveredColumns.slice(0, 40))}`);
+  }
+
+  const cols = columns;
 
   const idCol = pickColumn(cols, ['id']) ?? 'id';
   const idColType = findColumnType(columnInfo, idCol);
@@ -321,8 +315,8 @@ export async function getEvacSiteMeta(prisma: import('@prisma/client').PrismaCli
   const prefectureCol = pickColumn(cols, ['prefecture', 'pref_name', 'prefName']);
   const cityCol = pickColumn(cols, ['city', 'muni', 'municipality', 'muni_name', 'muniName']);
   const municipalityCodeCol = pickColumn(cols, ['municipalitycode', 'municipality_code', 'municode', 'muni_code']);
-  const latCol = pickColumn(cols, ['lat', 'latitude']) ?? 'lat';
-  const lonCol = pickColumn(cols, ['lon', 'lng', 'longitude']) ?? 'lon';
+  const latCol = schemaResult.latCol;
+  const lonCol = schemaResult.lonCol;
   const isActiveCol = pickColumn(cols, ['isactive', 'is_active', 'active', 'enabled', 'is_enabled']);
   const hazardsCol = pickColumn(cols, ['hazards']);
   const isSameAddressCol = pickColumn(cols, ['is_same_address_as_shelter', 'isSameAddressAsShelter']);
@@ -340,7 +334,7 @@ export async function getEvacSiteMeta(prisma: import('@prisma/client').PrismaCli
   }
 
   const meta: EvacSiteMeta = {
-    tableRef: TABLE_REF,
+    tableRef: schemaResult.tableName,
     columns: cols,
     idCol,
     idColType,
@@ -430,29 +424,10 @@ export async function getEvacSiteCoordFactors(prisma: import('@prisma/client').P
   const now = nowMs();
   if (cachedScale && now - cachedScale.checkedAtMs < SCALE_TTL_MS) return cachedScale.factors;
 
-  const latCol = raw(qIdent(meta.latCol));
-  const lonCol = raw(qIdent(meta.lonCol));
-  const table = raw(meta.tableRef);
-
-  const rows = (await prisma.$queryRaw(
-    Prisma.sql`
-      SELECT ${latCol} AS lat, ${lonCol} AS lon
-      FROM ${table}
-      WHERE ${latCol} IS NOT NULL AND ${lonCol} IS NOT NULL
-      LIMIT 50
-    `
-  )) as Array<{ lat: unknown; lon: unknown }>;
-
-  const samples = rows
-    .map((r) => {
-      const lat = toFiniteNumber(r.lat);
-      const lon = toFiniteNumber(r.lon);
-      if (lat === null || lon === null) return null;
-      return { lat, lon };
-    })
-    .filter((v): v is { lat: number; lon: number } => Boolean(v));
-
-  const ranked = rankCoordFactors(samples);
+  const schemaResult = await getEvacSitesSchema();
+  if (!schemaResult.ok) throw new Error(schemaResult.lastError);
+  const factor = factorModeToScale(schemaResult.factorMode);
+  const ranked = [factor];
   cachedScale = { checkedAtMs: now, factors: ranked };
   return ranked;
 }
@@ -527,8 +502,8 @@ export async function rawCountNearbyEvacSites(
   const latDelta = radiusKm / 111.32;
   const lonDelta = radiusKm / (111.32 * Math.max(0.2, Math.cos((args.lat * Math.PI) / 180)));
 
-  const latDb = args.lat * factor;
-  const lonDb = args.lon * factor;
+  const latDb = factor === 1 ? args.lat : Math.round(args.lat * factor);
+  const lonDb = factor === 1 ? args.lon : Math.round(args.lon * factor);
   const latDeltaDb = latDelta * factor;
   const lonDeltaDb = lonDelta * factor;
 
@@ -570,8 +545,8 @@ export async function rawNearestDistanceKm(
   const latDelta = radiusKm / 111.32;
   const lonDelta = radiusKm / (111.32 * Math.max(0.2, Math.cos((args.lat * Math.PI) / 180)));
 
-  const latDb = args.lat * factor;
-  const lonDb = args.lon * factor;
+  const latDb = factor === 1 ? args.lat : Math.round(args.lat * factor);
+  const lonDb = factor === 1 ? args.lon : Math.round(args.lon * factor);
   const latDeltaDb = latDelta * factor;
   const lonDeltaDb = lonDelta * factor;
 
@@ -895,7 +870,13 @@ export async function getEvacSiteDbDiagnostics(
   evacSite: { columns: string[] | null; count: number; nullCoords: number; invalidCoords: number };
   hazardCaps: { columns: string[] | null; count: number };
 }> {
-  const evacColumns = await readInformationSchemaColumns(prisma, { schema: TABLE_SCHEMA, table: TABLE_NAME });
+  const schemaResult = await getEvacSitesSchema();
+  if (!schemaResult.ok) throw new Error(schemaResult.lastError);
+
+  const evacColumns = await readInformationSchemaColumns(prisma, {
+    schema: schemaResult.schema,
+    table: schemaResult.relation,
+  });
   const hazardColumns = await readInformationSchemaColumns(prisma, { schema: TABLE_SCHEMA, table: HAZARD_TABLE_NAME });
 
   const evacMeta = await getEvacSiteMeta(prisma);

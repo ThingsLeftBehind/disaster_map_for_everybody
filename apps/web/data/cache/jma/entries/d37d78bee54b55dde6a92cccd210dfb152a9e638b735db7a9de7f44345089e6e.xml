@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_add="http://xml.kishou.go.jp/jmaxml1/addition1/">
+<Control>
+<Title>地方海上予報（Ｈ２８）</Title>
+<DateTime>2025-12-27T21:10:05Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>福岡管区気象台</EditorialOffice>
+<PublishingOffice>福岡管区気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>福岡海上気象</Title>
+<ReportDateTime>2025-12-28T07:00:00+09:00</ReportDateTime>
+<TargetDateTime>2025-12-28T07:00:00+09:00</TargetDateTime>
+<TargetDuration>P1DT17H</TargetDuration>
+<EventID/>
+<InfoType>発表</InfoType>
+<Serial/>
+<InfoKind>地方海上予報</InfoKind>
+<InfoKindVersion>1.0_2</InfoKindVersion>
+<Headline>
+<Text/>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/" xmlns:jmx_eb="http://xml.kishou.go.jp/jmaxml1/elementBasis1/">
+<Warning type="地方海上警報発表状況">
+<Item>
+<Kind>
+<Name>海上風警報</Name>
+<Code>20</Code>
+</Kind>
+<Area>
+<Name>対馬海峡</Name>
+<Code>5000</Code>
+</Area>
+</Item>
+</Warning>
+<MeteorologicalInfos type="気象要因">
+<MeteorologicalInfo>
+<DateTime>2025-12-28T03:00:00+09:00</DateTime>
+<Name>２８日０３時</Name>
+<Item>
+<Kind>
+<Property>
+<Type>概況</Type>
+<SynopsisPart>
+<jmx_eb:Synopsis type="気象要因">高  １０２６  北緯３３度  東経１２８度  東南東
+１０ノット（２０キロ）</jmx_eb:Synopsis>
+</SynopsisPart>
+</Property>
+</Kind>
+<Area>
+<Name>対馬海峡</Name>
+<Code>5000</Code>
+</Area>
+</Item>
+</MeteorologicalInfo>
+</MeteorologicalInfos>
+<MeteorologicalInfos type="観測実況">
+<MeteorologicalInfo>
+<DateTime>2025-12-28T03:00:00+09:00</DateTime>
+<Name>２８日０３時</Name>
+<Item>
+<Kind>
+<Condition>通常</Condition>
+<Property>
+<Type>風</Type>
+<WindDirectionPart>
+<jmx_eb:WindDirection type="風向" unit="１６方位漢字">南東</jmx_eb:WindDirection>
+</WindDirectionPart>
+<WindSpeedPart>
+<jmx_eb:WindSpeed type="風速" unit="ノット" description="６ノット">6</jmx_eb:WindSpeed>
+</WindSpeedPart>
+</Property>
+<Property>
+<Type>天気</Type>
+<WeatherPart>
+<jmx_eb:Weather type="天気">曇</jmx_eb:Weather>
+</WeatherPart>
+</Property>
+<Property>
+<Type>気圧</Type>
+<PressurePart>
+<jmx_eb:Pressure type="気圧" unit="hPa" description="１０２５ヘクトパスカル">1025</jmx_eb:Pressure>
+</PressurePart>
+</Property>
+<Property>
+<Type>気温</Type>
+<TemperaturePart>
+<jmx_eb:Temperature type="気温" unit="度" description="５度">5</jmx_eb:Temperature>
+</TemperaturePart>
+</Property>
+<Property>
+<Type>視程</Type>
+<VisibilityPart>
+<jmx_eb:Visibility type="視程" unit="海里" description="１０海里">10</jmx_eb:Visibility>
+</VisibilityPart>
+</Property>
+</Kind>
+<Station>
+<Name>福岡</Name>
+<Code>47807</Code>
+</Station>
+</Item>
+<Item>
+<Kind>
+<Condition>通常</Condition>
+<Property>
+<Type>風</Type>
+<WindDirectionPart>
+<jmx_eb:WindDirection type="風向" unit="１６方位漢字">北北西</jmx_eb:WindDirection>
+</WindDirectionPart>
+<WindSpeedPart>
+<jmx_eb:WindSpeed type="風速" unit="ノット" description="２ノット">2</jmx_eb:WindSpeed>
+</WindSpeedPart>
+</Property>
+<Property>
+<Type>天気</Type>
+<WeatherPart>
+<jmx_eb:Weather type="天気">曇</jmx_eb:Weather>
+</WeatherPart>
+</Property>
+<Property>
+<Type>気圧</Type>
+<PressurePart>
+<jmx_eb:Pressure type="気圧" unit="hPa" description="１０２５ヘクトパスカル">1025</jmx_eb:Pressure>
+</PressurePart>
+</Property>
+<Property>
+<Type>気温</Type>
+<TemperaturePart>
+<jmx_eb:Temperature type="気温" unit="度" description="２度">2</jmx_eb:Temperature>
+</TemperaturePart>
+</Property>
+<Property>
+<Type>視程</Type>
+<VisibilityPart>
+<jmx_eb:Visibility type="視程" unit="海里" description="１０海里">10</jmx_eb:Visibility>
+</VisibilityPart>
+</Property>
+</Kind>
+<Station>
+<Name>厳原</Name>
+<Code>47800</Code>
+</Station>
+</Item>
+</MeteorologicalInfo>
+</MeteorologicalInfos>
+<MeteorologicalInfos type="地方海域の予報">
+<MeteorologicalInfo>
+<DateTime>2025-12-28T07:00:00+09:00</DateTime>
+<Duration>PT17H</Duration>
+<Name>今日</Name>
+<Item>
+<Kind>
+<Property>
+<Type>風</Type>
+<WindPart>
+<SubArea>
+<Sentence>西  １５ノット（８メートル）  ２８日２１時までに  南西  ２０ノット（１０メートル）</Sentence>
+<Base>
+<jmx_eb:WindDirection type="風向" unit="８方位漢字">西</jmx_eb:WindDirection>
+<jmx_eb:WindSpeed type="風速" unit="ノット" description="１５ノット">15</jmx_eb:WindSpeed>
+<jmx_eb:WindSpeed type="風速" unit="m/s" description="８メートル">8</jmx_eb:WindSpeed>
+</Base>
+<Becoming>
+<TimeModifier>２８日２１時までに</TimeModifier>
+<jmx_eb:WindDirection type="風向" unit="８方位漢字">南西</jmx_eb:WindDirection>
+<jmx_eb:WindSpeed type="風速" unit="ノット" description="２０ノット">20</jmx_eb:WindSpeed>
+<jmx_eb:WindSpeed type="風速" unit="m/s" description="１０メートル">10</jmx_eb:WindSpeed>
+</Becoming>
+</SubArea>
+</WindPart>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>天気</Type>
+<WeatherPart>
+<SubArea>
+<Sentence>晴時々曇  所により雷を伴う</Sentence>
+<Base>
+<jmx_eb:Weather type="天気">晴時々曇</jmx_eb:Weather>
+<Local>
+<Sentence type="地域天気">所により雷を伴う</Sentence>
+</Local>
+</Base>
+</SubArea>
+</WeatherPart>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>視程</Type>
+<VisibilityPart>
+<SubArea>
+<Sentence>５海里（１０キロ）</Sentence>
+<Base>
+<jmx_eb:Visibility type="視程" unit="海里" description="５海里">5</jmx_eb:Visibility>
+<jmx_eb:Visibility type="視程" unit="km" description="１０キロ">10</jmx_eb:Visibility>
+</Base>
+</SubArea>
+</VisibilityPart>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>波</Type>
+<WaveHeightPart>
+<SubArea>
+<Sentence>１．５メートル</Sentence>
+<Base>
+<jmx_eb:WaveHeight type="波高" unit="m" description="１．５メートル">1.5</jmx_eb:WaveHeight>
+</Base>
+</SubArea>
+</WaveHeightPart>
+</Property>
+</Kind>
+<Area>
+<Name>対馬海峡</Name>
+<Code>5000</Code>
+</Area>
+</Item>
+</MeteorologicalInfo>
+<MeteorologicalInfo>
+<DateTime>2025-12-29T00:00:00+09:00</DateTime>
+<Duration>P1D</Duration>
+<Name>明日</Name>
+<Item>
+<Kind>
+<Property>
+<Type>風</Type>
+<WindPart>
+<SubArea>
+<Sentence>南西  ３０ノット（１５メートル）  ２９日２１時までに  西  ２０ノット（１０メートル）</Sentence>
+<Base>
+<jmx_eb:WindDirection type="風向" unit="８方位漢字">南西</jmx_eb:WindDirection>
+<jmx_eb:WindSpeed type="風速" unit="ノット" description="３０ノット">30</jmx_eb:WindSpeed>
+<jmx_eb:WindSpeed type="風速" unit="m/s" description="１５メートル">15</jmx_eb:WindSpeed>
+</Base>
+<Becoming>
+<TimeModifier>２９日２１時までに</TimeModifier>
+<jmx_eb:WindDirection type="風向" unit="８方位漢字">西</jmx_eb:WindDirection>
+<jmx_eb:WindSpeed type="風速" unit="ノット" description="２０ノット">20</jmx_eb:WindSpeed>
+<jmx_eb:WindSpeed type="風速" unit="m/s" description="１０メートル">10</jmx_eb:WindSpeed>
+</Becoming>
+</SubArea>
+</WindPart>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>天気</Type>
+<WeatherPart>
+<SubArea>
+<Sentence>晴  所により雷を伴う</Sentence>
+<Base>
+<jmx_eb:Weather type="天気">晴</jmx_eb:Weather>
+<Local>
+<Sentence type="地域天気">所により雷を伴う</Sentence>
+</Local>
+</Base>
+</SubArea>
+</WeatherPart>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>視程</Type>
+<VisibilityPart>
+<SubArea>
+<Sentence>５海里（１０キロ）</Sentence>
+<Base>
+<jmx_eb:Visibility type="視程" unit="海里" description="５海里">5</jmx_eb:Visibility>
+<jmx_eb:Visibility type="視程" unit="km" description="１０キロ">10</jmx_eb:Visibility>
+</Base>
+</SubArea>
+</VisibilityPart>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>波</Type>
+<WaveHeightPart>
+<SubArea>
+<Sentence>２．５メートル  ２９日１５時までに  ２メートル</Sentence>
+<Base>
+<jmx_eb:WaveHeight type="波高" unit="m" description="２．５メートル">2.5</jmx_eb:WaveHeight>
+</Base>
+<Becoming>
+<TimeModifier>２９日１５時までに</TimeModifier>
+<jmx_eb:WaveHeight type="波高" unit="m" description="２メートル">2</jmx_eb:WaveHeight>
+</Becoming>
+</SubArea>
+</WaveHeightPart>
+</Property>
+</Kind>
+<Area>
+<Name>対馬海峡</Name>
+<Code>5000</Code>
+</Area>
+</Item>
+</MeteorologicalInfo>
+</MeteorologicalInfos>
+</Body>
+</Report>

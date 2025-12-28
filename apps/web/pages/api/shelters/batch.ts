@@ -1,9 +1,11 @@
-import { Prisma, prisma } from 'lib/db/prisma';
+import { prisma } from 'lib/db/prisma';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { fallbackFindSheltersByIds } from 'lib/db/sheltersFallback';
 import { getEvacSitesCoordScale, normalizeLatLon } from 'lib/shelters/coords';
 import {
+  getEvacSiteMeta,
   isEvacSitesTableMismatchError,
+  rawFindByIds,
   safeErrorMessage,
 } from 'lib/shelters/evacsiteCompat';
 export const config = { runtime: 'nodejs' };
@@ -26,6 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const factor = await getEvacSitesCoordScale(prisma);
+    const evacMeta = await getEvacSiteMeta(prisma);
     const rows = await prisma.evac_sites.findMany({
       where: { id: { in: uniqueIds } },
       select: {
@@ -33,8 +36,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         pref_city: true,
         name: true,
         address: true,
-        lat: true,
-        lon: true,
         hazards: true,
         is_same_address_as_shelter: true,
         notes: true,
@@ -43,9 +44,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
 
+    const ids = rows.map((row: any) => row.id).filter(Boolean);
+    const rawRows = ids.length > 0 ? await rawFindByIds(prisma, evacMeta, ids) : [];
+    const coordsById = new Map<string, { lat: number; lon: number }>();
+    for (const row of rawRows) {
+      const idRaw = row[evacMeta.idCol];
+      if (idRaw === null || idRaw === undefined) continue;
+      const coords = normalizeLatLon({ lat: row[evacMeta.latCol], lon: row[evacMeta.lonCol], factor });
+      if (!coords) continue;
+      coordsById.set(String(idRaw), coords);
+    }
+
     const normalized = rows
       .map((r: any) => {
-        const coords = normalizeLatLon({ lat: r.lat, lon: r.lon, factor });
+        const coords = coordsById.get(String(r.id));
         return coords ? { ...r, lat: coords.lat, lon: coords.lon } : null;
       })
       .filter((v: any): v is NonNullable<typeof v> => Boolean(v));

@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/">
+<Control>
+<Title>降灰予報（定時）</Title>
+<DateTime>2025-12-28T05:00:00Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>気象庁本庁</EditorialOffice>
+<PublishingOffice>気象庁</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>火山名　薩摩硫黄島　降灰予報（定時）</Title>
+<ReportDateTime>2025-12-28T14:00:00+09:00</ReportDateTime>
+<TargetDateTime>2025-12-28T15:00:00+09:00</TargetDateTime>
+<ValidDateTime>2025-12-29T09:00:00+09:00</ValidDateTime>
+<EventID>508</EventID>
+<InfoType>発表</InfoType>
+<Serial>1</Serial>
+<InfoKind>降灰予報</InfoKind>
+<InfoKindVersion>1.1_0</InfoKindVersion>
+<Headline>
+<Text>　現在、薩摩硫黄島は噴火警戒レベル２（火口周辺規制）です。薩摩硫黄島で噴火が発生した場合には、２８日２１時から２４時までは火口から南方向に降灰が予想されます。</Text>
+<Information type="降灰予報（対象火山）">
+<Item>
+<Kind>
+<Name>降灰予報（定時）</Name>
+<Code>06</Code>
+</Kind>
+<Areas codeType="火山名">
+<Area>
+<Name>薩摩硫黄島</Name>
+<Code>508</Code>
+</Area>
+</Areas>
+</Item>
+</Information>
+<Information type="降灰予報（対象市町村等）">
+<Item>
+<Kind>
+<Name>降灰</Name>
+<Code>70</Code>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県三島村</Name>
+<Code>4630300</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>小さな噴石の落下</Name>
+<Code>75</Code>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県三島村</Name>
+<Code>4630300</Code>
+</Area>
+</Areas>
+</Item>
+</Information>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/volcanology1/" xmlns:jmx_eb="http://xml.kishou.go.jp/jmaxml1/elementBasis1/">
+<VolcanoInfo type="降灰予報（対象火山）">
+<Item>
+<Kind>
+<Name>降灰予報（定時）</Name>
+<Code>06</Code>
+</Kind>
+<Areas codeType="火山名">
+<Area>
+<Name>薩摩硫黄島</Name>
+<Code>508</Code>
+<Coordinate description="北緯３０度４７．５８分　東経１３０度１８．３２分　標高７０４ｍ">+3047.58+13018.32+704/</Coordinate>
+</Area>
+</Areas>
+</Item>
+</VolcanoInfo>
+<VolcanoInfo type="降灰予報（対象市町村等）">
+<Item>
+<Kind>
+<Name>降灰</Name>
+<Code>70</Code>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県三島村</Name>
+<Code>4630300</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>小さな噴石の落下</Name>
+<Code>75</Code>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県三島村</Name>
+<Code>4630300</Code>
+</Area>
+</Areas>
+</Item>
+</VolcanoInfo>
+<AshInfos type="降灰予報（定時）">
+<AshInfo type="予報　３時間後">
+<StartTime>2025-12-28T15:00:00+09:00</StartTime>
+<EndTime>2025-12-28T18:00:00+09:00</EndTime>
+<Item>
+<Kind>
+<Name>降灰</Name>
+<Code>70</Code>
+<Property>
+<jmx_eb:Polygon type="位置（度）">+30.8199+130.3000/+30.8198+130.3200/+30.8000+130.3398/+30.7800+130.3400/+30.7686+130.3400/+30.7600+130.3483/+30.7400+130.3579/+30.7200+130.3598/+30.7187+130.3600/+30.7000+130.3738/+30.6800+130.3786/+30.6706+130.3800/+30.6600+130.3865/+30.6400+130.3939/+30.6220+130.4000/+30.6200+130.4016/+30.6000+130.4077/+30.5800+130.4135/+30.5600+130.4141/+30.5400+130.4095/+30.5209+130.4000/+30.5200+130.3997/+30.5018+130.3800/+30.5013+130.3600/+30.5084+130.3400/+30.5200+130.3204/+30.5203+130.3200/+30.5400+130.3010/+30.5410+130.3000/+30.5600+130.2878/+30.5800+130.2835/+30.5881+130.2800/+30.6000+130.2746/+30.6200+130.2718/+30.6400+130.2716/+30.6600+130.2741/+30.6800+130.2708/+30.7000+130.2708/+30.7200+130.2773/+30.7261+130.2800/+30.7400+130.2801/+30.7600+130.2800/+30.7800+130.2800/+30.8000+130.2801/+30.8199+130.3000/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="降灰の方向" unit="漢字" description="南">南</jmx_eb:PlumeDirection>
+<Distance type="降灰の到達距離" unit="km">30</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県三島村</Name>
+<Code>4630300</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>小さな噴石の落下</Name>
+<Code>75</Code>
+<Property>
+<Size type="小さな噴石の大きさ" unit="cm">1</Size>
+<jmx_eb:Polygon type="位置（度）">+30.8188+130.3000/+30.8168+130.3200/+30.8000+130.3368/+30.7800+130.3371/+30.7623+130.3200/+30.7614+130.3000/+30.7800+130.2817/+30.8000+130.2812/+30.8188+130.3000/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="小さな噴石の落下方向" unit="漢字" description="南東">南東</jmx_eb:PlumeDirection>
+<Distance type="小さな噴石の到達距離" unit="km">2</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県三島村</Name>
+<Code>4630300</Code>
+</Area>
+</Areas>
+</Item>
+</AshInfo>
+<AshInfo type="予報　６時間後">
+<StartTime>2025-12-28T18:00:00+09:00</StartTime>
+<EndTime>2025-12-28T21:00:00+09:00</EndTime>
+<Item>
+<Kind>
+<Name>降灰</Name>
+<Code>70</Code>
+<Property>
+<jmx_eb:Polygon type="位置（度）">+30.8199+130.3000/+30.8198+130.3200/+30.8000+130.3398/+30.7800+130.3400/+30.7781+130.3400/+30.7600+130.3573/+30.7400+130.3599/+30.7397+130.3600/+30.7200+130.3758/+30.7085+130.3800/+30.7000+130.3883/+30.6800+130.3994/+30.6784+130.4000/+30.6600+130.4121/+30.6400+130.4184/+30.6364+130.4200/+30.6200+130.4321/+30.6000+130.4304/+30.5800+130.4268/+30.5693+130.4200/+30.5600+130.4099/+30.5544+130.4000/+30.5551+130.3800/+30.5523+130.3600/+30.5588+130.3400/+30.5600+130.3376/+30.5687+130.3200/+30.5796+130.3000/+30.5800+130.2995/+30.5992+130.2800/+30.6000+130.2792/+30.6191+130.2600/+30.6200+130.2594/+30.6400+130.2593/+30.6600+130.2520/+30.6800+130.2521/+30.7000+130.2570/+30.7066+130.2600/+30.7200+130.2605/+30.7400+130.2610/+30.7600+130.2613/+30.7800+130.2646/+30.7954+130.2800/+30.8000+130.2801/+30.8199+130.3000/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="降灰の方向" unit="漢字" description="南">南</jmx_eb:PlumeDirection>
+<Distance type="降灰の到達距離" unit="km">30</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県三島村</Name>
+<Code>4630300</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>小さな噴石の落下</Name>
+<Code>75</Code>
+<Property>
+<Size type="小さな噴石の大きさ" unit="cm">1</Size>
+<jmx_eb:Polygon type="位置（度）">+30.8188+130.3000/+30.8173+130.3200/+30.8000+130.3373/+30.7800+130.3365/+30.7631+130.3200/+30.7627+130.3000/+30.7800+130.2830/+30.8000+130.2812/+30.8188+130.3000/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="小さな噴石の落下方向" unit="漢字" description="南東">南東</jmx_eb:PlumeDirection>
+<Distance type="小さな噴石の到達距離" unit="km">2</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県三島村</Name>
+<Code>4630300</Code>
+</Area>
+</Areas>
+</Item>
+</AshInfo>
+<AshInfo type="予報　９時間後">
+<StartTime>2025-12-28T21:00:00+09:00</StartTime>
+<EndTime>2025-12-29T00:00:00+09:00</EndTime>
+<Item>
+<Kind>
+<Name>降灰</Name>
+<Code>70</Code>
+<Property>
+<jmx_eb:Polygon type="位置（度）">+30.8127+130.2800/+30.8200+130.3000/+30.8198+130.3200/+30.8000+130.3398/+30.7800+130.3400/+30.7788+130.3400/+30.7600+130.3564/+30.7439+130.3600/+30.7400+130.3637/+30.7200+130.3767/+30.7091+130.3800/+30.7000+130.3856/+30.6800+130.3951/+30.6721+130.4000/+30.6600+130.4082/+30.6403+130.4000/+30.6400+130.3999/+30.6200+130.3999/+30.6009+130.3800/+30.6014+130.3600/+30.6000+130.3547/+30.5944+130.3400/+30.5927+130.3200/+30.6000+130.3087/+30.6084+130.3000/+30.6200+130.2805/+30.6201+130.2800/+30.6327+130.2600/+30.6400+130.2540/+30.6553+130.2400/+30.6600+130.2371/+30.6800+130.2303/+30.7000+130.2303/+30.7200+130.2298/+30.7338+130.2400/+30.7400+130.2410/+30.7600+130.2458/+30.7748+130.2600/+30.7800+130.2602/+30.8000+130.2673/+30.8127+130.2800/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="降灰の方向" unit="漢字" description="南">南</jmx_eb:PlumeDirection>
+<Distance type="降灰の到達距離" unit="km">20</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県三島村</Name>
+<Code>4630300</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>小さな噴石の落下</Name>
+<Code>75</Code>
+<Property>
+<Size type="小さな噴石の大きさ" unit="cm">1</Size>
+<jmx_eb:Polygon type="位置（度）">+30.8188+130.3000/+30.8171+130.3200/+30.8000+130.3371/+30.7800+130.3321/+30.7675+130.3200/+30.7629+130.3000/+30.7800+130.2830/+30.8000+130.2812/+30.8188+130.3000/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="小さな噴石の落下方向" unit="漢字" description="南東">南東</jmx_eb:PlumeDirection>
+<Distance type="小さな噴石の到達距離" unit="km">2</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県三島村</Name>
+<Code>4630300</Code>
+</Area>
+</Areas>
+</Item>
+</AshInfo>
+<AshInfo type="予報　１２時間後">
+<StartTime>2025-12-29T00:00:00+09:00</StartTime>
+<EndTime>2025-12-29T03:00:00+09:00</EndTime>
+<Item>
+<Kind>
+<Name>降灰</Name>
+<Code>70</Code>
+<Property>
+<jmx_eb:Polygon type="位置（度）">+30.8438+130.2600/+30.8517+130.2800/+30.8563+130.3000/+30.8560+130.3200/+30.8541+130.3400/+30.8400+130.3576/+30.8361+130.3600/+30.8200+130.3743/+30.8031+130.3800/+30.8000+130.3812/+30.7979+130.3800/+30.7800+130.3753/+30.7600+130.3654/+30.7558+130.3600/+30.7436+130.3400/+30.7406+130.3200/+30.7400+130.3000/+30.7400+130.2978/+30.7362+130.2800/+30.7377+130.2600/+30.7400+130.2558/+30.7432+130.2400/+30.7600+130.2206/+30.7615+130.2200/+30.7800+130.2094/+30.8000+130.2088/+30.8200+130.2180/+30.8218+130.2200/+30.8378+130.2400/+30.8400+130.2511/+30.8438+130.2600/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="降灰の方向" unit="漢字" description="西">西</jmx_eb:PlumeDirection>
+<Distance type="降灰の到達距離" unit="km">9</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県三島村</Name>
+<Code>4630300</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>小さな噴石の落下</Name>
+<Code>75</Code>
+<Property>
+<Size type="小さな噴石の大きさ" unit="cm">1</Size>
+<jmx_eb:Polygon type="位置（度）">+30.8189+130.3000/+30.8176+130.3200/+30.8000+130.3375/+30.7817+130.3200/+30.7802+130.3000/+30.8000+130.2811/+30.8189+130.3000/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="小さな噴石の落下方向" unit="漢字" description="北東">北東</jmx_eb:PlumeDirection>
+<Distance type="小さな噴石の到達距離" unit="km">2</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県三島村</Name>
+<Code>4630300</Code>
+</Area>
+</Areas>
+</Item>
+</AshInfo>
+<AshInfo type="予報　１５時間後">
+<StartTime>2025-12-29T03:00:00+09:00</StartTime>
+<EndTime>2025-12-29T06:00:00+09:00</EndTime>
+<Item>
+<Kind>
+<Name>降灰</Name>
+<Code>70</Code>
+<Property>
+<jmx_eb:Polygon type="位置（度）">+30.9437+130.2800/+30.9485+130.3000/+30.9556+130.3200/+30.9535+130.3400/+30.9442+130.3600/+30.9400+130.3646/+30.9288+130.3800/+30.9200+130.3859/+30.9000+130.3865/+30.8821+130.3800/+30.8800+130.3797/+30.8600+130.3746/+30.8400+130.3619/+30.8381+130.3600/+30.8200+130.3535/+30.8060+130.3400/+30.8000+130.3399/+30.7800+130.3396/+30.7604+130.3200/+30.7601+130.3000/+30.7638+130.2800/+30.7800+130.2637/+30.7847+130.2600/+30.8000+130.2435/+30.8076+130.2400/+30.8200+130.2286/+30.8400+130.2245/+30.8600+130.2244/+30.8800+130.2304/+30.8918+130.2400/+30.9000+130.2458/+30.9180+130.2600/+30.9200+130.2626/+30.9400+130.2751/+30.9437+130.2800/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="降灰の方向" unit="漢字" description="北">北</jmx_eb:PlumeDirection>
+<Distance type="降灰の到達距離" unit="km">20</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県三島村</Name>
+<Code>4630300</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>小さな噴石の落下</Name>
+<Code>75</Code>
+<Property>
+<Size type="小さな噴石の大きさ" unit="cm">1</Size>
+<jmx_eb:Polygon type="位置（度）">+30.8190+130.3000/+30.8177+130.3200/+30.8000+130.3372/+30.7828+130.3200/+30.7812+130.3000/+30.8000+130.2811/+30.8190+130.3000/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="小さな噴石の落下方向" unit="漢字" description="北東">北東</jmx_eb:PlumeDirection>
+<Distance type="小さな噴石の到達距離" unit="km">2</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県三島村</Name>
+<Code>4630300</Code>
+</Area>
+</Areas>
+</Item>
+</AshInfo>
+<AshInfo type="予報　１８時間後">
+<StartTime>2025-12-29T06:00:00+09:00</StartTime>
+<EndTime>2025-12-29T09:00:00+09:00</EndTime>
+<Item>
+<Kind>
+<Name>降灰</Name>
+<Code>70</Code>
+<Property>
+<jmx_eb:Polygon type="位置（度）">+31.0019+130.3600/+31.0050+130.3800/+31.0057+130.4000/+31.0000+130.4094/+30.9944+130.4200/+30.9800+130.4313/+30.9600+130.4364/+30.9400+130.4260/+30.9297+130.4200/+30.9200+130.4172/+30.9000+130.4109/+30.8812+130.4000/+30.8800+130.3996/+30.8600+130.3905/+30.8490+130.3800/+30.8400+130.3762/+30.8237+130.3600/+30.8200+130.3590/+30.8004+130.3400/+30.8000+130.3400/+30.7800+130.3396/+30.7604+130.3200/+30.7602+130.3000/+30.7800+130.2802/+30.8000+130.2800/+30.8025+130.2800/+30.8200+130.2654/+30.8400+130.2654/+30.8600+130.2682/+30.8800+130.2714/+30.9000+130.2775/+30.9040+130.2800/+30.9200+130.2849/+30.9400+130.2958/+30.9447+130.3000/+30.9600+130.3158/+30.9662+130.3200/+30.9800+130.3282/+30.9971+130.3400/+31.0000+130.3518/+31.0019+130.3600/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="降灰の方向" unit="漢字" description="北">北</jmx_eb:PlumeDirection>
+<Distance type="降灰の到達距離" unit="km">20</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県三島村</Name>
+<Code>4630300</Code>
+</Area>
+</Areas>
+</Item>
+<Item>
+<Kind>
+<Name>小さな噴石の落下</Name>
+<Code>75</Code>
+<Property>
+<Size type="小さな噴石の大きさ" unit="cm">1</Size>
+<jmx_eb:Polygon type="位置（度）">+30.8190+130.3000/+30.8166+130.3200/+30.8000+130.3360/+30.7840+130.3200/+30.7812+130.3000/+30.8000+130.2812/+30.8190+130.3000/</jmx_eb:Polygon>
+<jmx_eb:PlumeDirection type="小さな噴石の落下方向" unit="漢字" description="北東">北東</jmx_eb:PlumeDirection>
+<Distance type="小さな噴石の到達距離" unit="km">2</Distance>
+</Property>
+</Kind>
+<Areas codeType="気象・地震・火山情報／市町村等">
+<Area>
+<Name>鹿児島県三島村</Name>
+<Code>4630300</Code>
+</Area>
+</Areas>
+</Item>
+</AshInfo>
+</AshInfos>
+<VolcanoInfoContent>
+<VolcanoHeadline>　現在、薩摩硫黄島は噴火警戒レベル２（火口周辺規制）です。薩摩硫黄島で噴火が発生した場合には、２８日２１時から２４時までは火口から南方向に降灰が予想されます。</VolcanoHeadline>
+<VolcanoActivity>　２８日１５時から２９日９時までに噴火が発生した場合には、以下の方向・距離に降灰及び小さな噴石の落下が予想されます。
+　
+　時刻　　　　　　　　　　　　火口からの方向　降灰の距離　小さな噴石の距離
+　２８日１５時から１８時まで　南　　　　　　　３０ｋｍ　　２ｋｍ　　　　　
+　２８日１８時から２１時まで　南　　　　　　　３０ｋｍ　　２ｋｍ　　　　　
+　２８日２１時から２４時まで　南　　　　　　　２０ｋｍ　　２ｋｍ　　　　　
+　２９日００時から０３時まで　西　　　　　　　９ｋｍ　　　２ｋｍ　　　　　
+　２９日０３時から０６時まで　北　　　　　　　２０ｋｍ　　２ｋｍ　　　　　
+　２９日０６時から０９時まで　北　　　　　　　２０ｋｍ　　２ｋｍ　　　　　
+
+　
+　期間中に噴火が発生した場合には、以下の市町村に降灰が予想されます。
+　鹿児島県：三島村
+　</VolcanoActivity>
+<VolcanoPrevention>　噴煙が火口縁上１０００ｍまで上がった場合の火山灰及び小さな噴石の落下範囲を示しています。
+　噴火発生時、小さな噴石の落下が予想される範囲内では、屋内や頑丈な屋根の下などに移動してください。
+　</VolcanoPrevention>
+</VolcanoInfoContent>
+</Body>
+</Report>

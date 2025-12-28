@@ -3,15 +3,19 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { fallbackNearbyShelters } from 'lib/db/sheltersFallback';
 import { NearbyQuerySchema } from 'lib/validators';
 import { haversineDistance, hazardKeys } from '@jp-evac/shared';
-import { getEvacSitesCoordScales, normalizeLatLon } from 'lib/shelters/coords';
+import type { Sql } from '@prisma/client/runtime/library';
+import { normalizeLatLon } from 'lib/shelters/coords';
+import { factorModeToScale, getEvacSitesSchema } from 'lib/shelters/evacSitesSchema';
 import { isEvacSitesTableMismatchError, safeErrorMessage } from 'lib/shelters/evacsiteCompat';
 import { DEFAULT_MAIN_LIMIT } from 'lib/constants';
 export const config = { runtime: 'nodejs' };
 
-const BASE_SCALE_FACTORS = [1, 1e7, 1e6, 1e5, 1e4, 1e3, 1e2] as const;
-
 function nowIso() {
   return new Date().toISOString();
+}
+
+function qIdent(name: string): string {
+  return `"${name.replaceAll('"', '""')}"`;
 }
 
 function toFiniteNumber(value: unknown): number | null {
@@ -39,18 +43,6 @@ function buildHaversineSql(args: { latExpr: Sql; lonExpr: Sql; lat: number; lon:
   `;
 }
 
-function mergeScaleCandidates(primary: number[]): number[] {
-  const merged: number[] = [];
-  const seen = new Set<number>();
-  for (const factor of [...primary, ...BASE_SCALE_FACTORS]) {
-    if (!Number.isFinite(factor) || factor <= 0) continue;
-    if (seen.has(factor)) continue;
-    seen.add(factor);
-    merged.push(factor);
-  }
-  return merged.length > 0 ? merged : [1];
-}
-
 type ScaleClause = { bbox: Sql; distanceExpr: Sql };
 
 function buildScaleClauses(args: {
@@ -65,8 +57,8 @@ function buildScaleClauses(args: {
   const lonDelta = args.radiusKm / (111.32 * Math.max(0.2, Math.cos((args.lat * Math.PI) / 180)));
 
   return args.factors.map((factor: any) => {
-    const latDb = args.lat * factor;
-    const lonDb = args.lon * factor;
+    const latDb = factor === 1 ? args.lat : Math.round(args.lat * factor);
+    const lonDb = factor === 1 ? args.lon : Math.round(args.lon * factor);
     const latDeltaDb = latDelta * factor;
     const lonDeltaDb = lonDelta * factor;
 
@@ -186,6 +178,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Invalid parameters', details: parsed.error.flatten() });
   }
 
+  const schemaResult = await getEvacSitesSchema();
+  if (!schemaResult.ok) {
+    return res.status(200).json({
+      fetchStatus: 'DOWN',
+      updatedAt: null,
+      lastError: schemaResult.lastError,
+      sites: [],
+      items: [],
+    });
+  }
+
   try {
     const { lat, lon, hazardTypes, limit, radiusKm, hideIneligible, q } = parsed.data;
     const hazardFilters = hazardTypes ?? [];
@@ -196,13 +199,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const isDev = process.env.NODE_ENV === 'development';
     if (isDev) res.setHeader('x-overfetch-limit', String(overfetchLimit));
 
-    const scaleCandidates = await getEvacSitesCoordScales(prisma);
-    const factorCandidates = mergeScaleCandidates(scaleCandidates);
+    const factor = factorModeToScale(schemaResult.factorMode);
+    const factorCandidates = [factor];
     const bufferTake = overfetchLimit;
 
-    const table = Prisma.raw(`"${'public'}"."${'evac_sites'}"`);
-    const latColRaw = Prisma.raw(`"lat"`);
-    const lonColRaw = Prisma.raw(`"lon"`);
+    const table = Prisma.raw(schemaResult.tableName);
+    const latColRaw = Prisma.raw(qIdent(schemaResult.latCol));
+    const lonColRaw = Prisma.raw(qIdent(schemaResult.lonCol));
     const scaleClauses = buildScaleClauses({
       latCol: latColRaw,
       lonCol: lonColRaw,
@@ -227,8 +230,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             pref_city,
             name,
             address,
-            lat,
-            lon,
+            ${latColRaw} AS lat,
+            ${lonColRaw} AS lon,
             hazards,
             is_same_address_as_shelter,
             shelter_fields,
@@ -247,9 +250,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const enriched = rows
       .map((site: any) => {
-        const coords =
-          factorCandidates.map((f: any) => normalizeLatLon({ lat: site.lat, lon: site.lon, factor: f })).find(Boolean) ??
-          null;
+        const coords = normalizeLatLon({ lat: site.lat, lon: site.lon, factor });
         if (!coords) return null;
         const distanceKm = toFiniteNumber(site.distance_km) ?? haversineDistance(lat, lon, coords.lat, coords.lon);
         const flags = (site.hazards ?? {}) as Record<string, boolean>;

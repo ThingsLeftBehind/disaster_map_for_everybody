@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_add="http://xml.kishou.go.jp/jmaxml1/addition1/">
+<Control>
+<Title>府県気象情報</Title>
+<DateTime>2025-12-28T07:06:25Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>秋田地方気象台</EditorialOffice>
+<PublishingOffice>秋田地方気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>雷と突風及びひょうに関する秋田県気象情報</Title>
+<ReportDateTime>2025-12-28T16:06:00+09:00</ReportDateTime>
+<TargetDateTime>2025-12-28T16:06:00+09:00</TargetDateTime>
+<EventID>JPDB250070</EventID>
+<InfoType>発表</InfoType>
+<Serial>1</Serial>
+<InfoKind>同一現象用平文情報</InfoKind>
+<InfoKindVersion>1.0_0</InfoKindVersion>
+<Headline>
+<Text>秋田県では、気圧の谷や暖かく湿った空気の影響により、大気の状態が非常に不安定となるでしょう。２９日明け方から３０日にかけて、竜巻などの激しい突風や落雷、ひょう、急な強い雨に注意してください。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/">
+<Notice/>
+<Comment>
+<Text type="本文">［気象概況］
+　２９日は、低気圧が沿海州付近からサハリン付近へ進み、３０日にかけて、気圧の谷が北日本を通過する見込みです。気圧の谷に向かって暖かく湿った空気が流れ込むため、東北日本海側では大気の状態が非常に不安定となるでしょう。
+　このため、秋田県では、積乱雲が発達し、雷の発生する所がある見込みです。
+
+［防災事項］
+　秋田県では、２９日明け方から３０日にかけて、竜巻などの激しい突風や落雷、ひょう、急な強い雨に注意してください。発達した積乱雲の近づく兆しがある場合には、頑丈な建物内に移動するなど、安全確保に努めてください。
+
+［補足事項］
+今後発表する防災気象情報に留意してください。
+次の「雷と突風及びひょうに関する秋田県気象情報」は、２９日６時頃に発表する予定です。</Text>
+</Comment>
+</Body>
+</Report>
