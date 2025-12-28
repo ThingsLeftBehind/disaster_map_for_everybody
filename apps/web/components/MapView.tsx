@@ -38,6 +38,7 @@ interface Props {
   onReportCheckin?: ((pinId: string) => void) | null;
   isFavorite?: (id: string) => boolean;
   onToggleFavorite?: (id: string, isFavorite: boolean) => void;
+  onMarkerClick?: (site: SiteWithDistance) => void;
 }
 
 export default function MapView({
@@ -55,6 +56,7 @@ export default function MapView({
   onReportCheckin,
   isFavorite,
   onToggleFavorite,
+  onMarkerClick,
 }: Props) {
   const sitesById = useMemo(() => new Map(sites.map((s) => [s.id, s])), [sites]);
   const markers = useMemo(
@@ -72,6 +74,11 @@ export default function MapView({
   const handleSelect: ComponentProps<typeof DynamicMap>['onSelect'] = (marker) => {
     const site = sitesById.get(marker.id);
     if (site) onSelect(site);
+  };
+  const handleMarkerClick: ComponentProps<typeof DynamicMap>['onMarkerClick'] = (marker) => {
+    if (!onMarkerClick) return;
+    const site = sitesById.get(marker.id);
+    if (site) onMarkerClick(site);
   };
 
   return (
@@ -91,6 +98,7 @@ export default function MapView({
       onReportCheckin={onReportCheckin ?? null}
       isFavorite={isFavorite}
       onToggleFavorite={onToggleFavorite}
+      onMarkerClick={onMarkerClick ? handleMarkerClick : undefined}
     />
   );
 }

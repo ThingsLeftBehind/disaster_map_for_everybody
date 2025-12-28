@@ -268,6 +268,7 @@ export default function MainPage() {
   }, [favoritesData, localSavedShelters, favoriteIds, sites]);
 
   const [toast, setToast] = useState<string | null>(null);
+  const [nearbyOpenSignal, setNearbyOpenSignal] = useState(0);
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(null), 2500);
@@ -417,6 +418,14 @@ export default function MainPage() {
               onSelect={(site: any) => {
                 void router.push(`/shelters/${site.id}`);
               }}
+              isFavorite={isFavorite}
+              onToggleFavorite={(id, on) => {
+                const siteData = sites.find((s) => s.id === id) as NearbySite | undefined;
+                setFavorite(id, on, siteData);
+              }}
+              onMarkerClick={() => {
+                setNearbyOpenSignal((prev) => prev + 1);
+              }}
               checkinPins={showSafetyPins ? (safetyPins as any) : null}
               checkinModerationPolicy={safetyPinsPolicy}
               onReportCheckin={async (pinId) => {
@@ -502,6 +511,7 @@ export default function MainPage() {
             formatDistanceKm={formatDistanceKm}
             isFavorite={isFavorite}
             setFavorite={setFavorite}
+            openSignal={nearbyOpenSignal}
           />
         </div>
 
@@ -717,6 +727,7 @@ function NearbySheltersSection({
   formatDistanceKm,
   isFavorite,
   setFavorite,
+  openSignal,
 }: {
   coords: Coords | null;
   sites: any[];
@@ -726,14 +737,18 @@ function NearbySheltersSection({
   formatDistanceKm: (d?: number) => string;
   isFavorite: (id: string) => boolean;
   setFavorite: (id: string, next: boolean, site?: any) => void;
+  openSignal?: number;
 }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  useEffect(() => {
+    if (openSignal) setIsOpen(true);
+  }, [openSignal]);
 
   return (
     <div>
       <button
-        className="flex w-full items-center justify-between rounded-xl border bg-white p-3 hover:bg-gray-50"
+        className="flex w-full items-center justify-between rounded-xl border border-gray-300 bg-white p-3 hover:bg-gray-50"
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
       >

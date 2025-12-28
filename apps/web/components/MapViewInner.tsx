@@ -48,6 +48,7 @@ interface Props {
   onReportCheckin?: ((pinId: string) => void) | null;
   isFavorite?: (id: string) => boolean;
   onToggleFavorite?: (id: string, isFavorite: boolean) => void;
+  onMarkerClick?: (marker: MarkerData) => void;
 }
 
 function Recenter({ center, recenterSignal, enabled }: { center: { lat: number; lon: number }; recenterSignal: number; enabled: boolean }) {
@@ -146,6 +147,7 @@ export default function MapViewInner({
   onReportCheckin,
   isFavorite,
   onToggleFavorite,
+  onMarkerClick,
 }: Props) {
   const [tileError, setTileError] = useState<string | null>(null);
 
@@ -234,7 +236,11 @@ export default function MapViewInner({
           );
         })}
         {markers.map((marker) => (
-          <Marker key={marker.id} position={[marker.position.lat, marker.position.lon]}>
+          <Marker
+            key={marker.id}
+            position={[marker.position.lat, marker.position.lon]}
+            eventHandlers={onMarkerClick ? { click: () => onMarkerClick(marker) } : undefined}
+          >
             <Popup>
               <ShelterPopup
                 marker={marker}

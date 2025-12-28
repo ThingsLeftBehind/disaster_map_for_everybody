@@ -217,6 +217,10 @@ export default function QuakesPage() {
 
 
   // Pagination for Recent Quakes
+  const [strongVisibleCount, setStrongVisibleCount] = useState(3);
+  const handleStrongLoadMore = () => {
+    setStrongVisibleCount((prev) => Math.min(prev + 3, 9));
+  };
   const [visibleCount, setVisibleCount] = useState(10);
   const visibleRecentItems = recentItems.slice(0, visibleCount);
   const handleLoadMore = () => {
@@ -245,10 +249,12 @@ export default function QuakesPage() {
 
       <section className="rounded-lg bg-white p-5 shadow">
         <h2 className="text-lg font-semibold">最近の強い揺れ</h2>
-        <div className="mt-2 text-xs text-gray-600">過去7日間の最大震度上位3件を表示します。</div>
+        <div className="mt-2 text-xs text-gray-600">過去7日間の最大震度上位を表示します（最大9件まで）。</div>
 
         <div className="mt-3 grid gap-2 md:grid-cols-3">
-          {(displayStrong.length > 0 ? displayStrong : [null, null, null]).slice(0, 3).map((v, idx) => {
+          {(displayStrong.length > 0 ? displayStrong : Array.from({ length: strongVisibleCount }).fill(null))
+            .slice(0, strongVisibleCount)
+            .map((v, idx) => {
             if (!v) {
               return (
                 <div key={`empty-${idx}`} className="rounded border bg-gray-50 px-3 py-3 text-sm text-gray-600">
@@ -277,6 +283,16 @@ export default function QuakesPage() {
             );
           })}
         </div>
+        {displayStrong.length > strongVisibleCount && strongVisibleCount < 9 && (
+          <div className="mt-4 text-center">
+            <button
+              onClick={handleStrongLoadMore}
+              className="rounded-full bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200"
+            >
+              もっと見る ({Math.min(displayStrong.length - strongVisibleCount, 3)}件)
+            </button>
+          </div>
+        )}
       </section>
 
       <section className="rounded-lg bg-white p-5 shadow">
