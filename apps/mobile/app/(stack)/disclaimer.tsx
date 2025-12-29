@@ -9,8 +9,12 @@ export default function DisclaimerScreen() {
     <Screen title="Disclaimer" leftAction={{ label: 'Back', onPress: () => router.back() }}>
       <Card>
         <SectionTitle>Reference Only</SectionTitle>
-        <TextBlock>This app provides reference information from official sources.</TextBlock>
-        <TextBlock muted>Follow local guidance and official instructions in emergencies.</TextBlock>
+        <TextBlock>This app provides reference information for emergency support.</TextBlock>
+        <TextBlock muted>Always follow official instructions from local authorities.</TextBlock>
+      </Card>
+      <Card>
+        <SectionTitle>Availability</SectionTitle>
+        <TextBlock muted>Data may be delayed or unavailable during outages.</TextBlock>
       </Card>
     </Screen>
   );

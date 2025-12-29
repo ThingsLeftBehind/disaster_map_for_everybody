@@ -11,6 +11,7 @@ function TabIcon({ name, color }: { name: ComponentProps<typeof FontAwesome>['na
 export default function TabLayout() {
   return (
     <Tabs
+      initialRouteName="main"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.text,

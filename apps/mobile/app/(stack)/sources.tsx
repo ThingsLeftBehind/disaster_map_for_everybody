@@ -9,11 +9,12 @@ export default function SourcesScreen() {
     <Screen title="Sources" leftAction={{ label: 'Back', onPress: () => router.back() }}>
       <Card>
         <SectionTitle>Official Sources</SectionTitle>
-        <TextBlock>JMA warnings and earthquake data are from official sources.</TextBlock>
+        <TextBlock>JMA warnings/advisories and earthquake data are from official sources.</TextBlock>
+        <TextBlock>Hazard layers are provided by GSI.</TextBlock>
       </Card>
       <Card>
         <SectionTitle>Notes</SectionTitle>
-        <TextBlock>Data is provided for reference only.</TextBlock>
+        <TextBlock muted>Data is provided for reference only. Follow official guidance in emergencies.</TextBlock>
       </Card>
     </Screen>
   );

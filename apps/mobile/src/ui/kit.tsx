@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { colors, radii, spacing, typography } from './theme';
 
@@ -24,6 +24,19 @@ type ButtonProps = {
 type TextBlockProps = {
   children: ReactNode;
   muted?: boolean;
+};
+
+type ToggleProps = {
+  label: string;
+  value: boolean;
+  onToggle: () => void;
+};
+
+type InputProps = {
+  value: string;
+  placeholder?: string;
+  onChangeText: (text: string) => void;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
 };
 
 export function Screen({ title, leftAction, rightAction, children }: ScreenProps) {
@@ -55,6 +68,30 @@ export function Button({ label, onPress, variant = 'primary' }: ButtonProps) {
     >
       <Text style={variant === 'primary' ? styles.buttonTextPrimary : styles.buttonTextSecondary}>{label}</Text>
     </Pressable>
+  );
+}
+
+export function Toggle({ label, value, onToggle }: ToggleProps) {
+  return (
+    <Pressable
+      onPress={onToggle}
+      style={[styles.toggle, value ? styles.toggleOn : styles.toggleOff]}
+    >
+      <Text style={value ? styles.toggleTextOn : styles.toggleTextOff}>{label}</Text>
+    </Pressable>
+  );
+}
+
+export function Input({ value, placeholder, onChangeText, autoCapitalize = 'none' }: InputProps) {
+  return (
+    <TextInput
+      value={value}
+      onChangeText={onChangeText}
+      placeholder={placeholder}
+      placeholderTextColor={colors.muted}
+      autoCapitalize={autoCapitalize}
+      style={styles.input}
+    />
   );
 }
 
@@ -157,5 +194,42 @@ const styles = StyleSheet.create({
   buttonTextSecondary: {
     ...typography.subtitle,
     color: colors.text,
+  },
+  toggle: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    borderRadius: 999,
+    borderWidth: 1,
+    marginBottom: spacing.sm,
+    alignSelf: 'flex-start',
+  },
+  toggleOn: {
+    backgroundColor: colors.text,
+    borderColor: colors.text,
+  },
+  toggleOff: {
+    backgroundColor: colors.background,
+    borderColor: colors.border,
+  },
+  toggleTextOn: {
+    color: colors.background,
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  toggleTextOff: {
+    color: colors.text,
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    fontSize: 15,
+    color: colors.text,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.background,
   },
 });
