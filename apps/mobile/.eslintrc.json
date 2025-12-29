@@ -1,4 +1,12 @@
 {
   "root": true,
-  "extends": ["expo"]
+  "extends": ["expo"],
+  "overrides": [
+    {
+      "files": ["**/__tests__/**", "**/*.test.*", "**/*.spec.*"],
+      "env": {
+        "jest": true
+      }
+    }
+  ]
 }

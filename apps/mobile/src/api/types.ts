@@ -36,6 +36,14 @@ export type SheltersSearchResponse = {
   items: Shelter[];
 };
 
+export type ShelterVersionResponse = {
+  fetchStatus: 'OK' | 'UNAVAILABLE';
+  updatedAt: string | null;
+  version: string | null;
+  lastError?: string | null;
+  count?: number | null;
+};
+
 export type ShelterDetailResponse = {
   fetchStatus: FetchStatus;
   updatedAt: string | null;

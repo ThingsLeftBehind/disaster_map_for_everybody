@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 
-import { fetchJson } from '@/src/api/client';
+import { buildCacheKey, checkShelterVersion, fetchJson, fetchJsonWithCache } from '@/src/api/client';
 import type {
   Municipality,
   MunicipalitiesResponse,
@@ -48,6 +48,59 @@ export default function ListScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [cacheInfo, setCacheInfo] = useState<{ fromCache: boolean; cachedAt: string | null; updatedAt: string | null } | null>(null);
+
+  const fetchNearby = useCallback(async (coords: LatLng) => {
+    setIsLoading(true);
+    setError(null);
+    setNotice(null);
+    setCacheInfo(null);
+    try {
+      await checkShelterVersion();
+      const params = new URLSearchParams({
+        lat: coords.lat.toString(),
+        lon: coords.lon.toString(),
+        limit: String(DEFAULT_LIMIT),
+        radiusKm: String(DEFAULT_RADIUS_KM),
+        hideIneligible: 'false',
+      });
+      const cacheKey = buildCacheKey('/api/shelters/nearby', params);
+      const result = await fetchJsonWithCache<SheltersNearbyResponse>(
+        `/api/shelters/nearby?${params.toString()}`,
+        {},
+        { key: cacheKey, kind: 'nearby' }
+      );
+      const data = result.data;
+      setShelters(sortShelters(data.items ?? data.sites ?? []));
+      setCacheInfo({ fromCache: result.fromCache, cachedAt: result.cachedAt, updatedAt: result.updatedAt });
+      if (!result.fromCache && data.fetchStatus !== 'OK') {
+        setNotice(data.lastError ?? '更新が遅れています');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load shelters');
+      setShelters([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const ensureLocation = useCallback(async () => {
+    setError(null);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setPermission('denied');
+        return;
+      }
+      setPermission('granted');
+      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const coords = { lat: position.coords.latitude, lon: position.coords.longitude };
+      setLocation(coords);
+      await fetchNearby(coords);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch location');
+    }
+  }, [fetchNearby]);
 
   useEffect(() => {
     let active = true;
@@ -56,7 +109,7 @@ export default function ListScreen() {
         const data = await fetchJson<PrefecturesResponse>('/api/ref/municipalities');
         if (!active) return;
         setPrefectures(data.prefectures ?? []);
-      } catch (err) {
+      } catch {
         if (!active) return;
         setPrefectures([]);
       }
@@ -78,7 +131,7 @@ export default function ListScreen() {
         const data = await fetchJson<MunicipalitiesResponse>(`/api/ref/municipalities?prefCode=${selectedPref.prefCode}`);
         if (!active) return;
         setMunicipalities(data.municipalities ?? []);
-      } catch (err) {
+      } catch {
         if (!active) return;
         setMunicipalities([]);
       }
@@ -92,50 +145,11 @@ export default function ListScreen() {
   useEffect(() => {
     if (mode !== 'LOCATION' || !useLocation) return;
     void ensureLocation();
-  }, [mode, useLocation]);
+  }, [mode, useLocation, ensureLocation]);
 
-  const ensureLocation = async () => {
-    setError(null);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setPermission('denied');
-        return;
-      }
-      setPermission('granted');
-      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      const coords = { lat: position.coords.latitude, lon: position.coords.longitude };
-      setLocation(coords);
-      await fetchNearby(coords);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch location');
-    }
-  };
-
-  const fetchNearby = async (coords: LatLng) => {
-    setIsLoading(true);
-    setError(null);
-    setNotice(null);
-    try {
-      const params = new URLSearchParams({
-        lat: coords.lat.toString(),
-        lon: coords.lon.toString(),
-        limit: String(DEFAULT_LIMIT),
-        radiusKm: String(DEFAULT_RADIUS_KM),
-        hideIneligible: 'false',
-      });
-      const data = await fetchJson<SheltersNearbyResponse>(`/api/shelters/nearby?${params.toString()}`);
-      setShelters(sortShelters(data.items ?? data.sites ?? []));
-      if (data.fetchStatus !== 'OK') {
-        setNotice(data.lastError ?? '更新が遅れています');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load shelters');
-      setShelters([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  useEffect(() => {
+    void checkShelterVersion();
+  }, []);
 
   const fetchByArea = async () => {
     if (!selectedPref?.prefCode) {
@@ -146,7 +160,9 @@ export default function ListScreen() {
     setIsLoading(true);
     setError(null);
     setNotice(null);
+    setCacheInfo(null);
     try {
+      await checkShelterVersion();
       const params = new URLSearchParams({
         mode: 'AREA',
         prefCode: selectedPref.prefCode,
@@ -155,9 +171,16 @@ export default function ListScreen() {
       if (selectedMuni?.muniCode) {
         params.set('muniCode', selectedMuni.muniCode);
       }
-      const data = await fetchJson<SheltersSearchResponse>(`/api/shelters/search?${params.toString()}`);
+      const cacheKey = buildCacheKey('/api/shelters/search', params);
+      const result = await fetchJsonWithCache<SheltersSearchResponse>(
+        `/api/shelters/search?${params.toString()}`,
+        {},
+        { key: cacheKey, kind: 'search' }
+      );
+      const data = result.data;
       setShelters(sortShelters(data.items ?? data.sites ?? []));
-      if (data.fetchStatus !== 'OK') {
+      setCacheInfo({ fromCache: result.fromCache, cachedAt: result.cachedAt, updatedAt: result.updatedAt });
+      if (!result.fromCache && data.fetchStatus !== 'OK') {
         setNotice(data.lastError ?? '更新が遅れています');
       }
     } catch (err) {
@@ -177,15 +200,24 @@ export default function ListScreen() {
     setIsLoading(true);
     setError(null);
     setNotice(null);
+    setCacheInfo(null);
     try {
+      await checkShelterVersion();
       const params = new URLSearchParams({
         mode: 'KEYWORD',
         q: keyword.trim(),
         limit: String(DEFAULT_LIMIT),
       });
-      const data = await fetchJson<SheltersSearchResponse>(`/api/shelters/search?${params.toString()}`);
+      const cacheKey = buildCacheKey('/api/shelters/search', params);
+      const result = await fetchJsonWithCache<SheltersSearchResponse>(
+        `/api/shelters/search?${params.toString()}`,
+        {},
+        { key: cacheKey, kind: 'search' }
+      );
+      const data = result.data;
       setShelters(sortShelters(data.items ?? data.sites ?? []));
-      if (data.fetchStatus !== 'OK') {
+      setCacheInfo({ fromCache: result.fromCache, cachedAt: result.cachedAt, updatedAt: result.updatedAt });
+      if (!result.fromCache && data.fetchStatus !== 'OK') {
         setNotice(data.lastError ?? '更新が遅れています');
       }
     } catch (err) {
@@ -370,6 +402,9 @@ export default function ListScreen() {
 
       <Card>
         <SectionTitle>検索結果</SectionTitle>
+        {cacheInfo?.fromCache ? (
+          <TextBlock muted>キャッシュ表示 · 最終更新: {formatTime(cacheInfo.updatedAt ?? cacheInfo.cachedAt)}</TextBlock>
+        ) : null}
         {shelters.map((shelter) => (
           <Button
             key={String(shelter.id)}
@@ -408,6 +443,15 @@ function formatDistance(distance: number) {
   if (!Number.isFinite(distance)) return '距離不明';
   if (distance < 1) return `${Math.round(distance * 1000)}m`;
   return `${distance.toFixed(1)}km`;
+}
+
+function formatTime(value: string | null) {
+  if (!value) return '不明';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(
+    date.getMinutes()
+  ).padStart(2, '0')}`;
 }
 
 const styles = StyleSheet.create({

@@ -4,7 +4,7 @@ import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 
-import { fetchJson } from '@/src/api/client';
+import { buildCacheKey, checkShelterVersion, fetchJsonWithCache } from '@/src/api/client';
 import type { SheltersNearbyResponse, Shelter } from '@/src/api/types';
 import { Button, Card, Screen, SectionTitle, TextBlock } from '@/src/ui/kit';
 import { colors, spacing } from '@/src/ui/theme';
@@ -28,6 +28,7 @@ export default function MainScreen() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [shelters, setShelters] = useState<Shelter[]>([]);
+  const [cacheInfo, setCacheInfo] = useState<{ fromCache: boolean; cachedAt: string | null; updatedAt: string | null } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -63,11 +64,17 @@ export default function MainScreen() {
     };
   }, []);
 
+  useEffect(() => {
+    void checkShelterVersion();
+  }, []);
+
   const fetchShelters = async (coords: LatLng) => {
     setIsLoading(true);
     setError(null);
     setNotice(null);
+    setCacheInfo(null);
     try {
+      await checkShelterVersion();
       const params = new URLSearchParams({
         lat: coords.lat.toString(),
         lon: coords.lon.toString(),
@@ -75,11 +82,18 @@ export default function MainScreen() {
         radiusKm: String(DEFAULT_RADIUS_KM),
         hideIneligible: 'false',
       });
-      const data = await fetchJson<SheltersNearbyResponse>(`/api/shelters/nearby?${params.toString()}`);
+      const cacheKey = buildCacheKey('/api/shelters/nearby', params);
+      const result = await fetchJsonWithCache<SheltersNearbyResponse>(
+        `/api/shelters/nearby?${params.toString()}`,
+        {},
+        { key: cacheKey, kind: 'nearby' }
+      );
+      const data = result.data;
       const items = (data.items ?? data.sites ?? []).slice();
       items.sort((a, b) => getDistance(a) - getDistance(b));
       setShelters(items);
-      if (data.fetchStatus !== 'OK') {
+      setCacheInfo({ fromCache: result.fromCache, cachedAt: result.cachedAt, updatedAt: result.updatedAt });
+      if (!result.fromCache && data.fetchStatus !== 'OK') {
         setNotice(data.lastError ?? '更新が遅れています');
       }
     } catch (err) {
@@ -124,8 +138,14 @@ export default function MainScreen() {
           </View>
         ) : null}
         {error ? <TextBlock muted>{error}</TextBlock> : null}
+        {cacheInfo?.fromCache ? (
+          <TextBlock muted>キャッシュ表示 · 最終更新: {formatTime(cacheInfo.updatedAt ?? cacheInfo.cachedAt)}</TextBlock>
+        ) : null}
         {notice ? <TextBlock muted>{notice}</TextBlock> : null}
         {emptyState ? <TextBlock muted>近くの避難所が見つかりませんでした。</TextBlock> : null}
+        {permission === 'granted' && location ? (
+          <Button label="再検索" variant="secondary" onPress={() => fetchShelters(location)} />
+        ) : null}
       </Card>
 
       {mapRegion ? (
@@ -180,6 +200,15 @@ function formatDistance(distance: number) {
   if (!Number.isFinite(distance)) return '距離不明';
   if (distance < 1) return `${Math.round(distance * 1000)}m`;
   return `${distance.toFixed(1)}km`;
+}
+
+function formatTime(value: string | null) {
+  if (!value) return '不明';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(
+    date.getMinutes()
+  ).padStart(2, '0')}`;
 }
 
 const styles = StyleSheet.create({

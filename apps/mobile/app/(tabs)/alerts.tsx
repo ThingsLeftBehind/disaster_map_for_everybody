@@ -46,7 +46,7 @@ export default function AlertsScreen() {
         const data = await fetchJson<PrefecturesResponse>('/api/ref/municipalities');
         if (!active) return;
         setPrefectures(data.prefectures ?? []);
-      } catch (err) {
+      } catch {
         if (!active) return;
         setPrefectures([]);
       }
@@ -99,7 +99,7 @@ export default function AlertsScreen() {
         const prefCode = await reverseGeocodePrefCode(coords);
         if (!active) return;
         setCurrentPrefCode(prefCode);
-      } catch (err) {
+      } catch {
         if (!active) return;
         setCurrentPrefCode(null);
       }

@@ -42,7 +42,7 @@ export default function QuakesScreen() {
     };
   }, []);
 
-  const items = quakes?.items ?? [];
+  const items = useMemo(() => quakes?.items ?? [], [quakes]);
   const strongItems = useMemo(() => items.filter((item) => isStrongIntensity(item.maxIntensity)), [items]);
   const strongVisible = strongItems.slice(0, strongCount);
   const canShowMore = strongItems.length > strongCount && strongCount < 9;
