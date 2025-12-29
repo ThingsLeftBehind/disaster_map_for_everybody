@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, StyleSheet, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -6,6 +6,9 @@ import { useRouter } from 'expo-router';
 
 import { buildCacheKey, checkShelterVersion, fetchJsonWithCache } from '@/src/api/client';
 import type { SheltersNearbyResponse, Shelter } from '@/src/api/types';
+import { subscribeMainRefresh } from '@/src/push/events';
+import { loadLastKnownLocation } from '@/src/push/service';
+import { setLastKnownLocation } from '@/src/push/state';
 import { Button, Card, Screen, SectionTitle, TextBlock } from '@/src/ui/kit';
 import { colors, spacing } from '@/src/ui/theme';
 
@@ -30,6 +33,45 @@ export default function MainScreen() {
   const [shelters, setShelters] = useState<Shelter[]>([]);
   const [cacheInfo, setCacheInfo] = useState<{ fromCache: boolean; cachedAt: string | null; updatedAt: string | null } | null>(null);
 
+  const fetchShelters = useCallback(
+    async (coords: LatLng, options?: { notice?: string | null }) => {
+      setIsLoading(true);
+      setError(null);
+      setNotice(options?.notice ?? null);
+      setCacheInfo(null);
+      try {
+        await checkShelterVersion();
+        const params = new URLSearchParams({
+          lat: coords.lat.toString(),
+          lon: coords.lon.toString(),
+          limit: String(DEFAULT_LIMIT),
+          radiusKm: String(DEFAULT_RADIUS_KM),
+          hideIneligible: 'false',
+        });
+        const cacheKey = buildCacheKey('/api/shelters/nearby', params);
+        const result = await fetchJsonWithCache<SheltersNearbyResponse>(
+          `/api/shelters/nearby?${params.toString()}`,
+          {},
+          { key: cacheKey, kind: 'nearby' }
+        );
+        const data = result.data;
+        const items = (data.items ?? data.sites ?? []).slice();
+        items.sort((a, b) => getDistance(a) - getDistance(b));
+        setShelters(items);
+        setCacheInfo({ fromCache: result.fromCache, cachedAt: result.cachedAt, updatedAt: result.updatedAt });
+        if (!result.fromCache && data.fetchStatus !== 'OK') {
+          setNotice(data.lastError ?? '更新が遅れています');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load shelters');
+        setShelters([]);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
   useEffect(() => {
     let active = true;
 
@@ -49,6 +91,7 @@ export default function MainScreen() {
         if (!active) return;
         const coords = { lat: position.coords.latitude, lon: position.coords.longitude };
         setLocation(coords);
+        await setLastKnownLocation(coords);
         setIsLocating(false);
         await fetchShelters(coords);
       } catch (err) {
@@ -62,47 +105,39 @@ export default function MainScreen() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [fetchShelters]);
 
   useEffect(() => {
     void checkShelterVersion();
   }, []);
 
-  const fetchShelters = async (coords: LatLng) => {
-    setIsLoading(true);
-    setError(null);
-    setNotice(null);
-    setCacheInfo(null);
-    try {
-      await checkShelterVersion();
-      const params = new URLSearchParams({
-        lat: coords.lat.toString(),
-        lon: coords.lon.toString(),
-        limit: String(DEFAULT_LIMIT),
-        radiusKm: String(DEFAULT_RADIUS_KM),
-        hideIneligible: 'false',
-      });
-      const cacheKey = buildCacheKey('/api/shelters/nearby', params);
-      const result = await fetchJsonWithCache<SheltersNearbyResponse>(
-        `/api/shelters/nearby?${params.toString()}`,
-        {},
-        { key: cacheKey, kind: 'nearby' }
-      );
-      const data = result.data;
-      const items = (data.items ?? data.sites ?? []).slice();
-      items.sort((a, b) => getDistance(a) - getDistance(b));
-      setShelters(items);
-      setCacheInfo({ fromCache: result.fromCache, cachedAt: result.cachedAt, updatedAt: result.updatedAt });
-      if (!result.fromCache && data.fetchStatus !== 'OK') {
-        setNotice(data.lastError ?? '更新が遅れています');
+  const refreshFromPush = useCallback(async () => {
+    const permissionStatus = await Location.getForegroundPermissionsAsync();
+    if (permissionStatus.status === 'granted') {
+      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).catch(() => null);
+      if (position?.coords) {
+        const coords = { lat: position.coords.latitude, lon: position.coords.longitude };
+        setLocation(coords);
+        await setLastKnownLocation(coords);
+        await fetchShelters(coords);
+        return;
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load shelters');
-      setShelters([]);
-    } finally {
-      setIsLoading(false);
     }
-  };
+
+    const last = await loadLastKnownLocation();
+    if (last) {
+      await fetchShelters(last, { notice: '保存済みの位置で表示しています。' });
+    } else {
+      setNotice('位置情報が必要です。');
+    }
+  }, [fetchShelters]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeMainRefresh(() => {
+      void refreshFromPush();
+    });
+    return unsubscribe;
+  }, [refreshFromPush]);
 
   const mapRegion = useMemo(() => {
     if (!location) return null;

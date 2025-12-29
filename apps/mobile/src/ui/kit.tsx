@@ -19,6 +19,7 @@ type ButtonProps = {
   label: string;
   onPress: () => void;
   variant?: 'primary' | 'secondary';
+  disabled?: boolean;
 };
 
 type TextBlockProps = {
@@ -60,11 +61,16 @@ export function Card({ children }: { children: ReactNode }) {
   return <View style={styles.card}>{children}</View>;
 }
 
-export function Button({ label, onPress, variant = 'primary' }: ButtonProps) {
+export function Button({ label, onPress, variant = 'primary', disabled = false }: ButtonProps) {
   return (
     <Pressable
       onPress={onPress}
-      style={[styles.button, variant === 'primary' ? styles.buttonPrimary : styles.buttonSecondary]}
+      disabled={disabled}
+      style={[
+        styles.button,
+        variant === 'primary' ? styles.buttonPrimary : styles.buttonSecondary,
+        disabled ? styles.buttonDisabled : null,
+      ]}
     >
       <Text style={variant === 'primary' ? styles.buttonTextPrimary : styles.buttonTextSecondary}>{label}</Text>
     </Pressable>
@@ -194,6 +200,9 @@ const styles = StyleSheet.create({
   buttonTextSecondary: {
     ...typography.subtitle,
     color: colors.text,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
   toggle: {
     paddingVertical: spacing.xs,

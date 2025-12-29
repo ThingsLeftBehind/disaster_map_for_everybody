@@ -14,6 +14,7 @@ import type {
   SheltersNearbyResponse,
   SheltersSearchResponse,
 } from '@/src/api/types';
+import { setLastKnownLocation } from '@/src/push/state';
 import { Button, Card, Input, Screen, SectionTitle, TextBlock, Toggle } from '@/src/ui/kit';
 import { colors, spacing } from '@/src/ui/theme';
 
@@ -96,6 +97,7 @@ export default function ListScreen() {
       const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       const coords = { lat: position.coords.latitude, lon: position.coords.longitude };
       setLocation(coords);
+      await setLastKnownLocation(coords);
       await fetchNearby(coords);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch location');
