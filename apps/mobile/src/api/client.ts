@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import type { ShelterVersionResponse } from './types';
 import {
   clearShelterCache,
@@ -10,6 +11,12 @@ import {
 
 const DEFAULT_API_BASE_URL = 'https://www.hinanavi.com';
 const DEFAULT_TIMEOUT_MS = 10000;
+
+export type ApiError = {
+  message: string;
+  status: number | null;
+  kind: 'http' | 'timeout' | 'network' | 'unknown';
+};
 
 export type CacheResult<T> = {
   data: T;
@@ -27,6 +34,9 @@ export function getApiBaseUrl() {
   const envValue = process.env.EXPO_PUBLIC_API_BASE_URL;
   if (envValue && envValue.trim().length > 0) {
     return envValue.trim();
+  }
+  if (Platform.OS === 'web' && process.env.NODE_ENV !== 'production') {
+    return '';
   }
   return DEFAULT_API_BASE_URL;
 }
@@ -63,10 +73,12 @@ export async function fetchJson<T>(path: string, init: RequestInit = {}): Promis
     if (!response.ok) {
       const text = await response.text().catch(() => '');
       const message = text ? `Request failed ${response.status}: ${text}` : `Request failed ${response.status}`;
-      throw new Error(message);
+      throw createApiError(message, response.status, 'http');
     }
 
     return (await response.json()) as T;
+  } catch (error) {
+    throw toApiError(error);
   } finally {
     if (timeoutId) {
       clearTimeout(timeoutId);
@@ -129,4 +141,26 @@ function shouldCacheResponse(value: unknown) {
   const status = (value as { fetchStatus?: unknown }).fetchStatus;
   if (!status) return true;
   return status === 'OK';
+}
+
+function createApiError(message: string, status: number | null, kind: ApiError['kind']): ApiError {
+  return { message, status, kind };
+}
+
+function isApiError(value: unknown): value is ApiError {
+  if (!value || typeof value !== 'object') return false;
+  return typeof (value as ApiError).message === 'string' && 'kind' in (value as ApiError);
+}
+
+export function toApiError(error: unknown): ApiError {
+  if (isApiError(error)) return error;
+  if (error instanceof Error) {
+    if (error.name === 'AbortError') {
+      return createApiError('Request timed out', null, 'timeout');
+    }
+    const message = error.message || 'Network error';
+    const kind = /Failed to fetch|Network request failed/i.test(message) ? 'network' : 'unknown';
+    return createApiError(message, null, kind);
+  }
+  return createApiError('Unknown error', null, 'unknown');
 }

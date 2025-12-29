@@ -1,21 +1,35 @@
 import { useRouter } from 'expo-router';
+import { Text } from 'react-native';
 
-import { Card, Screen, SectionTitle, TextBlock } from '@/src/ui/kit';
+import { ScreenContainer, SectionCard, StatusPill } from '@/src/ui/system';
+import { colors, spacing, typography } from '@/src/ui/theme';
 
 export default function SourcesScreen() {
   const router = useRouter();
 
   return (
-    <Screen title="Sources" leftAction={{ label: 'Back', onPress: () => router.back() }}>
-      <Card>
-        <SectionTitle>Official Sources</SectionTitle>
-        <TextBlock>JMA warnings/advisories and earthquake data are from official sources.</TextBlock>
-        <TextBlock>Hazard layers are provided by GSI.</TextBlock>
-      </Card>
-      <Card>
-        <SectionTitle>Notes</SectionTitle>
-        <TextBlock muted>Data is provided for reference only. Follow official guidance in emergencies.</TextBlock>
-      </Card>
-    </Screen>
+    <ScreenContainer title="Sources" leftAction={{ label: 'Back', onPress: () => router.back() }}>
+      <SectionCard title="Official Sources">
+        <StatusPill label="JMA" tone="info" />
+        <Text style={styles.bodyText}>警報・注意報、地震情報は気象庁の公式情報を使用しています。</Text>
+        <StatusPill label="GSI" tone="neutral" />
+        <Text style={styles.bodyText}>ハザードレイヤーは国土地理院の公開データです。</Text>
+      </SectionCard>
+      <SectionCard title="Notes">
+        <Text style={styles.mutedText}>本アプリの情報は参考情報です。必ず自治体の指示に従ってください。</Text>
+      </SectionCard>
+    </ScreenContainer>
   );
 }
+
+const styles = {
+  bodyText: {
+    ...typography.body,
+    color: colors.text,
+    marginTop: spacing.xs,
+  },
+  mutedText: {
+    ...typography.body,
+    color: colors.muted,
+  },
+};

@@ -1,17 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
-import { useRouter } from 'expo-router';
 
-import { fetchJson } from '@/src/api/client';
-import type {
-  JmaStatusResponse,
-  JmaWarningsResponse,
-  Prefecture,
-  PrefecturesResponse,
-} from '@/src/api/types';
-import { Button, Card, Input, Screen, SectionTitle, TextBlock, Toggle } from '@/src/ui/kit';
-import { colors, spacing } from '@/src/ui/theme';
+import { fetchJson, toApiError, type ApiError } from '@/src/api/client';
+import type { JmaWarningItem, JmaWarningsResponse, Prefecture, PrefecturesResponse } from '@/src/api/types';
+import { SecondaryButton, Skeleton, TabScreen, TextField } from '@/src/ui/system';
+import { colors, radii, spacing, typography } from '@/src/ui/theme';
+
+const DEFAULT_AREA = '130000';
+const SAVED_AREAS_KEY = 'hinanavi_saved_areas_v1';
+const MAX_SAVED_AREAS = 5;
 
 type PermissionState = 'unknown' | 'granted' | 'denied';
 
@@ -20,16 +19,82 @@ type LatLng = {
   lon: number;
 };
 
-const DEFAULT_AREA = '130000';
+type Severity = 'special' | 'warning' | 'advisory';
+
+type WarningGuide = {
+  description: string;
+  actions: string[];
+};
+
+type SavedArea = {
+  prefCode: string;
+  prefName: string;
+};
+
+type NormalizedWarning = {
+  id: string;
+  kind: string;
+  phenomenon: string;
+  severity: Severity;
+  guide: WarningGuide;
+};
+
+const GUIDE_MAP: { patterns: RegExp[]; description: string; actions: string[] }[] = [
+  {
+    patterns: [/雷/, /落雷/],
+    description: '落雷や突風の危険があります。',
+    actions: ['屋外を避ける', '金属製品から離れる'],
+  },
+  {
+    patterns: [/大雨/],
+    description: '短時間の強い雨で浸水のおそれ。',
+    actions: ['低地を避ける', '避難情報を確認'],
+  },
+  {
+    patterns: [/洪水/],
+    description: '河川の増水に警戒。',
+    actions: ['川沿いに近づかない', '高い場所へ'],
+  },
+  {
+    patterns: [/強風/, /暴風/],
+    description: '飛来物や倒木の危険。',
+    actions: ['外出を控える', '窓を養生'],
+  },
+  {
+    patterns: [/波浪/],
+    description: '高波に警戒。',
+    actions: ['海岸に近づかない', '漁港を避ける'],
+  },
+  {
+    patterns: [/濃霧/],
+    description: '視界不良が発生します。',
+    actions: ['速度を落とす', '無理な外出を控える'],
+  },
+  {
+    patterns: [/大雪/],
+    description: '路面凍結や交通障害に注意。',
+    actions: ['不要不急の外出を控える', '交通情報を確認'],
+  },
+  {
+    patterns: [/乾燥/],
+    description: '火災が発生しやすい状態です。',
+    actions: ['火の取り扱い注意', '換気と加湿'],
+  },
+  {
+    patterns: [/熱中症/],
+    description: '熱中症の危険があります。',
+    actions: ['水分補給', '涼しい場所へ'],
+  },
+];
+
+const FALLBACK_GUIDE: WarningGuide = {
+  description: '公式情報を確認してください。',
+  actions: ['周囲の安全確保', '避難情報に注意'],
+};
 
 export default function AlertsScreen() {
-  const router = useRouter();
-  const [status, setStatus] = useState<JmaStatusResponse | null>(null);
-  const [statusError, setStatusError] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<JmaWarningsResponse | null>(null);
-  const [warningsError, setWarningsError] = useState<string | null>(null);
-  const [warningsNotice, setWarningsNotice] = useState<string | null>(null);
-  const [isStatusLoading, setIsStatusLoading] = useState(false);
+  const [warningsError, setWarningsError] = useState<ApiError | null>(null);
   const [isWarningsLoading, setIsWarningsLoading] = useState(false);
   const [useCurrent, setUseCurrent] = useState(true);
   const [permission, setPermission] = useState<PermissionState>('unknown');
@@ -38,17 +103,26 @@ export default function AlertsScreen() {
   const [prefectures, setPrefectures] = useState<Prefecture[]>([]);
   const [prefListOpen, setPrefListOpen] = useState(false);
   const [prefFilter, setPrefFilter] = useState('');
+  const [prefLoading, setPrefLoading] = useState(false);
+  const [prefError, setPrefError] = useState<ApiError | null>(null);
+  const [savedAreas, setSavedAreas] = useState<SavedArea[]>([]);
+  const [selectedFromSaved, setSelectedFromSaved] = useState(false);
 
   useEffect(() => {
     let active = true;
     const load = async () => {
+      setPrefLoading(true);
+      setPrefError(null);
       try {
         const data = await fetchJson<PrefecturesResponse>('/api/ref/municipalities');
         if (!active) return;
         setPrefectures(data.prefectures ?? []);
-      } catch {
+      } catch (err) {
         if (!active) return;
         setPrefectures([]);
+        setPrefError(toApiError(err));
+      } finally {
+        if (active) setPrefLoading(false);
       }
     };
     void load();
@@ -59,26 +133,27 @@ export default function AlertsScreen() {
 
   useEffect(() => {
     let active = true;
-    const loadStatus = async () => {
-      setIsStatusLoading(true);
-      setStatusError(null);
+    const loadSaved = async () => {
       try {
-        const data = await fetchJson<JmaStatusResponse>('/api/jma/status');
+        const raw = await AsyncStorage.getItem(SAVED_AREAS_KEY);
+        if (!raw || !active) return;
+        const parsed = JSON.parse(raw) as SavedArea[];
+        if (!Array.isArray(parsed)) return;
+        setSavedAreas(parsed.filter((item) => item?.prefCode && item?.prefName));
+      } catch {
         if (!active) return;
-        setStatus(data);
-      } catch (err) {
-        if (!active) return;
-        setStatus(null);
-        setStatusError(err instanceof Error ? err.message : 'Failed to load status');
-      } finally {
-        if (active) setIsStatusLoading(false);
+        setSavedAreas([]);
       }
     };
-    void loadStatus();
+    void loadSaved();
     return () => {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    void AsyncStorage.setItem(SAVED_AREAS_KEY, JSON.stringify(savedAreas));
+  }, [savedAreas]);
 
   useEffect(() => {
     if (!useCurrent) return;
@@ -116,174 +191,431 @@ export default function AlertsScreen() {
     return DEFAULT_AREA;
   }, [currentPrefCode, manualPref?.prefCode, useCurrent]);
 
-  const areaLabel = useMemo(() => {
-    if (useCurrent && currentPrefCode) {
-      const name = prefectures.find((p) => p.prefCode === currentPrefCode)?.prefName ?? null;
-      return name ? `現在地: ${name}` : '現在地: エリア未取得';
-    }
-    if (manualPref?.prefName) return `手動: ${manualPref.prefName}`;
-    return '既定: 東京';
-  }, [currentPrefCode, manualPref?.prefName, prefectures, useCurrent]);
+  const defaultPrefName = useMemo(
+    () => prefectures.find((pref) => pref.prefCode === DEFAULT_AREA.slice(0, 2))?.prefName ?? '東京',
+    [prefectures]
+  );
 
-  useEffect(() => {
-    let active = true;
-    const loadWarnings = async () => {
-      setIsWarningsLoading(true);
-      setWarningsError(null);
-      setWarningsNotice(null);
-      try {
-        const data = await fetchJson<JmaWarningsResponse>(`/api/jma/warnings?area=${areaCode}`);
-        if (!active) return;
-        setWarnings(data);
-        if (data.fetchStatus !== 'OK') {
-          setWarningsNotice(data.lastError ?? '更新が遅れています');
-        }
-      } catch (err) {
-        if (!active) return;
-        setWarnings(null);
-        setWarningsError(err instanceof Error ? err.message : 'Failed to load warnings');
-      } finally {
-        if (active) setIsWarningsLoading(false);
-      }
-    };
-    void loadWarnings();
-    return () => {
-      active = false;
-    };
+  const areaName = useMemo(() => {
+    if (useCurrent) {
+      const name = prefectures.find((p) => p.prefCode === currentPrefCode)?.prefName ?? null;
+      return name ?? defaultPrefName;
+    }
+    if (manualPref?.prefName) return manualPref.prefName;
+    return defaultPrefName;
+  }, [currentPrefCode, defaultPrefName, manualPref?.prefName, prefectures, useCurrent]);
+
+  const areaModeLabel = useMemo(() => {
+    if (useCurrent) return '現在地';
+    return selectedFromSaved ? '保存エリア' : '手動';
+  }, [selectedFromSaved, useCurrent]);
+
+  const loadWarnings = useCallback(async () => {
+    setIsWarningsLoading(true);
+    setWarningsError(null);
+    try {
+      const data = await fetchJson<JmaWarningsResponse>(`/api/jma/warnings?area=${areaCode}`);
+      setWarnings(data);
+    } catch (err) {
+      setWarnings(null);
+      setWarningsError(toApiError(err));
+    } finally {
+      setIsWarningsLoading(false);
+    }
   }, [areaCode]);
 
-  const dedupedItems = useMemo(() => dedupeWarnings(warnings?.items ?? []), [warnings?.items]);
-  const urgentItems = dedupedItems.filter((item) => isWarning(item.kind));
-  const advisoryItems = dedupedItems.filter((item) => isAdvisory(item.kind));
+  useEffect(() => {
+    void loadWarnings();
+  }, [loadWarnings]);
 
-  const emptyState = !isWarningsLoading && !warningsError && dedupedItems.length === 0;
+  const dedupedItems = useMemo(() => dedupeWarnings(warnings?.items ?? []), [warnings?.items]);
+
+  const normalizedItems = useMemo(() => {
+    return dedupedItems.map((item) => {
+      const severity = getSeverity(item.kind);
+      const phenomenon = normalizePhenomenon(item.kind);
+      const guide = getGuide(phenomenon);
+      return {
+        id: item.id,
+        kind: item.kind,
+        phenomenon,
+        severity,
+        guide,
+      };
+    });
+  }, [dedupedItems]);
+
+  const grouped = useMemo(() => {
+    const groups: Record<Severity, NormalizedWarning[]> = { special: [], warning: [], advisory: [] };
+    normalizedItems.forEach((item) => {
+      groups[item.severity].push(item);
+    });
+    return groups;
+  }, [normalizedItems]);
+
+  const totalCount = normalizedItems.length;
+  const emptyState = !isWarningsLoading && !warningsError && totalCount === 0;
+
+  const handleSelectSaved = useCallback(
+    (area: SavedArea) => {
+      setManualPref({ prefCode: area.prefCode, prefName: area.prefName });
+      setUseCurrent(false);
+      setSelectedFromSaved(true);
+      setPrefListOpen(false);
+    },
+    []
+  );
+
+  const handleSelectPref = useCallback(
+    (pref: Prefecture) => {
+      setManualPref(pref);
+      setUseCurrent(false);
+      setSelectedFromSaved(false);
+      setPrefListOpen(false);
+      setSavedAreas((prev) => {
+        const next = [{ prefCode: pref.prefCode, prefName: pref.prefName }, ...prev.filter((p) => p.prefCode !== pref.prefCode)];
+        return next.slice(0, MAX_SAVED_AREAS);
+      });
+    },
+    []
+  );
+
+  const filteredPrefectures = useMemo(() => {
+    if (!prefFilter.trim()) return prefectures;
+    return prefectures.filter((p) => p.prefName.includes(prefFilter.trim()));
+  }, [prefFilter, prefectures]);
 
   return (
-    <Screen title="Alerts" rightAction={{ label: 'Settings', onPress: () => router.push('/settings') }}>
-      <Card>
-        <SectionTitle>JMAステータス</SectionTitle>
-        {isStatusLoading ? (
-          <View style={styles.row}>
-            <ActivityIndicator color={colors.text} />
-            <TextBlock>更新中...</TextBlock>
-          </View>
-        ) : null}
-        {status ? <StatusChip status={status.fetchStatus} updatedAt={status.updatedAt} /> : null}
-        {statusError ? <TextBlock muted>{statusError}</TextBlock> : null}
-      </Card>
+    <TabScreen title="警報">
+      <View style={styles.headerBlock}>
+        <Text style={styles.subtitle}>気象庁の発表をもとに表示</Text>
+      </View>
 
-      <Card>
-        <SectionTitle>エリア</SectionTitle>
-        <Toggle label={useCurrent ? '現在地: ON' : '現在地: OFF'} value={useCurrent} onToggle={() => setUseCurrent((v) => !v)} />
-        <TextBlock muted>{areaLabel}</TextBlock>
-        {useCurrent && permission === 'denied' ? (
-          <>
-            <TextBlock>位置情報がオフです。現在地エリアを取得できません。</TextBlock>
-            <Button label="設定を開く" variant="secondary" onPress={() => Linking.openSettings()} />
-          </>
-        ) : null}
-        <Button
-          label={manualPref ? `手動エリア: ${manualPref.prefName}` : '手動エリアを選択'}
-          variant="secondary"
-          onPress={() => setPrefListOpen((v) => !v)}
-        />
-        {prefListOpen ? (
-          <>
-            <Input value={prefFilter} placeholder="都道府県を絞り込み" onChangeText={setPrefFilter} />
-            <View style={styles.listWrap}>
-              {prefectures
-                .filter((p) => (prefFilter ? p.prefName.includes(prefFilter.trim()) : true))
-                .map((pref) => (
-                  <Pressable
-                    key={pref.prefCode}
-                    style={styles.listItem}
-                    onPress={() => {
-                      setManualPref(pref);
-                      setPrefListOpen(false);
-                    }}
-                  >
-                    <TextBlock>{pref.prefName}</TextBlock>
-                  </Pressable>
-                ))}
-            </View>
-          </>
-        ) : null}
-      </Card>
+      <AreaScopeCard
+        areaName={areaName}
+        modeLabel={areaModeLabel}
+        onChange={() => setPrefListOpen(true)}
+      />
 
-      <Card>
-        <SectionTitle>警報・注意報</SectionTitle>
-        <TextBlock muted>対象エリア: {warnings?.areaName ?? areaCode}</TextBlock>
-        {isWarningsLoading ? (
-          <View style={styles.row}>
-            <ActivityIndicator color={colors.text} />
-            <TextBlock>読み込み中...</TextBlock>
-          </View>
-        ) : null}
-        {warningsNotice ? <TextBlock muted>{warningsNotice}</TextBlock> : null}
-        {warningsError ? <TextBlock muted>{warningsError}</TextBlock> : null}
-        {emptyState ? <TextBlock muted>発表中の警報・注意報はありません。</TextBlock> : null}
-      </Card>
+      {warningsError ? <ErrorBanner message="警報情報を取得できませんでした" onRetry={loadWarnings} /> : null}
 
-      {dedupedItems.length > 0 ? (
-        <Card>
-          <SectionTitle>概要</SectionTitle>
-          <TextBlock>警報: {urgentItems.length}件</TextBlock>
-          <TextBlock>注意報: {advisoryItems.length}件</TextBlock>
-        </Card>
-      ) : null}
+      <ActiveWarningsSection
+        isLoading={isWarningsLoading}
+        empty={emptyState}
+        groups={grouped}
+      />
 
-      {urgentItems.length > 0 ? (
-        <Card>
-          <SectionTitle>警報</SectionTitle>
-          {urgentItems.map((item) => (
-            <View key={item.id} style={styles.itemRow}>
-              <TextBlock>{item.kind}</TextBlock>
-              {shouldShowStatus(item.status) ? <TextBlock muted>{item.status}</TextBlock> : null}
-            </View>
-          ))}
-        </Card>
-      ) : null}
+      <DetailsAccordion items={dedupedItems} />
 
-      {advisoryItems.length > 0 ? (
-        <Card>
-          <SectionTitle>注意報</SectionTitle>
-          {advisoryItems.map((item) => (
-            <View key={item.id} style={styles.itemRow}>
-              <TextBlock>{item.kind}</TextBlock>
-              {shouldShowStatus(item.status) ? <TextBlock muted>{item.status}</TextBlock> : null}
-            </View>
-          ))}
-        </Card>
-      ) : null}
-    </Screen>
+      <AreaScopeSheet
+        visible={prefListOpen}
+        onClose={() => setPrefListOpen(false)}
+        useCurrent={useCurrent}
+        onToggleCurrent={(next) => {
+          setUseCurrent(next);
+          if (next) {
+            setSelectedFromSaved(false);
+          }
+        }}
+        permission={permission}
+        savedAreas={savedAreas}
+        selectedPrefCode={!useCurrent ? manualPref?.prefCode ?? null : null}
+        onSelectSaved={handleSelectSaved}
+        filterValue={prefFilter}
+        onChangeFilter={setPrefFilter}
+        prefectures={filteredPrefectures}
+        isLoading={prefLoading}
+        error={prefError}
+        onSelectPref={handleSelectPref}
+      />
+    </TabScreen>
   );
 }
 
-function StatusChip({ status, updatedAt }: { status: string; updatedAt: string | null }) {
-  const isOk = status === 'OK';
+function AreaScopeCard({ areaName, modeLabel, onChange }: { areaName: string; modeLabel: string; onChange: () => void }) {
   return (
-    <View style={[styles.chip, isOk ? styles.chipOk : styles.chipWarn]}>
-      <Text style={[styles.chipText, isOk ? styles.chipTextOn : styles.chipTextOff]}>状態: {status}</Text>
-      {updatedAt ? (
-        <Text style={[styles.chipSub, isOk ? styles.chipTextOn : styles.chipTextOff]}>{formatTime(updatedAt)}</Text>
+    <View style={styles.scopeCard}>
+      <View style={styles.scopeText}>
+        <Text style={styles.scopeLabel}>対象エリア</Text>
+        <Text style={styles.scopeName}>{areaName}</Text>
+        <View style={styles.scopeMetaRow}>
+          <View style={styles.modePill}>
+            <Text style={styles.modePillText}>{modeLabel}</Text>
+          </View>
+        </View>
+      </View>
+      <SecondaryButton label="変更" onPress={onChange} />
+    </View>
+  );
+}
+
+function AreaScopeSheet({
+  visible,
+  onClose,
+  useCurrent,
+  onToggleCurrent,
+  permission,
+  savedAreas,
+  selectedPrefCode,
+  onSelectSaved,
+  filterValue,
+  onChangeFilter,
+  prefectures,
+  isLoading,
+  error,
+  onSelectPref,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  useCurrent: boolean;
+  onToggleCurrent: (next: boolean) => void;
+  permission: PermissionState;
+  savedAreas: SavedArea[];
+  selectedPrefCode: string | null;
+  onSelectSaved: (area: SavedArea) => void;
+  filterValue: string;
+  onChangeFilter: (value: string) => void;
+  prefectures: Prefecture[];
+  isLoading: boolean;
+  error: ApiError | null;
+  onSelectPref: (pref: Prefecture) => void;
+}) {
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={styles.sheetOverlay}>
+        <Pressable style={styles.sheetBackdrop} onPress={onClose} />
+        <View style={styles.sheetCard}>
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>対象エリアを変更</Text>
+            <Pressable onPress={onClose} hitSlop={10}>
+              <Text style={styles.sheetClose}>閉じる</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.sheetSection}>
+            <Text style={styles.sheetLabel}>現在地</Text>
+            <View style={styles.toggleRow}>
+              <Pressable
+                style={[styles.toggleButton, useCurrent ? styles.toggleButtonActive : null]}
+                onPress={() => onToggleCurrent(true)}
+              >
+                <Text style={[styles.toggleText, useCurrent ? styles.toggleTextActive : null]}>ON</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.toggleButton, !useCurrent ? styles.toggleButtonActive : null]}
+                onPress={() => onToggleCurrent(false)}
+              >
+                <Text style={[styles.toggleText, !useCurrent ? styles.toggleTextActive : null]}>OFF</Text>
+              </Pressable>
+            </View>
+            {useCurrent && permission === 'denied' ? (
+              <InlineBanner
+                message="位置情報の許可が必要です。"
+                actionLabel="設定を開く"
+                onAction={() => Linking.openSettings()}
+              />
+            ) : null}
+          </View>
+
+          <View style={styles.sheetSection}>
+            <Text style={styles.sheetLabel}>保存エリア</Text>
+            {savedAreas.length === 0 ? (
+              <Text style={styles.sheetMuted}>保存エリアはありません。</Text>
+            ) : (
+              <View style={styles.savedList}>
+                {savedAreas.map((area) => (
+                  <Pressable key={area.prefCode} style={styles.savedRow} onPress={() => onSelectSaved(area)}>
+                    <Text style={styles.savedName}>{area.prefName}</Text>
+                    <View style={[styles.radio, selectedPrefCode === area.prefCode ? styles.radioActive : null]}>
+                      {selectedPrefCode === area.prefCode ? <View style={styles.radioDot} /> : null}
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+          </View>
+
+          <View style={styles.sheetSection}>
+            <Text style={styles.sheetLabel}>都道府県から選ぶ</Text>
+            <TextField value={filterValue} placeholder="都道府県を検索" onChangeText={onChangeFilter} />
+            {isLoading ? (
+              <View style={styles.skeletonStack}>
+                <Skeleton height={14} />
+                <Skeleton width="70%" />
+              </View>
+            ) : null}
+            {error ? <InlineBanner message="都道府県一覧を取得できませんでした。" /> : null}
+            <ScrollView style={styles.prefList} contentContainerStyle={styles.prefListContent}>
+              {prefectures.map((pref) => (
+                <Pressable key={pref.prefCode} onPress={() => onSelectPref(pref)} style={styles.prefRow}>
+                  <Text style={styles.prefName}>{pref.prefName}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function ActiveWarningsSection({
+  isLoading,
+  empty,
+  groups,
+}: {
+  isLoading: boolean;
+  empty: boolean;
+  groups: Record<Severity, NormalizedWarning[]>;
+}) {
+  return (
+    <View style={styles.sectionBlock}>
+      <Text style={styles.sectionTitle}>発令中</Text>
+      {isLoading ? <WarningSkeletonList /> : null}
+      {empty ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyTitle}>現在、発令中の警報・注意報はありません</Text>
+          <Text style={styles.emptyNote}>状況は変わることがあります</Text>
+        </View>
+      ) : null}
+      <WarningGroup label="特別警報" severity="special" items={groups.special} />
+      <WarningGroup label="警報" severity="warning" items={groups.warning} />
+      <WarningGroup label="注意報" severity="advisory" items={groups.advisory} />
+    </View>
+  );
+}
+
+function WarningGroup({
+  label,
+  severity,
+  items,
+}: {
+  label: string;
+  severity: Severity;
+  items: NormalizedWarning[];
+}) {
+  if (items.length === 0) return null;
+  return (
+    <View style={styles.groupBlock}>
+      <View style={styles.groupHeader}>
+        <Text style={styles.groupTitle}>{label}</Text>
+        <Text style={styles.groupCount}>{items.length}件</Text>
+      </View>
+      <View style={styles.groupList}>
+        {items.map((item) => (
+          <WarningPhenomenonCard key={item.id} item={item} severity={severity} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function WarningPhenomenonCard({ item, severity }: { item: NormalizedWarning; severity: Severity }) {
+  return (
+    <View style={styles.warnCard}>
+      <View style={styles.warnHeader}>
+        <View style={styles.warnTitleRow}>
+          <View style={styles.warnIcon} />
+          <Text style={styles.warnTitle}>{item.phenomenon}</Text>
+        </View>
+        <SeverityBadge severity={severity} />
+      </View>
+      <Text style={styles.warnDescription}>{item.guide.description}</Text>
+      <View style={styles.warnActions}>
+        {item.guide.actions.slice(0, 2).map((action) => (
+          <Text key={action} style={styles.warnAction}>{`• ${action}`}</Text>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function DetailsAccordion({ items }: { items: JmaWarningItem[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <View style={styles.sectionBlock}>
+      <Pressable onPress={() => setOpen((prev) => !prev)} style={styles.accordionHeader}>
+        <Text style={styles.sectionTitle}>詳細（エリア別）</Text>
+        <Text style={styles.accordionToggle}>{open ? '閉じる' : '開く'}</Text>
+      </Pressable>
+      {open ? (
+        <View style={styles.detailList}>
+          {items.length === 0 ? (
+            <Text style={styles.detailText}>詳細情報はありません。</Text>
+          ) : (
+            items.map((item) => (
+              <View key={item.id} style={styles.detailRow}>
+                <Text style={styles.detailLabel}>{item.kind}</Text>
+                {item.status ? <Text style={styles.detailText}>{item.status}</Text> : null}
+              </View>
+            ))
+          )}
+        </View>
       ) : null}
     </View>
   );
 }
 
-function formatTime(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(
-    date.getMinutes()
-  ).padStart(2, '0')}`;
+function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <View style={styles.banner}>
+      <Text style={styles.bannerText}>{message}</Text>
+      <SecondaryButton label="再試行" onPress={onRetry} />
+    </View>
+  );
+}
+
+function InlineBanner({
+  message,
+  actionLabel,
+  onAction,
+}: {
+  message: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
+  return (
+    <View style={styles.inlineBanner}>
+      <Text style={styles.inlineBannerText}>{message}</Text>
+      {actionLabel && onAction ? <SecondaryButton label={actionLabel} onPress={onAction} /> : null}
+    </View>
+  );
+}
+
+function WarningSkeletonList() {
+  return (
+    <View style={styles.skeletonList}>
+      {[0, 1, 2].map((item) => (
+        <View key={item} style={styles.skeletonCard}>
+          <Skeleton width="60%" />
+          <Skeleton width="40%" />
+          <Skeleton width="70%" />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function SeverityBadge({ severity }: { severity: Severity }) {
+  const label = severity === 'special' ? '特別' : severity === 'warning' ? '警報' : '注意';
+  const toneStyle =
+    severity === 'special'
+      ? styles.badgeSpecial
+      : severity === 'warning'
+        ? styles.badgeWarning
+        : styles.badgeAdvisory;
+  return (
+    <View style={[styles.badge, toneStyle]}>
+      <Text style={styles.badgeText}>{label}</Text>
+    </View>
+  );
 }
 
 function dedupeWarnings(items: JmaWarningsResponse['items']) {
   const seen = new Set<string>();
   const result: JmaWarningsResponse['items'] = [];
   for (const item of items) {
-    const key = `${item.kind}|${item.status ?? ''}`;
+    const key = item.kind;
     if (seen.has(key)) continue;
     seen.add(key);
     result.push(item);
@@ -291,20 +623,28 @@ function dedupeWarnings(items: JmaWarningsResponse['items']) {
   return result;
 }
 
-function isWarning(kind: string) {
-  if (!kind) return false;
-  return kind.includes('警報') || kind.includes('特別警報');
+function getSeverity(kind: string): Severity {
+  if (kind.includes('特別警報')) return 'special';
+  if (kind.includes('警報')) return 'warning';
+  return 'advisory';
 }
 
-function isAdvisory(kind: string) {
-  if (!kind) return false;
-  return kind.includes('注意報');
+function normalizePhenomenon(kind: string): string {
+  const trimmed = kind
+    .replace('特別警報', '')
+    .replace('警報', '')
+    .replace('注意報', '')
+    .trim();
+  return trimmed.length > 0 ? trimmed : kind;
 }
 
-function shouldShowStatus(status: string | null) {
-  if (!status) return false;
-  if (status.includes('継続')) return false;
-  return true;
+function getGuide(phenomenon: string): WarningGuide {
+  for (const entry of GUIDE_MAP) {
+    if (entry.patterns.some((pattern) => pattern.test(phenomenon))) {
+      return { description: entry.description, actions: entry.actions };
+    }
+  }
+  return FALLBACK_GUIDE;
 }
 
 async function reverseGeocodePrefCode(coords: LatLng): Promise<string | null> {
@@ -351,51 +691,341 @@ function normalizeMuniCode(raw: unknown): { muniCode: string | null; prefCode: s
 }
 
 const styles = StyleSheet.create({
-  row: {
+  headerBlock: {
+    marginBottom: spacing.md,
+  },
+  subtitle: {
+    ...typography.caption,
+    color: colors.muted,
+  },
+  scopeCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    padding: spacing.md,
+    backgroundColor: colors.background,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  scopeText: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  scopeLabel: {
+    ...typography.caption,
+    color: colors.muted,
+  },
+  scopeName: {
+    ...typography.subtitle,
+    color: colors.text,
+  },
+  scopeMetaRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    alignItems: 'center',
+  },
+  modePill: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.surface,
+  },
+  modePillText: {
+    ...typography.caption,
+    color: colors.text,
+  },
+  banner: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    padding: spacing.sm,
+    backgroundColor: colors.surface,
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  bannerText: {
+    ...typography.body,
+    color: colors.text,
+  },
+  sectionBlock: {
+    marginTop: spacing.lg,
+  },
+  sectionTitle: {
+    ...typography.subtitle,
+    color: colors.text,
+    marginBottom: spacing.sm,
+  },
+  emptyState: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    gap: spacing.xs,
+  },
+  emptyTitle: {
+    ...typography.body,
+    color: colors.text,
+  },
+  emptyNote: {
+    ...typography.caption,
+    color: colors.muted,
+  },
+  groupBlock: {
+    marginTop: spacing.md,
+  },
+  groupHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  groupTitle: {
+    ...typography.label,
+    color: colors.text,
+  },
+  groupCount: {
+    ...typography.caption,
+    color: colors.muted,
+  },
+  groupList: {
+    gap: spacing.sm,
+  },
+  warnCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    padding: spacing.md,
+    backgroundColor: colors.background,
+    gap: spacing.xs,
+  },
+  warnHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  warnTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
   },
-  chip: {
-    borderRadius: 999,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-    alignSelf: 'flex-start',
-    borderWidth: 1,
+  warnIcon: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.text,
   },
-  chipOk: {
+  warnTitle: {
+    ...typography.subtitle,
+    color: colors.text,
+  },
+  warnDescription: {
+    ...typography.body,
+    color: colors.text,
+  },
+  warnActions: {
+    marginTop: spacing.xs,
+    gap: spacing.xxs,
+  },
+  warnAction: {
+    ...typography.small,
+    color: colors.muted,
+  },
+  badge: {
+    borderWidth: 1,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  badgeText: {
+    ...typography.caption,
+    color: colors.text,
+  },
+  badgeSpecial: {
+    backgroundColor: colors.statusBgDanger,
+    borderColor: colors.statusDanger,
+  },
+  badgeWarning: {
+    backgroundColor: colors.statusBgWarning,
+    borderColor: colors.statusWarning,
+  },
+  badgeAdvisory: {
+    backgroundColor: colors.statusBgInfo,
+    borderColor: colors.statusInfo,
+  },
+  accordionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  accordionToggle: {
+    ...typography.caption,
+    color: colors.muted,
+  },
+  detailList: {
+    marginTop: spacing.sm,
+    gap: spacing.xs,
+  },
+  detailRow: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    padding: spacing.sm,
+    backgroundColor: colors.surface,
+    gap: spacing.xs,
+  },
+  detailLabel: {
+    ...typography.body,
+    color: colors.text,
+  },
+  detailText: {
+    ...typography.caption,
+    color: colors.muted,
+  },
+  skeletonList: {
+    gap: spacing.sm,
+  },
+  skeletonCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    padding: spacing.sm,
+    backgroundColor: colors.surface,
+    gap: spacing.xs,
+  },
+  sheetOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  sheetBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  sheetCard: {
+    backgroundColor: colors.background,
+    padding: spacing.lg,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '85%',
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  sheetTitle: {
+    ...typography.subtitle,
+    color: colors.text,
+  },
+  sheetClose: {
+    ...typography.caption,
+    color: colors.text,
+  },
+  sheetSection: {
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  sheetLabel: {
+    ...typography.label,
+    color: colors.text,
+  },
+  sheetMuted: {
+    ...typography.caption,
+    color: colors.muted,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+  },
+  toggleButtonActive: {
     backgroundColor: colors.text,
     borderColor: colors.text,
   },
-  chipWarn: {
-    backgroundColor: colors.background,
-    borderColor: colors.border,
-  },
-  chipText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  chipSub: {
-    fontSize: 12,
-  },
-  chipTextOn: {
-    color: colors.background,
-  },
-  chipTextOff: {
+  toggleText: {
+    ...typography.label,
     color: colors.text,
   },
-  listWrap: {
+  toggleTextActive: {
+    color: colors.background,
+  },
+  savedList: {
+    gap: spacing.xs,
+  },
+  savedRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 12,
+    borderRadius: radii.md,
     padding: spacing.sm,
-    marginBottom: spacing.md,
-    maxHeight: 240,
+    backgroundColor: colors.surface,
   },
-  listItem: {
-    paddingVertical: spacing.xs,
+  savedName: {
+    ...typography.body,
+    color: colors.text,
   },
-  itemRow: {
-    marginBottom: spacing.sm,
+  radio: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioActive: {
+    borderColor: colors.text,
+  },
+  radioDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.text,
+  },
+  prefList: {
+    maxHeight: 280,
+  },
+  prefListContent: {
+    paddingBottom: spacing.md,
+  },
+  prefRow: {
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  prefName: {
+    ...typography.body,
+    color: colors.text,
+  },
+  inlineBanner: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    padding: spacing.sm,
+    backgroundColor: colors.surface,
+    gap: spacing.xs,
+  },
+  inlineBannerText: {
+    ...typography.caption,
+    color: colors.text,
+  },
+  skeletonStack: {
+    gap: spacing.xs,
   },
 });

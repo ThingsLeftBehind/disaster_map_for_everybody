@@ -1,11 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import { fetchJson } from '@/src/api/client';
+import { fetchJson, toApiError, type ApiError } from '@/src/api/client';
 import type { Shelter, ShelterDetailResponse } from '@/src/api/types';
-import { Card, Screen, SectionTitle, TextBlock, Toggle } from '@/src/ui/kit';
-import { colors, spacing } from '@/src/ui/theme';
+import {
+  Chip,
+  EmptyState,
+  ErrorState,
+  ScreenContainer,
+  SectionCard,
+  Skeleton,
+} from '@/src/ui/system';
+import { colors, spacing, typography } from '@/src/ui/theme';
 
 export default function ShelterDetailScreen() {
   const router = useRouter();
@@ -13,7 +20,7 @@ export default function ShelterDetailScreen() {
   const shelterId = Array.isArray(params.id) ? params.id[0] : params.id;
   const [shelter, setShelter] = useState<Shelter | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ApiError | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [favorite, setFavorite] = useState(false);
 
@@ -21,7 +28,7 @@ export default function ShelterDetailScreen() {
     let active = true;
     const load = async () => {
       if (!shelterId) {
-        setError('避難所IDが見つかりません。');
+        setError({ message: '避難所IDが見つかりません。', status: null, kind: 'unknown' });
         return;
       }
       setIsLoading(true);
@@ -37,7 +44,7 @@ export default function ShelterDetailScreen() {
       } catch (err) {
         if (!active) return;
         setShelter(null);
-        setError(err instanceof Error ? err.message : 'Failed to load shelter');
+        setError(toApiError(err));
       } finally {
         if (active) setIsLoading(false);
       }
@@ -56,49 +63,62 @@ export default function ShelterDetailScreen() {
   }, [shelter?.hazards]);
 
   return (
-    <Screen title="Shelter" leftAction={{ label: 'Back', onPress: () => router.back() }}>
-      <Card>
-        <SectionTitle>{shelter?.name ?? '避難所'}</SectionTitle>
-        <TextBlock>{shelter?.address ?? '住所不明'}</TextBlock>
+    <ScreenContainer title="Shelter" leftAction={{ label: 'Back', onPress: () => router.back() }}>
+      <SectionCard title={shelter?.name ?? '避難所'}>
         {isLoading ? (
-          <View style={styles.row}>
-            <ActivityIndicator color={colors.text} />
-            <TextBlock>読み込み中...</TextBlock>
+          <View style={styles.skeletonStack}>
+            <Skeleton width="70%" />
+            <Skeleton width="40%" />
           </View>
         ) : null}
-        {notice ? <TextBlock muted>{notice}</TextBlock> : null}
-        {error ? <TextBlock muted>{error}</TextBlock> : null}
-      </Card>
+        {shelter?.address ? <Text style={styles.bodyText}>{shelter.address}</Text> : null}
+        {notice ? <Text style={styles.mutedText}>{notice}</Text> : null}
+        {error ? <ErrorState message={error.message} /> : null}
+      </SectionCard>
 
-      <Card>
-        <SectionTitle>お気に入り</SectionTitle>
-        <Toggle label={favorite ? 'お気に入り: ON' : 'お気に入り: OFF'} value={favorite} onToggle={() => setFavorite((v) => !v)} />
-        <TextBlock muted>この設定は保存されません。</TextBlock>
-      </Card>
+      <SectionCard title="Favorite">
+        <View style={styles.rowWrap}>
+          <Chip label="お気に入り" selected={favorite} onPress={() => setFavorite((v) => !v)} />
+        </View>
+        <Text style={styles.mutedText}>この設定は端末内のみで管理されます。</Text>
+      </SectionCard>
 
-      <Card>
-        <SectionTitle>ハザード</SectionTitle>
-        {hazardKeys.length === 0 ? <TextBlock muted>ハザード情報はありません。</TextBlock> : null}
-        {hazardKeys.map((key) => (
-          <TextBlock key={key}>{key}</TextBlock>
-        ))}
-      </Card>
+      <SectionCard title="Hazards">
+        {hazardKeys.length === 0 ? <EmptyState message="ハザード情報はありません。" /> : null}
+        <View style={styles.rowWrap}>
+          {hazardKeys.map((key) => (
+            <Chip key={key} label={key} />
+          ))}
+        </View>
+      </SectionCard>
 
       {shelter?.notes ? (
-        <Card>
-          <SectionTitle>備考</SectionTitle>
-          <TextBlock>{shelter.notes}</TextBlock>
-        </Card>
+        <SectionCard title="Notes">
+          <Text style={styles.bodyText}>{shelter.notes}</Text>
+        </SectionCard>
       ) : null}
-    </Screen>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
+  bodyText: {
+    ...typography.body,
+    color: colors.text,
+    marginTop: spacing.xs,
+  },
+  mutedText: {
+    ...typography.caption,
+    color: colors.muted,
+    marginTop: spacing.xs,
+  },
+  rowWrap: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
+    flexWrap: 'wrap',
+    gap: spacing.xs,
     marginTop: spacing.sm,
+  },
+  skeletonStack: {
+    gap: spacing.xs,
   },
 });

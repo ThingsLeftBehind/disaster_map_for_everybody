@@ -113,11 +113,17 @@ export type HazardLayer = {
   maxZoom?: number | null;
 };
 
+export type HazardLayerSource = {
+  portalUrl?: string | null;
+  metadataUrl?: string | null;
+};
+
 export type HazardLayersResponse = {
   fetchStatus?: FetchStatus;
   updatedAt: string | null;
   lastError?: string | null;
   version?: number;
+  source?: HazardLayerSource | null;
   layers: HazardLayer[];
 };
 

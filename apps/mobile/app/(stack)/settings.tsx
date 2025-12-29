@@ -1,9 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 
 import { getApiBaseUrl } from '@/src/api/client';
-import { Button, Card, Screen, SectionTitle, TextBlock, Toggle } from '@/src/ui/kit';
+import {
+  PrimaryButton,
+  ScreenContainer,
+  SectionCard,
+  SecondaryButton,
+  StatusPill,
+} from '@/src/ui/system';
+import { colors, spacing, typography } from '@/src/ui/theme';
 import { disableBackgroundAlerts, enableBackgroundAlerts, getBackgroundStatus } from '@/src/push/service';
 
 export default function SettingsScreen() {
@@ -48,38 +56,54 @@ export default function SettingsScreen() {
     setIsWorking(false);
   }, [refreshStatus]);
 
-  const handleToggle = useCallback(() => {
-    if (isWorking) return;
-    if (alertsEnabled) {
-      void handleDisable();
-    } else {
-      void handleEnable();
-    }
-  }, [alertsEnabled, handleDisable, handleEnable, isWorking]);
-
   return (
-    <Screen title="Settings" leftAction={{ label: 'Back', onPress: () => router.back() }}>
-      <Card>
-        <SectionTitle>App</SectionTitle>
-        <TextBlock>Version: {version}</TextBlock>
-        <TextBlock>API: {apiBaseUrl}</TextBlock>
-      </Card>
+    <ScreenContainer title="Settings" leftAction={{ label: 'Back', onPress: () => router.back() }}>
+      <SectionCard title="Background Alerts">
+        <StatusPill label={alertsEnabled ? '有効' : '無効'} tone={alertsEnabled ? 'ok' : 'neutral'} />
+        <TextLine label="説明" value="災害通知と周辺避難所の更新に通知と位置情報の許可が必要です。" />
+        {error ? <Text style={styles.mutedText}>{error}</Text> : null}
+        <PrimaryButton label="有効にする" onPress={handleEnable} disabled={isWorking} />
+        <SecondaryButton label="無効にする" onPress={handleDisable} disabled={isWorking} />
+      </SectionCard>
 
-      <Card>
-        <SectionTitle>Background Alerts</SectionTitle>
-        <TextBlock muted>災害情報の通知と周辺避難所の更新に、通知と位置情報の許可が必要です。</TextBlock>
-        <Toggle label={alertsEnabled ? 'Background alerts: ON' : 'Background alerts: OFF'} value={alertsEnabled} onToggle={handleToggle} />
-        <TextBlock>Status: {alertsEnabled ? 'Enabled' : 'Disabled'}</TextBlock>
-        {error ? <TextBlock muted>{error}</TextBlock> : null}
-        <Button label="Enable background alerts" onPress={handleEnable} disabled={isWorking} />
-        <Button label="Disable background alerts" variant="secondary" onPress={handleDisable} disabled={isWorking} />
-      </Card>
+      <SectionCard title="App Info">
+        <TextLine label="Version" value={version} />
+        <TextLine label="API" value={apiBaseUrl} />
+      </SectionCard>
 
-      <Card>
-        <SectionTitle>Information</SectionTitle>
-        <Button label="Sources" variant="secondary" onPress={() => router.push('/sources')} />
-        <Button label="Disclaimer" variant="secondary" onPress={() => router.push('/disclaimer')} />
-      </Card>
-    </Screen>
+      <SectionCard title="Links">
+        <SecondaryButton label="Sources" onPress={() => router.push('/sources')} />
+        <SecondaryButton label="Disclaimer" onPress={() => router.push('/disclaimer')} />
+      </SectionCard>
+    </ScreenContainer>
   );
 }
+
+function TextLine({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.textLine}>
+      <Text style={styles.textLabel}>{label}</Text>
+      <Text style={styles.textValue}>{value}</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  textLine: {
+    marginBottom: spacing.sm,
+  },
+  textLabel: {
+    ...typography.label,
+    color: colors.text,
+  },
+  textValue: {
+    ...typography.body,
+    color: colors.muted,
+    marginTop: spacing.xs,
+  },
+  mutedText: {
+    ...typography.caption,
+    color: colors.muted,
+    marginTop: spacing.xs,
+  },
+});

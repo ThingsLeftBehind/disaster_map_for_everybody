@@ -1,21 +1,35 @@
 import { useRouter } from 'expo-router';
+import { Text } from 'react-native';
 
-import { Card, Screen, SectionTitle, TextBlock } from '@/src/ui/kit';
+import { ScreenContainer, SectionCard, StatusPill } from '@/src/ui/system';
+import { colors, spacing, typography } from '@/src/ui/theme';
 
 export default function DisclaimerScreen() {
   const router = useRouter();
 
   return (
-    <Screen title="Disclaimer" leftAction={{ label: 'Back', onPress: () => router.back() }}>
-      <Card>
-        <SectionTitle>Reference Only</SectionTitle>
-        <TextBlock>This app provides reference information for emergency support.</TextBlock>
-        <TextBlock muted>Always follow official instructions from local authorities.</TextBlock>
-      </Card>
-      <Card>
-        <SectionTitle>Availability</SectionTitle>
-        <TextBlock muted>Data may be delayed or unavailable during outages.</TextBlock>
-      </Card>
-    </Screen>
+    <ScreenContainer title="Disclaimer" leftAction={{ label: 'Back', onPress: () => router.back() }}>
+      <SectionCard title="Reference Only">
+        <StatusPill label="参考情報" tone="neutral" />
+        <Text style={styles.bodyText}>本アプリは災害時の参考情報を提供します。</Text>
+        <Text style={styles.mutedText}>必ず自治体や公式機関の指示に従ってください。</Text>
+      </SectionCard>
+      <SectionCard title="Availability">
+        <Text style={styles.mutedText}>通信障害や提供元の都合で情報が遅延する場合があります。</Text>
+      </SectionCard>
+    </ScreenContainer>
   );
 }
+
+const styles = {
+  bodyText: {
+    ...typography.body,
+    color: colors.text,
+    marginTop: spacing.xs,
+  },
+  mutedText: {
+    ...typography.body,
+    color: colors.muted,
+    marginTop: spacing.xs,
+  },
+};

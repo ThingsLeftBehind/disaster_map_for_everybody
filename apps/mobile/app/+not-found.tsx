@@ -1,32 +1,24 @@
-import { Link } from 'expo-router';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Text } from 'react-native';
 
-import { Screen, TextBlock } from '@/src/ui/kit';
-import { colors, spacing } from '@/src/ui/theme';
+import { PrimaryButton, ScreenContainer, SectionCard } from '@/src/ui/system';
+import { colors, typography } from '@/src/ui/theme';
 
 export default function NotFoundScreen() {
+  const router = useRouter();
   return (
-    <Screen title="Not Found">
-      <TextBlock>This screen does not exist.</TextBlock>
-      <Link href="/main" asChild>
-        <Pressable style={styles.button}>
-          <Text style={styles.buttonText}>Go to Main</Text>
-        </Pressable>
-      </Link>
-    </Screen>
+    <ScreenContainer title="Not Found">
+      <SectionCard>
+        <Text style={styles.text}>This screen does not exist.</Text>
+        <PrimaryButton label="Go to Main" onPress={() => router.replace('/main')} />
+      </SectionCard>
+    </ScreenContainer>
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: 8,
-    backgroundColor: colors.text,
+const styles = {
+  text: {
+    ...typography.body,
+    color: colors.text,
   },
-  buttonText: {
-    color: colors.background,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
+};

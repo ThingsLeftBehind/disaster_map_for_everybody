@@ -1,6 +1,18 @@
 {
   "root": true,
   "extends": ["expo"],
+  "settings": {
+    "import/resolver": {
+      "typescript": {
+        "project": "./tsconfig.json",
+        "alwaysTryTypes": true,
+        "extensions": [".ts", ".tsx", ".d.ts", ".native.ts", ".native.tsx", ".web.ts", ".web.tsx"]
+      },
+      "node": {
+        "extensions": [".js", ".jsx", ".ts", ".tsx", ".native.ts", ".native.tsx", ".web.ts", ".web.tsx", ".json"]
+      }
+    }
+  },
   "overrides": [
     {
       "files": ["**/__tests__/**", "**/*.test.*", "**/*.spec.*"],
