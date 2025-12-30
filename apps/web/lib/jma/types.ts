@@ -56,6 +56,8 @@ export type NormalizedQuakeItem = {
   maxIntensity: string | null;
   magnitude: string | null;
   epicenter: string | null;
+  depthKm: number | null;
+  intensityAreas?: Array<{ intensity: string; areas: string[] }>;
   source: 'pull' | 'webjson';
 };
 

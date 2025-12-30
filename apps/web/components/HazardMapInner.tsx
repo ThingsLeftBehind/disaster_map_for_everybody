@@ -146,11 +146,12 @@ function ZoomWatcher({ onZoomChange }: { onZoomChange: (zoom: number) => void })
   return null;
 }
 
-function Recenter({ center }: { center: { lat: number; lon: number } }) {
+function Recenter({ center, minZoom }: { center: { lat: number; lon: number }; minZoom: number }) {
   const map = useMap();
   useEffect(() => {
-    map.setView([center.lat, center.lon], map.getZoom(), { animate: true });
-  }, [center.lat, center.lon, map]);
+    const nextZoom = Math.max(map.getZoom(), minZoom);
+    map.setView([center.lat, center.lon], nextZoom, { animate: true });
+  }, [center.lat, center.lon, map, minZoom]);
   return null;
 }
 
@@ -158,6 +159,8 @@ export default function HazardMapInner({
   enabledKeys,
   layers,
   center,
+  initialZoom,
+  minRequiredZoom,
   onZoomOutOfRange,
   onZoomValid,
   onDiagnostics,
@@ -166,6 +169,8 @@ export default function HazardMapInner({
   enabledKeys: string[];
   layers: HazardLayer[];
   center: { lat: number; lon: number };
+  initialZoom: number;
+  minRequiredZoom: number;
   onZoomOutOfRange: (args: { direction: 'low' | 'high'; zoom: number; min: number; max: number; keys: string[] }) => void;
   onZoomValid?: (keys: string[]) => void;
   onDiagnostics?: (diag: OverlayDiagnostics) => void;
@@ -193,7 +198,7 @@ export default function HazardMapInner({
     return maxs.length > 0 ? Math.max(...maxs) : 18;
   }, [overlays]);
   const [ready, setReady] = useState(false);
-  const [currentZoom, setCurrentZoom] = useState(11);
+  const [currentZoom, setCurrentZoom] = useState(initialZoom);
   const [baseTileError, setBaseTileError] = useState<string | null>(null);
   const [overlayTileError, setOverlayTileError] = useState<string | null>(null);
   const [landslideNotice, setLandslideNotice] = useState<{ level: 'soft' | 'hard'; message: string } | null>(null);
@@ -216,6 +221,10 @@ export default function HazardMapInner({
     firstNon404AtMs: 0,
   });
   const diagnosticsEnabled = Boolean(onDiagnostics) && process.env.NODE_ENV !== 'production';
+
+  useEffect(() => {
+    setCurrentZoom((prev) => (prev < initialZoom ? initialZoom : prev));
+  }, [initialZoom]);
 
   const safeTileOptions = {
     bounds: JAPAN_BOUNDS,
@@ -388,13 +397,14 @@ export default function HazardMapInner({
   return (
     <div className="relative">
       <MapContainer
+        key={`hazard-map-${initialZoom}`}
         center={[center.lat, center.lon]}
-        zoom={11}
+        zoom={initialZoom}
         scrollWheelZoom={true}
         maxBounds={JAPAN_BOUNDS}
         className="h-[520px] w-full rounded-lg"
       >
-        <Recenter center={center} />
+        <Recenter center={center} minZoom={minRequiredZoom} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

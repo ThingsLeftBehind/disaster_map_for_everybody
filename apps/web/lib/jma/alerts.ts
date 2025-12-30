@@ -1,4 +1,4 @@
-import { getJmaWarningPriority, type JmaWarningPriority } from './filters';
+import { getWarningLevel, isActiveWarningItem, type WarningLevel } from './filters';
 import { getTokyoScopedItems, inferTokyoGroup, type TokyoGroupKey, type TokyoGroups, type WarningItem } from '../alerts/tokyoScope';
 
 export type WarningGroup = {
@@ -6,36 +6,23 @@ export type WarningGroup = {
   kind: string;
   count: number;
   statuses: string[];
-  priority: JmaWarningPriority;
+  level: WarningLevel;
 };
 
 export type WarningBuckets = {
-  urgent: WarningGroup[];
+  special: WarningGroup[];
+  warning: WarningGroup[];
   advisory: WarningGroup[];
-  reference: WarningGroup[];
 };
 
 export type WarningCounts = {
-  urgent: number;
+  special: number;
+  warning: number;
   advisory: number;
-  reference: number;
   total: number;
 };
 
-const PRIORITY_RANK: Record<JmaWarningPriority, number> = { URGENT: 2, ADVISORY: 1, REFERENCE: 0 };
-
-function maxPriority(a: JmaWarningPriority, b: JmaWarningPriority): JmaWarningPriority {
-  return PRIORITY_RANK[a] >= PRIORITY_RANK[b] ? a : b;
-}
-
-function priorityFromStatus(status: string | null | undefined): JmaWarningPriority | null {
-  const s = String(status ?? '').trim();
-  if (!s) return null;
-  if (/(特別警報|警報)/.test(s) && !/注意報/.test(s)) return 'URGENT';
-  if (/注意報/.test(s)) return 'ADVISORY';
-  if (/(特別警報|警報)/.test(s)) return 'URGENT';
-  return null;
-}
+const LEVEL_ORDER: Record<WarningLevel, number> = { special: 3, warning: 2, advisory: 1 };
 
 function statusRank(status: string | null | undefined): number {
   const s = String(status ?? '').trim();
@@ -115,11 +102,11 @@ export function deduplicateWarnings(items: WarningItem[], defaultAreaCode?: stri
     const kindCode = (item as any).kindCode || (item as any).code || '';
     const kind = normalizeString(item.kind);
     const status = normalizeString(item.status);
-    const level = (item as any).level || '';
+    const level = getWarningLevel(kind, status) ?? '';
 
-    // key = `${areaCode}|${kindCode}|${kind}|${status}|${level}`
-    // If kindCode matches, we are confident. If not, we rely on kind string.
-    return `${defaultAreaCode ?? ''}|${kindCode}|${kind}|${status}|${level}`;
+    // key = `${areaCode}|${kindCode}|${kind}|${level}`
+    // If kindCode matches, we are confident. If not, we rely on kind string + level.
+    return `${defaultAreaCode ?? ''}|${kindCode}|${kind}|${level}`;
   });
 }
 
@@ -130,30 +117,29 @@ export function deduplicateKindsForDisplay(items: WarningItem[]): WarningItem[] 
 
 export function buildWarningBuckets(items: WarningItem[]): WarningBuckets {
   // Deduplicate first!
-  const prevCount = items.length;
-  const uniqueItems = deduplicateWarnings(items);
+  const activeItems = items.filter((item) => isActiveWarningItem(item));
+  const uniqueItems = deduplicateWarnings(activeItems);
 
   const groups: WarningGroup[] = [];
   const grouped = groupByKind(uniqueItems);
   for (const [kind, groupItems] of grouped.entries()) {
     if (groupItems.length === 0) continue;
     const representative = pickRepresentative(groupItems);
-    const base = getJmaWarningPriority(kind);
-    const statusPriority = priorityFromStatus(representative.status);
-    const itemPriority = statusPriority ? maxPriority(base, statusPriority) : base;
+    const level = getWarningLevel(kind, representative.status);
+    if (!level) continue;
     groups.push({
       key: kind,
       kind,
       count: groupItems.length,
       statuses: representative.status ? [representative.status] : [],
-      priority: itemPriority,
+      level,
     });
   }
 
   return {
-    urgent: groups.filter((g) => g.priority === 'URGENT'),
-    advisory: groups.filter((g) => g.priority === 'ADVISORY'),
-    reference: groups.filter((g) => g.priority === 'REFERENCE'),
+    special: groups.filter((g) => g.level === 'special').sort((a, b) => LEVEL_ORDER[b.level] - LEVEL_ORDER[a.level]),
+    warning: groups.filter((g) => g.level === 'warning').sort((a, b) => LEVEL_ORDER[b.level] - LEVEL_ORDER[a.level]),
+    advisory: groups.filter((g) => g.level === 'advisory').sort((a, b) => LEVEL_ORDER[b.level] - LEVEL_ORDER[a.level]),
   };
 }
 
@@ -184,10 +170,10 @@ export function shapeAlertWarnings(args: {
   });
   const buckets = buildWarningBuckets(primaryItems);
   const counts = {
-    urgent: buckets.urgent.length,
+    special: buckets.special.length,
+    warning: buckets.warning.length,
     advisory: buckets.advisory.length,
-    reference: buckets.reference.length,
-    total: buckets.urgent.length + buckets.advisory.length,
+    total: buckets.special.length + buckets.warning.length + buckets.advisory.length,
   };
 
   return {

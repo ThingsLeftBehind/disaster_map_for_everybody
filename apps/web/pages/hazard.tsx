@@ -1,7 +1,6 @@
 import { Seo } from '../components/Seo';
-import Link from 'next/link';
 import useSWR from 'swr';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
 import HazardMap from '../components/HazardMap';
 import { useDevice } from '../components/device/DeviceProvider';
@@ -51,7 +50,10 @@ export default function HazardPage() {
   const layers: HazardLayer[] = data?.layers?.length ? data.layers : fallbackLayers;
   const fetchStatus: string = data?.fetchStatus ?? 'DEGRADED';
   const updatedAt: string | null = data?.updatedAt ?? null;
-  const lastError: string | null = data?.lastError ?? null;
+  const minRequiredZoom = useMemo(() => {
+    const zooms = layers.map((layer) => layer.minZoom).filter((z) => Number.isFinite(z));
+    return zooms.length > 0 ? Math.max(...zooms) : 10;
+  }, [layers]);
 
   const [enabled, setEnabled] = useState<string[]>([]);
   const [zoomWarn, setZoomWarn] = useState<string | null>(null);
@@ -87,7 +89,6 @@ export default function HazardPage() {
   };
 
   const labelByKey = useMemo(() => new Map(layers.map((l) => [l.key, l.jaName])), [layers]);
-  const enabledNames = useMemo(() => enabled.map((k) => labelByKey.get(k) ?? k), [enabled, labelByKey]);
   const diagnosticsByKey = useMemo(() => new Map((diagnostics?.items ?? []).map((item) => [item.key, item])), [diagnostics]);
   const layerWarnings = useMemo(
     () =>
@@ -142,9 +143,6 @@ export default function HazardPage() {
             現在地へ
           </button>
         </div>
-        <div className="mt-2 text-xs text-gray-600">
-          デフォルトはOFFです。レイヤーをONにするとタイルを読み込みます。ズームが低い場合は自動的にOFFになります。
-        </div>
         {apiUnreachable && (
           <div className="mt-3 rounded border bg-amber-50 px-3 py-2 text-sm text-amber-900">
             Server API unreachable (wrong port or dev server stopped).
@@ -162,6 +160,9 @@ export default function HazardPage() {
                 enabledKeys={enabled}
                 layers={layers}
                 center={center}
+                initialZoom={minRequiredZoom}
+                minRequiredZoom={minRequiredZoom}
+                userLocation={userLocation}
                 onDiagnostics={debugEnabled ? setDiagnostics : undefined}
                 onZoomValid={(keys) => {
                   // Clear auto-disabled keys that are now valid
@@ -215,7 +216,7 @@ export default function HazardPage() {
         </div>
 
         {/* Layer color explanation */}
-        <LayerColorExplanation enabledKeys={enabled} />
+        <LayerColorExplanation enabledKeys={enabled} labelByKey={labelByKey} />
       </section>
 
       <DataFetchDetails
@@ -283,32 +284,67 @@ export default function HazardPage() {
   );
 }
 
-const LAYER_EXPLANATIONS: Record<string, { description: string; colorGuide: string }> = {
+const LAYER_EXPLANATIONS: Record<
+  string,
+  { description: string; legend: Array<{ label: string; color: string }>; guidance: string[] }
+> = {
   flood: {
     description: '洪水浸水想定区域（L2想定最大）を表示しています。',
-    colorGuide: '濃い青/紫ほど浸水深が大きい（危険）を示します。薄い色は浅い浸水、透明/空白はデータなし・範囲外・極低リスクを示します。',
+    legend: [
+      { label: '浅い', color: 'bg-blue-100' },
+      { label: '中程度', color: 'bg-blue-300' },
+      { label: '深い', color: 'bg-blue-600' },
+    ],
+    guidance: [
+      '低地や地下は浸水しやすいため、早めに高い場所へ移動する準備をしてください。',
+      '河川沿い・橋の下には近づかず、周辺の安全を最優先に行動してください。',
+      '避難情報やハザードの更新を確認し、無理のない範囲で避難を検討してください。',
+    ],
   },
   landslide: {
     description: '土砂災害警戒区域（土石流・急傾斜地・地すべり）を表示しています。',
-    colorGuide: '赤色/黄色が警戒区域・特別警戒区域を示します。透明/空白はデータなし・範囲外・対象外を示します。',
+    legend: [
+      { label: '警戒区域', color: 'bg-yellow-300' },
+      { label: '特別警戒区域', color: 'bg-red-500' },
+    ],
+    guidance: [
+      '斜面や崖の近くから離れ、安全な建物内に避難してください。',
+      '強い雨が続くときは早めに移動し、避難経路の安全を確認してください。',
+    ],
   },
   tsunami: {
     description: '津波浸水想定区域を表示しています。',
-    colorGuide: '濃い色ほど浸水深が大きい（危険）を示します。透明/空白はデータなし・範囲外・極低リスクを示します。',
+    legend: [
+      { label: '低い', color: 'bg-cyan-100' },
+      { label: '中程度', color: 'bg-cyan-300' },
+      { label: '高い', color: 'bg-cyan-600' },
+    ],
+    guidance: [
+      '強い揺れや津波警報が出たら、すぐ高台や指定の避難場所へ向かってください。',
+      '海岸・河口・川沿いには近づかず、情報更新に注意してください。',
+    ],
   },
   liquefaction: {
     description: '液状化危険度（2012年版）を表示しています。',
-    colorGuide: '赤/オレンジは液状化リスクが高い地域を示します。透明/空白はデータなし・範囲外を示します（データは一部地域のみ）。',
+    legend: [
+      { label: '低い', color: 'bg-amber-100' },
+      { label: 'やや高い', color: 'bg-amber-300' },
+      { label: '高い', color: 'bg-orange-500' },
+    ],
+    guidance: [
+      '道路の段差や沈下が起きる可能性があります。足元の安全を確認してください。',
+      'マンホールの浮き上がり等に注意し、無理な移動を避けてください。',
+    ],
   },
 };
 
-function LayerColorExplanation({ enabledKeys }: { enabledKeys: string[] }) {
+function LayerColorExplanation({ enabledKeys, labelByKey }: { enabledKeys: string[]; labelByKey: Map<string, string> }) {
   const [isOpen, setIsOpen] = useState(true);
 
   if (enabledKeys.length === 0) return null;
 
   const explanations = enabledKeys
-    .map((key) => ({ key, ...LAYER_EXPLANATIONS[key] }))
+    .map((key) => ({ key, label: labelByKey.get(key) ?? key, ...LAYER_EXPLANATIONS[key] }))
     .filter((e) => e.description);
 
   if (explanations.length === 0) return null;
@@ -327,13 +363,35 @@ function LayerColorExplanation({ enabledKeys }: { enabledKeys: string[] }) {
         <div className="mt-3 space-y-3">
           {explanations.map((e) => (
             <div key={e.key} className="text-xs text-gray-700">
-              <div className="font-semibold">{e.key === 'flood' ? '洪水' : e.key === 'landslide' ? '土砂災害' : e.key === 'tsunami' ? '津波' : '液状化'}</div>
+              <div className="font-semibold">{e.label}</div>
               <div className="mt-1">{e.description}</div>
-              <div className="mt-1">{e.colorGuide}</div>
+              {e.legend.length > 0 && (
+                <div className="mt-2">
+                  <div className="text-[11px] font-semibold text-gray-600">凡例</div>
+                  <div className="mt-1 space-y-1">
+                    {e.legend.map((item) => (
+                      <div key={`${e.key}-${item.label}`} className="flex items-center gap-2">
+                        <span className={`h-3 w-3 rounded ${item.color}`} />
+                        <span>{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {e.guidance.length > 0 && (
+                <div className="mt-2">
+                  <div className="text-[11px] font-semibold text-gray-600">避難の考え方</div>
+                  <ul className="mt-1 list-disc space-y-1 pl-4">
+                    {e.guidance.map((line) => (
+                      <li key={line}>{line}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           ))}
           <div className="mt-2 rounded border-l-2 border-amber-400 bg-amber-50 px-2 py-1 text-[11px] text-amber-900">
-            一般的に、濃い色/強い色ほど危険度が高いことを示します。透明/空白部分はデータなし・範囲外・極低リスクの場合があります。
+            濃い色ほど危険度が高い目安です。透明/空白部分はデータなし・範囲外・極低リスクの場合があります。
           </div>
         </div>
       )}

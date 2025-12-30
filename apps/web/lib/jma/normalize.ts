@@ -48,6 +48,31 @@ function normalizeFullWidthDigits(input: string): string {
   return input.replace(/[０-９]/g, (ch) => String('０１２３４５６７８９'.indexOf(ch)));
 }
 
+function normalizeIntensityLabel(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const t = normalizeFullWidthDigits(String(raw)).trim();
+  if (!t) return null;
+  const m = t.match(/([0-7])\s*([+\-]|弱|強)?/);
+  if (!m) return null;
+  const base = Number(m[1]);
+  if (!Number.isFinite(base)) return null;
+  const mod = (m[2] ?? '').trim();
+  if (!mod) return String(base);
+  if (mod === '-' || mod === '弱') return `${base}弱`;
+  if (mod === '+' || mod === '強') return `${base}強`;
+  return `${base}${mod}`;
+}
+
+function intensityScore(label: string): number {
+  const t = normalizeFullWidthDigits(label);
+  const m = t.match(/([0-7])\s*(弱|強)?/);
+  if (!m) return 0;
+  const base = Number(m[1]);
+  if (!Number.isFinite(base)) return 0;
+  const mod = m[2] ?? '';
+  return base + (mod === '強' ? 0.5 : 0);
+}
+
 function normalizeJstLikeTimeToIso(raw: string | null): string | null {
   if (!raw) return null;
   const trimmed = normalizeFullWidthDigits(String(raw).trim());
@@ -93,6 +118,36 @@ function pickMagnitude(value: unknown): string | null {
   return null;
 }
 
+function normalizeDepthKm(raw: unknown): number | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    if (raw > 1000) return raw / 1000;
+    return raw;
+  }
+  if (typeof raw === 'string') {
+    const t = normalizeFullWidthDigits(raw).trim();
+    if (!t) return null;
+    const m = t.match(/([0-9]+(?:\.[0-9]+)?)\s*km/i);
+    if (m) return Number(m[1]);
+    const n = Number(t.replace(/[^0-9.]/g, ''));
+    if (!Number.isFinite(n)) return null;
+    return n > 1000 ? n / 1000 : n;
+  }
+  return null;
+}
+
+function pickDepthKm(value: unknown): number | null {
+  if (!value || typeof value !== 'object') return null;
+  const v =
+    (value as any).depth ??
+    (value as any).dep ??
+    (value as any).depthKm ??
+    (value as any).depth_km ??
+    (value as any).depthkm ??
+    (value as any).d;
+  return normalizeDepthKm(v);
+}
+
 function extractMagnitude(xml: string): string | null {
   return (
     xmlTextBetween(xml, 'jmx_eb:Magnitude') ??
@@ -115,6 +170,73 @@ function extractEpicenter(xml: string): string | null {
   }
 
   return null;
+}
+
+function extractDepthKm(xml: string): number | null {
+  const coordMatch = xml.match(/<jmx_eb:Coordinate\b[^>]*>([\s\S]*?)<\/jmx_eb:Coordinate>/i);
+  if (!coordMatch) return null;
+  const coordBlock = coordMatch[0];
+  const descMatch = coordBlock.match(/description="([^"]+)"/i);
+  const desc = normalizeFullWidthDigits(descMatch?.[1] ?? '');
+  const depthMatch = desc.match(/深さ\s*([0-9]+(?:\.[0-9]+)?)\s*km/i);
+  if (depthMatch) return Number(depthMatch[1]);
+
+  const coordText = normalizeFullWidthDigits(coordMatch[1] ?? '').trim();
+  const parts = coordText.match(/[+-]\d+(?:\.\d+)?/g);
+  if (parts && parts.length >= 3) {
+    const depthMeters = Math.abs(Number(parts[2]));
+    if (Number.isFinite(depthMeters)) return depthMeters / 1000;
+  }
+  return null;
+}
+
+function extractMaxIntensity(xml: string): string | null {
+  const intensityMatch = xml.match(/<Intensity[\s\S]*?<\/Intensity>/i);
+  if (!intensityMatch) return null;
+  const block = intensityMatch[0];
+  const raw = xmlTextBetween(block, 'MaxInt');
+  return normalizeIntensityLabel(raw) ?? (raw ? normalizeFullWidthDigits(raw).trim() : null);
+}
+
+function extractIntensityAreas(xml: string): Array<{ intensity: string; areas: string[] }> | null {
+  const intensityMatch = xml.match(/<Intensity[\s\S]*?<\/Intensity>/i);
+  if (!intensityMatch) return null;
+  const block = intensityMatch[0];
+  const prefBlocks = block.match(/<Pref>[\s\S]*?<\/Pref>/gi) ?? [];
+  if (prefBlocks.length === 0) return null;
+
+  const grouped = new Map<string, Set<string>>();
+  for (const prefBlock of prefBlocks) {
+    const prefName = xmlTextBetween(prefBlock, 'Name') ?? '';
+    const areaBlocks = prefBlock.match(/<Area>[\s\S]*?<\/Area>/gi) ?? [];
+    if (areaBlocks.length === 0) {
+      const prefIntensity = normalizeIntensityLabel(xmlTextBetween(prefBlock, 'MaxInt') ?? xmlTextBetween(prefBlock, 'Int'));
+      if (prefIntensity && prefName) {
+        const set = grouped.get(prefIntensity) ?? new Set<string>();
+        set.add(prefName);
+        grouped.set(prefIntensity, set);
+      }
+      continue;
+    }
+
+    for (const areaBlock of areaBlocks) {
+      const areaName = xmlTextBetween(areaBlock, 'Name');
+      const areaIntensity = normalizeIntensityLabel(xmlTextBetween(areaBlock, 'MaxInt') ?? xmlTextBetween(areaBlock, 'Int'));
+      if (!areaName || !areaIntensity) continue;
+      const label = prefName && !areaName.startsWith(prefName) ? `${prefName} ${areaName}` : areaName;
+      const set = grouped.get(areaIntensity) ?? new Set<string>();
+      set.add(label);
+      grouped.set(areaIntensity, set);
+    }
+  }
+
+  if (grouped.size === 0) return null;
+  const result = Array.from(grouped.entries()).map(([intensity, areas]) => ({
+    intensity,
+    areas: Array.from(areas),
+  }));
+  result.sort((a, b) => intensityScore(b.intensity) - intensityScore(a.intensity));
+  return result;
 }
 
 function computeFetchStatus(updatedAt: string | null, lastError: string | null): FetchStatus {
@@ -156,12 +278,25 @@ function normalizeQuakesFromWebJson(raw: unknown): NormalizedQuakeItem[] {
     const epicenter = pickFirstString(row, ['anm', 'an', 'name', 'place', 'epicenter', 'loc', 'en']);
     const magnitude = pickMagnitude(row);
     const maxi = pickFirstString(row, ['maxi', 'maxIntensity', 'max', 'int', 'intensity', 'shindo']);
+    const maxIntensity = normalizeIntensityLabel(maxi) ?? maxi;
+    const depthKm = pickDepthKm(row);
     const link = pickFirstString(row, ['url', 'link', 'href', 'detailUrl', 'detail', 'page']);
-    const title = pickFirstString(row, ['ttl', 'title', 'headline', 'text']) ?? buildQuakeTitle({ maxi, epicenter, magnitude });
+    const title = pickFirstString(row, ['ttl', 'title', 'headline', 'text']) ?? buildQuakeTitle({ maxi: maxIntensity, epicenter, magnitude });
 
     const idBasis = JSON.stringify({ time, title, link });
     const id = crypto.createHash('sha256').update(idBasis).digest('hex').slice(0, 16);
-    parsed.push({ id, time, title, link, maxIntensity: maxi, magnitude, epicenter, source: 'webjson' });
+    parsed.push({
+      id,
+      time,
+      title,
+      link,
+      maxIntensity: maxIntensity ?? null,
+      magnitude,
+      epicenter,
+      depthKm,
+      intensityAreas: undefined,
+      source: 'webjson',
+    });
     if (parsed.length >= NORMALIZATION_LIMITS.quakesItems) break;
   }
 
@@ -271,11 +406,17 @@ export async function rebuildNormalizedQuakes(): Promise<NormalizedQuakesSnapsho
 
     let magnitude: string | null = null;
     let epicenter: string | null = null;
+    let depthKm: number | null = null;
+    let maxIntensity: string | null = null;
+    let intensityAreas: Array<{ intensity: string; areas: string[] }> | undefined = undefined;
     if (await fileExists(detailPath)) {
       const detailXml = await readTextFile(detailPath);
       if (detailXml) {
         magnitude = extractMagnitude(detailXml);
         epicenter = extractEpicenter(detailXml);
+        depthKm = extractDepthKm(detailXml);
+        maxIntensity = extractMaxIntensity(detailXml);
+        intensityAreas = extractIntensityAreas(detailXml) ?? undefined;
       }
     }
 
@@ -291,9 +432,11 @@ export async function rebuildNormalizedQuakes(): Promise<NormalizedQuakesSnapsho
       time: entry.updated ?? entry.published,
       title: entry.title,
       link: entry.link,
-      maxIntensity: null,
+      maxIntensity,
       magnitude,
       epicenter,
+      depthKm,
+      intensityAreas,
       source: 'pull',
     });
   }

@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import { parseAtomFeed } from 'lib/jma/atom';
 import { readTextFile } from 'lib/jma/cache';
 import { jmaFeedXmlPath } from 'lib/jma/paths';
-import { getJmaWarningPriority } from 'lib/jma/filters';
+import { getWarningLevel, isActiveWarningItem } from 'lib/jma/filters';
 
 type Item = { id: string; title: string; updated: string | null };
 
@@ -31,7 +31,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       for (const entry of parsed.entries) {
         const title = String(entry.title ?? '').trim();
         if (!title) continue;
-        if (getJmaWarningPriority(title) !== 'URGENT') continue;
+        if (!isActiveWarningItem({ kind: title })) continue;
+        const level = getWarningLevel(title, null);
+        if (level !== 'warning' && level !== 'special') continue;
         const t = entry.updated ?? entry.published ?? null;
         const id = crypto.createHash('sha256').update(`${feed}|${entry.id}|${title}`).digest('hex').slice(0, 16);
         items.push({ id, title, updated: t });

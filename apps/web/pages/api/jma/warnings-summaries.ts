@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { readCachedWarnings } from 'lib/jma/normalize';
-import { getJmaWarningPriority } from 'lib/jma/filters';
+import { getWarningLevel, isActiveWarningItem } from 'lib/jma/filters';
 
 type Summary = {
   area: string;
@@ -48,9 +48,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       for (const it of items) {
         const kind = String((it as any)?.kind ?? '').trim();
         if (!kind) continue;
-        const p = getJmaWarningPriority(kind);
-        if (p === 'URGENT') urgentCounts.set(kind, (urgentCounts.get(kind) ?? 0) + 1);
-        if (p === 'ADVISORY') advisoryCounts.set(kind, (advisoryCounts.get(kind) ?? 0) + 1);
+        if (!isActiveWarningItem(it)) continue;
+        const level = getWarningLevel(kind, (it as any)?.status ?? null);
+        if (!level) continue;
+        if (level === 'special' || level === 'warning') urgentCounts.set(kind, (urgentCounts.get(kind) ?? 0) + 1);
+        if (level === 'advisory') advisoryCounts.set(kind, (advisoryCounts.get(kind) ?? 0) + 1);
       }
 
       const topUrgent = Array.from(urgentCounts.entries())

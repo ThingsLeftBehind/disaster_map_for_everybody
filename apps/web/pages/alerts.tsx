@@ -6,6 +6,8 @@ import { useDevice } from '../components/device/DeviceProvider';
 import { reverseGeocodeGsi, saveLastLocation } from '../lib/client/location';
 import { formatPrefMuniLabel, useAreaName } from '../lib/client/areaName';
 import { shapeAlertWarnings, type WarningGroup, deduplicateWarnings } from '../lib/jma/alerts';
+import { isActiveWarningItem } from '../lib/jma/filters';
+import { WARNING_LEVEL_BADGE_CLASSES, WARNING_LEVEL_CHIP_CLASSES, WARNING_LEVEL_LABEL } from '../lib/ui/alertLevels';
 import {
   getTokyoContextFromGroup,
   getTokyoContextFromMuniCode,
@@ -35,17 +37,6 @@ function shouldShowUnstable({ status, warnings }: { status?: FetchStatusPayload 
   const parsed = Date.parse(updatedAt);
   if (Number.isNaN(parsed)) return true;
   return Date.now() - parsed > STALE_MS;
-}
-
-function formatUpdatedAt(updatedAt: string | null | undefined): string {
-  if (!updatedAt) return '未取得';
-  const t = Date.parse(updatedAt);
-  if (Number.isNaN(t)) return '未取得';
-  return new Date(t).toLocaleString();
-}
-
-function sanitizeFetchError(message: string | null | undefined): string {
-  return message ? '取得エラー' : 'なし';
 }
 
 function matchesTokyoGroup(areaCode: string, group: TokyoGroupKey | null): boolean {
@@ -151,16 +142,10 @@ export default function AlertsPage() {
   const tokyoScopeLabel = tokyoContext === 'MAINLAND' ? '東京都' : tokyoContext === 'ISLANDS' ? '東京都（島しょ）' : null;
 
   const targetLabel = useCurrent
-    ? currentJmaAreaCode
-      ? coarseAreaLabel
-        ? `現在地: ${coarseAreaLabel}`
-        : '現在地: エリア未確定'
-      : '現在地: エリア未確定'
+    ? coarseAreaLabel ?? 'エリア未確定'
     : selectedArea
-      ? `選択エリア: ${formatPrefMuniLabel({ prefName: selectedArea.prefName, muniName: selectedArea.muniName ?? null }) ?? selectedArea.prefName}`
-      : manualPrefLabel
-        ? `手動: ${manualPrefLabel}`
-        : 'エリア未確定';
+      ? formatPrefMuniLabel({ prefName: selectedArea.prefName, muniName: selectedArea.muniName ?? null }) ?? selectedArea.prefName
+      : manualPrefLabel ?? 'エリア未確定';
 
   const breakdown = (warnings as any)?.breakdown as Record<string, { name: string; items: any[] }> | null;
   const muniMap = (warnings as any)?.muniMap as Record<string, string> | null;
@@ -173,10 +158,7 @@ export default function AlertsPage() {
     return Object.entries(breakdown)
       .map(([code, data]) => {
         if (!matchesTokyoGroup(code, tokyoGroupFilter)) return null;
-        const activeItems = data.items.filter((i: any) => {
-          const s = i.status || '';
-          return !s.includes('解除') && !s.includes('なし') && !s.includes('ありません');
-        });
+        const activeItems = data.items.filter((i: any) => isActiveWarningItem(i));
         const items = deduplicateWarnings(activeItems);
         return { code, ...data, items };
       })
@@ -186,8 +168,6 @@ export default function AlertsPage() {
 
   const activeAreaNames = activeAreas.slice(0, 3).map(a => a.name);
   if (activeAreas.length > 3) activeAreaNames.push('ほか');
-
-  const errorLabel = sanitizeFetchError(warnings?.lastError ?? status?.lastError);
 
   const beginAction = () => {
     const now = Date.now();
@@ -222,18 +202,26 @@ export default function AlertsPage() {
                 <span
                   className={classNames(
                     'rounded-full px-3 py-1 text-xs font-bold ring-1',
-                    warningCounts.urgent > 0 ? 'bg-red-50 text-red-800 ring-red-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
+                    warningCounts.special > 0 ? WARNING_LEVEL_CHIP_CLASSES.special : 'bg-gray-50 text-gray-800 ring-gray-200'
                   )}
                 >
-                  警報 {warningCounts.urgent}
+                  {WARNING_LEVEL_LABEL.special} {warningCounts.special}
                 </span>
                 <span
                   className={classNames(
                     'rounded-full px-3 py-1 text-xs font-bold ring-1',
-                    warningCounts.advisory > 0 ? 'bg-amber-50 text-amber-900 ring-amber-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
+                    warningCounts.warning > 0 ? WARNING_LEVEL_CHIP_CLASSES.warning : 'bg-gray-50 text-gray-800 ring-gray-200'
                   )}
                 >
-                  注意報 {warningCounts.advisory}
+                  {WARNING_LEVEL_LABEL.warning} {warningCounts.warning}
+                </span>
+                <span
+                  className={classNames(
+                    'rounded-full px-3 py-1 text-xs font-bold ring-1',
+                    warningCounts.advisory > 0 ? WARNING_LEVEL_CHIP_CLASSES.advisory : 'bg-gray-50 text-gray-800 ring-gray-200'
+                  )}
+                >
+                  {WARNING_LEVEL_LABEL.advisory} {warningCounts.advisory}
                 </span>
               </div>
             </div>
@@ -244,18 +232,26 @@ export default function AlertsPage() {
               <span
                 className={classNames(
                   'rounded-full px-3 py-1 text-xs font-bold ring-1',
-                  warningCounts.urgent > 0 ? 'bg-red-50 text-red-800 ring-red-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
+                  warningCounts.special > 0 ? WARNING_LEVEL_CHIP_CLASSES.special : 'bg-gray-50 text-gray-800 ring-gray-200'
                 )}
               >
-                警報 {warningCounts.urgent}種類
+                {WARNING_LEVEL_LABEL.special} {warningCounts.special}種類
               </span>
               <span
                 className={classNames(
                   'rounded-full px-3 py-1 text-xs font-bold ring-1',
-                  warningCounts.advisory > 0 ? 'bg-amber-50 text-amber-900 ring-amber-200' : 'bg-gray-50 text-gray-800 ring-gray-200'
+                  warningCounts.warning > 0 ? WARNING_LEVEL_CHIP_CLASSES.warning : 'bg-gray-50 text-gray-800 ring-gray-200'
                 )}
               >
-                注意報 {warningCounts.advisory}種類
+                {WARNING_LEVEL_LABEL.warning} {warningCounts.warning}種類
+              </span>
+              <span
+                className={classNames(
+                  'rounded-full px-3 py-1 text-xs font-bold ring-1',
+                  warningCounts.advisory > 0 ? WARNING_LEVEL_CHIP_CLASSES.advisory : 'bg-gray-50 text-gray-800 ring-gray-200'
+                )}
+              >
+                {WARNING_LEVEL_LABEL.advisory} {warningCounts.advisory}種類
               </span>
             </div>
             {tokyoScopeLabel && <div className="text-[11px] text-gray-600">対象: {tokyoScopeLabel}</div>}
@@ -376,6 +372,8 @@ export default function AlertsPage() {
       </section >
 
       <section className="space-y-6">
+        <GuidanceSection special={warningBuckets.special} warning={warningBuckets.warning} advisory={warningBuckets.advisory} />
+
         <MyAreaWarningsSection />
 
         <div className="rounded-2xl bg-white p-5 shadow">
@@ -401,8 +399,9 @@ export default function AlertsPage() {
               {/* Checkbox removed per request */}
 
               <div className="mt-4 space-y-4">
-                <WarningGroupSection title="緊急（警報/特別警報）" groups={warningBuckets.urgent} />
-                <WarningGroupSection title="注意報" groups={warningBuckets.advisory} />
+                <WarningGroupSection title={WARNING_LEVEL_LABEL.special} groups={warningBuckets.special} />
+                <WarningGroupSection title={WARNING_LEVEL_LABEL.warning} groups={warningBuckets.warning} />
+                <WarningGroupSection title={WARNING_LEVEL_LABEL.advisory} groups={warningBuckets.advisory} />
                 {/* Reference info always hidden or removed? User said remove checkbox. 
                   But also 'Dedupe per area card...'. 
                   If we want to show reference (possibility etc), user didn't explicitly say "Show reference always".
@@ -422,7 +421,6 @@ export default function AlertsPage() {
                   <SubAreaBreakdown
                     breakdown={breakdown}
                     highlightCode={targetForecastCode}
-                    manualOrSaved={Boolean(activeMuniCode)}
                     tokyoGroup={tokyoGroupFilter}
                   />
                 </div>
@@ -432,8 +430,6 @@ export default function AlertsPage() {
           )}
         </div>
       </section>
-
-      <GuidanceSection urgent={warningBuckets.urgent} advisory={warningBuckets.advisory} />
 
       <div className="rounded-xl border bg-gray-50 px-3 py-2 text-sm text-gray-700">
         <div className="font-semibold">発表区域について</div>
@@ -465,7 +461,6 @@ function WarningGroupSection({
   if (!groups || groups.length === 0) return null;
 
   const sorted = [...groups].sort((a, b) => {
-    if (a.priority !== b.priority) return a.priority.localeCompare(b.priority);
     if (a.count !== b.count) return b.count - a.count;
     return a.kind.localeCompare(b.kind);
   });
@@ -479,7 +474,12 @@ function WarningGroupSection({
       <ul className="mt-2 space-y-2">
         {sorted.map((g) => (
           <li key={g.key} className="rounded-2xl border bg-gray-50 px-3 py-2 text-sm break-words">
-            <div className="font-semibold break-words">{g.kind}</div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={classNames('rounded-full border px-2 py-0.5 text-[11px] font-semibold', WARNING_LEVEL_BADGE_CLASSES[g.level])}>
+                {WARNING_LEVEL_LABEL[g.level]}
+              </span>
+              <div className="font-semibold break-words">{g.kind}</div>
+            </div>
             {g.statuses.length > 0 && <div className="mt-1 text-xs text-gray-600 break-words">状態: {g.statuses.join(' / ')}</div>}
           </li>
         ))}
@@ -563,16 +563,14 @@ function extractPhenomenon(kind: string): string {
   return ph;
 }
 
-function GuidanceSection({ urgent, advisory }: { urgent: WarningGroup[]; advisory: WarningGroup[] }) {
+function GuidanceSection({ special, warning, advisory }: { special: WarningGroup[]; warning: WarningGroup[]; advisory: WarningGroup[] }) {
   // const [isOpen, setIsOpen] = useState(false); // Removed per request
-
-  const activeKinds = new Set([...urgent, ...advisory].map((g) => g.kind));
 
   // Extract unique phenomena from active alerts, preserving order of appearance
   const activePhenomena = useMemo(() => {
     const seen = new Set<string>();
     const result: string[] = [];
-    for (const g of [...urgent, ...advisory]) {
+    for (const g of [...special, ...warning, ...advisory]) {
       const ph = extractPhenomenon(g.kind);
       // Normalize 雷/落雷 to same key
       const key = ph === '落雷' ? '雷' : ph;
@@ -582,7 +580,7 @@ function GuidanceSection({ urgent, advisory }: { urgent: WarningGroup[]; advisor
       }
     }
     return result;
-  }, [urgent, advisory]);
+  }, [special, warning, advisory]);
 
   return (
     <section className="rounded-2xl bg-white p-5 shadow">
@@ -592,9 +590,24 @@ function GuidanceSection({ urgent, advisory }: { urgent: WarningGroup[]; advisor
 
       <div className="mt-4 space-y-4">
         <div className="rounded-xl bg-gray-50 p-4 text-sm space-y-2">
-          <div><span className="font-bold text-gray-900 border-b-2 border-amber-300">注意報</span>: 災害が起こるおそれがある場合に発表されます。</div>
-          <div><span className="font-bold text-red-800 border-b-2 border-red-300">警報</span>: 重大な災害が起こるおそれがある場合に発表されます。</div>
-          <div><span className="font-bold text-purple-900 border-b-2 border-purple-300">特別警報</span>: 予想をはるかに超える現象です。直ちに命を守る行動をとってください。</div>
+          <div className="flex items-center gap-2">
+            <span className={classNames('rounded-full border px-2 py-0.5 text-xs font-semibold', WARNING_LEVEL_BADGE_CLASSES.advisory)}>
+              {WARNING_LEVEL_LABEL.advisory}
+            </span>
+            <div>災害が起こるおそれがある場合に発表されます。</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={classNames('rounded-full border px-2 py-0.5 text-xs font-semibold', WARNING_LEVEL_BADGE_CLASSES.warning)}>
+              {WARNING_LEVEL_LABEL.warning}
+            </span>
+            <div>重大な災害が起こるおそれがある場合に発表されます。</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={classNames('rounded-full border px-2 py-0.5 text-xs font-semibold', WARNING_LEVEL_BADGE_CLASSES.special)}>
+              {WARNING_LEVEL_LABEL.special}
+            </span>
+            <div>予想をはるかに超える現象です。直ちに命を守る行動をとってください。</div>
+          </div>
 
           {/* Phenomenon-specific blocks */}
           {activePhenomena.length > 0 && (
@@ -626,12 +639,10 @@ function GuidanceSection({ urgent, advisory }: { urgent: WarningGroup[]; advisor
 function SubAreaBreakdown({
   breakdown,
   highlightCode,
-  manualOrSaved,
   tokyoGroup,
 }: {
   breakdown: Record<string, { name: string; items: any[] }>;
   highlightCode?: string | null;
-  manualOrSaved: boolean;
   tokyoGroup?: TokyoGroupKey | null;
 }) {
   // Sort: highlighted first, then by code
@@ -675,10 +686,7 @@ function SubAreaBreakdown({
           <div className="grid gap-2 md:grid-cols-2">
             {items.map(([code, data]) => {
               const isHighlighted = code === highlightCode;
-              const activeItems = data.items.filter((i: any) => {
-                const s = i.status || '';
-                return !s.includes('解除') && !s.includes('なし') && !s.includes('ありません');
-              });
+              const activeItems = data.items.filter((i: any) => isActiveWarningItem(i));
 
               // Robust deduplication
               const dedupedItems = deduplicateWarnings(activeItems);
@@ -705,111 +713,6 @@ function SubAreaBreakdown({
                     )}
                   </div>
                   {hasActive && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {dedupedItems.map((it: any) => (
-                        <span key={it.id ?? it.kind} className="text-xs border px-1.5 py-0.5 rounded bg-white text-gray-700">
-                          {it.kind}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SubAreaBreakdownDeprecated({
-  breakdown,
-  highlightCode,
-  manualOrSaved
-}: {
-  breakdown: Record<string, { name: string; items: any[] }>;
-  highlightCode?: string | null;
-  manualOrSaved: boolean;
-}) {
-  // Sort: highlighted first, then by code
-  const items = Object.entries(breakdown).sort((a, b) => {
-    if (highlightCode) {
-      if (a[0] === highlightCode) return -1;
-      if (b[0] === highlightCode) return 1;
-    }
-    return a[0].localeCompare(b[0]);
-  });
-
-  const [open, setOpen] = useState(false);
-  const hasContent = items.some(([, d]) => d.items.length > 0);
-
-  // Auto-open if specific area is highlighted
-  useEffect(() => {
-    if (highlightCode) setOpen(true);
-  }, [highlightCode]);
-
-  if (!hasContent) return null;
-
-  return (
-    <div>
-      <div className="flex items-center justify-between">
-        <h3 className="font-bold text-gray-800">発表区域（予報区）ごとの内訳</h3>
-        <button onClick={() => setOpen(!open)} className="text-sm font-semibold text-blue-600 hover:underline">
-          {open ? 'とじる' : 'すべて見る'}
-        </button>
-      </div>
-
-      {open && (
-        <div className="mt-3 space-y-3">
-          {highlightCode && (
-            <div className="text-xs text-blue-800 bg-blue-50 px-2 py-1 rounded inline-block">
-              選択した市区町村に対応する発表区域を強調表示しています（境界は一致しない場合あり）。
-            </div>
-          )}
-
-          <div className="grid gap-2 md:grid-cols-2">
-            {items.map(([code, data]) => {
-              const isHighlighted = code === highlightCode;
-              const activeItems = data.items.filter((i: any) => {
-                const s = i.status || '';
-                return !s.includes('解除') && !s.includes('なし') && !s.includes('ありません');
-              });
-
-              const hasActive = activeItems.length > 0;
-              if (!hasActive && !isHighlighted) return null;
-
-              const dedupedItems = (() => {
-                const map = new Map<string, any>();
-                for (const it of activeItems) {
-                  // Key by kind + status to allow distinct statuses (e.g., Released vs Active)
-                  const key = `${it.kind}|${it.status ?? ''}`;
-                  if (!map.has(key)) {
-                    map.set(key, it);
-                  }
-                }
-                return Array.from(map.values());
-              })();
-
-              return (
-                <div
-                  key={code}
-                  className={classNames(
-                    'rounded-lg border p-3 text-sm',
-                    isHighlighted ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-300' : 'bg-white'
-                  )}
-                >
-                  <div className="font-bold flex items-center justify-between">
-                    <span>{data.name}</span>
-                    {activeItems.length > 0 ? (
-                      <span className="text-xs font-normal bg-red-100 text-red-800 px-1.5 py-0.5 rounded-full">
-                        {activeItems.length}
-                      </span>
-                    ) : (
-                      <span className="text-xs font-normal text-gray-400">発表なし</span>
-                    )}
-                  </div>
-                  {activeItems.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
                       {dedupedItems.map((it: any) => (
                         <span key={it.id ?? it.kind} className="text-xs border px-1.5 py-0.5 rounded bg-white text-gray-700">

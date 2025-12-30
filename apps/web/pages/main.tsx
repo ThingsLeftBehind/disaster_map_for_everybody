@@ -10,7 +10,8 @@ import ShareMenu from '../components/ShareMenu';
 import { loadLastLocation, reverseGeocodeGsi, saveLastLocation, type Coords } from '../lib/client/location';
 import { buildUrl, formatShelterShareText } from '../lib/client/share';
 import { formatPrefMuniLabel, useAreaName } from '../lib/client/areaName';
-import { getJmaWarningPriority } from '../lib/jma/filters';
+import { shapeAlertWarnings } from '../lib/jma/alerts';
+import { WARNING_LEVEL_LABEL } from '../lib/ui/alertLevels';
 import { DEFAULT_MAIN_LIMIT, MAP_DEFAULT_ZOOM } from '../lib/constants';
 import { getAllSavedShelters, removeShelterFromStorage, saveShelterToStorage, type SavedShelter } from '../lib/client/shelterStorage';
 import { toDisplayFetchStatus } from '../lib/ui/fetchStatusLabel';
@@ -129,7 +130,7 @@ type WarningItem = { id: string; kind: string; status: string | null; source: st
 
 export default function MainPage() {
   const router = useRouter();
-  const { device, deviceId, updateDevice, coarseArea, setCoarseArea, checkin, addSavedArea, removeSavedArea } = useDevice();
+  const { device, deviceId, updateDevice, coarseArea, setCoarseArea, checkin, addSavedArea, removeSavedArea, currentJmaAreaCode } = useDevice();
   const lowBandwidth = Boolean(device?.settings?.lowBandwidth || device?.settings?.powerSaving);
   const refreshMs = device?.settings?.powerSaving ? 180_000 : 60_000;
   const { area: coarseAreaInfo, label: coarseAreaLabel } = useAreaName({ prefCode: coarseArea?.prefCode ?? null, muniCode: coarseArea?.muniCode ?? null });
@@ -217,6 +218,24 @@ export default function MainPage() {
   const sheltersCount: number | null = typeof healthData?.sheltersCount === 'number' ? healthData.sheltersCount : null;
   const dbConnected: boolean | null = typeof healthData?.dbConnected === 'boolean' ? healthData.dbConnected : null;
   const sheltersUnavailable = dbConnected === false || sheltersCount === 0;
+
+  const currentWarningsUrl = currentJmaAreaCode ? `/api/jma/warnings?area=${currentJmaAreaCode}` : null;
+  const { data: currentWarnings } = useSWR(currentWarningsUrl, fetcher, { dedupingInterval: 10_000, refreshInterval: 0 });
+  const currentWarningShape = useMemo(
+    () =>
+      shapeAlertWarnings({
+        warnings: currentWarnings,
+        area: {
+          prefCode: coarseArea?.prefCode ?? null,
+          muniCode: coarseArea?.muniCode ?? null,
+          label: coarseAreaLabel ?? null,
+        },
+      }),
+    [coarseArea?.muniCode, coarseArea?.prefCode, coarseAreaLabel, currentWarnings]
+  );
+  const currentWarningCounts = currentWarningShape.counts;
+  const alertTotal = currentWarningCounts.special + currentWarningCounts.warning + currentWarningCounts.advisory;
+  const alertAreaLabel = coarseAreaLabel ?? currentWarnings?.areaName ?? '対象エリア';
 
   const isDev = process.env.NODE_ENV === 'development';
   const debugEnabled = isDev && String(router.query.debug ?? '') === '1';
@@ -376,6 +395,20 @@ export default function MainPage() {
         title="メイン"
         description="避難ナビ（HinaNavi）のメイン画面。現在地周辺の避難所を地図で確認し、距離順の一覧やハザード対応の目安を把握できます。警報・注意報や地震情報への導線も備え、災害時の行動判断を支援します。"
       />
+
+      {alertTotal > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-black bg-white px-3 py-2 text-sm shadow-sm">
+          <div className="font-semibold text-gray-900">
+            {WARNING_LEVEL_LABEL.special} {currentWarningCounts.special}件 / {WARNING_LEVEL_LABEL.warning} {currentWarningCounts.warning}件 / {WARNING_LEVEL_LABEL.advisory} {currentWarningCounts.advisory}件 / 対象: {alertAreaLabel}
+          </div>
+          <button
+            className="rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-black"
+            onClick={() => void router.push('/alerts')}
+          >
+            警報ページへ
+          </button>
+        </div>
+      )}
 
       <section className="rounded-2xl bg-white p-5 shadow">
         <div className="flex flex-row flex-wrap items-center justify-between gap-2">

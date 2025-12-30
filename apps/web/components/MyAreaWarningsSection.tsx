@@ -4,7 +4,8 @@ import classNames from 'classnames';
 import { useDevice } from './device/DeviceProvider';
 import { reverseGeocodeGsi, type Coords } from '../lib/client/location';
 import { formatPrefMuniLabel, useAreaName } from '../lib/client/areaName';
-import { getJmaWarningPriority } from '../lib/jma/filters';
+import { getWarningLevel, isActiveWarningItem } from '../lib/jma/filters';
+import { WARNING_LEVEL_CHIP_CLASSES, WARNING_LEVEL_LABEL } from '../lib/ui/alertLevels';
 import { inferTokyoGroup, type TokyoGroupKey } from '../lib/alerts/tokyoScope';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -18,18 +19,26 @@ const TOKYO_LABELS: Record<TokyoGroupKey, string> = {
 };
 
 function summarizeWarningItems(items: WarningItem[]) {
-    const urgentCounts = new Map<string, number>();
+    const specialCounts = new Map<string, number>();
+    const warningCounts = new Map<string, number>();
     const advisoryCounts = new Map<string, number>();
 
     for (const it of items) {
+        if (!isActiveWarningItem(it)) continue;
         const kind = String(it.kind ?? '').trim();
         if (!kind) continue;
-        const priority = getJmaWarningPriority(kind);
-        if (priority === 'URGENT') urgentCounts.set(kind, (urgentCounts.get(kind) ?? 0) + 1);
-        if (priority === 'ADVISORY') advisoryCounts.set(kind, (advisoryCounts.get(kind) ?? 0) + 1);
+        const level = getWarningLevel(kind, it.status);
+        if (!level) continue;
+        if (level === 'special') specialCounts.set(kind, (specialCounts.get(kind) ?? 0) + 1);
+        if (level === 'warning') warningCounts.set(kind, (warningCounts.get(kind) ?? 0) + 1);
+        if (level === 'advisory') advisoryCounts.set(kind, (advisoryCounts.get(kind) ?? 0) + 1);
     }
 
-    const topUrgent = Array.from(urgentCounts.entries())
+    const topSpecial = Array.from(specialCounts.entries())
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .map(([kind]) => kind)
+        .slice(0, 2);
+    const topWarning = Array.from(warningCounts.entries())
         .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
         .map(([kind]) => kind)
         .slice(0, 2);
@@ -39,9 +48,11 @@ function summarizeWarningItems(items: WarningItem[]) {
         .slice(0, 2);
 
     return {
-        urgentCount: urgentCounts.size,
+        specialCount: specialCounts.size,
+        warningCount: warningCounts.size,
         advisoryCount: advisoryCounts.size,
-        topUrgent,
+        topSpecial,
+        topWarning,
         topAdvisory,
     };
 }
@@ -241,9 +252,11 @@ export function MyAreaWarningsSection() {
                     areaName: formatPrefMuniLabel({ prefName: area.prefName, muniName: area.muniName ?? null }) ?? area.prefName,
                     tokyoLabel,
                     updatedAt: warnings?.updatedAt ?? null,
-                    urgentCount: summary.urgentCount,
+                    specialCount: summary.specialCount,
+                    warningCount: summary.warningCount,
                     advisoryCount: summary.advisoryCount,
-                    topUrgent: summary.topUrgent,
+                    topSpecial: summary.topSpecial,
+                    topWarning: summary.topWarning,
                     topAdvisory: summary.topAdvisory,
                 };
             }),
@@ -278,7 +291,7 @@ export function MyAreaWarningsSection() {
                     ) : (
                         <div className="mt-4 grid gap-3 md:grid-cols-2">
                             {myAreas.map((a) => {
-                                const hasAny = a.urgentCount + a.advisoryCount > 0;
+                                const hasAny = a.specialCount + a.warningCount + a.advisoryCount > 0;
                                 return (
                                     <div key={a.id} className="rounded-2xl border bg-gray-50 p-4">
                                         <div className="flex items-start justify-between gap-2">
@@ -290,27 +303,36 @@ export function MyAreaWarningsSection() {
                                                     {a.updatedAt ? `最終取得: ${new Date(a.updatedAt).toLocaleString()}` : 'まだ取得できていません'}
                                                 </div>
                                             </div>
-                                            <div className="flex gap-2">
-                                                <span className={classNames('rounded-full px-3 py-1 text-xs font-bold ring-1', a.urgentCount > 0 ? 'bg-red-50 text-red-800 ring-red-200' : 'bg-white text-gray-800 ring-gray-200')}>
-                                                    警報 {a.urgentCount}
+                                            <div className="flex flex-wrap gap-2">
+                                                <span className={classNames('rounded-full px-3 py-1 text-xs font-bold ring-1', a.specialCount > 0 ? WARNING_LEVEL_CHIP_CLASSES.special : 'bg-white text-gray-800 ring-gray-200')}>
+                                                    {WARNING_LEVEL_LABEL.special} {a.specialCount}
                                                 </span>
-                                                <span className={classNames('rounded-full px-3 py-1 text-xs font-bold ring-1', a.advisoryCount > 0 ? 'bg-amber-50 text-amber-900 ring-amber-200' : 'bg-white text-gray-800 ring-gray-200')}>
-                                                    注意報 {a.advisoryCount}
+                                                <span className={classNames('rounded-full px-3 py-1 text-xs font-bold ring-1', a.warningCount > 0 ? WARNING_LEVEL_CHIP_CLASSES.warning : 'bg-white text-gray-800 ring-gray-200')}>
+                                                    {WARNING_LEVEL_LABEL.warning} {a.warningCount}
+                                                </span>
+                                                <span className={classNames('rounded-full px-3 py-1 text-xs font-bold ring-1', a.advisoryCount > 0 ? WARNING_LEVEL_CHIP_CLASSES.advisory : 'bg-white text-gray-800 ring-gray-200')}>
+                                                    {WARNING_LEVEL_LABEL.advisory} {a.advisoryCount}
                                                 </span>
                                             </div>
                                         </div>
 
                                         {hasAny ? (
                                             <div className="mt-3 space-y-2 text-sm text-gray-900">
-                                                {a.topUrgent.length > 0 && (
+                                                {a.topSpecial.length > 0 && (
                                                     <div>
-                                                        <div className="text-xs font-semibold text-red-800">警報</div>
-                                                        <div className="mt-1 text-sm">{a.topUrgent.join(' / ')}</div>
+                                                        <div className="text-xs font-semibold text-purple-900">{WARNING_LEVEL_LABEL.special}</div>
+                                                        <div className="mt-1 text-sm">{a.topSpecial.join(' / ')}</div>
+                                                    </div>
+                                                )}
+                                                {a.topWarning.length > 0 && (
+                                                    <div>
+                                                        <div className="text-xs font-semibold text-red-800">{WARNING_LEVEL_LABEL.warning}</div>
+                                                        <div className="mt-1 text-sm">{a.topWarning.join(' / ')}</div>
                                                     </div>
                                                 )}
                                                 {a.topAdvisory.length > 0 && (
                                                     <div>
-                                                        <div className="text-xs font-semibold text-amber-900">注意報</div>
+                                                        <div className="text-xs font-semibold text-amber-900">{WARNING_LEVEL_LABEL.advisory}</div>
                                                         <div className="mt-1 text-sm">{a.topAdvisory.join(' / ')}</div>
                                                     </div>
                                                 )}

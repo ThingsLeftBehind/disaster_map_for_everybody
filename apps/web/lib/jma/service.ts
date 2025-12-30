@@ -79,6 +79,8 @@ export async function getJmaQuakes(): Promise<{
     maxIntensity: string | null;
     magnitude: string | null;
     epicenter: string | null;
+    depthKm: number | null;
+    intensityAreas?: Array<{ intensity: string; areas: string[] }>;
   }>;
 }> {
   const cached = await readCachedQuakes();

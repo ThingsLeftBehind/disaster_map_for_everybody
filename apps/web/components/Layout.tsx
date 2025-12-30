@@ -240,7 +240,8 @@ export default function Layout({ children }: { children: ReactNode }) {
   const warningCount = selectedCount > 0 ? selectedCount : currentCount;
   const warningSource = selectedCount > 0 ? 'selected' : currentCount > 0 ? 'current' : null;
   const bannerCounts = warningSource === 'selected' ? selectedCounts : warningSource === 'current' ? currentCounts : null;
-  const bannerUrgentCount = bannerCounts?.urgent ?? 0;
+  const bannerSpecialCount = bannerCounts?.special ?? 0;
+  const bannerWarningCount = bannerCounts?.warning ?? 0;
   const bannerAdvisoryCount = bannerCounts?.advisory ?? 0;
 
   const { data: jmaStatus } = useSWR('/api/jma/status', fetcher, { refreshInterval: refreshMs, dedupingInterval: 10_000 });
@@ -369,7 +370,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           <div className="border-t bg-red-50">
             <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3 md:flex-row md:items-center md:justify-between">
               <div className="text-sm font-semibold text-red-900">
-                警報 {bannerUrgentCount}種類 / 注意報 {bannerAdvisoryCount}種類 — 公式情報を確認してください。
+                特別警報 {bannerSpecialCount}種類 / 警報 {bannerWarningCount}種類 / 注意報 {bannerAdvisoryCount}種類 — 公式情報を確認してください。
                 {warningSource === 'current' && (
                   <span className="ml-2 text-xs font-normal text-red-800">現在地: {coarseAreaLabel ?? 'エリア未確定'}</span>
                 )}
