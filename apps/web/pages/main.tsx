@@ -14,6 +14,7 @@ import { getJmaWarningPriority } from '../lib/jma/filters';
 import { DEFAULT_MAIN_LIMIT, MAP_DEFAULT_ZOOM } from '../lib/constants';
 import { getAllSavedShelters, removeShelterFromStorage, saveShelterToStorage, type SavedShelter } from '../lib/client/shelterStorage';
 import { toDisplayFetchStatus } from '../lib/ui/fetchStatusLabel';
+import { AlertsBanner } from '../components/AlertsBanner';
 
 const MapView = dynamic(() => import('../components/MapView'), {
   ssr: false,
@@ -395,6 +396,14 @@ export default function MainPage() {
           <div className="mt-2 rounded-xl border bg-amber-50 px-3 py-2 text-sm text-amber-900">
             避難場所データに接続できません。通信・サーバ状況を確認してください。
           </div>
+        )}
+
+        {coarseArea?.prefCode && (
+          <AlertsBanner
+            areaCode={`${coarseArea.prefCode}0000`}
+            areaLabel={coarseAreaLabel}
+            refreshMs={refreshMs}
+          />
         )}
 
         <div className="mt-4">

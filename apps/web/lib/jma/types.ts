@@ -64,9 +64,12 @@ export type NormalizedQuakesSnapshot = {
   items: NormalizedQuakeItem[];
 };
 
+export type WarningLevel = 'advisory' | 'warning' | 'special';
+
 export type NormalizedWarningItem = {
   id: string;
   kind: string;
+  level?: WarningLevel;
   status: string | null;
   source: 'webjson' | 'pull';
 };

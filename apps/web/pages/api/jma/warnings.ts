@@ -244,6 +244,8 @@ function shouldSkipWarningStatus(status: string | null): boolean {
   if (/解除/.test(s)) return true;
   if (/発表警報・注意報は?なし/.test(s)) return true;
   if (/発表警報・注意報は?ありません/.test(s)) return true;
+  // Filter out forecast-like items (not active)
+  if (/明日|明後日|見込み|予報/.test(s)) return true;
   return false;
 }
 

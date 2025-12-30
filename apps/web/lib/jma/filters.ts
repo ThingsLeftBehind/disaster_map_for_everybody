@@ -25,3 +25,12 @@ export function getJmaWarningPriority(kind: string | null | undefined): JmaWarni
 export function isJmaLowPriorityWarning(kind: string | null | undefined): boolean {
   return getJmaWarningPriority(kind) === 'REFERENCE';
 }
+
+export type WarningLevel = 'advisory' | 'warning' | 'special';
+
+export function classifyWarningLevel(kind: string | null | undefined): WarningLevel {
+  if (!kind) return 'advisory';
+  if (/特別警報/.test(kind)) return 'special';
+  if (/警報/.test(kind) && !/注意報/.test(kind)) return 'warning';
+  return 'advisory';
+}

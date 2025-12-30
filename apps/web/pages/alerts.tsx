@@ -6,6 +6,7 @@ import { useDevice } from '../components/device/DeviceProvider';
 import { reverseGeocodeGsi, saveLastLocation } from '../lib/client/location';
 import { formatPrefMuniLabel, useAreaName } from '../lib/client/areaName';
 import { shapeAlertWarnings, type WarningGroup, deduplicateWarnings } from '../lib/jma/alerts';
+import { classifyWarningLevel } from '../lib/jma/filters';
 import {
   getTokyoContextFromGroup,
   getTokyoContextFromMuniCode,
@@ -452,6 +453,19 @@ export default function AlertsPage() {
   );
 }
 
+// Level chip styles for severity classification
+const LEVEL_CHIP_STYLES = {
+  advisory: 'bg-amber-100 border-amber-400 text-amber-800',
+  warning: 'bg-red-100 border-red-400 text-red-800',
+  special: 'bg-purple-100 border-purple-400 text-purple-800',
+} as const;
+
+const LEVEL_LABELS = {
+  advisory: '注意報',
+  warning: '警報',
+  special: '特別警報',
+} as const;
+
 function WarningGroupSection({
   title,
   groups,
@@ -477,12 +491,22 @@ function WarningGroupSection({
         <div className="text-xs text-gray-600">{sorted.length}種類</div>
       </div>
       <ul className="mt-2 space-y-2">
-        {sorted.map((g) => (
-          <li key={g.key} className="rounded-2xl border bg-gray-50 px-3 py-2 text-sm break-words">
-            <div className="font-semibold break-words">{g.kind}</div>
-            {g.statuses.length > 0 && <div className="mt-1 text-xs text-gray-600 break-words">状態: {g.statuses.join(' / ')}</div>}
-          </li>
-        ))}
+        {sorted.map((g) => {
+          const level = classifyWarningLevel(g.kind);
+          const chipStyle = LEVEL_CHIP_STYLES[level];
+          const chipLabel = LEVEL_LABELS[level];
+          return (
+            <li key={g.key} className="rounded-2xl border bg-gray-50 px-3 py-2 text-sm break-words">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={classNames('shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold border', chipStyle)}>
+                  {chipLabel}
+                </span>
+                <span className="font-semibold break-words">{g.kind}</span>
+              </div>
+              {g.statuses.length > 0 && <div className="mt-1 text-xs text-gray-600 break-words">状態: {g.statuses.join(' / ')}</div>}
+            </li>
+          );
+        })}
       </ul>
     </section>
   );
