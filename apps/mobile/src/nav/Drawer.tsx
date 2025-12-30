@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
-import { colors, spacing, typography } from '@/src/ui/theme';
+import { spacing, typography, useThemedStyles, useTheme } from '@/src/ui/theme';
 
 type DrawerContextValue = {
   openDrawer: () => void;
@@ -37,12 +37,12 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
   const [visible, setVisible] = useState(false);
   const { width } = useWindowDimensions();
   const drawerWidth = Math.min(320, Math.max(240, width * 0.82));
-  const translateX = useRef(new Animated.Value(-drawerWidth)).current;
+  const translateX = useRef(new Animated.Value(drawerWidth)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (!isOpen) {
-      translateX.setValue(-drawerWidth);
+      translateX.setValue(drawerWidth);
     }
   }, [drawerWidth, isOpen, translateX]);
 
@@ -69,7 +69,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     setIsOpen(false);
     Animated.parallel([
       Animated.timing(translateX, {
-        toValue: -drawerWidth,
+        toValue: drawerWidth,
         duration: ANIMATION_MS,
         useNativeDriver: true,
       }),
@@ -115,12 +115,14 @@ function DrawerOverlay({
 }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = useThemedStyles((themeColors) => createStyles(themeColors));
   const panResponder = useMemo(
     () =>
       PanResponder.create({
         onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dx) > 12,
         onPanResponderRelease: (_, gesture) => {
-          if (gesture.dx < -40) {
+          if (gesture.dx > 40) {
             onClose();
           }
         },
@@ -146,7 +148,16 @@ function DrawerOverlay({
         <Animated.View
           style={[
             styles.drawer,
-            { width: drawerWidth, paddingTop: insets.top + spacing.lg, transform: [{ translateX }] },
+            {
+              width: drawerWidth,
+              paddingTop: insets.top + spacing.lg,
+              transform: [{ translateX }],
+              borderRightWidth: 0,
+              borderLeftWidth: 1,
+              borderLeftColor: colors.border,
+              right: 0,
+              left: undefined,
+            },
           ]}
           {...panResponder.panHandlers}
         >
@@ -166,10 +177,12 @@ const drawerItems = [
   { label: '設定', route: '/settings' },
   { label: 'MySafetyPinCard', route: '/mysafety' },
   { label: '注意・免責事項', route: '/disclaimer' },
+  { label: 'お知らせ', route: '/notices' },
   { label: '出典', route: '/sources' },
 ];
 
-const styles = StyleSheet.create({
+const createStyles = (colors: { background: string; border: string; text: string }) =>
+  StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-start',
@@ -180,12 +193,10 @@ const styles = StyleSheet.create({
   },
   drawer: {
     position: 'absolute',
-    left: 0,
+    right: 0,
     top: 0,
     bottom: 0,
     backgroundColor: colors.background,
-    borderRightWidth: 1,
-    borderRightColor: colors.border,
     paddingHorizontal: spacing.lg,
   },
   drawerTitle: {

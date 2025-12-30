@@ -4,25 +4,31 @@ import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors } from '@/src/ui/theme';
+import { useTheme } from '@/src/ui/theme';
 
 function TabIcon({ name, color }: { name: ComponentProps<typeof FontAwesome>['name']; color: string }) {
   return <FontAwesome size={18} name={name} color={color} />;
 }
 
 export default function TabLayout() {
+  const { colors, themeName } = useTheme();
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === 'web';
   const paddingBottom = Math.max(insets.bottom, isWeb ? 10 : 6);
   const baseHeight = isWeb ? 64 : 58;
+  const activeBackground = '#000000';
+  const inactiveBackground = themeName === 'dark' ? '#111111' : '#FFFFFF';
+  const inactiveTint = themeName === 'dark' ? '#B0B0B0' : colors.muted;
 
   return (
     <Tabs
       initialRouteName="main"
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.text,
-        tabBarInactiveTintColor: colors.muted,
+        tabBarActiveTintColor: '#FFFFFF',
+        tabBarInactiveTintColor: inactiveTint,
+        tabBarActiveBackgroundColor: activeBackground,
+        tabBarInactiveBackgroundColor: inactiveBackground,
         tabBarStyle: [
           {
             backgroundColor: colors.background,

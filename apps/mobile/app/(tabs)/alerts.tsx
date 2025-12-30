@@ -6,7 +6,7 @@ import * as Location from 'expo-location';
 import { fetchJson, toApiError, type ApiError } from '@/src/api/client';
 import type { JmaWarningItem, JmaWarningsResponse, Prefecture, PrefecturesResponse } from '@/src/api/types';
 import { SecondaryButton, Skeleton, TabScreen, TextField } from '@/src/ui/system';
-import { colors, radii, spacing, typography } from '@/src/ui/theme';
+import { radii, spacing, typography, useThemedStyles } from '@/src/ui/theme';
 
 const DEFAULT_AREA = '130000';
 const SAVED_AREAS_KEY = 'hinanavi_saved_areas_v1';
@@ -93,6 +93,7 @@ const FALLBACK_GUIDE: WarningGuide = {
 };
 
 export default function AlertsScreen() {
+  const styles = useThemedStyles(createStyles);
   const [warnings, setWarnings] = useState<JmaWarningsResponse | null>(null);
   const [warningsError, setWarningsError] = useState<ApiError | null>(null);
   const [isWarningsLoading, setIsWarningsLoading] = useState(false);
@@ -333,6 +334,7 @@ export default function AlertsScreen() {
 }
 
 function AreaScopeCard({ areaName, modeLabel, onChange }: { areaName: string; modeLabel: string; onChange: () => void }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.scopeCard}>
       <View style={styles.scopeText}>
@@ -380,6 +382,7 @@ function AreaScopeSheet({
   error: ApiError | null;
   onSelectPref: (pref: Prefecture) => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.sheetOverlay}>
@@ -468,6 +471,7 @@ function ActiveWarningsSection({
   empty: boolean;
   groups: Record<Severity, NormalizedWarning[]>;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.sectionBlock}>
       <Text style={styles.sectionTitle}>発令中</Text>
@@ -494,6 +498,7 @@ function WarningGroup({
   severity: Severity;
   items: NormalizedWarning[];
 }) {
+  const styles = useThemedStyles(createStyles);
   if (items.length === 0) return null;
   return (
     <View style={styles.groupBlock}>
@@ -511,6 +516,7 @@ function WarningGroup({
 }
 
 function WarningPhenomenonCard({ item, severity }: { item: NormalizedWarning; severity: Severity }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.warnCard}>
       <View style={styles.warnHeader}>
@@ -531,6 +537,7 @@ function WarningPhenomenonCard({ item, severity }: { item: NormalizedWarning; se
 }
 
 function DetailsAccordion({ items }: { items: JmaWarningItem[] }) {
+  const styles = useThemedStyles(createStyles);
   const [open, setOpen] = useState(false);
   return (
     <View style={styles.sectionBlock}>
@@ -557,6 +564,7 @@ function DetailsAccordion({ items }: { items: JmaWarningItem[] }) {
 }
 
 function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.banner}>
       <Text style={styles.bannerText}>{message}</Text>
@@ -574,6 +582,7 @@ function InlineBanner({
   actionLabel?: string;
   onAction?: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.inlineBanner}>
       <Text style={styles.inlineBannerText}>{message}</Text>
@@ -583,6 +592,7 @@ function InlineBanner({
 }
 
 function WarningSkeletonList() {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.skeletonList}>
       {[0, 1, 2].map((item) => (
@@ -597,6 +607,7 @@ function WarningSkeletonList() {
 }
 
 function SeverityBadge({ severity }: { severity: Severity }) {
+  const styles = useThemedStyles(createStyles);
   const label = severity === 'special' ? '特別' : severity === 'warning' ? '警報' : '注意';
   const toneStyle =
     severity === 'special'
@@ -690,7 +701,21 @@ function normalizeMuniCode(raw: unknown): { muniCode: string | null; prefCode: s
   return { muniCode: null, prefCode: null };
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: {
+  background: string;
+  border: string;
+  text: string;
+  muted: string;
+  surface: string;
+  surfaceStrong: string;
+  statusBgDanger: string;
+  statusDanger: string;
+  statusBgWarning: string;
+  statusWarning: string;
+  statusBgInfo: string;
+  statusInfo: string;
+}) =>
+  StyleSheet.create({
   headerBlock: {
     marginBottom: spacing.md,
   },

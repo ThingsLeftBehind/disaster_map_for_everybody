@@ -51,6 +51,27 @@ export type ShelterDetailResponse = {
   site: Shelter | null;
 };
 
+export type CrowdVoteValue = 'EVACUATING' | 'SMOOTH' | 'NORMAL' | 'CROWDED' | 'CLOSED';
+
+export type ShelterComment = {
+  id: string;
+  text: string;
+  createdAt: string;
+  reportCount?: number | null;
+};
+
+export type ShelterCommunityResponse = {
+  updatedAt: string | null;
+  moderationPolicy: { reportCautionThreshold: number; reportHideThreshold: number } | null;
+  votesSummary: Record<string, number>;
+  commentCount: number;
+  hiddenCount: number;
+  mostReported: number;
+  commentsCollapsed: boolean;
+  comments: ShelterComment[];
+  lastError?: string | null;
+};
+
 export type JmaStatusFeed = {
   fetchStatus: FetchStatus;
   updatedAt: string | null;

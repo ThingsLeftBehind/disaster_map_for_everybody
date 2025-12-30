@@ -4,7 +4,7 @@ import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { fetchJson, toApiError, type ApiError } from '@/src/api/client';
 import type { JmaQuakeItem, JmaQuakesResponse } from '@/src/api/types';
 import { SecondaryButton, Skeleton, TabScreen } from '@/src/ui/system';
-import { colors, radii, spacing, typography } from '@/src/ui/theme';
+import { radii, spacing, typography, useTheme, useThemedStyles } from '@/src/ui/theme';
 
 type QuakeTab = 'latest' | 'guide';
 
@@ -60,6 +60,7 @@ const GUIDE_SECTIONS: GuideSection[] = [
 const QUICK_ACTIONS = ['身を守る', '火の元を確認', '出口を確保', '落下物に注意'];
 
 export default function QuakesScreen() {
+  const styles = useThemedStyles(createStyles);
   const [quakes, setQuakes] = useState<JmaQuakesResponse | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -165,6 +166,7 @@ function QuakesHeader({
   onRefresh: () => void;
   isLoading: boolean;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.headerBlock}>
       <View style={styles.headerRow}>
@@ -184,6 +186,7 @@ function QuakesHeader({
 }
 
 function QuakesSegTabs({ activeTab, onChange }: { activeTab: QuakeTab; onChange: (tab: QuakeTab) => void }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.segmentedControl}>
       <Pressable
@@ -203,6 +206,7 @@ function QuakesSegTabs({ activeTab, onChange }: { activeTab: QuakeTab; onChange:
 }
 
 function QuakesSummary({ maxItem, latestItem }: { maxItem: JmaQuakeItem | null; latestItem: JmaQuakeItem | null }) {
+  const styles = useThemedStyles(createStyles);
   const maxIntensity = formatIntensityLabel(maxItem?.maxIntensity ?? null);
   const maxRegion = maxItem ? pickRegionName(maxItem) : '情報なし';
   const maxTime = maxItem?.time ? formatTimeShort(maxItem.time) : null;
@@ -246,6 +250,7 @@ function QuakeList({
   expandedIds: Record<string, boolean>;
   onToggle: (id: string) => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.sectionBlock}>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -264,6 +269,7 @@ function QuakeList({
 }
 
 function StrongQuakesSection({ items }: { items: JmaQuakeItem[] }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.sectionBlock}>
       <Text style={styles.sectionTitle}>強い揺れ</Text>
@@ -287,6 +293,7 @@ function StrongQuakesSection({ items }: { items: JmaQuakeItem[] }) {
 }
 
 function QuakeCard({ item, expanded, onToggle }: { item: JmaQuakeItem; expanded: boolean; onToggle: () => void }) {
+  const styles = useThemedStyles(createStyles);
   const intensity = formatIntensityLabel(item.maxIntensity);
   const metaLine = formatMetaLine(item);
   const depth = item.title ? extractDepth(item.title) : null;
@@ -317,6 +324,7 @@ function QuakeCard({ item, expanded, onToggle }: { item: JmaQuakeItem; expanded:
 }
 
 function QuickActionCard() {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.quickCard}>
       <Text style={styles.quickTitle}>今すぐやること</Text>
@@ -338,6 +346,7 @@ function IntensityGuideAccordion({
   expanded: Record<string, boolean>;
   onToggle: (label: string) => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.sectionBlock}>
       <Text style={styles.sectionTitle}>揺れの目安と行動</Text>
@@ -369,6 +378,7 @@ function IntensityGuideAccordion({
 }
 
 function FetchStateBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.banner}>
       <Text style={styles.bannerText}>{message}</Text>
@@ -378,6 +388,7 @@ function FetchStateBanner({ message, onRetry }: { message: string; onRetry: () =
 }
 
 function QuakeSkeletonList() {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.skeletonList}>
       {[0, 1, 2, 3, 4].map((item) => (
@@ -392,8 +403,10 @@ function QuakeSkeletonList() {
 }
 
 function IntensityBadge({ value, compact = false }: { value: string; compact?: boolean }) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const tone = intensityTone(value);
-  const toneStyle = intensityToneStyles[tone];
+  const toneStyle = getIntensityToneStyles(colors)[tone];
   return (
     <View style={[styles.intensityBadge, compact ? styles.intensityBadgeCompact : null, toneStyle.container]}>
       <Text style={[styles.intensityText, toneStyle.text]}>{value}</Text>
@@ -402,30 +415,44 @@ function IntensityBadge({ value, compact = false }: { value: string; compact?: b
 }
 
 function StatusDot({ tone }: { tone: IntensityTone }) {
-  const toneStyle = intensityToneStyles[tone];
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
+  const toneStyle = getIntensityToneStyles(colors)[tone];
   return <View style={[styles.statusDot, toneStyle.container]} />;
 }
 
 type IntensityTone = 'neutral' | 'info' | 'warning' | 'danger';
 
-const intensityToneStyles: Record<IntensityTone, { container: object; text: object }> = {
-  neutral: {
-    container: { backgroundColor: colors.surfaceStrong, borderColor: colors.border },
-    text: { color: colors.text },
-  },
-  info: {
-    container: { backgroundColor: colors.statusBgInfo, borderColor: colors.statusInfo },
-    text: { color: colors.statusInfo },
-  },
-  warning: {
-    container: { backgroundColor: colors.statusBgWarning, borderColor: colors.statusWarning },
-    text: { color: colors.statusWarning },
-  },
-  danger: {
-    container: { backgroundColor: colors.statusBgDanger, borderColor: colors.statusDanger },
-    text: { color: colors.statusDanger },
-  },
-};
+function getIntensityToneStyles(colors: {
+  surfaceStrong: string;
+  border: string;
+  text: string;
+  statusBgInfo: string;
+  statusInfo: string;
+  statusBgWarning: string;
+  statusWarning: string;
+  statusBgDanger: string;
+  statusDanger: string;
+}): Record<IntensityTone, { container: object; text: object }> {
+  return {
+    neutral: {
+      container: { backgroundColor: colors.surfaceStrong, borderColor: colors.border },
+      text: { color: colors.text },
+    },
+    info: {
+      container: { backgroundColor: colors.statusBgInfo, borderColor: colors.statusInfo },
+      text: { color: colors.statusInfo },
+    },
+    warning: {
+      container: { backgroundColor: colors.statusBgWarning, borderColor: colors.statusWarning },
+      text: { color: colors.statusWarning },
+    },
+    danger: {
+      container: { backgroundColor: colors.statusBgDanger, borderColor: colors.statusDanger },
+      text: { color: colors.statusDanger },
+    },
+  };
+}
 
 function intensityTone(value: string) {
   const rank = intensityRank(value);
@@ -539,7 +566,21 @@ function statusTone(status: string) {
   return 'neutral' as const;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: {
+  background: string;
+  border: string;
+  text: string;
+  muted: string;
+  surface: string;
+  surfaceStrong: string;
+  statusBgInfo: string;
+  statusInfo: string;
+  statusBgWarning: string;
+  statusWarning: string;
+  statusBgDanger: string;
+  statusDanger: string;
+}) =>
+  StyleSheet.create({
   headerBlock: {
     gap: spacing.xs,
     marginBottom: spacing.md,

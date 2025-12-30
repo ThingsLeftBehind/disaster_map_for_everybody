@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { colors, radii, spacing, typography } from './theme';
+import { radii, spacing, typography, useTheme, useThemedStyles } from './theme';
 
 type Action = {
   label: string;
@@ -41,6 +41,7 @@ type InputProps = {
 };
 
 export function Screen({ title, leftAction, rightAction, children }: ScreenProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
@@ -58,10 +59,12 @@ export function Screen({ title, leftAction, rightAction, children }: ScreenProps
 }
 
 export function Card({ children }: { children: ReactNode }) {
+  const styles = useThemedStyles(createStyles);
   return <View style={styles.card}>{children}</View>;
 }
 
 export function Button({ label, onPress, variant = 'primary', disabled = false }: ButtonProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable
       onPress={onPress}
@@ -78,6 +81,7 @@ export function Button({ label, onPress, variant = 'primary', disabled = false }
 }
 
 export function Toggle({ label, value, onToggle }: ToggleProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable
       onPress={onToggle}
@@ -89,6 +93,8 @@ export function Toggle({ label, value, onToggle }: ToggleProps) {
 }
 
 export function Input({ value, placeholder, onChangeText, autoCapitalize = 'none' }: InputProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <TextInput
       value={value}
@@ -102,14 +108,17 @@ export function Input({ value, placeholder, onChangeText, autoCapitalize = 'none
 }
 
 export function TextBlock({ children, muted }: TextBlockProps) {
+  const styles = useThemedStyles(createStyles);
   return <Text style={muted ? styles.textMuted : styles.text}>{children}</Text>;
 }
 
 export function SectionTitle({ children }: { children: ReactNode }) {
+  const styles = useThemedStyles(createStyles);
   return <Text style={styles.sectionTitle}>{children}</Text>;
 }
 
 function HeaderButton({ label, onPress }: Action) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable onPress={onPress} hitSlop={8} style={styles.headerAction}>
       <Text style={styles.headerActionText}>{label}</Text>
@@ -117,7 +126,8 @@ function HeaderButton({ label, onPress }: Action) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: { background: string; border: string; text: string; muted: string; card: string }) =>
+  StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.background,

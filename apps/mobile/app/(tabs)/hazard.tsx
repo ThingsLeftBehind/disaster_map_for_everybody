@@ -17,7 +17,7 @@ import { fetchJson, getApiBaseUrl, toApiError, type ApiError } from '@/src/api/c
 import type { HazardLayer, HazardLayersResponse } from '@/src/api/types';
 import { HazardMap, type HazardMapRegion, type HazardTile } from '@/src/map/HazardMap';
 import { Chip, SecondaryButton, Skeleton, TabScreen } from '@/src/ui/system';
-import { colors, radii, spacing, typography } from '@/src/ui/theme';
+import { radii, spacing, typography, useTheme, useThemedStyles } from '@/src/ui/theme';
 
 const STORAGE_KEY = 'hinanavi_hazard_layer_v1';
 
@@ -152,22 +152,26 @@ const LAYER_META: Record<string, LayerMeta> = {
   },
 };
 
-const FALLBACK_META: LayerMeta = {
-  label: 'ハザード',
-  legend: [
-    { color: colors.surfaceStrong, label: '注意' },
-    { color: colors.statusBgWarning, label: '危険' },
-  ],
-  meaning: 'ハザード情報の参考表示です。',
-  actions: ['公式情報を確認', '周囲の安全確保', '避難情報に注意'],
-  detail: {
-    about: 'ハザードの想定情報を示します。',
-    guidance: ['自治体の指示に従う', '危険区域から離れる'],
-  },
-};
+function buildFallbackMeta(colors: { surfaceStrong: string; statusBgWarning: string }): LayerMeta {
+  return {
+    label: 'ハザード',
+    legend: [
+      { color: colors.surfaceStrong, label: '注意' },
+      { color: colors.statusBgWarning, label: '危険' },
+    ],
+    meaning: 'ハザード情報の参考表示です。',
+    actions: ['公式情報を確認', '周囲の安全確保', '避難情報に注意'],
+    detail: {
+      about: 'ハザードの想定情報を示します。',
+      guidance: ['自治体の指示に従う', '危険区域から離れる'],
+    },
+  };
+}
 
 export default function HazardScreen() {
   const { height: windowHeight } = useWindowDimensions();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const mapHeight = Math.max(260, Math.min(Math.round(windowHeight * 0.5), 440));
 
   const [layers, setLayers] = useState<HazardLayer[]>([]);
@@ -241,9 +245,11 @@ export default function HazardScreen() {
     [selectedLayerKey, sortedLayers]
   );
 
+  const fallbackMeta = useMemo(() => buildFallbackMeta(colors), [colors]);
+
   const selectedMeta = useMemo(
-    () => getLayerMeta(selectedLayerKey, selectedLayer?.jaName ?? selectedLayer?.name ?? null),
-    [selectedLayerKey, selectedLayer?.jaName, selectedLayer?.name]
+    () => getLayerMeta(selectedLayerKey, selectedLayer?.jaName ?? selectedLayer?.name ?? null, fallbackMeta),
+    [fallbackMeta, selectedLayerKey, selectedLayer?.jaName, selectedLayer?.name]
   );
 
   const layerLabel = selectedLayerKey ? selectedMeta.label : 'OFF';
@@ -362,6 +368,7 @@ function HazardHeader({
   updatedAt: string | null;
   notice: string | null;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.headerBlock}>
       <View style={styles.statusRow}>
@@ -382,6 +389,7 @@ function HazardLayerChips({
   selectedKey: string | null;
   onSelect: (key: string | null) => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <ScrollView
       horizontal
@@ -412,6 +420,7 @@ function HazardLegendCard({
   tileAvailable: boolean;
   onOpenDetail: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.legendCard}>
       <View style={styles.legendHeader}>
@@ -459,6 +468,7 @@ function HazardDetailSheet({
   meta: LayerMeta;
   sourceUrl: string | null;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.sheetOverlay}>
@@ -493,6 +503,7 @@ function HazardDetailSheet({
 }
 
 function FetchStateBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.banner}>
       <Text style={styles.bannerText}>{message}</Text>
@@ -501,10 +512,10 @@ function FetchStateBanner({ message, onRetry }: { message: string; onRetry: () =
   );
 }
 
-function getLayerMeta(key: string | null, fallbackLabel: string | null): LayerMeta {
+function getLayerMeta(key: string | null, fallbackLabel: string | null, fallbackMeta: LayerMeta): LayerMeta {
   if (key && LAYER_META[key]) return LAYER_META[key];
-  const label = fallbackLabel ?? (key ? key : FALLBACK_META.label);
-  return { ...FALLBACK_META, label };
+  const label = fallbackLabel ?? (key ? key : fallbackMeta.label);
+  return { ...fallbackMeta, label };
 }
 
 function sortLayers(layers: HazardLayer[]) {
@@ -585,7 +596,15 @@ async function writeStoredLayerKey(value: string | null) {
   await AsyncStorage.setItem(STORAGE_KEY, value);
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: {
+  background: string;
+  border: string;
+  text: string;
+  muted: string;
+  surface: string;
+  surfaceStrong: string;
+}) =>
+  StyleSheet.create({
   headerBlock: {
     gap: spacing.xs,
     marginBottom: spacing.md,

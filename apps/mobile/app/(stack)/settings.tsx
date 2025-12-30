@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Switch, Text, View } from 'react-native';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 
@@ -11,11 +11,13 @@ import {
   SecondaryButton,
   StatusPill,
 } from '@/src/ui/system';
-import { colors, spacing, typography } from '@/src/ui/theme';
+import { spacing, typography, useTheme, useThemedStyles } from '@/src/ui/theme';
 import { disableBackgroundAlerts, enableBackgroundAlerts, getBackgroundStatus } from '@/src/push/service';
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { themeName, setThemeName, colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const version = Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? 'unknown';
   const apiBaseUrl = getApiBaseUrl();
   const [alertsEnabled, setAlertsEnabled] = useState(false);
@@ -58,6 +60,18 @@ export default function SettingsScreen() {
 
   return (
     <ScreenContainer title="Settings" leftAction={{ label: 'Back', onPress: () => router.back() }}>
+      <SectionCard title="表示">
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>ダークモード</Text>
+          <Switch
+            value={themeName === 'dark'}
+            onValueChange={(value) => setThemeName(value ? 'dark' : 'light')}
+            trackColor={{ false: colors.border, true: colors.text }}
+            thumbColor={colors.background}
+          />
+        </View>
+      </SectionCard>
+
       <SectionCard title="Background Alerts">
         <StatusPill label={alertsEnabled ? '有効' : '無効'} tone={alertsEnabled ? 'ok' : 'neutral'} />
         <TextLine label="説明" value="災害通知と周辺避難所の更新に通知と位置情報の許可が必要です。" />
@@ -80,6 +94,7 @@ export default function SettingsScreen() {
 }
 
 function TextLine({ label, value }: { label: string; value: string }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.textLine}>
       <Text style={styles.textLabel}>{label}</Text>
@@ -88,7 +103,17 @@ function TextLine({ label, value }: { label: string; value: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: { text: string; muted: string; border: string }) =>
+  StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  rowLabel: {
+    ...typography.body,
+    color: colors.text,
+  },
   textLine: {
     marginBottom: spacing.sm,
   },

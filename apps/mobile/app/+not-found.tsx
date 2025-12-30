@@ -2,10 +2,11 @@ import { useRouter } from 'expo-router';
 import { Text } from 'react-native';
 
 import { PrimaryButton, ScreenContainer, SectionCard } from '@/src/ui/system';
-import { colors, typography } from '@/src/ui/theme';
+import { typography, useThemedStyles } from '@/src/ui/theme';
 
 export default function NotFoundScreen() {
   const router = useRouter();
+  const styles = useThemedStyles(createStyles);
   return (
     <ScreenContainer title="Not Found">
       <SectionCard>
@@ -16,9 +17,9 @@ export default function NotFoundScreen() {
   );
 }
 
-const styles = {
+const createStyles = (colors: { text: string }) => ({
   text: {
     ...typography.body,
     color: colors.text,
   },
-};
+});

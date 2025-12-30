@@ -3,12 +3,12 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Shelter } from '@/src/api/types';
 import { EmptyState, ErrorState, SecondaryButton, Skeleton } from '@/src/ui/system';
-import { colors, radii, spacing, typography } from '@/src/ui/theme';
+import { radii, spacing, typography, useThemedStyles } from '@/src/ui/theme';
 
 import type { FavoriteShelter } from './favorites';
 
 const DEFAULT_VISIBLE = 10;
-const MAX_VISIBLE = 30;
+const MAX_VISIBLE = 20;
 
 type Props = {
   shelters: Shelter[];
@@ -18,8 +18,6 @@ type Props = {
   error: { message?: string } | null;
   cacheLabel?: string | null;
   notice?: string | null;
-  open: boolean;
-  onToggleOpen: () => void;
   onRetry: () => void;
   onSelect: (shelter: Shelter) => void;
   onOpenList: () => void;
@@ -33,12 +31,11 @@ export function NearbySheltersCard({
   error,
   cacheLabel,
   notice,
-  open,
-  onToggleOpen,
   onRetry,
   onSelect,
   onOpenList,
 }: Props) {
+  const styles = useThemedStyles(createStyles);
   const [visibleCount, setVisibleCount] = useState(DEFAULT_VISIBLE);
 
   useEffect(() => {
@@ -57,69 +54,61 @@ export function NearbySheltersCard({
 
   const totalCount = shelters.length;
   const visibleShelters = regularShelters.slice(0, Math.min(visibleCount, regularShelters.length));
+  const shownCount = Math.min(visibleCount, totalCount);
   const canExpand = regularShelters.length > visibleCount && visibleCount < MAX_VISIBLE;
 
   return (
     <View style={styles.card}>
-      <Pressable style={styles.cardHeader} onPress={onToggleOpen}>
-        <View>
-          <Text style={styles.cardTitle}>近くの避難場所</Text>
-          <Text style={styles.cardCount}>{totalCount}件</Text>
-        </View>
-        <Text style={styles.toggleText}>{open ? '閉じる' : '開く'}</Text>
-      </Pressable>
+      <View style={styles.cardHeader}>
+        <Text style={styles.cardTitle}>近くの避難場所</Text>
+        <Text style={styles.cardCount}>{shownCount}件</Text>
+      </View>
 
       {cacheLabel ? <Text style={styles.metaText}>キャッシュ {cacheLabel}</Text> : null}
       {notice ? <Text style={styles.noticeText}>{notice}</Text> : null}
 
-      {!open ? null : (
-        <>
-          {isLoading ? (
-            <View style={styles.skeletonStack}>
-              <Skeleton height={16} />
-              <Skeleton width="80%" />
-              <Skeleton width="60%" />
-            </View>
-          ) : null}
-          {error && !isLoading ? (
-            <ErrorState message="取得できませんでした。" retryLabel="再試行" onRetry={onRetry} />
-          ) : null}
-          {!isLoading && !error && totalCount === 0 ? (
-            <EmptyState message="近くの避難所が見つかりませんでした。" />
-          ) : null}
+      {isLoading ? (
+        <View style={styles.skeletonStack}>
+          <Skeleton height={16} />
+          <Skeleton width="80%" />
+          <Skeleton width="60%" />
+        </View>
+      ) : null}
+      {error && !isLoading ? <ErrorState message="取得できませんでした。" retryLabel="再試行" onRetry={onRetry} /> : null}
+      {!isLoading && !error && totalCount === 0 ? (
+        <EmptyState message="近くの避難所が見つかりませんでした。" />
+      ) : null}
 
-          {favoriteShelters.length > 0 ? (
-            <View style={styles.group}>
-              <Text style={styles.groupTitle}>保存済み</Text>
-              {favoriteShelters.map((shelter) => (
-                <ShelterRow
-                  key={`fav-${shelter.id}`}
-                  shelter={shelter}
-                  selected={selectedId === String(shelter.id)}
-                  onPress={() => onSelect(shelter)}
-                />
-              ))}
-            </View>
-          ) : null}
-
-          {visibleShelters.map((shelter) => (
+      {favoriteShelters.length > 0 ? (
+        <View style={styles.group}>
+          <Text style={styles.groupTitle}>保存済み</Text>
+          {favoriteShelters.map((shelter) => (
             <ShelterRow
-              key={String(shelter.id)}
+              key={`fav-${shelter.id}`}
               shelter={shelter}
               selected={selectedId === String(shelter.id)}
               onPress={() => onSelect(shelter)}
             />
           ))}
+        </View>
+      ) : null}
 
-          {canExpand ? (
-            <Pressable style={styles.moreButton} onPress={() => setVisibleCount(Math.min(MAX_VISIBLE, totalCount))}>
-              <Text style={styles.moreText}>もっと見る</Text>
-            </Pressable>
-          ) : null}
+      {visibleShelters.map((shelter) => (
+        <ShelterRow
+          key={String(shelter.id)}
+          shelter={shelter}
+          selected={selectedId === String(shelter.id)}
+          onPress={() => onSelect(shelter)}
+        />
+      ))}
 
-          <SecondaryButton label="一覧へ" onPress={onOpenList} />
-        </>
-      )}
+      {canExpand ? (
+        <Pressable style={styles.moreButton} onPress={() => setVisibleCount((prev) => Math.min(MAX_VISIBLE, prev + 10))}>
+          <Text style={styles.moreText}>もっと見る</Text>
+        </Pressable>
+      ) : null}
+
+      <SecondaryButton label="一覧へ" onPress={onOpenList} />
     </View>
   );
 }
@@ -133,6 +122,7 @@ function ShelterRow({
   selected: boolean;
   onPress: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   const distanceLabel = formatDistance(getDistance(shelter));
   const hazardLabels = getHazardLabels(shelter);
 
@@ -153,7 +143,15 @@ function ShelterRow({
           </View>
         ) : null}
       </View>
-      <Text style={styles.distanceText}>{distanceLabel}</Text>
+      <View style={styles.rowRight}>
+        <View style={styles.distanceBlock}>
+          <Text style={styles.distanceLabel}>直線距離</Text>
+          <Text style={styles.distanceText}>{distanceLabel}</Text>
+        </View>
+        <Pressable style={styles.detailButton} onPress={onPress}>
+          <Text style={styles.detailButtonText}>詳細</Text>
+        </Pressable>
+      </View>
     </Pressable>
   );
 }
@@ -187,118 +185,144 @@ const HAZARD_OPTIONS = [
   { key: 'volcano', label: '火山' },
 ] as const;
 
-const styles = StyleSheet.create({
-  card: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    backgroundColor: colors.background,
-    marginBottom: spacing.md,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.xs,
-  },
-  cardTitle: {
-    ...typography.subtitle,
-    color: colors.text,
-  },
-  cardCount: {
-    ...typography.caption,
-    color: colors.muted,
-    marginTop: spacing.xxs,
-  },
-  toggleText: {
-    ...typography.caption,
-    color: colors.muted,
-  },
-  metaText: {
-    ...typography.caption,
-    color: colors.muted,
-    marginBottom: spacing.xs,
-  },
-  noticeText: {
-    ...typography.caption,
-    color: colors.muted,
-    marginBottom: spacing.xs,
-  },
-  skeletonStack: {
-    gap: spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  group: {
-    marginBottom: spacing.sm,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  groupTitle: {
-    ...typography.label,
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  row: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.md,
-    padding: spacing.sm,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  rowSelected: {
-    borderColor: colors.text,
-    backgroundColor: colors.surface,
-  },
-  rowText: {
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  rowTitle: {
-    ...typography.subtitle,
-    color: colors.text,
-  },
-  rowAddress: {
-    ...typography.caption,
-    color: colors.muted,
-    marginTop: spacing.xxs,
-  },
-  distanceText: {
-    ...typography.label,
-    color: colors.text,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    marginTop: spacing.xs,
-  },
-  badge: {
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-  },
-  badgeText: {
-    ...typography.caption,
-    color: colors.text,
-  },
-  moreButton: {
-    alignSelf: 'center',
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.sm,
-  },
-  moreText: {
-    ...typography.label,
-    color: colors.text,
-  },
-});
+const createStyles = (colors: {
+  background: string;
+  border: string;
+  text: string;
+  muted: string;
+  surface: string;
+}) =>
+  StyleSheet.create({
+    card: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radii.lg,
+      padding: spacing.md,
+      backgroundColor: colors.background,
+      marginBottom: spacing.md,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: spacing.xs,
+    },
+    cardTitle: {
+      ...typography.subtitle,
+      color: colors.text,
+    },
+    cardCount: {
+      ...typography.label,
+      color: colors.text,
+    },
+    metaText: {
+      ...typography.caption,
+      color: colors.muted,
+      marginBottom: spacing.xs,
+    },
+    noticeText: {
+      ...typography.caption,
+      color: colors.muted,
+      marginBottom: spacing.xs,
+    },
+    skeletonStack: {
+      gap: spacing.xs,
+      marginBottom: spacing.sm,
+    },
+    group: {
+      marginBottom: spacing.sm,
+      paddingBottom: spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    groupTitle: {
+      ...typography.label,
+      color: colors.text,
+      marginBottom: spacing.xs,
+    },
+    row: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radii.md,
+      padding: spacing.sm,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: spacing.sm,
+    },
+    rowSelected: {
+      borderColor: colors.text,
+      backgroundColor: colors.surface,
+    },
+    rowText: {
+      flex: 1,
+      marginRight: spacing.sm,
+    },
+    rowTitle: {
+      ...typography.subtitle,
+      color: colors.text,
+    },
+    rowAddress: {
+      ...typography.caption,
+      color: colors.muted,
+      marginTop: spacing.xxs,
+    },
+    rowRight: {
+      alignItems: 'flex-end',
+      justifyContent: 'space-between',
+      minHeight: 58,
+    },
+    distanceBlock: {
+      alignItems: 'flex-end',
+      marginTop: -2,
+    },
+    distanceLabel: {
+      ...typography.caption,
+      color: colors.muted,
+    },
+    distanceText: {
+      ...typography.label,
+      color: colors.text,
+    },
+    badgeRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.xs,
+      marginTop: spacing.xs,
+    },
+    badge: {
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: spacing.xs,
+      paddingVertical: 2,
+    },
+    badgeText: {
+      ...typography.caption,
+      color: colors.text,
+    },
+    detailButton: {
+      backgroundColor: colors.text,
+      borderRadius: radii.pill,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xxs,
+      marginTop: spacing.xs,
+    },
+    detailButtonText: {
+      ...typography.caption,
+      color: colors.background,
+    },
+    moreButton: {
+      alignSelf: 'center',
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.md,
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: spacing.sm,
+    },
+    moreText: {
+      ...typography.label,
+      color: colors.text,
+    },
+  });

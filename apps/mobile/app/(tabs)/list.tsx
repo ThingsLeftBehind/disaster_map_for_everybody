@@ -35,7 +35,7 @@ import { ShelterMap, type ShelterMapRegion, type ShelterMarker } from '@/src/map
 import { setLastKnownLocation } from '@/src/push/state';
 import { clearShelterCache } from '@/src/storage/shelterCache';
 import { Chip, EmptyState, PrimaryButton, SecondaryButton, Skeleton, TabScreen, TextField } from '@/src/ui/system';
-import { colors, radii, spacing, typography } from '@/src/ui/theme';
+import { radii, spacing, typography, useThemedStyles } from '@/src/ui/theme';
 
 const DEFAULT_RADIUS_KM = 30;
 const DEFAULT_LIMIT = 50;
@@ -115,6 +115,7 @@ const DEFAULT_FILTERS: FilterState = {
 
 export default function ListScreen() {
   const router = useRouter();
+  const styles = useThemedStyles(createStyles);
   const [mode, setMode] = useState<SearchMode>('LOCATION');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [useLocation, setUseLocation] = useState(true);
@@ -796,6 +797,7 @@ export default function ListScreen() {
 }
 
 function SearchModeBar({ mode, onChange }: { mode: SearchMode; onChange: (next: SearchMode) => void }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.segmentedControl}>
       {(
@@ -838,6 +840,7 @@ function ShelterList({
   onFocusMap: (shelter: Shelter) => void;
   onOpenDetail: (id: string) => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.listStack}>
       {shelters.map((shelter) => (
@@ -876,6 +879,7 @@ function ShelterCard({
   onFocusMap: () => void;
   onOpenDetail: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   const hazardBadges = getShelterHazardBadges(shelter, selectedHazards);
   const distanceLabel = formatDistance(getDistance(shelter));
 
@@ -949,6 +953,7 @@ function FilterSheet({
   onReset: () => void;
   onApply: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   const panResponder = useMemo(
     () =>
       PanResponder.create({
@@ -1039,6 +1044,7 @@ function SavedSheltersSheet({
   onRemove: (id: string) => void;
   onSelect: (id: string) => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   const panResponder = useMemo(
     () =>
       PanResponder.create({
@@ -1107,6 +1113,7 @@ function PickerModal({
   onClose: () => void;
   onSelect: (id: string) => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.sheetOverlay}>
@@ -1149,6 +1156,7 @@ function InlineBanner({
   actionLabel?: string;
   onAction?: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.banner}>
       <Text style={styles.bannerText}>{message}</Text>
@@ -1168,6 +1176,7 @@ function Stepper({
   onChange: (next: number) => void;
   unit: string;
 }) {
+  const styles = useThemedStyles(createStyles);
   const index = options.indexOf(value);
   const canDown = index > 0;
   const canUp = index >= 0 && index < options.length - 1;
@@ -1192,6 +1201,7 @@ function Stepper({
 }
 
 function ListSkeleton() {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.skeletonList}>
       {[0, 1, 2, 3, 4].map((item) => (
@@ -1206,6 +1216,7 @@ function ListSkeleton() {
 }
 
 function MapSkeleton() {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.mapSkeleton}>
       <Skeleton width="70%" />
@@ -1273,7 +1284,15 @@ function hazardLabel(key: HazardKey) {
   return HAZARD_OPTIONS.find((option) => option.key === key)?.label ?? key;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: {
+  background: string;
+  border: string;
+  text: string;
+  muted: string;
+  surface: string;
+  surfaceStrong: string;
+}) =>
+  StyleSheet.create({
   topBar: {
     marginBottom: spacing.sm,
   },

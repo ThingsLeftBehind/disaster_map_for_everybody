@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, spacing, typography } from '@/src/ui/theme';
+import { spacing, typography, useThemedStyles } from '@/src/ui/theme';
 
 export type HazardTile = {
   id: string;
@@ -25,6 +25,7 @@ type HazardMapProps = {
 };
 
 export function HazardMap({ tiles }: HazardMapProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.panel}>
       <Text style={styles.title}>ハザード地図はWebでは簡易表示です。</Text>
@@ -33,26 +34,27 @@ export function HazardMap({ tiles }: HazardMapProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  panel: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    padding: spacing.md,
-  },
-  title: {
-    ...typography.subtitle,
-    color: colors.text,
-    textAlign: 'center',
-  },
-  caption: {
-    ...typography.small,
-    color: colors.muted,
-    marginTop: spacing.xs,
-    textAlign: 'center',
-  },
-});
+const createStyles = (colors: { background: string; border: string; text: string; muted: string }) =>
+  StyleSheet.create({
+    panel: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      padding: spacing.md,
+    },
+    title: {
+      ...typography.subtitle,
+      color: colors.text,
+      textAlign: 'center',
+    },
+    caption: {
+      ...typography.small,
+      color: colors.muted,
+      marginTop: spacing.xs,
+      textAlign: 'center',
+    },
+  });

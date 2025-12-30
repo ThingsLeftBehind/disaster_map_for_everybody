@@ -2,10 +2,11 @@ import { useRouter } from 'expo-router';
 import { Text } from 'react-native';
 
 import { ScreenContainer, SectionCard } from '@/src/ui/system';
-import { colors, spacing, typography } from '@/src/ui/theme';
+import { spacing, typography, useThemedStyles } from '@/src/ui/theme';
 
 export default function MySafetyScreen() {
   const router = useRouter();
+  const styles = useThemedStyles(createStyles);
 
   return (
     <ScreenContainer title="MySafetyPin" leftAction={{ label: 'Back', onPress: () => router.back() }}>
@@ -25,7 +26,7 @@ export default function MySafetyScreen() {
   );
 }
 
-const styles = {
+const createStyles = (colors: { text: string; muted: string }) => ({
   bodyText: {
     ...typography.body,
     color: colors.text,
@@ -35,4 +36,4 @@ const styles = {
     color: colors.muted,
     marginTop: spacing.xs,
   },
-};
+});

@@ -12,10 +12,11 @@ import {
   SectionCard,
   Skeleton,
 } from '@/src/ui/system';
-import { colors, spacing, typography } from '@/src/ui/theme';
+import { spacing, typography, useThemedStyles } from '@/src/ui/theme';
 
 export default function ShelterDetailScreen() {
   const router = useRouter();
+  const styles = useThemedStyles(createStyles);
   const params = useLocalSearchParams();
   const shelterId = Array.isArray(params.id) ? params.id[0] : params.id;
   const [shelter, setShelter] = useState<Shelter | null>(null);
@@ -101,24 +102,25 @@ export default function ShelterDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  bodyText: {
-    ...typography.body,
-    color: colors.text,
-    marginTop: spacing.xs,
-  },
-  mutedText: {
-    ...typography.caption,
-    color: colors.muted,
-    marginTop: spacing.xs,
-  },
-  rowWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    marginTop: spacing.sm,
-  },
-  skeletonStack: {
-    gap: spacing.xs,
-  },
-});
+const createStyles = (colors: { text: string; muted: string }) =>
+  StyleSheet.create({
+    bodyText: {
+      ...typography.body,
+      color: colors.text,
+      marginTop: spacing.xs,
+    },
+    mutedText: {
+      ...typography.caption,
+      color: colors.muted,
+      marginTop: spacing.xs,
+    },
+    rowWrap: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.xs,
+      marginTop: spacing.sm,
+    },
+    skeletonStack: {
+      gap: spacing.xs,
+    },
+  });

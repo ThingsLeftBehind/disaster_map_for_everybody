@@ -2,10 +2,11 @@ import { useRouter } from 'expo-router';
 import { Text } from 'react-native';
 
 import { ScreenContainer, SectionCard, StatusPill } from '@/src/ui/system';
-import { colors, spacing, typography } from '@/src/ui/theme';
+import { spacing, typography, useThemedStyles } from '@/src/ui/theme';
 
 export default function SourcesScreen() {
   const router = useRouter();
+  const styles = useThemedStyles(createStyles);
 
   return (
     <ScreenContainer title="Sources" leftAction={{ label: 'Back', onPress: () => router.back() }}>
@@ -22,7 +23,7 @@ export default function SourcesScreen() {
   );
 }
 
-const styles = {
+const createStyles = (colors: { text: string; muted: string }) => ({
   bodyText: {
     ...typography.body,
     color: colors.text,
@@ -32,4 +33,4 @@ const styles = {
     ...typography.body,
     color: colors.muted,
   },
-};
+});

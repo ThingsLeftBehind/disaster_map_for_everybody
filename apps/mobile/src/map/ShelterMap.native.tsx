@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 
-import { colors } from '@/src/ui/theme';
+import { useTheme } from '@/src/ui/theme';
 
 export type ShelterMarker = {
   id: string;
@@ -24,6 +24,7 @@ type ShelterMapProps = {
 };
 
 export function ShelterMap({ region, markers, onPressMarker }: ShelterMapProps) {
+  const { colors } = useTheme();
   return (
     <MapView style={styles.map} region={region}>
       {markers.map((marker) => (

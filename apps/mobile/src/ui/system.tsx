@@ -4,7 +4,7 @@ import { Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextIn
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, radii, spacing, typography } from './theme';
+import { radii, spacing, typography, useTheme, useThemedStyles } from './theme';
 import { useDrawer } from './drawer';
 
 type HeaderAction = {
@@ -82,6 +82,7 @@ export function ScreenContainer({
   children,
   scroll = true,
 }: ScreenContainerProps) {
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const baseHeight = Platform.OS === 'web' ? 64 : 58;
   const contentPaddingBottom = spacing.lg + baseHeight + insets.bottom;
@@ -114,7 +115,7 @@ export function ScreenContainer({
 export function TabScreen({
   title,
   subtitle,
-  titleAlign = 'center',
+  titleAlign = 'left',
   children,
   scrollRef,
 }: {
@@ -125,6 +126,8 @@ export function TabScreen({
   scrollRef?: RefObject<ScrollView>;
 }) {
   const { openDrawer } = useDrawer();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const baseHeight = Platform.OS === 'web' ? 64 : 58;
   const paddingBottom = Math.max(insets.bottom, Platform.OS === 'web' ? 10 : 6);
@@ -160,6 +163,7 @@ export function TabScreen({
 }
 
 export function SectionCard({ title, action, children }: SectionCardProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.card}>
       {title || action ? (
@@ -174,6 +178,7 @@ export function SectionCard({ title, action, children }: SectionCardProps) {
 }
 
 export function PrimaryButton({ label, onPress, disabled = false }: ButtonProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable
       onPress={onPress}
@@ -190,6 +195,7 @@ export function PrimaryButton({ label, onPress, disabled = false }: ButtonProps)
 }
 
 export function SecondaryButton({ label, onPress, disabled = false }: ButtonProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable
       onPress={onPress}
@@ -213,6 +219,8 @@ export function TextField({
   keyboardType = 'default',
   multiline = false,
 }: TextFieldProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <TextInput
       value={value}
@@ -228,6 +236,7 @@ export function TextField({
 }
 
 export function Chip({ label, selected = false, disabled = false, onPress }: ChipProps) {
+  const styles = useThemedStyles(createStyles);
   const content = (
     <View
       style={[
@@ -245,7 +254,9 @@ export function Chip({ label, selected = false, disabled = false, onPress }: Chi
 }
 
 export function StatusPill({ label, tone = 'neutral' }: StatusPillProps) {
-  const toneStyle = statusToneStyles[tone];
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const toneStyle = getStatusToneStyles(colors)[tone];
   return (
     <View style={[styles.statusPill, toneStyle.container]}>
       <Text style={[styles.statusText, toneStyle.text]}>{label}</Text>
@@ -254,6 +265,7 @@ export function StatusPill({ label, tone = 'neutral' }: StatusPillProps) {
 }
 
 export function ErrorState({ title = '読み込みエラー', message, retryLabel = '再試行', onRetry }: ErrorStateProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.stateWrap}>
       <Text style={styles.stateTitle}>{title}</Text>
@@ -264,6 +276,7 @@ export function ErrorState({ title = '読み込みエラー', message, retryLabe
 }
 
 export function EmptyState({ title = 'データなし', message, actionLabel, onAction }: EmptyStateProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.stateWrap}>
       <Text style={styles.stateTitle}>{title}</Text>
@@ -274,6 +287,7 @@ export function EmptyState({ title = 'データなし', message, actionLabel, on
 }
 
 export function Skeleton({ width = '100%', height = 14 }: SkeletonProps) {
+  const styles = useThemedStyles(createStyles);
   return <View style={[styles.skeleton, { width, height }]} />;
 }
 
@@ -286,6 +300,8 @@ function HeaderActionButton({
   align: 'left' | 'right';
   compact?: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable onPress={action.onPress} hitSlop={10} style={[styles.headerAction, compact ? styles.headerActionCompact : null]}>
       {action.icon ? (
@@ -300,30 +316,60 @@ function HeaderActionButton({
   );
 }
 
-const statusToneStyles: Record<StatusTone, { container: object; text: object }> = {
-  neutral: {
-    container: { backgroundColor: colors.surfaceStrong, borderColor: colors.border },
-    text: { color: colors.text },
-  },
-  ok: {
-    container: { backgroundColor: colors.statusBgOk, borderColor: colors.statusOk },
-    text: { color: colors.background },
-  },
-  info: {
-    container: { backgroundColor: colors.statusBgInfo, borderColor: colors.statusInfo },
-    text: { color: colors.statusInfo },
-  },
-  warning: {
-    container: { backgroundColor: colors.statusBgWarning, borderColor: colors.statusWarning },
-    text: { color: colors.statusWarning },
-  },
-  danger: {
-    container: { backgroundColor: colors.statusBgDanger, borderColor: colors.statusDanger },
-    text: { color: colors.statusDanger },
-  },
-};
+function getStatusToneStyles(colors: {
+  surfaceStrong: string;
+  border: string;
+  text: string;
+  statusBgOk: string;
+  statusOk: string;
+  background: string;
+  statusBgInfo: string;
+  statusInfo: string;
+  statusBgWarning: string;
+  statusWarning: string;
+  statusBgDanger: string;
+  statusDanger: string;
+}): Record<StatusTone, { container: object; text: object }> {
+  return {
+    neutral: {
+      container: { backgroundColor: colors.surfaceStrong, borderColor: colors.border },
+      text: { color: colors.text },
+    },
+    ok: {
+      container: { backgroundColor: colors.statusBgOk, borderColor: colors.statusOk },
+      text: { color: colors.background },
+    },
+    info: {
+      container: { backgroundColor: colors.statusBgInfo, borderColor: colors.statusInfo },
+      text: { color: colors.statusInfo },
+    },
+    warning: {
+      container: { backgroundColor: colors.statusBgWarning, borderColor: colors.statusWarning },
+      text: { color: colors.statusWarning },
+    },
+    danger: {
+      container: { backgroundColor: colors.statusBgDanger, borderColor: colors.statusDanger },
+      text: { color: colors.statusDanger },
+    },
+  };
+}
 
-const styles = StyleSheet.create({
+const createStyles = (colors: {
+  background: string;
+  border: string;
+  text: string;
+  muted: string;
+  surfaceStrong: string;
+  statusBgOk: string;
+  statusOk: string;
+  statusBgInfo: string;
+  statusInfo: string;
+  statusBgWarning: string;
+  statusWarning: string;
+  statusBgDanger: string;
+  statusDanger: string;
+}) =>
+  StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.background,
