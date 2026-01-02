@@ -106,13 +106,26 @@ function statusPriority(status: '発表' | '継続'): number {
     return status === '継続' ? 2 : 1;
 }
 
+function severityPriority(severity: Severity): number {
+    if (severity === 'special') return 3;
+    if (severity === 'warning') return 2;
+    return 1;
+}
+
+function isHigherPriority(a: WarningDisplayItem, b: WarningDisplayItem): boolean {
+    const sevA = severityPriority(a.severity);
+    const sevB = severityPriority(b.severity);
+    if (sevA !== sevB) return sevA > sevB;
+    return statusPriority(a.status) > statusPriority(b.status);
+}
+
 function dedupeByArea(items: WarningDisplayItem[], areaCode: string): WarningDisplayItem[] {
-    // Stable key: areaCode + warningName + levelLabel
+    // Stable key: areaCode + warningName (keep highest severity)
     const map = new Map<string, WarningDisplayItem>();
     for (const item of items) {
-        const key = `${areaCode}|${item.warningName}|${item.levelLabel}`;
+        const key = `${areaCode}|${item.warningName}`;
         const existing = map.get(key);
-        if (!existing || statusPriority(item.status) > statusPriority(existing.status)) {
+        if (!existing || isHigherPriority(item, existing)) {
             map.set(key, item);
         }
     }
@@ -175,9 +188,9 @@ function buildCountedWarnings(areaDetailItems: AreaDetailBlock[]): WarningDispla
     const map = new Map<string, WarningDisplayItem>();
     for (const block of areaDetailItems) {
         for (const item of block.items) {
-            const key = `${item.warningName}|${item.levelLabel}`;
+            const key = item.warningName;
             const existing = map.get(key);
-            if (!existing || statusPriority(item.status) > statusPriority(existing.status)) {
+            if (!existing || isHigherPriority(item, existing)) {
                 map.set(key, item);
             }
         }

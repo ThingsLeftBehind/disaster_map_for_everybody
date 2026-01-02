@@ -59,13 +59,55 @@ const PREFECTURES = [
 const PREF_BY_CODE = new Map(PREFECTURES.map((pref) => [pref.code, pref.name]));
 const MUNICIPALITY_BY_CODE = new Map(ALL_MUNICIPALITIES.map((muni) => [muni.muniCode, muni.muniName]));
 
+const PHENOMENON_GUIDE: Record<string, { description: string; actions: string[] }> = {
+    雷: {
+        description: '落雷の危険があります。',
+        actions: ['屋外の開けた場所を避ける', '金属製品から離れる', '建物内へ退避する'],
+    },
+    濃霧: {
+        description: '視界が悪くなります。',
+        actions: ['車は速度を落とす', 'ライトを点灯する', '無理な外出を控える'],
+    },
+    強風: {
+        description: '飛来物や転倒に注意が必要です。',
+        actions: ['飛来物に注意', '窓や屋外の固定', '不要不急の外出を控える'],
+    },
+    波浪: {
+        description: '高波による危険があります。',
+        actions: ['海岸に近づかない', '防波堤に近づかない', '最新情報を確認'],
+    },
+    大雪: {
+        description: '交通障害や停電に注意が必要です。',
+        actions: ['不要不急の外出を控える', '交通情報を確認', '備えを確保'],
+    },
+    乾燥: {
+        description: '火災の危険が高まります。',
+        actions: ['火の取り扱いに注意', '換気と加湿', '火災情報を確認'],
+    },
+    霜: {
+        description: '路面が滑りやすくなります。',
+        actions: ['足元や路面に注意', '車は速度を落とす'],
+    },
+    なだれ: {
+        description: '雪崩の危険があります。',
+        actions: ['斜面に近づかない', '危険箇所を避ける', '避難情報を確認'],
+    },
+    低温: {
+        description: '体調への影響や凍結に注意が必要です。',
+        actions: ['防寒を十分に', '水道管の凍結に注意'],
+    },
+    着雪: {
+        description: '樹木や電線への着雪に注意が必要です。',
+        actions: ['落雪に注意', '停電への備え'],
+    },
+};
+
 export default function AlertsScreen() {
     const styles = useThemedStyles(createStyles);
 
     // State
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<JmaWarningsResponse | null>(null);
-    const [referenceData, setReferenceData] = useState<JmaWarningsResponse[]>([]);
 
     // Area Selection
     const [currentLocation, setCurrentLocation] = useState<AreaSelection | null>(null);
@@ -101,21 +143,8 @@ export default function AlertsScreen() {
         return 'MAINLAND';
     }, [resolvedArea.officeCode, resolvedArea.class10Code]);
 
-    // Strictly normalize class20 code according to rules:
-    // 1) 7 digits: return as is.
-    // 2) 6 digits: drop check digit -> 5 digits, append "00".
-    // 3) 5 digits: append "00".
-    // 4) Otherwise: null.
-    const safeNormalizeClass20 = (code: string | null | undefined): string | null => {
-        if (!code) return null;
-        if (code.length === 7) return code;
-        if (code.length === 6) return `${code.slice(0, 5)}00`;
-        if (code.length === 5) return `${code}00`;
-        return null;
-    };
-
     const rawClass20 = resolvedArea.class20Code ?? manualArea?.muniCode ?? currentLocation?.muniCode ?? null;
-    const normalizedClass20 = safeNormalizeClass20(rawClass20);
+    const normalizedClass20 = normalizeClass20(rawClass20);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -126,20 +155,49 @@ export default function AlertsScreen() {
                 url += `&class20=${encodeURIComponent(normalizedClass20)}`;
             }
 
+            const isTokyoArea = apiAreaCode === '130000';
             if (__DEV__) {
+                console.log(`[JMA Warnings] Area: ${apiAreaCode}`);
                 console.log(`[JMA Warnings] RawClass20: ${rawClass20 ?? 'null'}`);
                 console.log(`[JMA Warnings] NormalizedClass20: ${normalizedClass20 ?? 'null'}`);
                 console.log(`[JMA Warnings] URL: ${url}`);
+                if (isTokyoArea && normalizedClass20) {
+                    console.log(`[JMA Warnings] Tokyo class20 group: ${getTokyoClass20Group(normalizedClass20)}`);
+                }
+                if (!normalizedClass20) {
+                    console.log('[JMA Warnings] No class20: area-only request');
+                }
             }
-            const primary = await fetchJson<JmaWarningsResponse>(url);
+            let primary = await fetchJson<JmaWarningsResponse>(url);
             if (__DEV__) {
                 console.log(`[JMA Warnings] Response items: ${primary.items?.length ?? 0}`);
             }
+
+            if (normalizedClass20 && (primary.items?.length ?? 0) === 0) {
+                if (isTokyoArea) {
+                    if (__DEV__) {
+                        console.log('[JMA Warnings] Fallback skipped: Tokyo with valid class20');
+                    }
+                } else {
+                    const fallbackUrl = `/api/jma/warnings?area=${apiAreaCode}`;
+                    if (__DEV__) {
+                        console.log(`[JMA Warnings] Fallback URL: ${fallbackUrl}`);
+                    }
+                    const fallback = await fetchJson<JmaWarningsResponse>(fallbackUrl);
+                    if (__DEV__) {
+                        console.log(`[JMA Warnings] Fallback items: ${fallback.items?.length ?? 0}`);
+                    }
+                    if ((fallback.items?.length ?? 0) > 0) {
+                        primary = fallback;
+                        if (__DEV__) {
+                            console.log('[JMA Warnings] Fallback used: non-Tokyo empty class20');
+                        }
+                    }
+                }
+            }
             setData(primary);
-            setReferenceData([]); // References not needed if we rely on office breakdown
         } catch {
             setData(null);
-            setReferenceData([]);
         } finally {
             setLoading(false);
         }
@@ -205,6 +263,17 @@ export default function AlertsScreen() {
             }
         );
     }, [data, manualArea, currentLocation, tokyoMode, resolvedArea]);
+
+    const hazardGuides = useMemo(
+        () =>
+            viewModel.countedWarnings
+                .map((item) => ({ item, guide: PHENOMENON_GUIDE[item.phenomenon] }))
+                .filter((entry) => Boolean(entry.guide)) as Array<{
+                item: (typeof viewModel.countedWarnings)[number];
+                guide: { description: string; actions: string[] };
+            }>,
+        [viewModel.countedWarnings]
+    );
 
     const [detailsExpanded, setDetailsExpanded] = useState(false);
 
@@ -371,13 +440,36 @@ export default function AlertsScreen() {
 
                 <View style={{ height: 24 }} />
 
-                {/* GUIDANCE (警戒レベルについて) - Bottom Placement */}
-                <Text style={styles.sectionTitle}>警戒レベルについて</Text>
+                {/* GUIDANCE (警報レベルについて) - Bottom Placement */}
+                <Text style={styles.sectionTitle}>警報レベルについて</Text>
                 <View style={styles.guidanceCard}>
                     <LevelRow level="special" label="特別警報" desc="予想をはるかに超える現象です。直ちに命を守る行動をとってください。" />
                     <LevelRow level="warning" label="警報" desc="重大な災害が起こるおそれがある場合に発表されます。" />
                     <LevelRow level="advisory" label="注意報" desc="災害が起こるおそれがある場合に発表されます。" />
                 </View>
+
+                {hazardGuides.length > 0 && (
+                    <>
+                        <Text style={styles.sectionTitle}>現象ごとの説明・対応</Text>
+                        <View style={styles.hazardGuideList}>
+                            {hazardGuides.map(({ item, guide }) => (
+                                <View key={`guide-${item.phenomenon}`} style={styles.hazardGuideCard}>
+                                    <View style={styles.hazardGuideHeader}>
+                                        <View style={[styles.hazardGuideChip, { borderColor: item.color.border, backgroundColor: item.color.bg }]}>
+                                            <Text style={[styles.hazardGuideChipText, { color: item.color.text }]}>{item.phenomenon}</Text>
+                                        </View>
+                                        <Text style={styles.hazardGuideDesc}>{guide.description}</Text>
+                                    </View>
+                                    <View style={styles.hazardGuideActions}>
+                                        {guide.actions.map((action) => (
+                                            <Text key={`${item.phenomenon}-${action}`} style={styles.hazardGuideAction}>• {action}</Text>
+                                        ))}
+                                    </View>
+                                </View>
+                            ))}
+                        </View>
+                    </>
+                )}
 
                 <View style={{ height: 40 }} />
             </ScrollView>
@@ -531,6 +623,29 @@ function AreaSelectorSheet({
             </View>
         </Modal>
     );
+}
+
+function normalizeClass20(raw: string | null | undefined): string | null {
+    if (!raw) return null;
+    const digits = raw.replace(/\D/g, '');
+    if (!digits) return null;
+    if (digits.length === 7) return digits;
+    if (digits.length === 5) return `${digits}00`;
+    if (digits.length === 6) {
+        const base5 = digits.slice(0, 5);
+        const checkDigit = digits.slice(5);
+        if (computeCheckDigit(base5) !== checkDigit) return null;
+        return `${base5}00`;
+    }
+    return null;
+}
+
+function getTokyoClass20Group(class20: string): 'urban' | 'islands' | 'unknown' {
+    if (!class20) return 'unknown';
+    const islandPrefixes = ['13361', '13362', '13363', '13364', '13381', '13382', '13401', '13402', '13421'];
+    if (islandPrefixes.some((prefix) => class20.startsWith(prefix))) return 'islands';
+    if (class20.startsWith('13')) return 'urban';
+    return 'unknown';
 }
 
 async function reverseGeocodeResult(coords: LatLng): Promise<{ prefCode: string | null; muniCode: string | null }> {
@@ -806,6 +921,45 @@ const createStyles = (colors: { background: string; border: string; text: string
         borderRadius: radii.lg,
         padding: spacing.md,
         gap: 12,
+    },
+    hazardGuideList: {
+        gap: 8,
+        marginBottom: spacing.sm,
+    },
+    hazardGuideCard: {
+        backgroundColor: '#fff',
+        borderRadius: radii.md,
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        padding: spacing.md,
+        gap: 8,
+    },
+    hazardGuideHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    hazardGuideChip: {
+        borderWidth: 1,
+        borderRadius: 999,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+    },
+    hazardGuideChipText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    hazardGuideDesc: {
+        flex: 1,
+        fontSize: 12,
+        color: colors.text,
+    },
+    hazardGuideActions: {
+        gap: 4,
+    },
+    hazardGuideAction: {
+        fontSize: 12,
+        color: colors.text,
     },
     levelRow: {
         flexDirection: 'row',

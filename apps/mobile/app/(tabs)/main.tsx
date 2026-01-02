@@ -223,20 +223,50 @@ export default function MainScreen() {
             setWarningsError(null);
             try {
                 const info = JmaAreaMapper.resolve(currentMuniCode);
-                const class20Candidate = info.class20Code ?? currentMuniCode ?? null;
-                const { rawClass20, normalizedClass20 } = normalizeClass20Info(class20Candidate);
+                const rawClass20 = info.class20Code ?? currentMuniCode ?? null;
+                const normalizedClass20 = normalizeClass20(rawClass20);
                 let url = `/api/jma/warnings?area=${areaCode}`;
-                if (areaCode === '130000' && normalizedClass20) {
+                if (normalizedClass20) {
                     url += `&class20=${encodeURIComponent(normalizedClass20)}`;
                 }
+                const isTokyoArea = areaCode === '130000';
                 if (__DEV__) {
+                    console.log(`[JMA Warnings] Area: ${areaCode}`);
                     console.log(`[JMA Warnings] RawClass20: ${rawClass20 ?? 'null'}`);
                     console.log(`[JMA Warnings] NormalizedClass20: ${normalizedClass20 ?? 'null'}`);
                     console.log(`[JMA Warnings] URL: ${url}`);
+                    if (isTokyoArea && normalizedClass20) {
+                        console.log(`[JMA Warnings] Tokyo class20 group: ${getTokyoClass20Group(normalizedClass20)}`);
+                    }
+                    if (!normalizedClass20) {
+                        console.log('[JMA Warnings] No class20: area-only request');
+                    }
                 }
-                const primary = await fetchJson<JmaWarningsResponse>(url);
+                let primary = await fetchJson<JmaWarningsResponse>(url);
                 if (__DEV__) {
                     console.log(`[JMA Warnings] Response items: ${primary.items?.length ?? 0}`);
+                }
+                if (normalizedClass20 && (primary.items?.length ?? 0) === 0) {
+                    if (isTokyoArea) {
+                        if (__DEV__) {
+                            console.log('[JMA Warnings] Fallback skipped: Tokyo with valid class20');
+                        }
+                    } else {
+                        const fallbackUrl = `/api/jma/warnings?area=${areaCode}`;
+                        if (__DEV__) {
+                            console.log(`[JMA Warnings] Fallback URL: ${fallbackUrl}`);
+                        }
+                        const fallback = await fetchJson<JmaWarningsResponse>(fallbackUrl);
+                        if (__DEV__) {
+                            console.log(`[JMA Warnings] Fallback items: ${fallback.items?.length ?? 0}`);
+                        }
+                        if ((fallback.items?.length ?? 0) > 0) {
+                            primary = fallback;
+                            if (__DEV__) {
+                                console.log('[JMA Warnings] Fallback used: non-Tokyo empty class20');
+                            }
+                        }
+                    }
                 }
 
                 if (!active) return;
@@ -559,20 +589,27 @@ function normalizeMuniCode(raw: unknown): { muniCode: string | null; prefCode: s
     return { muniCode: null, prefCode: null };
 }
 
-function normalizeClass20Info(code: string | null): { rawClass20: string | null; normalizedClass20: string | null } {
-    if (!code) return { rawClass20: null, normalizedClass20: null };
-    const digits = code.replace(/\D/g, '');
-    if (!digits) return { rawClass20: null, normalizedClass20: null };
-    if (digits.length === 7) return { rawClass20: digits, normalizedClass20: digits };
+function normalizeClass20(raw: string | null): string | null {
+    if (!raw) return null;
+    const digits = raw.replace(/\D/g, '');
+    if (!digits) return null;
+    if (digits.length === 7) return digits;
+    if (digits.length === 5) return `${digits}00`;
     if (digits.length === 6) {
-        const normalized = `${digits.slice(0, 5)}00`;
-        return { rawClass20: digits, normalizedClass20: normalized };
+        const base5 = digits.slice(0, 5);
+        const checkDigit = digits.slice(5);
+        if (computeCheckDigit(base5) !== checkDigit) return null;
+        return `${base5}00`;
     }
-    if (digits.length === 5) {
-        const normalized = `${digits}00`;
-        return { rawClass20: digits, normalizedClass20: normalized };
-    }
-    return { rawClass20: digits, normalizedClass20: null };
+    return null;
+}
+
+function getTokyoClass20Group(class20: string): 'urban' | 'islands' | 'unknown' {
+    if (!class20) return 'unknown';
+    const islandPrefixes = ['13361', '13362', '13363', '13364', '13381', '13382', '13401', '13402', '13421'];
+    if (islandPrefixes.some((prefix) => class20.startsWith(prefix))) return 'islands';
+    if (class20.startsWith('13')) return 'urban';
+    return 'unknown';
 }
 
 const createStyles = (colors: { background: string; border: string; text: string; muted: string }) =>
