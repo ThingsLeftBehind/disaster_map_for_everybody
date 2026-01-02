@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_add="http://xml.kishou.go.jp/jmaxml1/addition1/">
+<Control>
+<Title>府県気象情報</Title>
+<DateTime>2026-01-01T07:30:23Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>福井地方気象台</EditorialOffice>
+<PublishingOffice>福井地方気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>大雪と雷及び突風に関する福井県気象情報</Title>
+<ReportDateTime>2026-01-01T16:30:00+09:00</ReportDateTime>
+<TargetDateTime>2026-01-01T16:30:00+09:00</TargetDateTime>
+<EventID>JPNC250080</EventID>
+<InfoType>発表</InfoType>
+<Serial>2</Serial>
+<InfoKind>同一現象用平文情報</InfoKind>
+<InfoKindVersion>1.0_0</InfoKindVersion>
+<Headline>
+<Text>福井県では、２日昼過ぎから３日にかけて大雪による交通障害に注意・警戒してください。また、２日昼過ぎから夜遅くにかけて落雷や竜巻などの激しい突風に注意してください。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/">
+<Notice/>
+<Comment>
+<Text type="本文">［気象概況］
+　日本付近は３日にかけて強い冬型の気圧配置が続き、２日から３日にかけて北陸地方の上空約５５００メートルには氷点下３６度以下の強い寒気が流れ込む見込みです。
+　このため、福井県では２日昼過ぎから３日にかけて山地を中心に大雪となる所があるでしょう。また、大気の状態が非常に不安定となる見込みです。
+　予想より寒気が強まった場合や雪雲が同じ地域に流れ込み続けた場合には、警報級の大雪となる可能性があります。
+
+［雪の予想］
+１日１８時から２日１８時までに予想される２４時間降雪量は多い所で、
+　　嶺北北部平地　２０センチ
+　　嶺北北部山地　３０センチ
+　　嶺北南部平地　２０センチ
+　　嶺北南部山地　３０センチ
+　　奥越　　　　　３０センチ
+　　嶺南東部平地　２０センチ
+　　嶺南東部山地　３５センチ
+　　嶺南西部平地　２０センチ
+　　嶺南西部山地　３５センチ
+その後、２日１８時から３日１８時までに予想される２４時間降雪量は多い所で、
+　　嶺北北部平地　１５センチ
+　　嶺北北部山地　３０センチ
+　　嶺北南部平地　１５センチ
+　　嶺北南部山地　３０センチ
+　　奥越　　　　　３０センチ
+　　嶺南東部平地　２０センチ
+　　嶺南東部山地　３０センチ
+　　嶺南西部平地　２０センチ
+　　嶺南西部山地　３０センチ
+
+［防災事項］
+　福井県では、２日昼過ぎから３日にかけて大雪による交通障害に注意・警戒し、路面の凍結にも注意してください。
+　また、２日昼過ぎから夜遅くにかけて落雷や竜巻などの激しい突風に注意してください。発達した積乱雲の近づく兆しがある場合には、建物内に移動するなど安全確保に努めてください。
+
+［補足事項］
+　今後発表する防災気象情報に留意してください。
+　この情報は、「大雪に関する福井県気象情報」を引き継ぐものです。
+　次の「大雪と雷及び突風に関する福井県気象情報」は、２日６時頃に発表する予定です。</Text>
+</Comment>
+</Body>
+</Report>

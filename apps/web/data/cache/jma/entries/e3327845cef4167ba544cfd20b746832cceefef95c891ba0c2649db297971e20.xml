@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_add="http://xml.kishou.go.jp/jmaxml1/addition1/">
+<Control>
+<Title>府県気象情報</Title>
+<DateTime>2026-01-01T07:45:18Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>気象庁本庁</EditorialOffice>
+<PublishingOffice>気象庁</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>大雪と雷及び突風に関する東京都気象情報</Title>
+<ReportDateTime>2026-01-01T16:45:00+09:00</ReportDateTime>
+<TargetDateTime>2026-01-01T16:45:00+09:00</TargetDateTime>
+<EventID>JPTK260002</EventID>
+<InfoType>発表</InfoType>
+<Serial>2</Serial>
+<InfoKind>同一現象用平文情報</InfoKind>
+<InfoKindVersion>1.0_0</InfoKindVersion>
+<Headline>
+<Text>東京地方では、２日昼過ぎから夜のはじめ頃にかけて雪や雨が降り、多摩地方の山沿いや山地を中心に大雪となる見込みです。大雪や路面の凍結による交通障害に注意してください。伊豆諸島では、落雷や竜巻などの激しい突風、降ひょう、急な強い雨に注意してください。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/">
+<Notice/>
+<Comment>
+<Text type="本文">［気象概況］
+日本付近は強い冬型の気圧配置となっており、関東甲信地方には２日から３日にかけて、上空約５５００メートルに氷点下３６度以下の強い寒気が流れ込む見込みです。
+このため、多摩地方の山沿いや山地では２日昼過ぎから夜のはじめ頃にかけて、多摩地方の平地や２３区では２日夕方から夜のはじめ頃にかけて雪や雨が降り、多摩地方の山沿いや山地を中心に大雪となるでしょう。２３区でも積雪となる所がある見込みです。
+また、伊豆諸島では上空の強い寒気の影響で、２日夕方から３日はじめにかけて、大気の状態が非常に不安定となる見込みです。
+
+［雪の予想］
+１日１８時から２日１８時までに予想される２４時間降雪量は多い所で、
+　　多摩南部　３センチ
+　　多摩西部　３センチ
+その後、２日１８時から３日１８時までに予想される２４時間降雪量は多い所で、
+　　東京２３区　１センチ
+　　多摩北部　　１センチ
+　　多摩南部　　３センチ
+　　多摩西部　　３センチ
+
+［防災事項］
+東京地方では、多摩地方の山沿いや山地を中心に、２日夕方から夜のはじめ頃にかけて、大雪や路面の凍結による交通障害に注意してください。
+また、伊豆諸島では、２日夕方から３日はじめにかけて、落雷や竜巻などの激しい突風、急な強い雨に注意してください。発達した積乱雲の近づく兆しがある場合には、建物内に移動するなど安全確保に努めてください。降ひょうのおそれもありますので、農作物や農業施設の管理にも注意してください。
+
+［補足事項］
+今後発表する防災気象情報に留意してください。
+この情報は「雪に関する東京都気象情報」を引き継ぐものです。
+次の「大雪と雷及び突風に関する東京都気象情報」は、２日６時頃に発表する予定です。</Text>
+</Comment>
+</Body>
+</Report>

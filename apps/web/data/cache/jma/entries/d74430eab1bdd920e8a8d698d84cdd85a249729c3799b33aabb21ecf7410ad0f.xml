@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_add="http://xml.kishou.go.jp/jmaxml1/addition1/">
+<Control>
+<Title>府県気象情報</Title>
+<DateTime>2026-01-01T07:25:32Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>秋田地方気象台</EditorialOffice>
+<PublishingOffice>秋田地方気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>雷と突風に関する秋田県気象情報</Title>
+<ReportDateTime>2026-01-01T16:25:00+09:00</ReportDateTime>
+<TargetDateTime>2026-01-01T16:25:00+09:00</TargetDateTime>
+<EventID>JPDB260001</EventID>
+<InfoType>発表</InfoType>
+<Serial>1</Serial>
+<InfoKind>同一現象用平文情報</InfoKind>
+<InfoKindVersion>1.0_0</InfoKindVersion>
+<Headline>
+<Text>秋田県では、冬型の気圧配置や上空の強い寒気の影響により、２日昼前から夜遅くにかけて、竜巻などの激しい突風や落雷に注意してください。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/">
+<Notice/>
+<Comment>
+<Text type="本文">［気象概況］
+　日本付近は２日にかけて冬型の気圧配置が続く見込みです。東北地方の上空約５０００メートルには、氷点下３６度以下の寒気が流れ込み、大気の状態が非常に不安定となるでしょう。
+　このため、秋田県では、積乱雲が発達し、雷の発生する所がある見込みです。
+
+［防災事項］
+　秋田県では、２日昼前から夜遅くにかけて、竜巻などの激しい突風や落雷に注意してください。発達した積乱雲の近づく兆しがある場合には、頑丈な建物内に移動するなど、安全確保に努めてください。
+
+［補足事項］
+今後発表する防災気象情報に留意してください。
+次の「雷と突風に関する秋田県気象情報」は、２日６時頃に発表する予定です。</Text>
+</Comment>
+</Body>
+</Report>

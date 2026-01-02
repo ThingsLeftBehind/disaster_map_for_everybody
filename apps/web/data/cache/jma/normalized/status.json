@@ -1,15 +1,15 @@
 {
-  "updatedAt": "2025-12-28T08:26:29.048Z",
+  "updatedAt": "2026-01-01T11:39:05.009Z",
   "fetchStatus": "OK",
   "feeds": {
     "regular": {
       "fetchStatus": "OK",
-      "updatedAt": "2025-12-28T08:26:26.069Z",
+      "updatedAt": "2026-01-01T11:39:03.669Z",
       "lastError": null
     },
     "extra": {
       "fetchStatus": "OK",
-      "updatedAt": "2025-12-28T08:26:27.562Z",
+      "updatedAt": "2026-01-01T11:39:05.009Z",
       "lastError": null
     },
     "eqvol": {

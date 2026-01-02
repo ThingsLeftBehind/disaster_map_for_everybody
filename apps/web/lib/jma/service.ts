@@ -233,8 +233,7 @@ async function triggerWarningsRefresh(area: string, blocking: boolean): Promise<
     const beforeSig = [
       `${before.feeds.regular.lastSuccessfulUpdateTime ?? ''}|${before.feeds.regular.lastError ?? ''}`,
       `${before.feeds.extra.lastSuccessfulUpdateTime ?? ''}|${before.feeds.extra.lastError ?? ''}`,
-      `${before.webjson.warningsByArea[area]?.lastSuccessfulUpdateTime ?? ''}|${
-        before.webjson.warningsByArea[area]?.lastError ?? ''
+      `${before.webjson.warningsByArea[area]?.lastSuccessfulUpdateTime ?? ''}|${before.webjson.warningsByArea[area]?.lastError ?? ''
       }`,
     ].join('||');
 
@@ -246,8 +245,7 @@ async function triggerWarningsRefresh(area: string, blocking: boolean): Promise<
     const afterSig = [
       `${after.feeds.regular.lastSuccessfulUpdateTime ?? ''}|${after.feeds.regular.lastError ?? ''}`,
       `${after.feeds.extra.lastSuccessfulUpdateTime ?? ''}|${after.feeds.extra.lastError ?? ''}`,
-      `${after.webjson.warningsByArea[area]?.lastSuccessfulUpdateTime ?? ''}|${
-        after.webjson.warningsByArea[area]?.lastError ?? ''
+      `${after.webjson.warningsByArea[area]?.lastSuccessfulUpdateTime ?? ''}|${after.webjson.warningsByArea[area]?.lastError ?? ''
       }`,
     ].join('||');
 

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_add="http://xml.kishou.go.jp/jmaxml1/addition1/">
+<Control>
+<Title>府県気象情報</Title>
+<DateTime>2026-01-01T07:17:16Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>金沢地方気象台</EditorialOffice>
+<PublishingOffice>金沢地方気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>大雪と雷及び突風に関する石川県気象情報</Title>
+<ReportDateTime>2026-01-01T16:17:00+09:00</ReportDateTime>
+<TargetDateTime>2026-01-01T16:17:00+09:00</TargetDateTime>
+<EventID>JPNB250097</EventID>
+<InfoType>発表</InfoType>
+<Serial>2</Serial>
+<InfoKind>同一現象用平文情報</InfoKind>
+<InfoKindVersion>1.0_0</InfoKindVersion>
+<Headline>
+<Text>石川県では、２日朝から３日にかけて大雪による交通障害に注意・警戒し、２日昼過ぎから３日にかけて落雷や竜巻などの激しい突風、降ひょうに注意してください。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/">
+<Notice/>
+<Comment>
+<Text type="本文">［気象概況］
+　日本付近は３日にかけて強い冬型の気圧配置が続き、２日から３日にかけて北陸地方の上空約５５００メートルには氷点下３６度以下の強い寒気が流れ込む見込みです。
+　このため、石川県では３日にかけて大雪となる所があるでしょう。また、大気の状態が非常に不安定となるため、局地的に積乱雲が発達する見込みです。
+　予想より寒気が強まったり、雪雲が同じ地域に流れ込み続けたりした場合は、警報級の大雪となる可能性があります。
+
+［雪の予想］
+１日１８時から２日１８時までに予想される２４時間降雪量は多い所で、
+　　加賀平地　３５センチ
+　　加賀山地　３５センチ
+　　能登平地　３５センチ
+　　能登山地　３５センチ
+その後、２日１８時から３日１８時までに予想される２４時間降雪量は多い所で、
+　　加賀平地　１５センチ
+　　加賀山地　５０センチ
+　　能登平地　１５センチ
+　　能登山地　２０センチ
+
+［防災事項］
+　石川県では、２日朝から３日にかけて大雪による交通障害に注意・警戒してください。令和６年能登半島地震や令和６年９月の能登の記録的な大雨で損傷を受けた家屋では、積雪の重みによる倒壊にも注意が必要です。
+　また石川県では、２日昼過ぎから３日にかけて落雷や竜巻などの激しい突風に注意してください。発達した積乱雲の近づく兆しがある場合には、建物内に移動するなど、安全確保に努めてください。ひょうの降るおそれもありますので、農作物や農業施設の管理にも注意してください。
+
+［補足事項］
+　今後発表する防災気象情報に留意してください。
+　この情報は「大雪に関する石川県気象情報」を引き継ぐものです。
+　次の「大雪と雷及び突風に関する石川県気象情報」は、２日６時頃に発表する予定です。
+
+［お知らせ］
+　令和６年能登半島地震に伴い、能登では大雨警報・注意報の土壌雨量指数基準や洪水警報・注意報の流域雨量指数基準および高潮警報・注意報の基準を通常より引き下げた暫定基準で運用している市町があります。</Text>
+</Comment>
+</Body>
+</Report>

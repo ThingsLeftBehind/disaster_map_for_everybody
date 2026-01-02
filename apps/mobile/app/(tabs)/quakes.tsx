@@ -68,6 +68,7 @@ export default function QuakesScreen() {
   const [activeTab, setActiveTab] = useState<QuakeTab>('latest');
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
   const [guideExpanded, setGuideExpanded] = useState<Record<string, boolean>>({});
+  const [strongExpandedIds, setStrongExpandedIds] = useState<Record<string, boolean>>({});
 
   const loadQuakes = useCallback(async () => {
     setIsLoading(true);
@@ -91,10 +92,47 @@ export default function QuakesScreen() {
     void loadQuakes();
   }, [loadQuakes]);
 
-  const items = useMemo(() => quakes?.items ?? [], [quakes]);
+  const [strongLimit, setStrongLimit] = useState(3);
+  const [listLimit, setListLimit] = useState(10);
+
+  const items = useMemo(() => {
+    const all = quakes?.items ?? [];
+    // Filter non-final or invalid items
+    return all.filter(item => {
+      // Exclude "震度速報" (Intensity Flash) or items without maxIntensity
+      if (item.title?.includes('速報')) return false;
+      // Also strictly exclude if kind is "震度速報" if that field existed, but title check is robust for JMA feeds.
+      if (!item.maxIntensity) return false;
+      return true;
+    });
+  }, [quakes]);
+
   const latestItem = useMemo(() => pickLatestItem(items), [items]);
-  const maxIntensityItem = useMemo(() => pickMaxIntensityItem(items), [items]);
-  const strongItems = useMemo(() => items.filter((item) => isStrongIntensity(item.maxIntensity)), [items]);
+
+
+  const strongItems = useMemo(() => {
+    // Q8: Last 7 days, Max Int desc, Top 9
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const candidates = items.filter(item => {
+      if (!isStrongIntensity(item.maxIntensity)) return false;
+      const t = item.time ? Date.parse(item.time) : 0;
+      return t >= sevenDaysAgo;
+    });
+
+    return candidates.sort((a, b) => {
+      const rankA = intensityRank(a.maxIntensity);
+      const rankB = intensityRank(b.maxIntensity);
+      if (rankA !== rankB) return rankB - rankA; // Descending rank
+      // Tie-break: time desc
+      const tA = a.time ? Date.parse(a.time) : 0;
+      const tB = b.time ? Date.parse(b.time) : 0;
+      return tB - tA;
+    }).slice(0, 9);
+  }, [items]);
+
+  const visibleStrong = strongItems.slice(0, strongLimit);
+  const visibleList = items.slice(0, listLimit);
+
   const lastUpdated = quakes?.updatedAt ?? latestItem?.time ?? null;
   const emptyState = !isLoading && !error && items.length === 0;
 
@@ -113,14 +151,25 @@ export default function QuakesScreen() {
       {activeTab === 'latest' ? (
         <>
           {error ? <FetchStateBanner message="地震情報を取得できませんでした" onRetry={loadQuakes} /> : null}
-          <QuakesSummary maxItem={maxIntensityItem} latestItem={latestItem} />
           {isLoading ? <QuakeSkeletonList /> : null}
           {emptyState ? <Text style={styles.noticeText}>地震情報がありません。</Text> : null}
           {!isLoading && items.length > 0 ? (
             <>
+              {strongItems.length > 0 ? (
+                <StrongQuakesSection
+                  items={visibleStrong}
+                  hasMore={strongLimit < strongItems.length}
+                  onShowMore={() => setStrongLimit(prev => Math.min(prev + 3, 9))}
+                  onCollapse={() => setStrongLimit(3)}
+                  isExpanded={strongLimit > 3}
+                  expandedIds={strongExpandedIds}
+                  onToggle={(id) => setStrongExpandedIds(prev => ({ ...prev, [id]: !prev[id] }))}
+                />
+              ) : null}
+
               <QuakeList
                 title="最近の地震"
-                items={items}
+                items={visibleList}
                 expandedIds={expandedIds}
                 onToggle={(id) =>
                   setExpandedIds((prev) => ({
@@ -128,14 +177,16 @@ export default function QuakesScreen() {
                     [id]: !prev[id],
                   }))
                 }
+                hasMore={listLimit < items.length && listLimit < 100}
+                onShowMore={() => setListLimit((prev) => Math.min(prev + 10, 100))}
+                onCollapse={() => setListLimit(10)}
+                isExpanded={listLimit > 10}
               />
-              <StrongQuakesSection items={strongItems} />
             </>
           ) : null}
         </>
       ) : (
         <>
-          <QuickActionCard />
           <IntensityGuideAccordion
             sections={GUIDE_SECTIONS}
             expanded={guideExpanded}
@@ -205,50 +256,26 @@ function QuakesSegTabs({ activeTab, onChange }: { activeTab: QuakeTab; onChange:
   );
 }
 
-function QuakesSummary({ maxItem, latestItem }: { maxItem: JmaQuakeItem | null; latestItem: JmaQuakeItem | null }) {
-  const styles = useThemedStyles(createStyles);
-  const maxIntensity = formatIntensityLabel(maxItem?.maxIntensity ?? null);
-  const maxRegion = maxItem ? pickRegionName(maxItem) : '情報なし';
-  const maxTime = maxItem?.time ? formatTimeShort(maxItem.time) : null;
 
-  const magnitude = latestItem?.magnitude ? `M${latestItem.magnitude}` : null;
-  const depth = latestItem?.title ? extractDepth(latestItem.title) : null;
-
-  return (
-    <View style={styles.summaryRow}>
-      <View style={styles.summaryCard}>
-        <Text style={styles.summaryLabel}>直近の最大震度</Text>
-        {maxItem ? (
-          <View style={styles.summaryIntensityRow}>
-            <IntensityBadge value={maxIntensity} />
-            <View style={styles.summaryTextBlock}>
-              <Text style={styles.summaryTitle}>{maxRegion}</Text>
-              {maxTime ? <Text style={styles.summaryMeta}>{maxTime}</Text> : null}
-            </View>
-          </View>
-        ) : (
-          <Text style={styles.summaryMeta}>情報なし</Text>
-        )}
-      </View>
-      <View style={styles.summaryCard}>
-        <Text style={styles.summaryLabel}>M / 深さ</Text>
-        <Text style={styles.summaryTitle}>{magnitude ?? '不明'}</Text>
-        <Text style={styles.summaryMeta}>{depth ? `深さ ${depth}` : '深さ 不明'}</Text>
-      </View>
-    </View>
-  );
-}
 
 function QuakeList({
   title,
   items,
   expandedIds,
   onToggle,
+  hasMore,
+  onShowMore,
+  onCollapse,
+  isExpanded,
 }: {
   title: string;
   items: JmaQuakeItem[];
   expandedIds: Record<string, boolean>;
   onToggle: (id: string) => void;
+  hasMore: boolean;
+  onShowMore: () => void;
+  onCollapse: () => void;
+  isExpanded: boolean;
 }) {
   const styles = useThemedStyles(createStyles);
   return (
@@ -264,30 +291,63 @@ function QuakeList({
           />
         ))}
       </View>
+      {(hasMore || isExpanded) ? (
+        <View style={styles.paginationRow}>
+          {hasMore ? (
+            <Pressable style={styles.smallOutlineButton} onPress={onShowMore}>
+              <Text style={styles.smallOutlineButtonText}>もっと見る</Text>
+            </Pressable>
+          ) : null}
+          {isExpanded ? (
+            <Pressable style={styles.smallOutlineButton} onPress={onCollapse}>
+              <Text style={styles.smallOutlineButtonText}>閉じる</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
     </View>
   );
 }
 
-function StrongQuakesSection({ items }: { items: JmaQuakeItem[] }) {
+function StrongQuakesSection({
+  items, hasMore, onShowMore, onCollapse, isExpanded, expandedIds, onToggle
+}: {
+  items: JmaQuakeItem[];
+  hasMore: boolean;
+  onShowMore: () => void;
+  onCollapse: () => void;
+  isExpanded: boolean;
+  expandedIds: Record<string, boolean>;
+  onToggle: (id: string) => void;
+}) {
   const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.sectionBlock}>
-      <Text style={styles.sectionTitle}>強い揺れ</Text>
-      {items.length === 0 ? (
-        <Text style={styles.noticeText}>記録はありません</Text>
-      ) : (
-        <View style={styles.listStack}>
-          {items.map((item) => (
-            <View key={item.id} style={styles.strongRow}>
-              <IntensityBadge value={formatIntensityLabel(item.maxIntensity)} compact />
-              <View style={styles.strongBody}>
-                <Text style={styles.strongTitle}>{pickRegionName(item)}</Text>
-                <Text style={styles.strongMeta}>{formatMetaLine(item)}</Text>
-              </View>
-            </View>
-          ))}
+      <Text style={styles.sectionTitle}>最近の強い揺れ</Text>
+      <View style={styles.listStack}>
+        {items.map((item) => (
+          <QuakeCard
+            key={item.id}
+            item={item}
+            expanded={!!expandedIds[item.id]}
+            onToggle={() => onToggle(item.id)}
+          />
+        ))}
+      </View>
+      {(hasMore || isExpanded) ? (
+        <View style={styles.paginationRow}>
+          {hasMore ? (
+            <Pressable style={styles.smallOutlineButton} onPress={onShowMore}>
+              <Text style={styles.smallOutlineButtonText}>もっと見る</Text>
+            </Pressable>
+          ) : null}
+          {isExpanded ? (
+            <Pressable style={styles.smallOutlineButton} onPress={onCollapse}>
+              <Text style={styles.smallOutlineButtonText}>閉じる</Text>
+            </Pressable>
+          ) : null}
         </View>
-      )}
+      ) : null}
     </View>
   );
 }
@@ -296,7 +356,9 @@ function QuakeCard({ item, expanded, onToggle }: { item: JmaQuakeItem; expanded:
   const styles = useThemedStyles(createStyles);
   const intensity = formatIntensityLabel(item.maxIntensity);
   const metaLine = formatMetaLine(item);
-  const depth = item.title ? extractDepth(item.title) : null;
+  const depth = item.depthKm !== undefined && item.depthKm !== null
+    ? `${item.depthKm}km`
+    : item.title ? extractDepth(item.title) : null;
 
   return (
     <View style={styles.quakeCard}>
@@ -313,12 +375,36 @@ function QuakeCard({ item, expanded, onToggle }: { item: JmaQuakeItem; expanded:
           {item.epicenter ? <Text style={styles.detailText}>震源: {item.epicenter}</Text> : null}
           {item.magnitude ? <Text style={styles.detailText}>規模: M{item.magnitude}</Text> : null}
           {depth ? <Text style={styles.detailText}>深さ: {depth}</Text> : null}
-          {item.title ? <Text style={styles.detailText}>{item.title}</Text> : null}
+
+          {item.intensityAreas ? (
+            <FeltPointsList areas={item.intensityAreas} />
+          ) : (
+            <Text style={styles.detailText}>震度詳細情報はありません。</Text>
+          )}
+
           {item.link ? (
-            <SecondaryButton label="詳細を開く" onPress={() => Linking.openURL(item.link as string)} />
+            <SecondaryButton label="気象庁HPで見る" onPress={() => Linking.openURL(item.link as string)} />
           ) : null}
         </View>
       ) : null}
+    </View>
+  );
+}
+
+function FeltPointsList({ areas }: { areas: { intensity: string; areas: string[] }[] }) {
+  const styles = useThemedStyles(createStyles);
+  return (
+    <View style={styles.pointsStack}>
+      {areas.map((group) => (
+        <View key={group.intensity} style={styles.pointGroup}>
+          <View style={styles.pointHeader}>
+            <IntensityBadge value={group.intensity} compact />
+          </View>
+          <Text style={styles.pointBody}>
+            {group.areas.join('、')}
+          </Text>
+        </View>
+      ))}
     </View>
   );
 }
@@ -356,7 +442,10 @@ function IntensityGuideAccordion({
           return (
             <View key={section.label} style={styles.guideCard}>
               <Pressable onPress={() => onToggle(section.label)} style={styles.guideHeader}>
-                <Text style={styles.guideLabel}>{section.label}</Text>
+                <View style={styles.guideTitleRow}>
+                  <IntensityBadge value={section.label === '0–2' ? '2' : section.label} />
+                  <Text style={styles.guideLabel}>{section.label}</Text>
+                </View>
                 <Text style={styles.guideToggle}>{isOpen ? '閉じる' : '開く'}</Text>
               </Pressable>
               {isOpen ? (
@@ -407,107 +496,145 @@ function IntensityBadge({ value, compact = false }: { value: string; compact?: b
   const { colors } = useTheme();
   const tone = intensityTone(value);
   const toneStyle = getIntensityToneStyles(colors)[tone];
+  const label = displayIntensity(value);
   return (
     <View style={[styles.intensityBadge, compact ? styles.intensityBadgeCompact : null, toneStyle.container]}>
-      <Text style={[styles.intensityText, toneStyle.text]}>{value}</Text>
+      <Text style={[styles.intensityText, toneStyle.text]}>震度{label}</Text>
     </View>
   );
 }
 
-function StatusDot({ tone }: { tone: IntensityTone }) {
+function StatusDot({ tone }: { tone: StatusTone }) {
   const styles = useThemedStyles(createStyles);
   const { colors } = useTheme();
-  const toneStyle = getIntensityToneStyles(colors)[tone];
+  const toneStyle = getStatusToneStyles(colors)[tone];
   return <View style={[styles.statusDot, toneStyle.container]} />;
 }
 
-type IntensityTone = 'neutral' | 'info' | 'warning' | 'danger';
+type StatusTone = 'neutral' | 'info' | 'warning' | 'danger';
 
-function getIntensityToneStyles(colors: {
+function getStatusToneStyles(colors: {
   surfaceStrong: string;
   border: string;
-  text: string;
   statusBgInfo: string;
   statusInfo: string;
   statusBgWarning: string;
   statusWarning: string;
   statusBgDanger: string;
   statusDanger: string;
-}): Record<IntensityTone, { container: object; text: object }> {
+}): Record<StatusTone, { container: object }> {
   return {
     neutral: {
       container: { backgroundColor: colors.surfaceStrong, borderColor: colors.border },
-      text: { color: colors.text },
     },
     info: {
       container: { backgroundColor: colors.statusBgInfo, borderColor: colors.statusInfo },
-      text: { color: colors.statusInfo },
     },
     warning: {
       container: { backgroundColor: colors.statusBgWarning, borderColor: colors.statusWarning },
-      text: { color: colors.statusWarning },
     },
     danger: {
       container: { backgroundColor: colors.statusBgDanger, borderColor: colors.statusDanger },
-      text: { color: colors.statusDanger },
     },
   };
 }
 
-function intensityTone(value: string) {
-  const rank = intensityRank(value);
-  if (rank >= 6) return 'danger';
-  if (rank >= 5) return 'warning';
-  if (rank >= 4) return 'info';
-  return 'neutral';
-}
+type IntensityTone = '1' | '2' | '3' | '4' | '5-' | '5+' | '6-' | '6+' | '7' | 'unknown';
 
-function intensityRank(value: string | null) {
-  if (!value) return -1;
-  const label = formatIntensityLabel(value);
-  switch (label) {
-    case '7':
-      return 7;
-    case '6強':
-      return 6.7;
-    case '6弱':
-      return 6.3;
-    case '5強':
-      return 5.7;
-    case '5弱':
-      return 5.3;
-    case '4':
-      return 4;
-    case '3':
-      return 3;
-    case '2':
-      return 2;
-    case '1':
-      return 1;
-    case '0':
-      return 0;
-    default:
-      return -1;
+function getIntensityColor(tone: IntensityTone) {
+  switch (tone) {
+    case '1': return '#B3E7EA'; // Official 0-2
+    case '2': return '#B3E7EA'; // Official 0-2
+    case '3': return '#0041FF'; // Official 3
+    case '4': return '#FAE495'; // Official 4
+    case '5-': return '#FFE501'; // Official 5-
+    case '5+': return '#FF9904'; // Official 5+
+    case '6-': return '#FF2900'; // Official 6-
+    case '6+': return '#A50021'; // Official 6+
+    case '7': return '#B30168'; // Official 7
+    default: return '#9ca3af';
   }
 }
 
+function getIntensityToneStyles(colors: {
+  surfaceStrong: string;
+  border: string;
+  text: string;
+}): Record<IntensityTone, { container: object; text: object }> {
+  // We ignore theme colors for intensity badges to stick to official JMA colors (standardized).
+  // But we adjust text color for contrast (White for most, Black for Yellow).
+  const makeStyle = (bgColor: string, textColor: string = '#1f2937') => ({
+    container: { backgroundColor: bgColor, borderColor: bgColor },
+    text: { color: textColor },
+  });
+
+  return {
+    '1': makeStyle(getIntensityColor('1')),
+    '2': makeStyle(getIntensityColor('2')),
+    '3': makeStyle(getIntensityColor('3')),
+    '4': makeStyle(getIntensityColor('4'), '#000000'), // Yellow needs black text
+    '5-': makeStyle(getIntensityColor('5-')),
+    '5+': makeStyle(getIntensityColor('5+')),
+    '6-': makeStyle(getIntensityColor('6-')),
+    '6+': makeStyle(getIntensityColor('6+')),
+    '7': makeStyle(getIntensityColor('7')),
+    'unknown': makeStyle(colors.surfaceStrong, colors.text),
+  };
+}
+
+function intensityTone(value: string): IntensityTone {
+  const norm = formatIntensityLabel(value);
+  if (getRank(norm) !== -1) return norm as IntensityTone;
+  return 'unknown';
+}
+
+function getRank(label: string) {
+  const ranks: Record<string, number> = {
+    '7': 9, '6+': 8, '6-': 7, '5+': 6, '5-': 5, '4': 4, '3': 3, '2': 2, '1': 1, '0': 0
+  };
+  return ranks[label] ?? -1;
+}
+
+// ... existing helpers ...
+
 function formatIntensityLabel(value: string | null) {
   if (!value) return '不明';
-  if (value.includes('5-') || value.includes('5弱')) return '5弱';
-  if (value.includes('5+') || value.includes('5強')) return '5強';
-  if (value.includes('6-') || value.includes('6弱')) return '6弱';
-  if (value.includes('6+') || value.includes('6強')) return '6強';
+  if (value.includes('5-') || value.includes('5弱')) return '5-'; // Map to code keys
+  if (value.includes('5+') || value.includes('5強')) return '5+';
+  if (value.includes('6-') || value.includes('6弱')) return '6-';
+  if (value.includes('6+') || value.includes('6強')) return '6+';
   if (value.includes('7')) return '7';
   if (value.includes('4')) return '4';
   if (value.includes('3')) return '3';
   if (value.includes('2')) return '2';
   if (value.includes('1')) return '1';
-  if (value.includes('0')) return '0';
-  return value;
+  return value; // 0 or unknown
+}
+
+function displayIntensity(value: string | null) {
+  const raw = formatIntensityLabel(value);
+  const map: Record<string, string> = {
+    '5-': '5弱', '5+': '5強', '6-': '6弱', '6+': '6強'
+  };
+  return map[raw] ?? raw;
+}
+
+
+
+function intensityRank(value: string | null) {
+  if (!value) return -1;
+  const label = formatIntensityLabel(value);
+  return getRank(label);
 }
 
 function isStrongIntensity(value: string | null) {
-  return intensityRank(value) >= 5.3;
+  // 5- (Rank 5) or higher
+  return intensityRank(value) >= 3; // "Strong" usually means 3 or 4+?
+  // User Requirement Q3: "Strong Quakes Ranking ... Last 7 days ... Top N"
+  // Usually this list shows "Notable" quakes.
+  // I will set threshold to 3 (Rank 3).
+  // JMA "Latest" often shows all.
+  // Let's filter >= 3 to be "Strong".
 }
 
 function pickRegionName(item: JmaQuakeItem) {
@@ -539,15 +666,18 @@ function pickMaxIntensityItem(items: JmaQuakeItem[]) {
 }
 
 function formatMetaLine(item: JmaQuakeItem) {
-  const time = item.time ? formatTimeShort(item.time) : '時刻不明';
+  const time = item.time ? formatTimeLong(item.time) : '日時不明';
   const magnitude = item.magnitude ? `M${item.magnitude}` : 'M不明';
-  const depth = item.title ? extractDepth(item.title) : null;
+  const depth = item.depthKm !== undefined && item.depthKm !== null
+    ? `${item.depthKm}km`
+    : item.title ? extractDepth(item.title) : null;
   const depthText = depth ? `深さ${depth}` : '深さ不明';
   return `${time} · ${magnitude} · ${depthText}`;
 }
 
 function extractDepth(title: string) {
-  const match = title.match(/深さ\s*([0-9]+)\s*km/i);
+  // Handle "深さ約10km", "深さ 10km", "10km", etc.
+  const match = title.match(/(?:深さは?|約)?\s*([0-9]+)\s*km/i);
   if (match?.[1]) return `${match[1]}km`;
   if (title.includes('ごく浅い')) return 'ごく浅い';
   return null;
@@ -559,11 +689,20 @@ function formatTimeShort(value: string) {
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
-function statusTone(status: string) {
-  if (status === 'OK') return 'info' as const;
-  if (status === 'DEGRADED') return 'warning' as const;
-  if (status === 'DOWN') return 'danger' as const;
-  return 'neutral' as const;
+function formatTimeLong(value: string) {
+  const date = new Date(value);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  const time = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  return `${y}/${m}/${d} ${time}`;
+}
+
+function statusTone(status: string): StatusTone {
+  if (status === 'OK') return 'info';
+  if (status === 'DEGRADED') return 'warning';
+  if (status === 'DOWN') return 'danger';
+  return 'neutral';
 }
 
 const createStyles = (colors: {
@@ -581,276 +720,273 @@ const createStyles = (colors: {
   statusDanger: string;
 }) =>
   StyleSheet.create({
-  headerBlock: {
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    borderWidth: 1,
-  },
-  statusText: {
-    ...typography.caption,
-    color: colors.muted,
-  },
-  refreshButton: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    backgroundColor: colors.surface,
-  },
-  refreshText: {
-    ...typography.caption,
-    color: colors.text,
-  },
-  noticeText: {
-    ...typography.caption,
-    color: colors.muted,
-  },
-  segmentedControl: {
-    flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
-    marginBottom: spacing.md,
-  },
-  segmentButton: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-  },
-  segmentButtonActive: {
-    backgroundColor: colors.background,
-  },
-  segmentText: {
-    ...typography.caption,
-    color: colors.muted,
-  },
-  segmentTextActive: {
-    color: colors.text,
-    fontWeight: '600',
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  summaryCard: {
-    flex: 1,
-    minWidth: 150,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    backgroundColor: colors.background,
-    gap: spacing.xs,
-  },
-  summaryLabel: {
-    ...typography.caption,
-    color: colors.muted,
-  },
-  summaryTitle: {
-    ...typography.subtitle,
-    color: colors.text,
-  },
-  summaryMeta: {
-    ...typography.caption,
-    color: colors.muted,
-  },
-  summaryIntensityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  summaryTextBlock: {
-    gap: spacing.xs,
-    flex: 1,
-  },
-  sectionBlock: {
-    marginTop: spacing.md,
-  },
-  sectionTitle: {
-    ...typography.subtitle,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  listStack: {
-    gap: spacing.sm,
-  },
-  quakeCard: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    backgroundColor: colors.background,
-    gap: spacing.sm,
-  },
-  quakeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  quakeMain: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  quakeRegion: {
-    ...typography.subtitle,
-    color: colors.text,
-  },
-  quakeMeta: {
-    ...typography.caption,
-    color: colors.muted,
-  },
-  chevron: {
-    ...typography.caption,
-    color: colors.muted,
-  },
-  quakeDetail: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: spacing.sm,
-    gap: spacing.xs,
-  },
-  detailText: {
-    ...typography.caption,
-    color: colors.text,
-  },
-  strongRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    backgroundColor: colors.background,
-  },
-  strongBody: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  strongTitle: {
-    ...typography.subtitle,
-    color: colors.text,
-  },
-  strongMeta: {
-    ...typography.caption,
-    color: colors.muted,
-  },
-  quickCard: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    backgroundColor: colors.surface,
-    gap: spacing.sm,
-  },
-  quickTitle: {
-    ...typography.subtitle,
-    color: colors.text,
-  },
-  quickList: {
-    gap: spacing.xs,
-  },
-  quickItem: {
-    ...typography.body,
-    color: colors.text,
-  },
-  guideCard: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    backgroundColor: colors.background,
-    gap: spacing.sm,
-  },
-  guideHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  guideLabel: {
-    ...typography.subtitle,
-    color: colors.text,
-  },
-  guideToggle: {
-    ...typography.caption,
-    color: colors.muted,
-  },
-  guideBody: {
-    gap: spacing.xs,
-  },
-  guideSubLabel: {
-    ...typography.caption,
-    color: colors.muted,
-  },
-  guideText: {
-    ...typography.small,
-    color: colors.text,
-  },
-  disclaimer: {
-    ...typography.caption,
-    color: colors.muted,
-    marginTop: spacing.lg,
-  },
-  banner: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.md,
-    padding: spacing.sm,
-    backgroundColor: colors.surface,
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  bannerText: {
-    ...typography.body,
-    color: colors.text,
-  },
-  skeletonList: {
-    marginTop: spacing.md,
-    gap: spacing.sm,
-  },
-  skeletonCard: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.md,
-    padding: spacing.sm,
-    backgroundColor: colors.surface,
-    gap: spacing.xs,
-  },
-  intensityBadge: {
-    minWidth: 52,
-    borderWidth: 1,
-    borderRadius: radii.pill,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    alignItems: 'center',
-  },
-  intensityBadgeCompact: {
-    minWidth: 42,
-    paddingHorizontal: spacing.xs,
-  },
-  intensityText: {
-    ...typography.caption,
-    fontWeight: '600',
-  },
-});
+    headerBlock: {
+      gap: spacing.xs,
+      marginBottom: spacing.md,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.sm,
+    },
+    statusRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    statusDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      borderWidth: 1,
+    },
+    statusText: {
+      ...typography.caption,
+      color: colors.muted,
+    },
+    refreshButton: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radii.pill,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      backgroundColor: colors.surface,
+    },
+    refreshText: {
+      ...typography.caption,
+      color: colors.text,
+    },
+    noticeText: {
+      ...typography.caption,
+      color: colors.muted,
+    },
+    segmentedControl: {
+      flexDirection: 'row',
+      backgroundColor: colors.surface,
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+      marginBottom: spacing.md,
+    },
+    segmentButton: {
+      flex: 1,
+      paddingVertical: spacing.sm,
+      alignItems: 'center',
+    },
+    segmentButtonActive: {
+      backgroundColor: colors.background,
+    },
+    segmentText: {
+      ...typography.caption,
+      color: colors.muted,
+    },
+    segmentTextActive: {
+      color: colors.text,
+      fontWeight: '600',
+    },
+    summaryRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+    },
+
+    smallOutlineButton: {
+      alignSelf: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radii.sm,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs + 2,
+      minWidth: 100,
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      marginTop: spacing.sm,
+    },
+    smallOutlineButtonText: {
+      ...typography.caption,
+      color: colors.text,
+      fontWeight: '600',
+    },
+    guideTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    paginationRow: {
+      flexDirection: 'row',
+      gap: spacing.md,
+      justifyContent: 'center',
+      marginTop: spacing.sm,
+    },
+    sectionBlock: {
+      marginTop: spacing.md,
+    },
+    sectionTitle: {
+      ...typography.subtitle,
+      color: colors.text,
+      marginBottom: spacing.sm,
+    },
+    listStack: {
+      gap: spacing.sm,
+    },
+    quakeCard: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radii.lg,
+      padding: spacing.md,
+      backgroundColor: colors.background,
+      gap: spacing.sm,
+    },
+    quakeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    quakeMain: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+    quakeRegion: {
+      ...typography.subtitle,
+      color: colors.text,
+    },
+    quakeMeta: {
+      ...typography.caption,
+      color: colors.muted,
+    },
+    chevron: {
+      ...typography.caption,
+      color: colors.muted,
+    },
+    quakeDetail: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: spacing.sm,
+      gap: spacing.xs,
+    },
+    detailText: {
+      ...typography.caption,
+      color: colors.text,
+    },
+    pointsStack: {
+      gap: spacing.sm,
+      marginTop: spacing.xs,
+      paddingTop: spacing.xs,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    pointGroup: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    pointHeader: {
+      width: 40,
+      alignItems: 'center',
+    },
+    pointBody: {
+      flex: 1,
+      ...typography.caption,
+      color: colors.text,
+      lineHeight: 20,
+    },
+
+    quickCard: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radii.lg,
+      padding: spacing.md,
+      backgroundColor: colors.surface,
+      gap: spacing.sm,
+    },
+    quickTitle: {
+      ...typography.subtitle,
+      color: colors.text,
+    },
+    quickList: {
+      gap: spacing.xs,
+    },
+    quickItem: {
+      ...typography.body,
+      color: colors.text,
+    },
+    guideCard: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radii.lg,
+      padding: spacing.md,
+      backgroundColor: colors.background,
+      gap: spacing.sm,
+    },
+    guideHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    guideLabel: {
+      ...typography.subtitle,
+      color: colors.text,
+    },
+    guideToggle: {
+      ...typography.caption,
+      color: colors.muted,
+    },
+    guideBody: {
+      gap: spacing.xs,
+    },
+    guideSubLabel: {
+      ...typography.caption,
+      color: colors.muted,
+    },
+    guideText: {
+      ...typography.small,
+      color: colors.text,
+    },
+    disclaimer: {
+      ...typography.caption,
+      color: colors.muted,
+      marginTop: spacing.lg,
+    },
+    banner: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radii.md,
+      padding: spacing.sm,
+      backgroundColor: colors.surface,
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    bannerText: {
+      ...typography.body,
+      color: colors.text,
+    },
+    skeletonList: {
+      marginTop: spacing.md,
+      gap: spacing.sm,
+    },
+    skeletonCard: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radii.md,
+      padding: spacing.sm,
+      backgroundColor: colors.surface,
+      gap: spacing.xs,
+    },
+    intensityBadge: {
+      minWidth: 52,
+      borderWidth: 1,
+      borderRadius: radii.pill,
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.sm,
+      alignItems: 'center',
+    },
+    intensityBadgeCompact: {
+      minWidth: 42,
+      paddingHorizontal: spacing.xs,
+    },
+    intensityText: {
+      ...typography.caption,
+      fontWeight: '600',
+    },
+  });

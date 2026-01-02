@@ -1,1056 +1,892 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ScrollView, StyleSheet, Text, View, Pressable, RefreshControl, Modal, FlatList, TextInput } from 'react-native';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as Location from 'expo-location';
 
-import { fetchJson, toApiError, type ApiError } from '@/src/api/client';
-import type { JmaWarningItem, JmaWarningsResponse, Prefecture, PrefecturesResponse } from '@/src/api/types';
-import { SecondaryButton, Skeleton, TabScreen, TextField } from '@/src/ui/system';
+import { fetchJson } from '@/src/api/client';
+import type { JmaWarningsResponse } from '@/src/api/types';
+import { buildWarningsViewModel } from '@/src/features/warnings/transform';
+import { type TokyoMode } from '@/src/features/warnings/tokyoRouting';
+import { JmaAreaMapper, type JmaAreaResult } from '@/src/features/warnings/areaMapping';
+import { LEVEL_COLORS } from '@/src/features/warnings/constants';
+import { TabScreen } from '@/src/ui/system';
 import { radii, spacing, typography, useThemedStyles } from '@/src/ui/theme';
 
-const DEFAULT_AREA = '130000';
-const SAVED_AREAS_KEY = 'hinanavi_saved_areas_v1';
-const MAX_SAVED_AREAS = 5;
+import munisData from '@/src/data/municipalities.json';
 
-type PermissionState = 'unknown' | 'granted' | 'denied';
+// Types
+type Municipality = {
+    muniCode: string;
+    muniName: string;
+};
+
+type AreaSelection = {
+    prefCode: string;
+    prefName: string;
+    muniCode: string | null;
+    muniName: string | null;
+    jmaAreaCode: string | null;
+    jmaAreaName: string | null;
+};
 
 type LatLng = {
-  lat: number;
-  lon: number;
+    lat: number;
+    lon: number;
 };
 
-type Severity = 'special' | 'warning' | 'advisory';
+// Typed JSON data
+const ALL_MUNICIPALITIES: Municipality[] = munisData as Municipality[];
 
-type WarningGuide = {
-  description: string;
-  actions: string[];
-};
-
-type SavedArea = {
-  prefCode: string;
-  prefName: string;
-};
-
-type NormalizedWarning = {
-  id: string;
-  kind: string;
-  phenomenon: string;
-  severity: Severity;
-  guide: WarningGuide;
-};
-
-const GUIDE_MAP: { patterns: RegExp[]; description: string; actions: string[] }[] = [
-  {
-    patterns: [/雷/, /落雷/],
-    description: '落雷や突風の危険があります。',
-    actions: ['屋外を避ける', '金属製品から離れる'],
-  },
-  {
-    patterns: [/大雨/],
-    description: '短時間の強い雨で浸水のおそれ。',
-    actions: ['低地を避ける', '避難情報を確認'],
-  },
-  {
-    patterns: [/洪水/],
-    description: '河川の増水に警戒。',
-    actions: ['川沿いに近づかない', '高い場所へ'],
-  },
-  {
-    patterns: [/強風/, /暴風/],
-    description: '飛来物や倒木の危険。',
-    actions: ['外出を控える', '窓を養生'],
-  },
-  {
-    patterns: [/波浪/],
-    description: '高波に警戒。',
-    actions: ['海岸に近づかない', '漁港を避ける'],
-  },
-  {
-    patterns: [/濃霧/],
-    description: '視界不良が発生します。',
-    actions: ['速度を落とす', '無理な外出を控える'],
-  },
-  {
-    patterns: [/大雪/],
-    description: '路面凍結や交通障害に注意。',
-    actions: ['不要不急の外出を控える', '交通情報を確認'],
-  },
-  {
-    patterns: [/乾燥/],
-    description: '火災が発生しやすい状態です。',
-    actions: ['火の取り扱い注意', '換気と加湿'],
-  },
-  {
-    patterns: [/熱中症/],
-    description: '熱中症の危険があります。',
-    actions: ['水分補給', '涼しい場所へ'],
-  },
+const PREFECTURES = [
+    { code: '01', name: '北海道' }, { code: '02', name: '青森県' }, { code: '03', name: '岩手県' },
+    { code: '04', name: '宮城県' }, { code: '05', name: '秋田県' }, { code: '06', name: '山形県' },
+    { code: '07', name: '福島県' }, { code: '08', name: '茨城県' }, { code: '09', name: '栃木県' },
+    { code: '10', name: '群馬県' }, { code: '11', name: '埼玉県' }, { code: '12', name: '千葉県' },
+    { code: '13', name: '東京都' }, { code: '14', name: '神奈川県' }, { code: '15', name: '新潟県' },
+    { code: '16', name: '富山県' }, { code: '17', name: '石川県' }, { code: '18', name: '福井県' },
+    { code: '19', name: '山梨県' }, { code: '20', name: '長野県' }, { code: '21', name: '岐阜県' },
+    { code: '22', name: '静岡県' }, { code: '23', name: '愛知県' }, { code: '24', name: '三重県' },
+    { code: '25', name: '滋賀県' }, { code: '26', name: '京都府' }, { code: '27', name: '大阪府' },
+    { code: '28', name: '兵庫県' }, { code: '29', name: '奈良県' }, { code: '30', name: '和歌山県' },
+    { code: '31', name: '鳥取県' }, { code: '32', name: '島根県' }, { code: '33', name: '岡山県' },
+    { code: '34', name: '広島県' }, { code: '35', name: '山口県' }, { code: '36', name: '徳島県' },
+    { code: '37', name: '香川県' }, { code: '38', name: '愛媛県' }, { code: '39', name: '高知県' },
+    { code: '40', name: '福岡県' }, { code: '41', name: '佐賀県' }, { code: '42', name: '長崎県' },
+    { code: '43', name: '熊本県' }, { code: '44', name: '大分県' }, { code: '45', name: '宮崎県' },
+    { code: '46', name: '鹿児島県' }, { code: '47', name: '沖縄県' },
 ];
 
-const FALLBACK_GUIDE: WarningGuide = {
-  description: '公式情報を確認してください。',
-  actions: ['周囲の安全確保', '避難情報に注意'],
-};
+const PREF_BY_CODE = new Map(PREFECTURES.map((pref) => [pref.code, pref.name]));
+const MUNICIPALITY_BY_CODE = new Map(ALL_MUNICIPALITIES.map((muni) => [muni.muniCode, muni.muniName]));
 
 export default function AlertsScreen() {
-  const styles = useThemedStyles(createStyles);
-  const [warnings, setWarnings] = useState<JmaWarningsResponse | null>(null);
-  const [warningsError, setWarningsError] = useState<ApiError | null>(null);
-  const [isWarningsLoading, setIsWarningsLoading] = useState(false);
-  const [useCurrent, setUseCurrent] = useState(true);
-  const [permission, setPermission] = useState<PermissionState>('unknown');
-  const [currentPrefCode, setCurrentPrefCode] = useState<string | null>(null);
-  const [manualPref, setManualPref] = useState<Prefecture | null>(null);
-  const [prefectures, setPrefectures] = useState<Prefecture[]>([]);
-  const [prefListOpen, setPrefListOpen] = useState(false);
-  const [prefFilter, setPrefFilter] = useState('');
-  const [prefLoading, setPrefLoading] = useState(false);
-  const [prefError, setPrefError] = useState<ApiError | null>(null);
-  const [savedAreas, setSavedAreas] = useState<SavedArea[]>([]);
-  const [selectedFromSaved, setSelectedFromSaved] = useState(false);
+    const styles = useThemedStyles(createStyles);
 
-  useEffect(() => {
-    let active = true;
-    const load = async () => {
-      setPrefLoading(true);
-      setPrefError(null);
-      try {
-        const data = await fetchJson<PrefecturesResponse>('/api/ref/municipalities');
-        if (!active) return;
-        setPrefectures(data.prefectures ?? []);
-      } catch (err) {
-        if (!active) return;
-        setPrefectures([]);
-        setPrefError(toApiError(err));
-      } finally {
-        if (active) setPrefLoading(false);
-      }
-    };
-    void load();
-    return () => {
-      active = false;
-    };
-  }, []);
+    // State
+    const [loading, setLoading] = useState(false);
+    const [data, setData] = useState<JmaWarningsResponse | null>(null);
+    const [referenceData, setReferenceData] = useState<JmaWarningsResponse[]>([]);
 
-  useEffect(() => {
-    let active = true;
-    const loadSaved = async () => {
-      try {
-        const raw = await AsyncStorage.getItem(SAVED_AREAS_KEY);
-        if (!raw || !active) return;
-        const parsed = JSON.parse(raw) as SavedArea[];
-        if (!Array.isArray(parsed)) return;
-        setSavedAreas(parsed.filter((item) => item?.prefCode && item?.prefName));
-      } catch {
-        if (!active) return;
-        setSavedAreas([]);
-      }
-    };
-    void loadSaved();
-    return () => {
-      active = false;
-    };
-  }, []);
+    // Area Selection
+    const [currentLocation, setCurrentLocation] = useState<AreaSelection | null>(null);
+    const [manualArea, setManualArea] = useState<AreaSelection | null>(null);
 
-  useEffect(() => {
-    void AsyncStorage.setItem(SAVED_AREAS_KEY, JSON.stringify(savedAreas));
-  }, [savedAreas]);
+    const [selectorVisible, setSelectorVisible] = useState(false);
 
-  useEffect(() => {
-    if (!useCurrent) return;
-    let active = true;
-    const locate = async () => {
-      try {
-        const { status: perm } = await Location.requestForegroundPermissionsAsync();
-        if (!active) return;
-        if (perm !== 'granted') {
-          setPermission('denied');
-          setCurrentPrefCode(null);
-          return;
+    // Target Area Resolution
+    const resolvedArea = useMemo<JmaAreaResult>(() => {
+        // Use manual area if selected, otherwise current location
+        const code = manualArea?.muniCode ?? currentLocation?.muniCode ?? null;
+        // Default to Tokyo if nothing
+        if (!code) {
+            return {
+                officeCode: '130000',
+                officeName: '東京都',
+                class10Code: '130010', // Tokyo Area default
+                class10Name: '東京地方',
+                class20Code: null,
+                class20Name: null,
+            };
         }
-        setPermission('granted');
-        const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        if (!active) return;
-        const coords = { lat: position.coords.latitude, lon: position.coords.longitude };
-        const prefCode = await reverseGeocodePrefCode(coords);
-        if (!active) return;
-        setCurrentPrefCode(prefCode);
-      } catch {
-        if (!active) return;
-        setCurrentPrefCode(null);
-      }
+        return JmaAreaMapper.resolve(code);
+    }, [manualArea?.muniCode, currentLocation?.muniCode]);
+
+    const apiAreaCode = resolvedArea.officeCode ?? '130000';
+
+    // Derived Tokyo Mode for UI compat (can be refined later or derived from class10)
+    const tokyoMode: TokyoMode = useMemo(() => {
+        if (resolvedArea.officeCode !== '130000') return 'OTHER';
+        if (resolvedArea.class10Code === '130010') return 'MAINLAND';
+        if (['130020', '130030', '130040'].includes(resolvedArea.class10Code ?? '')) return 'ISLANDS';
+        return 'MAINLAND';
+    }, [resolvedArea.officeCode, resolvedArea.class10Code]);
+
+    // Strictly normalize class20 code according to rules:
+    // 1) 7 digits: return as is.
+    // 2) 6 digits: drop check digit -> 5 digits, append "00".
+    // 3) 5 digits: append "00".
+    // 4) Otherwise: null.
+    const safeNormalizeClass20 = (code: string | null | undefined): string | null => {
+        if (!code) return null;
+        if (code.length === 7) return code;
+        if (code.length === 6) return `${code.slice(0, 5)}00`;
+        if (code.length === 5) return `${code}00`;
+        return null;
     };
-    void locate();
-    return () => {
-      active = false;
+
+    const rawClass20 = resolvedArea.class20Code ?? manualArea?.muniCode ?? currentLocation?.muniCode ?? null;
+    const normalizedClass20 = safeNormalizeClass20(rawClass20);
+
+    const loadData = useCallback(async () => {
+        setLoading(true);
+        try {
+            // Build query string with class20 for municipality-level filtering
+            let url = `/api/jma/warnings?area=${apiAreaCode}`;
+            if (normalizedClass20) {
+                url += `&class20=${encodeURIComponent(normalizedClass20)}`;
+            }
+
+            if (__DEV__) {
+                console.log(`[JMA Warnings] RawClass20: ${rawClass20 ?? 'null'}`);
+                console.log(`[JMA Warnings] NormalizedClass20: ${normalizedClass20 ?? 'null'}`);
+                console.log(`[JMA Warnings] URL: ${url}`);
+            }
+            const primary = await fetchJson<JmaWarningsResponse>(url);
+            if (__DEV__) {
+                console.log(`[JMA Warnings] Response items: ${primary.items?.length ?? 0}`);
+            }
+            setData(primary);
+            setReferenceData([]); // References not needed if we rely on office breakdown
+        } catch {
+            setData(null);
+            setReferenceData([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [apiAreaCode, normalizedClass20, rawClass20]);
+
+    // Load Current Location on Mount
+    useEffect(() => {
+        let active = true;
+        const init = async () => {
+            try {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== 'granted') return;
+                const pos = await Location.getCurrentPositionAsync();
+                const coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+                const [geo, reverse] = await Promise.all([
+                    reverseGeocodeResult(coords).catch(() => null),
+                    Location.reverseGeocodeAsync({ latitude: coords.lat, longitude: coords.lon }).catch(() => null),
+                ]);
+                if (!active || !geo?.prefCode) return;
+
+                const prefName = PREF_BY_CODE.get(geo.prefCode) ?? reverse?.[0]?.region ?? null;
+                const muniName =
+                    (geo.muniCode ? MUNICIPALITY_BY_CODE.get(geo.muniCode) : null) ??
+                    reverse?.[0]?.city ??
+                    reverse?.[0]?.district ??
+                    reverse?.[0]?.subregion ??
+                    null;
+
+                setCurrentLocation({
+                    prefCode: geo.prefCode,
+                    prefName: prefName ?? '',
+                    muniCode: geo.muniCode,
+                    muniName,
+                    jmaAreaCode: null,
+                    jmaAreaName: null,
+                });
+            } catch {
+                // ignore
+            }
+        };
+        void init();
+        return () => {
+            active = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    // ViewModel
+    const viewModel = useMemo(() => {
+        return buildWarningsViewModel(
+            { primary: data, references: [] },
+            {
+                muniCode: manualArea?.muniCode ?? currentLocation?.muniCode ?? null,
+                prefName: manualArea?.prefName ?? currentLocation?.prefName ?? null,
+                muniName: manualArea?.muniName ?? currentLocation?.muniName ?? null,
+                tokyoMode,
+                class10Code: resolvedArea.class10Code,
+                officeName: resolvedArea.officeName,
+                class10Name: resolvedArea.class10Name,
+            }
+        );
+    }, [data, manualArea, currentLocation, tokyoMode, resolvedArea]);
+
+    const [detailsExpanded, setDetailsExpanded] = useState(false);
+
+    const onSelectArea = (area: AreaSelection) => {
+        setManualArea(area);
+        setSelectorVisible(false);
     };
-  }, [useCurrent]);
 
-  const areaCode = useMemo(() => {
-    if (useCurrent && currentPrefCode) return `${currentPrefCode}0000`;
-    if (manualPref?.prefCode) return `${manualPref.prefCode}0000`;
-    return DEFAULT_AREA;
-  }, [currentPrefCode, manualPref?.prefCode, useCurrent]);
+    const clearManual = () => {
+        setManualArea(null);
+    };
 
-  const defaultPrefName = useMemo(
-    () => prefectures.find((pref) => pref.prefCode === DEFAULT_AREA.slice(0, 2))?.prefName ?? '東京',
-    [prefectures]
-  );
+    // Header Counts
+    const { special, warning, advisory } = viewModel.summary;
 
-  const areaName = useMemo(() => {
-    if (useCurrent) {
-      const name = prefectures.find((p) => p.prefCode === currentPrefCode)?.prefName ?? null;
-      return name ?? defaultPrefName;
-    }
-    if (manualPref?.prefName) return manualPref.prefName;
-    return defaultPrefName;
-  }, [currentPrefCode, defaultPrefName, manualPref?.prefName, prefectures, useCurrent]);
+    const currentTarget = manualArea ?? currentLocation;
+    const dispPref = currentTarget?.prefName;
+    const dispMuni = currentTarget?.muniName;
 
-  const areaModeLabel = useMemo(() => {
-    if (useCurrent) return '現在地';
-    return selectedFromSaved ? '保存エリア' : '手動';
-  }, [selectedFromSaved, useCurrent]);
+    const areaDisplayName =
+        viewModel.meta.areaDisplayName ||
+        [dispPref, dispMuni].filter((v) => typeof v === 'string' && v.trim()).join(' ');
 
-  const loadWarnings = useCallback(async () => {
-    setIsWarningsLoading(true);
-    setWarningsError(null);
-    try {
-      const data = await fetchJson<JmaWarningsResponse>(`/api/jma/warnings?area=${areaCode}`);
-      setWarnings(data);
-    } catch (err) {
-      setWarnings(null);
-      setWarningsError(toApiError(err));
-    } finally {
-      setIsWarningsLoading(false);
-    }
-  }, [areaCode]);
+    const jmaAreaName = viewModel.meta.primaryJmaAreaName ?? currentTarget?.jmaAreaName;
 
-  useEffect(() => {
-    void loadWarnings();
-  }, [loadWarnings]);
-
-  const dedupedItems = useMemo(() => dedupeWarnings(warnings?.items ?? []), [warnings?.items]);
-
-  const normalizedItems = useMemo(() => {
-    return dedupedItems.map((item) => {
-      const severity = getSeverity(item.kind);
-      const phenomenon = normalizePhenomenon(item.kind);
-      const guide = getGuide(phenomenon);
-      return {
-        id: item.id,
-        kind: item.kind,
-        phenomenon,
-        severity,
-        guide,
-      };
-    });
-  }, [dedupedItems]);
-
-  const grouped = useMemo(() => {
-    const groups: Record<Severity, NormalizedWarning[]> = { special: [], warning: [], advisory: [] };
-    normalizedItems.forEach((item) => {
-      groups[item.severity].push(item);
-    });
-    return groups;
-  }, [normalizedItems]);
-
-  const totalCount = normalizedItems.length;
-  const emptyState = !isWarningsLoading && !warningsError && totalCount === 0;
-
-  const handleSelectSaved = useCallback(
-    (area: SavedArea) => {
-      setManualPref({ prefCode: area.prefCode, prefName: area.prefName });
-      setUseCurrent(false);
-      setSelectedFromSaved(true);
-      setPrefListOpen(false);
-    },
-    []
-  );
-
-  const handleSelectPref = useCallback(
-    (pref: Prefecture) => {
-      setManualPref(pref);
-      setUseCurrent(false);
-      setSelectedFromSaved(false);
-      setPrefListOpen(false);
-      setSavedAreas((prev) => {
-        const next = [{ prefCode: pref.prefCode, prefName: pref.prefName }, ...prev.filter((p) => p.prefCode !== pref.prefCode)];
-        return next.slice(0, MAX_SAVED_AREAS);
-      });
-    },
-    []
-  );
-
-  const filteredPrefectures = useMemo(() => {
-    if (!prefFilter.trim()) return prefectures;
-    return prefectures.filter((p) => p.prefName.includes(prefFilter.trim()));
-  }, [prefFilter, prefectures]);
-
-  return (
-    <TabScreen title="警報">
-      <View style={styles.headerBlock}>
-        <Text style={styles.subtitle}>気象庁の発表をもとに表示</Text>
-      </View>
-
-      <AreaScopeCard
-        areaName={areaName}
-        modeLabel={areaModeLabel}
-        onChange={() => setPrefListOpen(true)}
-      />
-
-      {warningsError ? <ErrorBanner message="警報情報を取得できませんでした" onRetry={loadWarnings} /> : null}
-
-      <ActiveWarningsSection
-        isLoading={isWarningsLoading}
-        empty={emptyState}
-        groups={grouped}
-      />
-
-      <DetailsAccordion items={dedupedItems} />
-
-      <AreaScopeSheet
-        visible={prefListOpen}
-        onClose={() => setPrefListOpen(false)}
-        useCurrent={useCurrent}
-        onToggleCurrent={(next) => {
-          setUseCurrent(next);
-          if (next) {
-            setSelectedFromSaved(false);
-          }
-        }}
-        permission={permission}
-        savedAreas={savedAreas}
-        selectedPrefCode={!useCurrent ? manualPref?.prefCode ?? null : null}
-        onSelectSaved={handleSelectSaved}
-        filterValue={prefFilter}
-        onChangeFilter={setPrefFilter}
-        prefectures={filteredPrefectures}
-        isLoading={prefLoading}
-        error={prefError}
-        onSelectPref={handleSelectPref}
-      />
-    </TabScreen>
-  );
-}
-
-function AreaScopeCard({ areaName, modeLabel, onChange }: { areaName: string; modeLabel: string; onChange: () => void }) {
-  const styles = useThemedStyles(createStyles);
-  return (
-    <View style={styles.scopeCard}>
-      <View style={styles.scopeText}>
-        <Text style={styles.scopeLabel}>対象エリア</Text>
-        <Text style={styles.scopeName}>{areaName}</Text>
-        <View style={styles.scopeMetaRow}>
-          <View style={styles.modePill}>
-            <Text style={styles.modePillText}>{modeLabel}</Text>
-          </View>
-        </View>
-      </View>
-      <SecondaryButton label="変更" onPress={onChange} />
-    </View>
-  );
-}
-
-function AreaScopeSheet({
-  visible,
-  onClose,
-  useCurrent,
-  onToggleCurrent,
-  permission,
-  savedAreas,
-  selectedPrefCode,
-  onSelectSaved,
-  filterValue,
-  onChangeFilter,
-  prefectures,
-  isLoading,
-  error,
-  onSelectPref,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  useCurrent: boolean;
-  onToggleCurrent: (next: boolean) => void;
-  permission: PermissionState;
-  savedAreas: SavedArea[];
-  selectedPrefCode: string | null;
-  onSelectSaved: (area: SavedArea) => void;
-  filterValue: string;
-  onChangeFilter: (value: string) => void;
-  prefectures: Prefecture[];
-  isLoading: boolean;
-  error: ApiError | null;
-  onSelectPref: (pref: Prefecture) => void;
-}) {
-  const styles = useThemedStyles(createStyles);
-  return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.sheetOverlay}>
-        <Pressable style={styles.sheetBackdrop} onPress={onClose} />
-        <View style={styles.sheetCard}>
-          <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>対象エリアを変更</Text>
-            <Pressable onPress={onClose} hitSlop={10}>
-              <Text style={styles.sheetClose}>閉じる</Text>
-            </Pressable>
-          </View>
-
-          <View style={styles.sheetSection}>
-            <Text style={styles.sheetLabel}>現在地</Text>
-            <View style={styles.toggleRow}>
-              <Pressable
-                style={[styles.toggleButton, useCurrent ? styles.toggleButtonActive : null]}
-                onPress={() => onToggleCurrent(true)}
-              >
-                <Text style={[styles.toggleText, useCurrent ? styles.toggleTextActive : null]}>ON</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.toggleButton, !useCurrent ? styles.toggleButtonActive : null]}
-                onPress={() => onToggleCurrent(false)}
-              >
-                <Text style={[styles.toggleText, !useCurrent ? styles.toggleTextActive : null]}>OFF</Text>
-              </Pressable>
-            </View>
-            {useCurrent && permission === 'denied' ? (
-              <InlineBanner
-                message="位置情報の許可が必要です。"
-                actionLabel="設定を開く"
-                onAction={() => Linking.openSettings()}
-              />
-            ) : null}
-          </View>
-
-          <View style={styles.sheetSection}>
-            <Text style={styles.sheetLabel}>保存エリア</Text>
-            {savedAreas.length === 0 ? (
-              <Text style={styles.sheetMuted}>保存エリアはありません。</Text>
-            ) : (
-              <View style={styles.savedList}>
-                {savedAreas.map((area) => (
-                  <Pressable key={area.prefCode} style={styles.savedRow} onPress={() => onSelectSaved(area)}>
-                    <Text style={styles.savedName}>{area.prefName}</Text>
-                    <View style={[styles.radio, selectedPrefCode === area.prefCode ? styles.radioActive : null]}>
-                      {selectedPrefCode === area.prefCode ? <View style={styles.radioDot} /> : null}
+    return (
+        <TabScreen title="警報・注意報">
+            <ScrollView
+                style={styles.container}
+                contentContainerStyle={styles.content}
+                refreshControl={<RefreshControl refreshing={loading} onRefresh={loadData} />}
+            >
+                {/* HEADER SECTION */}
+                <View style={styles.headerRow}>
+                    <Text style={styles.pageTitle}>発表状況</Text>
+                    <View style={styles.headerCounts}>
+                        {special > 0 && <Badge label="特別警報" count={special} color={LEVEL_COLORS.special} />}
+                        {warning > 0 && <Badge label="警報" count={warning} color={LEVEL_COLORS.warning} />}
+                        {advisory > 0 && <Badge label="注意報" count={advisory} color={LEVEL_COLORS.advisory} />}
+                        {(special === 0 && warning === 0 && advisory === 0) && (
+                            <Text style={styles.noAlertText}>発表なし</Text>
+                        )}
                     </View>
-                  </Pressable>
-                ))}
-              </View>
-            )}
-          </View>
+                </View>
 
-          <View style={styles.sheetSection}>
-            <Text style={styles.sheetLabel}>都道府県から選ぶ</Text>
-            <TextField value={filterValue} placeholder="都道府県を検索" onChangeText={onChangeFilter} />
-            {isLoading ? (
-              <View style={styles.skeletonStack}>
-                <Skeleton height={14} />
-                <Skeleton width="70%" />
-              </View>
-            ) : null}
-            {error ? <InlineBanner message="都道府県一覧を取得できませんでした。" /> : null}
-            <ScrollView style={styles.prefList} contentContainerStyle={styles.prefListContent}>
-              {prefectures.map((pref) => (
-                <Pressable key={pref.prefCode} onPress={() => onSelectPref(pref)} style={styles.prefRow}>
-                  <Text style={styles.prefName}>{pref.prefName}</Text>
-                </Pressable>
-              ))}
+                {/* AREA SELECTION */}
+                <View style={styles.areaCard}>
+                    <Text style={styles.areaLabel}>対象エリア</Text>
+                    <View style={styles.areaRow}>
+                        <View>
+                            <Text style={styles.currentAreaText}>{areaDisplayName || 'エリア未設定'}</Text>
+                            <Text style={styles.subAreaText}>JMA基準: {jmaAreaName || '未設定'}</Text>
+                        </View>
+                        <Pressable style={styles.changeButton} onPress={() => setSelectorVisible(true)}>
+                            <Text style={styles.changeButtonText}>変更</Text>
+                        </Pressable>
+                    </View>
+                    {manualArea && (
+                        <Pressable onPress={clearManual}>
+                            <Text style={styles.resetLink}>現在地に戻す</Text>
+                        </Pressable>
+                    )}
+                </View>
+
+                {/* ACTIVE WARNINGS (発令中) */}
+                <Text style={styles.sectionTitle}>発令中</Text>
+                {viewModel.countedWarnings.length === 0 ? (
+                    <View style={styles.emptyCard}>
+                        <Text style={styles.emptyText}>現在、発表されている警報・注意報はありません。</Text>
+                    </View>
+                ) : (
+                    <View style={styles.warningsGrid}>
+                        {viewModel.countedWarnings.map(item => (
+                            <View key={item.id} style={styles.warningCard}>
+                                <View style={styles.warningInfo}>
+                                    <View style={[styles.iconBox, {
+                                        backgroundColor: item.color.bg,
+                                        borderColor: item.color.border
+                                    }]}>
+                                        <Text style={[styles.iconText, { color: item.color.text }]}>{item.phenomenon}</Text>
+                                    </View>
+                                    <View style={styles.statusCol}>
+                                        <Text style={styles.kindText}>{item.kind}</Text>
+                                        {item.status && <Text style={styles.statusText}>{item.status}</Text>}
+                                    </View>
+                                </View>
+                                <View style={[styles.levelPill, {
+                                    borderColor: LEVEL_COLORS[item.severity].border,
+                                    backgroundColor: LEVEL_COLORS[item.severity].bg
+                                }]}>
+                                    <Text style={[styles.levelText, { color: LEVEL_COLORS[item.severity].border }]}>
+                                        {item.severity === 'special' ? '特別警報' : item.severity === 'warning' ? '警報' : '注意報'}
+                                    </Text>
+                                </View>
+                            </View>
+                        ))}
+                    </View>
+                )}
+
+                {/* DETAILS BY AREA (詳細) - Only if Prefecture level selected (no specific muni) */}
+                {!resolvedArea.class20Code && (
+                    <View style={{ marginBottom: 24 }}>
+                        <Pressable
+                            style={styles.detailAccordionHeader}
+                            onPress={() => setDetailsExpanded(!detailsExpanded)}
+                        >
+                            <Text style={styles.sectionTitleNoMargin}>詳細（エリア別）</Text>
+                            <FontAwesome name={detailsExpanded ? "chevron-up" : "chevron-down"} size={14} color="#6b7280" />
+                        </Pressable>
+
+                        {detailsExpanded && (
+                            <View style={{ marginTop: 8 }}>
+                                <Text style={styles.detailSubText}>JMA基準: {jmaAreaName || '未設定'}</Text>
+                                {viewModel.areaDetailItems.filter(a => a.hasActive).length === 0 ? (
+                                    <Text style={[styles.emptyText, { marginLeft: 4 }]}>発表なし</Text>
+                                ) : (
+                                    viewModel.areaDetailItems.filter(a => a.hasActive).map((area, idx) => (
+                                        <View key={`${area.areaName}-${idx}`} style={[styles.detailCard, area.isPrimary && styles.primaryDetailCard]}>
+                                            <View style={styles.detailHeader}>
+                                                <Text style={styles.detailAreaName}>{area.areaName}</Text>
+                                                <View style={styles.detailSummary}>
+                                                    <Text style={styles.activeLabel}>発表あり</Text>
+                                                </View>
+                                            </View>
+                                            <View style={styles.detailTags}>
+                                                {area.items.map(it => (
+                                                    <View key={it.id} style={[styles.miniTag, { borderColor: it.color.border }]}>
+                                                        <Text style={{ fontSize: 10, color: it.color.text }}>{it.kind}</Text>
+                                                    </View>
+                                                ))}
+                                            </View>
+                                        </View>
+                                    ))
+                                )}
+                            </View>
+                        )}
+                    </View>
+                )}
+
+                {viewModel.referenceWarnings.length > 0 && (
+                    <>
+                        <Text style={styles.sectionTitle}>参考情報（島しょ）</Text>
+                        {viewModel.referenceWarnings.map((area, idx) => (
+                            <View key={`ref-${area.areaName}-${idx}`} style={styles.detailCard}>
+                                <View style={styles.detailHeader}>
+                                    <Text style={styles.detailAreaName}>{area.areaName}</Text>
+                                    <View style={styles.detailSummary}>
+                                        <Text style={styles.referenceLabel}>参考</Text>
+                                    </View>
+                                </View>
+                                {area.items.length > 0 && (
+                                    <View style={styles.detailTags}>
+                                        {area.items.map((it) => (
+                                            <View key={it.id} style={[styles.miniTag, { borderColor: it.color.border }]}>
+                                                <Text style={{ fontSize: 10, color: it.color.text }}>{it.kind}</Text>
+                                            </View>
+                                        ))}
+                                    </View>
+                                )}
+                            </View>
+                        ))}
+                    </>
+                )}
+
+                <View style={{ height: 24 }} />
+
+                {/* GUIDANCE (警戒レベルについて) - Bottom Placement */}
+                <Text style={styles.sectionTitle}>警戒レベルについて</Text>
+                <View style={styles.guidanceCard}>
+                    <LevelRow level="special" label="特別警報" desc="予想をはるかに超える現象です。直ちに命を守る行動をとってください。" />
+                    <LevelRow level="warning" label="警報" desc="重大な災害が起こるおそれがある場合に発表されます。" />
+                    <LevelRow level="advisory" label="注意報" desc="災害が起こるおそれがある場合に発表されます。" />
+                </View>
+
+                <View style={{ height: 40 }} />
             </ScrollView>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
+
+            <AreaSelectorSheet
+                visible={selectorVisible}
+                onClose={() => setSelectorVisible(false)}
+                onSelect={onSelectArea}
+                muniMap={data?.muniMap ?? null}
+                breakdown={data?.breakdown ?? null}
+                currentPrefCode={manualArea?.prefCode ?? currentLocation?.prefCode ?? '13'}
+            />
+        </TabScreen>
+    );
 }
 
-function ActiveWarningsSection({
-  isLoading,
-  empty,
-  groups,
+function Badge({ label, count, color }: { label: string, count: number, color: { border: string, bg: string, text: string } }) {
+    const styles = useThemedStyles(createStyles);
+    return (
+        <View style={[styles.badge, { borderColor: color.border, backgroundColor: color.bg }]}>
+            <Text style={[styles.badgeText, { color: color.text }]}>{label} {count}</Text>
+        </View>
+    );
+}
+
+function LevelRow({ level, label, desc }: { level: 'special' | 'warning' | 'advisory', label: string, desc: string }) {
+    const styles = useThemedStyles(createStyles);
+    const c = LEVEL_COLORS[level];
+    return (
+        <View style={styles.levelRow}>
+            <View style={[styles.levelBadge, { backgroundColor: c.bg, borderColor: c.border }]}>
+                <Text style={[styles.levelBadgeText, { color: c.text }]}>{label}</Text>
+            </View>
+            <Text style={styles.levelDesc}>{desc}</Text>
+        </View>
+    );
+}
+
+// Text Input for search
+
+function AreaSelectorSheet({
+    visible,
+    onClose,
+    onSelect,
+    muniMap,
+    breakdown,
+    currentPrefCode,
 }: {
-  isLoading: boolean;
-  empty: boolean;
-  groups: Record<Severity, NormalizedWarning[]>;
+    visible: boolean;
+    onClose: () => void;
+    onSelect: (area: AreaSelection) => void;
+    muniMap: JmaWarningsResponse['muniMap'] | null;
+    breakdown: JmaWarningsResponse['breakdown'] | null;
+    currentPrefCode?: string;
 }) {
-  const styles = useThemedStyles(createStyles);
-  return (
-    <View style={styles.sectionBlock}>
-      <Text style={styles.sectionTitle}>発令中</Text>
-      {isLoading ? <WarningSkeletonList /> : null}
-      {empty ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>現在、発令中の警報・注意報はありません</Text>
-          <Text style={styles.emptyNote}>状況は変わることがあります</Text>
-        </View>
-      ) : null}
-      <WarningGroup label="特別警報" severity="special" items={groups.special} />
-      <WarningGroup label="警報" severity="warning" items={groups.warning} />
-      <WarningGroup label="注意報" severity="advisory" items={groups.advisory} />
-    </View>
-  );
+    const [selectedPref, setSelectedPref] = useState<string | null>(currentPrefCode ?? null);
+    const [searchText, setSearchText] = useState('');
+
+    const styles = useThemedStyles(createStyles);
+
+    const handlePrefPress = (code: string) => {
+        setSelectedPref(code);
+        setSearchText('');
+    };
+
+    // Filter Logic
+    const munis = useMemo(() => {
+        const term = searchText.trim();
+        if (!selectedPref && !term) return [];
+        let list = ALL_MUNICIPALITIES;
+        if (selectedPref) {
+            list = list.filter((m) => m.muniCode.startsWith(selectedPref));
+        }
+        if (term) {
+            list = list.filter((m) => m.muniName.includes(term));
+        }
+        return list.slice(0, 100);
+    }, [selectedPref, searchText]);
+
+    const handleMuniPress = (muni: Municipality) => {
+        const prefCode = muni.muniCode.slice(0, 2);
+        const prefName = PREF_BY_CODE.get(prefCode) ?? '未設定';
+        const jmaAreaCode = muniMap?.[muni.muniCode] ?? null;
+        const jmaAreaName = jmaAreaCode ? breakdown?.[jmaAreaCode]?.name ?? null : null;
+        onSelect({
+            prefCode,
+            prefName,
+            muniCode: muni.muniCode,
+            muniName: muni.muniName,
+            jmaAreaCode,
+            jmaAreaName,
+        });
+        setSelectedPref(null);
+        setSearchText('');
+    };
+
+    if (!visible) return null;
+
+    return (
+        <Modal visible={visible} animationType="slide" presentationStyle="formSheet">
+            <View style={styles.sheetContainer}>
+                <View style={styles.sheetHeader}>
+                    <Text style={styles.sheetTitle}>{selectedPref ? '市区町村を選択' : '都道府県を選択'}</Text>
+                    <Pressable onPress={() => { setSelectedPref(null); setSearchText(''); onClose(); }}>
+                        <Text style={styles.closeText}>閉じる</Text>
+                    </Pressable>
+                </View>
+
+                <View>
+                    {selectedPref && (
+                        <Pressable style={styles.backRow} onPress={() => { setSelectedPref(null); setSearchText(''); }}>
+                            <FontAwesome name="arrow-left" size={16} />
+                            <Text style={{ marginLeft: 8 }}>都道府県に戻る</Text>
+                        </Pressable>
+                    )}
+                    <View style={styles.searchBox}>
+                        <FontAwesome name="search" size={14} color="#9ca3af" />
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="市区町村を検索"
+                            value={searchText}
+                            onChangeText={setSearchText}
+                            autoFocus={false}
+                        />
+                    </View>
+                </View>
+
+                {!selectedPref && !searchText.trim() ? (
+                    <FlatList
+                        data={PREFECTURES}
+                        keyExtractor={(item) => item.code}
+                        renderItem={({ item }) => (
+                            <Pressable style={styles.optionRow} onPress={() => handlePrefPress(item.code)}>
+                                <Text style={styles.optionText}>{item.name}</Text>
+                                <FontAwesome name="chevron-right" color="#ccc" />
+                            </Pressable>
+                        )}
+                    />
+                ) : (
+                    <FlatList
+                        data={munis}
+                        keyExtractor={(item) => item.muniCode}
+                        renderItem={({ item }) => (
+                            <Pressable style={styles.optionRow} onPress={() => handleMuniPress(item)}>
+                                <Text style={styles.optionText}>{item.muniName}</Text>
+                            </Pressable>
+                        )}
+                        ListEmptyComponent={<Text style={styles.emptyText}>該当なし</Text>}
+                    />
+                )}
+            </View>
+        </Modal>
+    );
 }
 
-function WarningGroup({
-  label,
-  severity,
-  items,
-}: {
-  label: string;
-  severity: Severity;
-  items: NormalizedWarning[];
-}) {
-  const styles = useThemedStyles(createStyles);
-  if (items.length === 0) return null;
-  return (
-    <View style={styles.groupBlock}>
-      <View style={styles.groupHeader}>
-        <Text style={styles.groupTitle}>{label}</Text>
-        <Text style={styles.groupCount}>{items.length}件</Text>
-      </View>
-      <View style={styles.groupList}>
-        {items.map((item) => (
-          <WarningPhenomenonCard key={item.id} item={item} severity={severity} />
-        ))}
-      </View>
-    </View>
-  );
-}
-
-function WarningPhenomenonCard({ item, severity }: { item: NormalizedWarning; severity: Severity }) {
-  const styles = useThemedStyles(createStyles);
-  return (
-    <View style={styles.warnCard}>
-      <View style={styles.warnHeader}>
-        <View style={styles.warnTitleRow}>
-          <View style={styles.warnIcon} />
-          <Text style={styles.warnTitle}>{item.phenomenon}</Text>
-        </View>
-        <SeverityBadge severity={severity} />
-      </View>
-      <Text style={styles.warnDescription}>{item.guide.description}</Text>
-      <View style={styles.warnActions}>
-        {item.guide.actions.slice(0, 2).map((action) => (
-          <Text key={action} style={styles.warnAction}>{`• ${action}`}</Text>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-function DetailsAccordion({ items }: { items: JmaWarningItem[] }) {
-  const styles = useThemedStyles(createStyles);
-  const [open, setOpen] = useState(false);
-  return (
-    <View style={styles.sectionBlock}>
-      <Pressable onPress={() => setOpen((prev) => !prev)} style={styles.accordionHeader}>
-        <Text style={styles.sectionTitle}>詳細（エリア別）</Text>
-        <Text style={styles.accordionToggle}>{open ? '閉じる' : '開く'}</Text>
-      </Pressable>
-      {open ? (
-        <View style={styles.detailList}>
-          {items.length === 0 ? (
-            <Text style={styles.detailText}>詳細情報はありません。</Text>
-          ) : (
-            items.map((item) => (
-              <View key={item.id} style={styles.detailRow}>
-                <Text style={styles.detailLabel}>{item.kind}</Text>
-                {item.status ? <Text style={styles.detailText}>{item.status}</Text> : null}
-              </View>
-            ))
-          )}
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  const styles = useThemedStyles(createStyles);
-  return (
-    <View style={styles.banner}>
-      <Text style={styles.bannerText}>{message}</Text>
-      <SecondaryButton label="再試行" onPress={onRetry} />
-    </View>
-  );
-}
-
-function InlineBanner({
-  message,
-  actionLabel,
-  onAction,
-}: {
-  message: string;
-  actionLabel?: string;
-  onAction?: () => void;
-}) {
-  const styles = useThemedStyles(createStyles);
-  return (
-    <View style={styles.inlineBanner}>
-      <Text style={styles.inlineBannerText}>{message}</Text>
-      {actionLabel && onAction ? <SecondaryButton label={actionLabel} onPress={onAction} /> : null}
-    </View>
-  );
-}
-
-function WarningSkeletonList() {
-  const styles = useThemedStyles(createStyles);
-  return (
-    <View style={styles.skeletonList}>
-      {[0, 1, 2].map((item) => (
-        <View key={item} style={styles.skeletonCard}>
-          <Skeleton width="60%" />
-          <Skeleton width="40%" />
-          <Skeleton width="70%" />
-        </View>
-      ))}
-    </View>
-  );
-}
-
-function SeverityBadge({ severity }: { severity: Severity }) {
-  const styles = useThemedStyles(createStyles);
-  const label = severity === 'special' ? '特別' : severity === 'warning' ? '警報' : '注意';
-  const toneStyle =
-    severity === 'special'
-      ? styles.badgeSpecial
-      : severity === 'warning'
-        ? styles.badgeWarning
-        : styles.badgeAdvisory;
-  return (
-    <View style={[styles.badge, toneStyle]}>
-      <Text style={styles.badgeText}>{label}</Text>
-    </View>
-  );
-}
-
-function dedupeWarnings(items: JmaWarningsResponse['items']) {
-  const seen = new Set<string>();
-  const result: JmaWarningsResponse['items'] = [];
-  for (const item of items) {
-    const key = item.kind;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    result.push(item);
-  }
-  return result;
-}
-
-function getSeverity(kind: string): Severity {
-  if (kind.includes('特別警報')) return 'special';
-  if (kind.includes('警報')) return 'warning';
-  return 'advisory';
-}
-
-function normalizePhenomenon(kind: string): string {
-  const trimmed = kind
-    .replace('特別警報', '')
-    .replace('警報', '')
-    .replace('注意報', '')
-    .trim();
-  return trimmed.length > 0 ? trimmed : kind;
-}
-
-function getGuide(phenomenon: string): WarningGuide {
-  for (const entry of GUIDE_MAP) {
-    if (entry.patterns.some((pattern) => pattern.test(phenomenon))) {
-      return { description: entry.description, actions: entry.actions };
-    }
-  }
-  return FALLBACK_GUIDE;
-}
-
-async function reverseGeocodePrefCode(coords: LatLng): Promise<string | null> {
-  const url = `https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?lon=${encodeURIComponent(
-    coords.lon
-  )}&lat=${encodeURIComponent(coords.lat)}`;
-  const response = await fetch(url, { cache: 'no-store' });
-  if (!response.ok) return null;
-  const json = await response.json();
-  const muniRaw = json?.results?.muniCd ?? null;
-  const { prefCode } = normalizeMuniCode(muniRaw);
-  return prefCode;
+async function reverseGeocodeResult(coords: LatLng): Promise<{ prefCode: string | null; muniCode: string | null }> {
+    const url = `https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?lon=${encodeURIComponent(
+        coords.lon
+    )}&lat=${encodeURIComponent(coords.lat)}`;
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) return { prefCode: null, muniCode: null };
+    const json = await response.json();
+    const muniRaw = json?.results?.muniCd ?? null;
+    return normalizeMuniCode(muniRaw);
 }
 
 function computeCheckDigit(code5: string): string {
-  const digits = code5.split('').map((ch) => Number(ch));
-  if (digits.length !== 5 || digits.some((d) => !Number.isFinite(d))) return '0';
-  const weights = [6, 5, 4, 3, 2];
-  const sum = digits.reduce((acc, d, i) => acc + d * weights[i], 0);
-  const remainder = sum % 11;
-  const cd = (11 - remainder) % 11;
-  return cd === 10 ? '0' : String(cd);
+    const digits = code5.split('').map((ch) => Number(ch));
+    if (digits.length !== 5 || digits.some((d) => !Number.isFinite(d))) return '0';
+    const weights = [6, 5, 4, 3, 2];
+    const sum = digits.reduce((acc, d, i) => acc + d * weights[i], 0);
+    const remainder = sum % 11;
+    const cd = (11 - remainder) % 11;
+    return cd === 10 ? '0' : String(cd);
 }
 
 function normalizeMuniCode(raw: unknown): { muniCode: string | null; prefCode: string | null } {
-  if (typeof raw !== 'string') return { muniCode: null, prefCode: null };
-  const digits = raw.replace(/\D/g, '');
-  if (!digits) return { muniCode: null, prefCode: null };
+    if (typeof raw !== 'string') return { muniCode: null, prefCode: null };
+    const digits = raw.replace(/\D/g, '');
+    if (!digits) return { muniCode: null, prefCode: null };
 
-  if (digits.length === 6) {
-    const prefCode = digits.slice(0, 2);
-    return { muniCode: digits, prefCode: /^\d{2}$/.test(prefCode) ? prefCode : null };
-  }
+    if (digits.length === 6) {
+        const prefCode = digits.slice(0, 2);
+        return { muniCode: digits, prefCode: /^\d{2}$/.test(prefCode) ? prefCode : null };
+    }
 
-  if (digits.length <= 5) {
-    const base5 = digits.padStart(5, '0');
-    if (!/^\d{5}$/.test(base5)) return { muniCode: null, prefCode: null };
-    const muniCode = `${base5}${computeCheckDigit(base5)}`;
-    const prefCode = base5.slice(0, 2);
-    return { muniCode, prefCode: /^\d{2}$/.test(prefCode) ? prefCode : null };
-  }
+    if (digits.length <= 5) {
+        const base5 = digits.padStart(5, '0');
+        if (!/^\d{5}$/.test(base5)) return { muniCode: null, prefCode: null };
+        const muniCode = `${base5}${computeCheckDigit(base5)}`;
+        const prefCode = base5.slice(0, 2);
+        return { muniCode, prefCode: /^\d{2}$/.test(prefCode) ? prefCode : null };
+    }
 
-  return { muniCode: null, prefCode: null };
+    return { muniCode: null, prefCode: null };
 }
 
-const createStyles = (colors: {
-  background: string;
-  border: string;
-  text: string;
-  muted: string;
-  surface: string;
-  surfaceStrong: string;
-  statusBgDanger: string;
-  statusDanger: string;
-  statusBgWarning: string;
-  statusWarning: string;
-  statusBgInfo: string;
-  statusInfo: string;
-}) =>
-  StyleSheet.create({
-  headerBlock: {
-    marginBottom: spacing.md,
-  },
-  subtitle: {
-    ...typography.caption,
-    color: colors.muted,
-  },
-  scopeCard: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    backgroundColor: colors.background,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  scopeText: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  scopeLabel: {
-    ...typography.caption,
-    color: colors.muted,
-  },
-  scopeName: {
-    ...typography.subtitle,
-    color: colors.text,
-  },
-  scopeMetaRow: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    alignItems: 'center',
-  },
-  modePill: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    backgroundColor: colors.surface,
-  },
-  modePillText: {
-    ...typography.caption,
-    color: colors.text,
-  },
-  banner: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.md,
-    padding: spacing.sm,
-    backgroundColor: colors.surface,
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
-  bannerText: {
-    ...typography.body,
-    color: colors.text,
-  },
-  sectionBlock: {
-    marginTop: spacing.lg,
-  },
-  sectionTitle: {
-    ...typography.subtitle,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  emptyState: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    backgroundColor: colors.surface,
-    gap: spacing.xs,
-  },
-  emptyTitle: {
-    ...typography.body,
-    color: colors.text,
-  },
-  emptyNote: {
-    ...typography.caption,
-    color: colors.muted,
-  },
-  groupBlock: {
-    marginTop: spacing.md,
-  },
-  groupHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  groupTitle: {
-    ...typography.label,
-    color: colors.text,
-  },
-  groupCount: {
-    ...typography.caption,
-    color: colors.muted,
-  },
-  groupList: {
-    gap: spacing.sm,
-  },
-  warnCard: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    backgroundColor: colors.background,
-    gap: spacing.xs,
-  },
-  warnHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  warnTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  warnIcon: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.text,
-  },
-  warnTitle: {
-    ...typography.subtitle,
-    color: colors.text,
-  },
-  warnDescription: {
-    ...typography.body,
-    color: colors.text,
-  },
-  warnActions: {
-    marginTop: spacing.xs,
-    gap: spacing.xxs,
-  },
-  warnAction: {
-    ...typography.small,
-    color: colors.muted,
-  },
-  badge: {
-    borderWidth: 1,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  badgeText: {
-    ...typography.caption,
-    color: colors.text,
-  },
-  badgeSpecial: {
-    backgroundColor: colors.statusBgDanger,
-    borderColor: colors.statusDanger,
-  },
-  badgeWarning: {
-    backgroundColor: colors.statusBgWarning,
-    borderColor: colors.statusWarning,
-  },
-  badgeAdvisory: {
-    backgroundColor: colors.statusBgInfo,
-    borderColor: colors.statusInfo,
-  },
-  accordionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  accordionToggle: {
-    ...typography.caption,
-    color: colors.muted,
-  },
-  detailList: {
-    marginTop: spacing.sm,
-    gap: spacing.xs,
-  },
-  detailRow: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.md,
-    padding: spacing.sm,
-    backgroundColor: colors.surface,
-    gap: spacing.xs,
-  },
-  detailLabel: {
-    ...typography.body,
-    color: colors.text,
-  },
-  detailText: {
-    ...typography.caption,
-    color: colors.muted,
-  },
-  skeletonList: {
-    gap: spacing.sm,
-  },
-  skeletonCard: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.md,
-    padding: spacing.sm,
-    backgroundColor: colors.surface,
-    gap: spacing.xs,
-  },
-  sheetOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.35)',
-  },
-  sheetBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  sheetCard: {
-    backgroundColor: colors.background,
-    padding: spacing.lg,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '85%',
-  },
-  sheetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  sheetTitle: {
-    ...typography.subtitle,
-    color: colors.text,
-  },
-  sheetClose: {
-    ...typography.caption,
-    color: colors.text,
-  },
-  sheetSection: {
-    marginBottom: spacing.md,
-    gap: spacing.sm,
-  },
-  sheetLabel: {
-    ...typography.label,
-    color: colors.text,
-  },
-  sheetMuted: {
-    ...typography.caption,
-    color: colors.muted,
-  },
-  toggleRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  toggleButton: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-  },
-  toggleButtonActive: {
-    backgroundColor: colors.text,
-    borderColor: colors.text,
-  },
-  toggleText: {
-    ...typography.label,
-    color: colors.text,
-  },
-  toggleTextActive: {
-    color: colors.background,
-  },
-  savedList: {
-    gap: spacing.xs,
-  },
-  savedRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.md,
-    padding: spacing.sm,
-    backgroundColor: colors.surface,
-  },
-  savedName: {
-    ...typography.body,
-    color: colors.text,
-  },
-  radio: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioActive: {
-    borderColor: colors.text,
-  },
-  radioDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.text,
-  },
-  prefList: {
-    maxHeight: 280,
-  },
-  prefListContent: {
-    paddingBottom: spacing.md,
-  },
-  prefRow: {
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  prefName: {
-    ...typography.body,
-    color: colors.text,
-  },
-  inlineBanner: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.md,
-    padding: spacing.sm,
-    backgroundColor: colors.surface,
-    gap: spacing.xs,
-  },
-  inlineBannerText: {
-    ...typography.caption,
-    color: colors.text,
-  },
-  skeletonStack: {
-    gap: spacing.xs,
-  },
+
+// Styles
+const createStyles = (colors: { background: string; border: string; text: string; muted: string }) => StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
+    content: {
+        padding: spacing.md,
+    },
+    headerRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: spacing.md,
+    },
+    pageTitle: {
+        ...typography.subtitle, // Already bold
+        fontSize: 24,
+        color: colors.text,
+    },
+    headerCounts: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'flex-end',
+        gap: 4,
+        flex: 1,
+        marginLeft: 16, // Space from title
+    },
+    badge: {
+        borderWidth: 1,
+        borderRadius: 8, // Pill
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+    },
+    badgeText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    noAlertText: {
+        fontSize: 12,
+        color: colors.muted,
+        marginTop: 6,
+    },
+    areaCard: {
+        backgroundColor: '#f9fafb', // gray-50
+        borderRadius: radii.lg,
+        padding: spacing.md,
+        marginBottom: spacing.md,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    areaLabel: {
+        fontSize: 12,
+        color: colors.muted,
+    },
+    areaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 4,
+    },
+    currentAreaText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: colors.text,
+    },
+    changeButton: {
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#ccc',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: radii.md,
+    },
+    changeButtonText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    resetLink: {
+        fontSize: 12,
+        color: '#2563eb', // blue-600
+        marginTop: 8,
+        textDecorationLine: 'underline',
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginTop: spacing.sm,
+        marginBottom: spacing.sm,
+        color: colors.text,
+    },
+    sectionTitleNoMargin: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: colors.text,
+    },
+    detailAccordionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 8,
+    },
+    detailSubText: {
+        fontSize: 12,
+        color: colors.muted,
+        marginBottom: spacing.sm,
+    },
+    emptyCard: {
+        padding: spacing.lg,
+        alignItems: 'center',
+        backgroundColor: '#f3f4f6', // gray-100
+        borderRadius: radii.lg,
+    },
+    emptyText: {
+        color: colors.muted,
+    },
+    warningsGrid: {
+        gap: spacing.sm,
+        marginBottom: spacing.lg,
+    },
+    warningCard: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        borderRadius: radii.lg,
+        padding: spacing.md,
+        shadowColor: '#000',
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        shadowOffset: { width: 0, height: 1 },
+        elevation: 1,
+    },
+    warningInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        flex: 1,
+    },
+    iconBox: {
+        width: 48,
+        height: 48,
+        borderRadius: 8,
+        borderWidth: 2,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    iconText: {
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
+    statusCol: {
+        flex: 1,
+    },
+    kindText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: colors.text,
+    },
+    statusText: {
+        fontSize: 12,
+        color: colors.muted,
+    },
+    levelPill: {
+        borderWidth: 1,
+        borderRadius: 16,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+    },
+    levelText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    detailCard: {
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        marginBottom: 8,
+        borderRadius: radii.md,
+        padding: 12,
+    },
+    primaryDetailCard: {
+        borderColor: '#93c5fd', // blue-300
+        backgroundColor: '#eff6ff', // blue-50
+    },
+    detailHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    detailAreaName: {
+        fontWeight: 'bold',
+        fontSize: 14,
+    },
+    detailSummary: {
+        //
+    },
+    activeLabel: {
+        fontSize: 12,
+        color: '#dc2626',
+        fontWeight: 'bold',
+    },
+    inactiveLabel: {
+        fontSize: 12,
+        color: '#9ca3af',
+    },
+    referenceLabel: {
+        fontSize: 12,
+        color: colors.muted,
+    },
+    detailTags: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 4,
+        marginTop: 8,
+    },
+    miniTag: {
+        borderWidth: 1,
+        borderRadius: 4,
+        paddingHorizontal: 4,
+        paddingVertical: 2,
+        backgroundColor: '#fff',
+    },
+    guidanceCard: {
+        backgroundColor: '#fff',
+        borderRadius: radii.lg,
+        padding: spacing.md,
+        gap: 12,
+    },
+    levelRow: {
+        flexDirection: 'row',
+        gap: 12,
+        alignItems: 'flex-start',
+    },
+    levelBadge: {
+        borderWidth: 1,
+        borderRadius: 12,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        minWidth: 70,
+        alignItems: 'center',
+    },
+    levelBadgeText: {
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+    levelDesc: {
+        flex: 1,
+        fontSize: 12,
+        color: colors.text,
+        lineHeight: 18,
+    },
+    // Sheet
+    sheetContainer: {
+        flex: 1,
+        backgroundColor: '#fff',
+        paddingTop: 20,
+    },
+    sheetHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingBottom: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    sheetTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    closeText: {
+        fontSize: 16,
+        color: '#2563eb',
+    },
+    backRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f3f3f3',
+    },
+    optionRow: {
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f3f3f3',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    optionText: {
+        fontSize: 16,
+    },
+    subAreaText: {
+        fontSize: 12,
+        color: '#6b7280',
+        marginTop: 2,
+    },
+    searchBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#f3f4f6',
+        marginHorizontal: 16,
+        marginBottom: 8,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        height: 36,
+    },
+    searchInput: {
+        flex: 1,
+        marginLeft: 8,
+        fontSize: 14,
+    },
 });

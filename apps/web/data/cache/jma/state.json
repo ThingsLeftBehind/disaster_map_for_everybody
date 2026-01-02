@@ -4,20 +4,20 @@
     "regular": {
       "url": "https://www.data.jma.go.jp/developer/xml/feed/regular.xml",
       "intervalMs": 180000,
-      "lastAttemptTime": "2025-12-28T08:26:25.515Z",
-      "lastSuccessfulUpdateTime": "2025-12-28T08:26:26.069Z",
+      "lastAttemptTime": "2026-01-01T11:39:03.213Z",
+      "lastSuccessfulUpdateTime": "2026-01-01T11:39:03.669Z",
       "lastError": null,
-      "etag": "W/\"a7e704ea16db0c9533e22305270ad40d\"",
-      "lastModified": "Sun, 28 Dec 2025 08:18:25 GMT"
+      "etag": "W/\"c000ec4fc766e430245dd5a62645cdff\"",
+      "lastModified": "Thu, 01 Jan 2026 11:38:34 GMT"
     },
     "extra": {
       "url": "https://www.data.jma.go.jp/developer/xml/feed/extra.xml",
       "intervalMs": 60000,
-      "lastAttemptTime": "2025-12-28T08:26:27.492Z",
-      "lastSuccessfulUpdateTime": "2025-12-28T08:26:27.562Z",
+      "lastAttemptTime": "2026-01-01T11:39:04.950Z",
+      "lastSuccessfulUpdateTime": "2026-01-01T11:39:05.009Z",
       "lastError": null,
-      "etag": "W/\"f03635e9215606a3a0a73c3099b96cda\"",
-      "lastModified": "Sun, 28 Dec 2025 07:31:03 GMT"
+      "etag": "W/\"40b190e85e2bbc34de49fb4532246840\"",
+      "lastModified": "Thu, 01 Jan 2026 11:10:54 GMT"
     },
     "eqvol": {
       "url": "https://www.data.jma.go.jp/developer/xml/feed/eqvol.xml",
@@ -48,11 +48,18 @@
     },
     "warningsByArea": {
       "130000": {
-        "lastAttemptTime": "2025-12-28T08:26:33.915Z",
-        "lastSuccessfulUpdateTime": "2025-12-28T08:26:34.188Z",
+        "lastAttemptTime": "2026-01-01T11:39:06.222Z",
+        "lastSuccessfulUpdateTime": "2026-01-01T11:39:06.508Z",
         "lastError": null,
-        "etag": "W/\"d164fb88203465de8fc1d3fad8068a9c\"",
-        "lastModified": "Sun, 28 Dec 2025 07:02:54 GMT"
+        "etag": "W/\"6ba2c00310b7f889db971aaf806cb7de\"",
+        "lastModified": "Thu, 01 Jan 2026 07:13:09 GMT"
+      },
+      "020000": {
+        "lastAttemptTime": "2026-01-01T11:30:10.034Z",
+        "lastSuccessfulUpdateTime": "2026-01-01T11:30:10.544Z",
+        "lastError": null,
+        "etag": "W/\"0250ef35e4310db030cf5bd5be668373\"",
+        "lastModified": "Thu, 01 Jan 2026 07:00:01 GMT"
       }
     }
   }

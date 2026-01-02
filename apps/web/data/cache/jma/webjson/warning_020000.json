@@ -1,0 +1,4991 @@
+{
+  "reportDatetime": "2026-01-01T15:59:00+09:00",
+  "publishingOffice": "青森地方気象台",
+  "headlineText": "津軽、三八上北では、１日夜遅くまで大雪に警戒してください。",
+  "notice": "大雨の警報・注意報については、令和７年１２月８日の青森県東方沖の地震の影響を考慮し、一部の地域について通常基準より引き下げた暫定基準で運用しています。",
+  "areaTypes": [
+    {
+      "areas": [
+        {
+          "code": "020010",
+          "warnings": [
+            {
+              "code": "06",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "16",
+              "status": "継続"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "020020",
+          "warnings": [
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "16",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "020030",
+          "warnings": [
+            {
+              "code": "06",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "16",
+              "status": "解除"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "areas": [
+        {
+          "code": "0220100",
+          "warnings": [
+            {
+              "code": "06",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "16",
+              "status": "解除"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0220200",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0220300",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0220400",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0220500",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "16",
+              "status": "継続"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0220600",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0220700",
+          "warnings": [
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0220800",
+          "warnings": [
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "16",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0220900",
+          "warnings": [
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "16",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0221000",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0230100",
+          "warnings": [
+            {
+              "code": "06",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "16",
+              "status": "解除"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0230300",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "16",
+              "status": "継続"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0230400",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "16",
+              "status": "解除"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0230700",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "16",
+              "status": "継続"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0232100",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "16",
+              "status": "継続"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0232300",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "16",
+              "status": "継続"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0234300",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0236100",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0236200",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0236700",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0238100",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0238400",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0238700",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "16",
+              "status": "継続"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0240100",
+          "warnings": [
+            {
+              "code": "06",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "16",
+              "status": "解除"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0240200",
+          "warnings": [
+            {
+              "code": "06",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0240500",
+          "warnings": [
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0240600",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "警報から注意報"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "16",
+              "status": "解除"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0240800",
+          "warnings": [
+            {
+              "code": "06",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0241100",
+          "warnings": [
+            {
+              "code": "06",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "22",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0241200",
+          "warnings": [
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0242300",
+          "warnings": [
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "16",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0242400",
+          "warnings": [
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "16",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0242500",
+          "warnings": [
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "16",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0242600",
+          "warnings": [
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "16",
+              "status": "継続"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0244100",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0244200",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0244300",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0244500",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0244600",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        },
+        {
+          "code": "0245000",
+          "warnings": [
+            {
+              "code": "12",
+              "status": "継続"
+            },
+            {
+              "code": "13",
+              "status": "解除"
+            },
+            {
+              "code": "23",
+              "status": "発表"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "timeSeries": [
+    {
+      "timeDefines": [
+        "2026-01-01T15:00:00+09:00",
+        "2026-01-01T18:00:00+09:00",
+        "2026-01-01T21:00:00+09:00",
+        "2026-01-02T00:00:00+09:00",
+        "2026-01-02T03:00:00+09:00",
+        "2026-01-02T06:00:00+09:00",
+        "2026-01-02T09:00:00+09:00",
+        "2026-01-02T12:00:00+09:00",
+        "2026-01-02T15:00:00+09:00"
+      ],
+      "areaTypes": [
+        {
+          "areas": [
+            {
+              "code": "020010",
+              "warnings": [
+                {
+                  "code": "06",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "30",
+                            "30",
+                            "30",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "40"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                {
+                  "code": "16",
+                  "levels": [
+                    {
+                      "type": "波危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "properties": [
+                    {
+                      "type": "波高",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "5",
+                            "5",
+                            "4",
+                            "4",
+                            "3",
+                            "3",
+                            "",
+                            "",
+                            ""
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "020020",
+              "warnings": [
+                {
+                  "code": "16",
+                  "levels": [
+                    {
+                      "type": "波危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "properties": [
+                    {
+                      "type": "波高",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "3",
+                            "3",
+                            "3",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            ""
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "020030",
+              "warnings": [
+                {
+                  "code": "06",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "30",
+                            "30",
+                            "30",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "40"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "areas": [
+            {
+              "code": "0220100",
+              "warnings": [
+                {
+                  "code": "06",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        },
+                        {
+                          "localAreaName": "平地",
+                          "values": [
+                            "30",
+                            "30",
+                            "30",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "40"
+                          }
+                        ]
+                      },
+                      {
+                        "localAreaName": "平地",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "35"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0220200",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        },
+                        {
+                          "localAreaName": "平地",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "40"
+                          }
+                        ]
+                      },
+                      {
+                        "localAreaName": "平地",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "15"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0220300",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "30"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0220400",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        },
+                        {
+                          "localAreaName": "平地",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "40"
+                          }
+                        ]
+                      },
+                      {
+                        "localAreaName": "平地",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "15"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0220500",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        },
+                        {
+                          "localAreaName": "平地",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "30"
+                          }
+                        ]
+                      },
+                      {
+                        "localAreaName": "平地",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "25"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                {
+                  "code": "16",
+                  "levels": [
+                    {
+                      "type": "波危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "properties": [
+                    {
+                      "type": "波高",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "5",
+                            "5",
+                            "4",
+                            "4",
+                            "3",
+                            "3",
+                            "",
+                            "",
+                            ""
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0220600",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        },
+                        {
+                          "localAreaName": "平地",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "40"
+                          }
+                        ]
+                      },
+                      {
+                        "localAreaName": "平地",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "25"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0220800",
+              "warnings": [
+                {
+                  "code": "16",
+                  "levels": [
+                    {
+                      "type": "波危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "外海",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "properties": [
+                    {
+                      "type": "波高",
+                      "localAreas": [
+                        {
+                          "localAreaName": "外海",
+                          "values": [
+                            "3",
+                            "3",
+                            "3",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            ""
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0220900",
+              "warnings": [
+                {
+                  "code": "16",
+                  "levels": [
+                    {
+                      "type": "波危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "properties": [
+                    {
+                      "type": "波高",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "5",
+                            "5",
+                            "4",
+                            "4",
+                            "3",
+                            "3",
+                            "",
+                            "",
+                            ""
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0221000",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        },
+                        {
+                          "localAreaName": "平地",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "40"
+                          }
+                        ]
+                      },
+                      {
+                        "localAreaName": "平地",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "15"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0230100",
+              "warnings": [
+                {
+                  "code": "06",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        },
+                        {
+                          "localAreaName": "平地",
+                          "values": [
+                            "30",
+                            "30",
+                            "30",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "40"
+                          }
+                        ]
+                      },
+                      {
+                        "localAreaName": "平地",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "35"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0230300",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        },
+                        {
+                          "localAreaName": "平地",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "40"
+                          }
+                        ]
+                      },
+                      {
+                        "localAreaName": "平地",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "25"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                {
+                  "code": "16",
+                  "levels": [
+                    {
+                      "type": "波危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "properties": [
+                    {
+                      "type": "波高",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "4",
+                            "3",
+                            "3",
+                            "3",
+                            "3",
+                            "",
+                            "",
+                            "",
+                            ""
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0230400",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        },
+                        {
+                          "localAreaName": "平地",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "40"
+                          }
+                        ]
+                      },
+                      {
+                        "localAreaName": "平地",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "25"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0230700",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        },
+                        {
+                          "localAreaName": "平地",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "40"
+                          }
+                        ]
+                      },
+                      {
+                        "localAreaName": "平地",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "25"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                {
+                  "code": "16",
+                  "levels": [
+                    {
+                      "type": "波危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "外海",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "properties": [
+                    {
+                      "type": "波高",
+                      "localAreas": [
+                        {
+                          "localAreaName": "外海",
+                          "values": [
+                            "4",
+                            "3",
+                            "3",
+                            "3",
+                            "3",
+                            "",
+                            "",
+                            "",
+                            ""
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0232100",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "30"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                {
+                  "code": "16",
+                  "levels": [
+                    {
+                      "type": "波危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "properties": [
+                    {
+                      "type": "波高",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "5",
+                            "5",
+                            "4",
+                            "4",
+                            "3",
+                            "3",
+                            "",
+                            "",
+                            ""
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0232300",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "30"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                {
+                  "code": "16",
+                  "levels": [
+                    {
+                      "type": "波危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "properties": [
+                    {
+                      "type": "波高",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "5",
+                            "5",
+                            "4",
+                            "4",
+                            "3",
+                            "3",
+                            "",
+                            "",
+                            ""
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0234300",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        },
+                        {
+                          "localAreaName": "平地",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "40"
+                          }
+                        ]
+                      },
+                      {
+                        "localAreaName": "平地",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "15"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0236100",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "15"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0236200",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        },
+                        {
+                          "localAreaName": "平地",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "40"
+                          }
+                        ]
+                      },
+                      {
+                        "localAreaName": "平地",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "15"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0236700",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "15"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0238100",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "25"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0238400",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "25"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0238700",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        },
+                        {
+                          "localAreaName": "平地",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "30"
+                          }
+                        ]
+                      },
+                      {
+                        "localAreaName": "平地",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "25"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                {
+                  "code": "16",
+                  "levels": [
+                    {
+                      "type": "波危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "properties": [
+                    {
+                      "type": "波高",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "5",
+                            "5",
+                            "4",
+                            "4",
+                            "3",
+                            "3",
+                            "",
+                            "",
+                            ""
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0240100",
+              "warnings": [
+                {
+                  "code": "06",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        },
+                        {
+                          "localAreaName": "平地",
+                          "values": [
+                            "30",
+                            "30",
+                            "30",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "40"
+                          }
+                        ]
+                      },
+                      {
+                        "localAreaName": "平地",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "35"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0240200",
+              "warnings": [
+                {
+                  "code": "06",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        },
+                        {
+                          "localAreaName": "平地",
+                          "values": [
+                            "30",
+                            "30",
+                            "30",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "40"
+                          }
+                        ]
+                      },
+                      {
+                        "localAreaName": "平地",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "35"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0240600",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        },
+                        {
+                          "localAreaName": "平地",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "40"
+                          }
+                        ]
+                      },
+                      {
+                        "localAreaName": "平地",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "25"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0240800",
+              "warnings": [
+                {
+                  "code": "06",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        },
+                        {
+                          "localAreaName": "平地",
+                          "values": [
+                            "30",
+                            "30",
+                            "30",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "40"
+                          }
+                        ]
+                      },
+                      {
+                        "localAreaName": "平地",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "35"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0241100",
+              "warnings": [
+                {
+                  "code": "06",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        },
+                        {
+                          "localAreaName": "平地",
+                          "values": [
+                            "30",
+                            "30",
+                            "30",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "40"
+                          }
+                        ]
+                      },
+                      {
+                        "localAreaName": "平地",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "35"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0242300",
+              "warnings": [
+                {
+                  "code": "16",
+                  "levels": [
+                    {
+                      "type": "波危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "properties": [
+                    {
+                      "type": "波高",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "3",
+                            "3",
+                            "3",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            ""
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0242400",
+              "warnings": [
+                {
+                  "code": "16",
+                  "levels": [
+                    {
+                      "type": "波危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "properties": [
+                    {
+                      "type": "波高",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "3",
+                            "3",
+                            "3",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            ""
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0242500",
+              "warnings": [
+                {
+                  "code": "16",
+                  "levels": [
+                    {
+                      "type": "波危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "properties": [
+                    {
+                      "type": "波高",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "3",
+                            "3",
+                            "3",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            ""
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0242600",
+              "warnings": [
+                {
+                  "code": "16",
+                  "levels": [
+                    {
+                      "type": "波危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "properties": [
+                    {
+                      "type": "波高",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "3",
+                            "3",
+                            "3",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            ""
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0244100",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "30"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0244200",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "30"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0244300",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "30"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0244500",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "30"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0244600",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "30"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "code": "0245000",
+              "warnings": [
+                {
+                  "code": "12",
+                  "levels": [
+                    {
+                      "type": "雪危険度",
+                      "localAreas": [
+                        {
+                          "localAreaName": "山沿い",
+                          "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "00",
+                            "00",
+                            "00",
+                            "00"
+                          ],
+                          "additions": [
+                            "降雪による交通障害"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "snowfall": {
+                    "localAreas": [
+                      {
+                        "localAreaName": "山沿い",
+                        "depths": [
+                          {
+                            "type": "１２時間最大降雪量",
+                            "value": "30"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "timeDefines": [
+        "2026-01-01T00:00:00+09:00",
+        "2026-01-02T00:00:00+09:00",
+        "2026-01-03T00:00:00+09:00"
+      ],
+      "areaTypes": [
+        {
+          "areas": [
+            {
+              "code": "020010",
+              "warnings": [
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "020020",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "020030",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "areas": [
+            {
+              "code": "0220100",
+              "warnings": [
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0220200",
+              "warnings": [
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0220300",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0220400",
+              "warnings": [
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0220500",
+              "warnings": [
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0220600",
+              "warnings": [
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0220700",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0220800",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0220900",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0221000",
+              "warnings": [
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0230100",
+              "warnings": [
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0230300",
+              "warnings": [
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0230400",
+              "warnings": [
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0230700",
+              "warnings": [
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0232100",
+              "warnings": [
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0232300",
+              "warnings": [
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0234300",
+              "warnings": [
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0236100",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0236200",
+              "warnings": [
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0236700",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0238100",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0238400",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0238700",
+              "warnings": [
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0240100",
+              "warnings": [
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0240200",
+              "warnings": [
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0240500",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0240600",
+              "warnings": [
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0240800",
+              "warnings": [
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0241100",
+              "warnings": [
+                {
+                  "code": "22",
+                  "levels": [
+                    {
+                      "type": "なだれ危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0241200",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0242300",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0242400",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0242500",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0242600",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0244100",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0244200",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0244300",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0244500",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0244600",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "code": "0245000",
+              "warnings": [
+                {
+                  "code": "23",
+                  "levels": [
+                    {
+                      "type": "低温危険度",
+                      "localAreas": [
+                        {
+                          "values": [
+                            "10",
+                            "10",
+                            "00"
+                          ],
+                          "additions": [
+                            "水道凍結",
+                            "路面凍結"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -99,6 +99,8 @@ export type JmaWarningsResponse = {
   area: string;
   areaName: string | null;
   items: JmaWarningItem[];
+  breakdown?: Record<string, { name: string; items: JmaWarningItem[] }>;
+  muniMap?: Record<string, string>;
 };
 
 export type JmaQuakeItem = {
@@ -109,6 +111,8 @@ export type JmaQuakeItem = {
   maxIntensity: string | null;
   magnitude: string | null;
   epicenter: string | null;
+  depthKm?: number | null;
+  intensityAreas?: { intensity: string; areas: string[] }[];
 };
 
 export type JmaQuakesResponse = {

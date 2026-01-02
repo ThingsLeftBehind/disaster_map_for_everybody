@@ -1,26 +1,117 @@
 {
-  "updatedAt": "2025-12-28T08:26:34.188Z",
+  "updatedAt": "2026-01-01T11:39:06.508Z",
   "areas": {
     "130000": {
-      "updatedAt": "2025-12-28T08:26:34.188Z",
+      "updatedAt": "2026-01-01T11:39:06.508Z",
       "area": "130000",
       "areaName": "東京都",
       "items": [
         {
-          "id": "85a49f44732cfaaa",
-          "kind": "雷注意報",
-          "status": "発表",
-          "source": "webjson"
-        },
-        {
-          "id": "5dc76bb10ebbc1ad",
-          "kind": "雷注意報",
+          "id": "9dadbcc961fa2871",
+          "kind": "乾燥注意報",
           "status": "継続",
           "source": "webjson"
         },
         {
-          "id": "7bb8661bd9de800a",
-          "kind": "雷注意報",
+          "id": "7c56be692bf0bdd0",
+          "kind": "強風注意報",
+          "status": "継続",
+          "source": "webjson"
+        },
+        {
+          "id": "9ae1974c20a43aff",
+          "kind": "波浪注意報",
+          "status": "継続",
+          "source": "webjson"
+        },
+        {
+          "id": "34f73c95dbd8219e",
+          "kind": "気象注意報",
+          "status": "継続",
+          "source": "webjson"
+        },
+        {
+          "id": "aa97c46f3eea6463",
+          "kind": "強風注意報",
+          "status": null,
+          "source": "webjson"
+        },
+        {
+          "id": "27a86ce1ea700da7",
+          "kind": "波浪注意報",
+          "status": null,
+          "source": "webjson"
+        },
+        {
+          "id": "a082330ff6dc5070",
+          "kind": "乾燥注意報",
+          "status": null,
+          "source": "webjson"
+        },
+        {
+          "id": "69dea991978cbd29",
+          "kind": "霜注意報",
+          "status": null,
+          "source": "webjson"
+        }
+      ]
+    },
+    "020000": {
+      "updatedAt": "2026-01-01T11:30:10.544Z",
+      "area": "020000",
+      "areaName": "青森県",
+      "items": [
+        {
+          "id": "34f73c95dbd8219e",
+          "kind": "気象注意報",
+          "status": "継続",
+          "source": "webjson"
+        },
+        {
+          "id": "9ae1974c20a43aff",
+          "kind": "波浪注意報",
+          "status": "継続",
+          "source": "webjson"
+        },
+        {
+          "id": "865bf73d44f58020",
+          "kind": "気象注意報",
+          "status": "発表",
+          "source": "webjson"
+        },
+        {
+          "id": "7d3c6cf2fd3919e0",
+          "kind": "気象注意報",
+          "status": "警報から注意報",
+          "source": "webjson"
+        },
+        {
+          "id": "edf1c1ece3a76194",
+          "kind": "大雪警報",
+          "status": null,
+          "source": "webjson"
+        },
+        {
+          "id": "27a86ce1ea700da7",
+          "kind": "波浪注意報",
+          "status": null,
+          "source": "webjson"
+        },
+        {
+          "id": "eb4f2c492601c030",
+          "kind": "大雪注意報",
+          "status": null,
+          "source": "webjson"
+        },
+        {
+          "id": "848fdfcbac882683",
+          "kind": "なだれ注意報",
+          "status": null,
+          "source": "webjson"
+        },
+        {
+          "id": "f909c34829e0ad8f",
+          "kind": "低温注意報",
           "status": null,
           "source": "webjson"
         }

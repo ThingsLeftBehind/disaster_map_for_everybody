@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_add="http://xml.kishou.go.jp/jmaxml1/addition1/">
+<Control>
+<Title>府県気象情報</Title>
+<DateTime>2026-01-01T07:35:25Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>鳥取地方気象台</EditorialOffice>
+<PublishingOffice>鳥取地方気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>大雪と突風及び落雷に関する鳥取県気象情報</Title>
+<ReportDateTime>2026-01-01T16:35:00+09:00</ReportDateTime>
+<TargetDateTime>2026-01-01T16:35:00+09:00</TargetDateTime>
+<EventID>JPHA250087</EventID>
+<InfoType>発表</InfoType>
+<Serial>3</Serial>
+<InfoKind>同一現象用平文情報</InfoKind>
+<InfoKindVersion>1.0_0</InfoKindVersion>
+<Headline>
+<Text>鳥取県では、２日未明から３日にかけて大雪となる見込みです。積雪や路面の凍結による交通障害に十分注意してください。また、竜巻などの激しい突風や落雷に注意してください。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/">
+<Notice/>
+<Comment>
+<Text type="本文">［気象概況］
+　中国地方は冬型の気圧配置となっています。２日は、中国地方の上空約５５００メートルに氷点下３６度以下のこの冬一番の強い寒気が流れ込み、鳥取県は冬型の気圧配置が強まるでしょう。また、大気の状態が非常に不安定となり、局地的に雷雲が発達する見込みです。
+
+［雪の予想］
+２日未明から３日にかけて大雪となる見込みです。雪雲が現在の予想以上に発達し、同じ所で降り続いた場合には、警報級の大雪となる可能性があります。
+１日１８時から２日６時までに予想される１２時間降雪量は多い所で、
+　　東部　　　平地　１５センチ
+　　東部　　　山地　２５センチ
+　　中・西部　平地　１０センチ
+　　中・西部　山地　１５センチ
+１日１８時から２日１８時までに予想される２４時間降雪量は多い所で、
+　　東部　　　平地　２５センチ
+　　東部　　　山地　５０センチ
+　　中・西部　平地　２０センチ
+　　中・西部　山地　４０センチ
+その後、２日１８時から３日１８時までに予想される２４時間降雪量は多い所で、
+　　東部　　　平地　２０センチ
+　　東部　　　山地　４０センチ
+　　中・西部　平地　２０センチ
+　　中・西部　山地　４０センチ
+
+［防災事項］
+積雪や路面の凍結による交通障害に十分注意してください。
+着雪による倒木や電線切断、なだれ、竜巻などの激しい突風、落雷に注意してください。
+発達した積乱雲の近づく兆しがある場合には、建物内に移動するなど、安全確保に努めてください。
+ビニールハウスは倒壊のおそれがあるため注意してください。
+農作物や農業施設の管理に注意してください。
+
+［補足事項］
+年始の移動時期と重なるため、今後発表する防災気象情報に留意してください。
+この情報は「大雪に関する鳥取県気象情報」を引き継ぐものです。
+次の「大雪と突風及び落雷に関する鳥取県気象情報」は、２日６時頃に発表する予定です。</Text>
+</Comment>
+</Body>
+</Report>

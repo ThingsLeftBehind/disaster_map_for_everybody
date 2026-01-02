@@ -1,0 +1,10484 @@
+[
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "011002",
+    "muniName": "札幌市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012025",
+    "muniName": "函館市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012033",
+    "muniName": "小樽市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012041",
+    "muniName": "旭川市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012050",
+    "muniName": "室蘭市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012068",
+    "muniName": "釧路市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012076",
+    "muniName": "帯広市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012084",
+    "muniName": "北見市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012092",
+    "muniName": "夕張市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012106",
+    "muniName": "岩見沢市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012114",
+    "muniName": "網走市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012122",
+    "muniName": "留萌市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012131",
+    "muniName": "苫小牧市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012149",
+    "muniName": "稚内市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012157",
+    "muniName": "美唄市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012165",
+    "muniName": "芦別市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012173",
+    "muniName": "江別市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012181",
+    "muniName": "赤平市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012190",
+    "muniName": "紋別市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012203",
+    "muniName": "士別市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012211",
+    "muniName": "名寄市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012220",
+    "muniName": "三笠市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012238",
+    "muniName": "根室市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012246",
+    "muniName": "千歳市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012254",
+    "muniName": "滝川市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012262",
+    "muniName": "砂川市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012271",
+    "muniName": "歌志内市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012289",
+    "muniName": "深川市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012297",
+    "muniName": "富良野市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012301",
+    "muniName": "登別市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012319",
+    "muniName": "恵庭市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012335",
+    "muniName": "伊達市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012343",
+    "muniName": "北広島市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012351",
+    "muniName": "石狩市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "012360",
+    "muniName": "北斗市"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013030",
+    "muniName": "当別町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013048",
+    "muniName": "新篠津村"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013315",
+    "muniName": "松前町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013323",
+    "muniName": "福島町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013331",
+    "muniName": "知内町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013340",
+    "muniName": "木古内町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013374",
+    "muniName": "七飯町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013439",
+    "muniName": "鹿部町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013455",
+    "muniName": "森町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013463",
+    "muniName": "八雲町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013471",
+    "muniName": "長万部町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013617",
+    "muniName": "江差町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013625",
+    "muniName": "上ノ国町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013633",
+    "muniName": "厚沢部町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013641",
+    "muniName": "乙部町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013676",
+    "muniName": "奥尻町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013706",
+    "muniName": "今金町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013714",
+    "muniName": "せたな町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013919",
+    "muniName": "島牧村"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013927",
+    "muniName": "寿都町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013935",
+    "muniName": "黒松内町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013943",
+    "muniName": "蘭越町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013951",
+    "muniName": "ニセコ町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013960",
+    "muniName": "真狩村"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013978",
+    "muniName": "留寿都村"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013986",
+    "muniName": "喜茂別町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "013994",
+    "muniName": "京極町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014001",
+    "muniName": "倶知安町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014010",
+    "muniName": "共和町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014028",
+    "muniName": "岩内町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014036",
+    "muniName": "泊村"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014044",
+    "muniName": "神恵内村"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014052",
+    "muniName": "積丹町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014061",
+    "muniName": "古平町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014079",
+    "muniName": "仁木町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014087",
+    "muniName": "余市町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014095",
+    "muniName": "赤井川村"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014231",
+    "muniName": "南幌町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014249",
+    "muniName": "奈井江町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014257",
+    "muniName": "上砂川町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014273",
+    "muniName": "由仁町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014281",
+    "muniName": "長沼町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014290",
+    "muniName": "栗山町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014303",
+    "muniName": "月形町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014311",
+    "muniName": "浦臼町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014320",
+    "muniName": "新十津川町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014338",
+    "muniName": "妹背牛町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014346",
+    "muniName": "秩父別町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014362",
+    "muniName": "雨竜町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014371",
+    "muniName": "北竜町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014389",
+    "muniName": "沼田町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014524",
+    "muniName": "鷹栖町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014532",
+    "muniName": "東神楽町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014541",
+    "muniName": "当麻町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014559",
+    "muniName": "比布町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014567",
+    "muniName": "愛別町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014575",
+    "muniName": "上川町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014583",
+    "muniName": "東川町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014591",
+    "muniName": "美瑛町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014605",
+    "muniName": "上富良野町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014613",
+    "muniName": "中富良野町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014621",
+    "muniName": "南富良野町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014630",
+    "muniName": "占冠村"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014648",
+    "muniName": "和寒町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014656",
+    "muniName": "剣淵町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014681",
+    "muniName": "下川町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014699",
+    "muniName": "美深町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014702",
+    "muniName": "音威子府村"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014711",
+    "muniName": "中川町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014729",
+    "muniName": "幌加内町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014818",
+    "muniName": "増毛町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014826",
+    "muniName": "小平町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014834",
+    "muniName": "苫前町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014842",
+    "muniName": "羽幌町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014851",
+    "muniName": "初山別村"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014869",
+    "muniName": "遠別町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "014877",
+    "muniName": "天塩町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015113",
+    "muniName": "猿払村"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015121",
+    "muniName": "浜頓別町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015130",
+    "muniName": "中頓別町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015148",
+    "muniName": "枝幸町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015164",
+    "muniName": "豊富町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015172",
+    "muniName": "礼文町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015181",
+    "muniName": "利尻町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015199",
+    "muniName": "利尻富士町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015202",
+    "muniName": "幌延町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015431",
+    "muniName": "美幌町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015440",
+    "muniName": "津別町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015458",
+    "muniName": "斜里町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015466",
+    "muniName": "清里町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015474",
+    "muniName": "小清水町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015491",
+    "muniName": "訓子府町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015504",
+    "muniName": "置戸町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015521",
+    "muniName": "佐呂間町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015555",
+    "muniName": "遠軽町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015598",
+    "muniName": "湧別町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015601",
+    "muniName": "滝上町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015610",
+    "muniName": "興部町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015628",
+    "muniName": "西興部村"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015636",
+    "muniName": "雄武町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015644",
+    "muniName": "大空町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015717",
+    "muniName": "豊浦町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015750",
+    "muniName": "壮瞥町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015784",
+    "muniName": "白老町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015814",
+    "muniName": "厚真町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015849",
+    "muniName": "洞爺湖町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015857",
+    "muniName": "安平町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "015865",
+    "muniName": "むかわ町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016012",
+    "muniName": "日高町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016021",
+    "muniName": "平取町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016047",
+    "muniName": "新冠町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016071",
+    "muniName": "浦河町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016080",
+    "muniName": "様似町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016098",
+    "muniName": "えりも町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016101",
+    "muniName": "新ひだか町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016314",
+    "muniName": "音更町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016322",
+    "muniName": "士幌町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016331",
+    "muniName": "上士幌町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016349",
+    "muniName": "鹿追町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016357",
+    "muniName": "新得町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016365",
+    "muniName": "清水町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016373",
+    "muniName": "芽室町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016381",
+    "muniName": "中札内村"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016390",
+    "muniName": "更別村"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016411",
+    "muniName": "大樹町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016420",
+    "muniName": "広尾町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016438",
+    "muniName": "幕別町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016446",
+    "muniName": "池田町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016454",
+    "muniName": "豊頃町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016462",
+    "muniName": "本別町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016471",
+    "muniName": "足寄町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016489",
+    "muniName": "陸別町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016497",
+    "muniName": "浦幌町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016616",
+    "muniName": "釧路町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016624",
+    "muniName": "厚岸町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016632",
+    "muniName": "浜中町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016641",
+    "muniName": "標茶町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016659",
+    "muniName": "弟子屈町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016675",
+    "muniName": "鶴居村"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016683",
+    "muniName": "白糠町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016918",
+    "muniName": "別海町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016926",
+    "muniName": "中標津町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016934",
+    "muniName": "標津町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016942",
+    "muniName": "羅臼町"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016951",
+    "muniName": "色丹村"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016969",
+    "muniName": "泊村"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016977",
+    "muniName": "留夜別村"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016985",
+    "muniName": "留別村"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "016993",
+    "muniName": "紗那村"
+  },
+  {
+    "prefCode": "01",
+    "prefName": "北海道",
+    "muniCode": "017001",
+    "muniName": "蘂取村"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "022012",
+    "muniName": "青森市"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "022021",
+    "muniName": "弘前市"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "022039",
+    "muniName": "八戸市"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "022047",
+    "muniName": "黒石市"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "022055",
+    "muniName": "五所川原市"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "022063",
+    "muniName": "十和田市"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "022071",
+    "muniName": "三沢市"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "022080",
+    "muniName": "むつ市"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "022098",
+    "muniName": "つがる市"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "022101",
+    "muniName": "平川市"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "023019",
+    "muniName": "平内町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "023035",
+    "muniName": "今別町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "023043",
+    "muniName": "蓬田村"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "023078",
+    "muniName": "外ヶ浜町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "023213",
+    "muniName": "鰺ヶ沢町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "023230",
+    "muniName": "深浦町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "023434",
+    "muniName": "西目屋村"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "023612",
+    "muniName": "藤崎町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "023621",
+    "muniName": "大鰐町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "023671",
+    "muniName": "田舎館村"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "023817",
+    "muniName": "板柳町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "023841",
+    "muniName": "鶴田町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "023876",
+    "muniName": "中泊町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "024015",
+    "muniName": "野辺地町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "024023",
+    "muniName": "七戸町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "024058",
+    "muniName": "六戸町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "024066",
+    "muniName": "横浜町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "024082",
+    "muniName": "東北町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "024112",
+    "muniName": "六ヶ所村"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "024121",
+    "muniName": "おいらせ町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "024236",
+    "muniName": "大間町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "024244",
+    "muniName": "東通村"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "024252",
+    "muniName": "風間浦村"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "024261",
+    "muniName": "佐井村"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "024414",
+    "muniName": "三戸町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "024422",
+    "muniName": "五戸町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "024431",
+    "muniName": "田子町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "024457",
+    "muniName": "南部町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "024465",
+    "muniName": "階上町"
+  },
+  {
+    "prefCode": "02",
+    "prefName": "青森県",
+    "muniCode": "024503",
+    "muniName": "新郷村"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "032018",
+    "muniName": "盛岡市"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "032026",
+    "muniName": "宮古市"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "032034",
+    "muniName": "大船渡市"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "032051",
+    "muniName": "花巻市"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "032069",
+    "muniName": "北上市"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "032077",
+    "muniName": "久慈市"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "032085",
+    "muniName": "遠野市"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "032093",
+    "muniName": "一関市"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "032107",
+    "muniName": "陸前高田市"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "032115",
+    "muniName": "釜石市"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "032131",
+    "muniName": "二戸市"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "032140",
+    "muniName": "八幡平市"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "032158",
+    "muniName": "奥州市"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "032166",
+    "muniName": "滝沢市"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "033014",
+    "muniName": "雫石町"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "033022",
+    "muniName": "葛巻町"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "033031",
+    "muniName": "岩手町"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "033219",
+    "muniName": "紫波町"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "033227",
+    "muniName": "矢巾町"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "033669",
+    "muniName": "西和賀町"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "033812",
+    "muniName": "金ケ崎町"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "034029",
+    "muniName": "平泉町"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "034410",
+    "muniName": "住田町"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "034614",
+    "muniName": "大槌町"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "034827",
+    "muniName": "山田町"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "034835",
+    "muniName": "岩泉町"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "034843",
+    "muniName": "田野畑村"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "034851",
+    "muniName": "普代村"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "035017",
+    "muniName": "軽米町"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "035033",
+    "muniName": "野田村"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "035068",
+    "muniName": "九戸村"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "035076",
+    "muniName": "洋野町"
+  },
+  {
+    "prefCode": "03",
+    "prefName": "岩手県",
+    "muniCode": "035246",
+    "muniName": "一戸町"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "041009",
+    "muniName": "仙台市"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "042021",
+    "muniName": "石巻市"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "042030",
+    "muniName": "塩竈市"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "042056",
+    "muniName": "気仙沼市"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "042064",
+    "muniName": "白石市"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "042072",
+    "muniName": "名取市"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "042081",
+    "muniName": "角田市"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "042099",
+    "muniName": "多賀城市"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "042111",
+    "muniName": "岩沼市"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "042129",
+    "muniName": "登米市"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "042137",
+    "muniName": "栗原市"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "042145",
+    "muniName": "東松島市"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "042153",
+    "muniName": "大崎市"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "042161",
+    "muniName": "富谷市"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "043010",
+    "muniName": "蔵王町"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "043028",
+    "muniName": "七ヶ宿町"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "043214",
+    "muniName": "大河原町"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "043222",
+    "muniName": "村田町"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "043231",
+    "muniName": "柴田町"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "043249",
+    "muniName": "川崎町"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "043419",
+    "muniName": "丸森町"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "043613",
+    "muniName": "亘理町"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "043621",
+    "muniName": "山元町"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "044016",
+    "muniName": "松島町"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "044041",
+    "muniName": "七ヶ浜町"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "044067",
+    "muniName": "利府町"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "044211",
+    "muniName": "大和町"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "044229",
+    "muniName": "大郷町"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "044245",
+    "muniName": "大衡村"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "044440",
+    "muniName": "色麻町"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "044458",
+    "muniName": "加美町"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "045012",
+    "muniName": "涌谷町"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "045055",
+    "muniName": "美里町"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "045811",
+    "muniName": "女川町"
+  },
+  {
+    "prefCode": "04",
+    "prefName": "宮城県",
+    "muniCode": "046060",
+    "muniName": "南三陸町"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "052019",
+    "muniName": "秋田市"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "052027",
+    "muniName": "能代市"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "052035",
+    "muniName": "横手市"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "052043",
+    "muniName": "大館市"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "052060",
+    "muniName": "男鹿市"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "052078",
+    "muniName": "湯沢市"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "052094",
+    "muniName": "鹿角市"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "052108",
+    "muniName": "由利本荘市"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "052116",
+    "muniName": "潟上市"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "052124",
+    "muniName": "大仙市"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "052132",
+    "muniName": "北秋田市"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "052141",
+    "muniName": "にかほ市"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "052159",
+    "muniName": "仙北市"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "053031",
+    "muniName": "小坂町"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "053279",
+    "muniName": "上小阿仁村"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "053465",
+    "muniName": "藤里町"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "053481",
+    "muniName": "三種町"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "053490",
+    "muniName": "八峰町"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "053619",
+    "muniName": "五城目町"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "053635",
+    "muniName": "八郎潟町"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "053660",
+    "muniName": "井川町"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "053686",
+    "muniName": "大潟村"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "054348",
+    "muniName": "美郷町"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "054631",
+    "muniName": "羽後町"
+  },
+  {
+    "prefCode": "05",
+    "prefName": "秋田県",
+    "muniCode": "054640",
+    "muniName": "東成瀬村"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "062014",
+    "muniName": "山形市"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "062022",
+    "muniName": "米沢市"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "062031",
+    "muniName": "鶴岡市"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "062049",
+    "muniName": "酒田市"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "062057",
+    "muniName": "新庄市"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "062065",
+    "muniName": "寒河江市"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "062073",
+    "muniName": "上山市"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "062081",
+    "muniName": "村山市"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "062090",
+    "muniName": "長井市"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "062103",
+    "muniName": "天童市"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "062111",
+    "muniName": "東根市"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "062120",
+    "muniName": "尾花沢市"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "062138",
+    "muniName": "南陽市"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "063011",
+    "muniName": "山辺町"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "063029",
+    "muniName": "中山町"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "063215",
+    "muniName": "河北町"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "063223",
+    "muniName": "西川町"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "063231",
+    "muniName": "朝日町"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "063240",
+    "muniName": "大江町"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "063410",
+    "muniName": "大石田町"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "063614",
+    "muniName": "金山町"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "063622",
+    "muniName": "最上町"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "063631",
+    "muniName": "舟形町"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "063649",
+    "muniName": "真室川町"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "063657",
+    "muniName": "大蔵村"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "063665",
+    "muniName": "鮭川村"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "063673",
+    "muniName": "戸沢村"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "063819",
+    "muniName": "高畠町"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "063827",
+    "muniName": "川西町"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "064017",
+    "muniName": "小国町"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "064025",
+    "muniName": "白鷹町"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "064033",
+    "muniName": "飯豊町"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "064262",
+    "muniName": "三川町"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "064289",
+    "muniName": "庄内町"
+  },
+  {
+    "prefCode": "06",
+    "prefName": "山形県",
+    "muniCode": "064611",
+    "muniName": "遊佐町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "072010",
+    "muniName": "福島市"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "072028",
+    "muniName": "会津若松市"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "072036",
+    "muniName": "郡山市"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "072044",
+    "muniName": "いわき市"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "072052",
+    "muniName": "白河市"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "072079",
+    "muniName": "須賀川市"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "072087",
+    "muniName": "喜多方市"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "072095",
+    "muniName": "相馬市"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "072109",
+    "muniName": "二本松市"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "072117",
+    "muniName": "田村市"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "072125",
+    "muniName": "南相馬市"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "072133",
+    "muniName": "伊達市"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "072141",
+    "muniName": "本宮市"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "073016",
+    "muniName": "桑折町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "073032",
+    "muniName": "国見町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "073083",
+    "muniName": "川俣町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "073229",
+    "muniName": "大玉村"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "073423",
+    "muniName": "鏡石町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "073440",
+    "muniName": "天栄村"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "073628",
+    "muniName": "下郷町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "073644",
+    "muniName": "檜枝岐村"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "073679",
+    "muniName": "只見町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "073687",
+    "muniName": "南会津町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "074021",
+    "muniName": "北塩原村"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "074055",
+    "muniName": "西会津町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "074071",
+    "muniName": "磐梯町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "074080",
+    "muniName": "猪苗代町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "074217",
+    "muniName": "会津坂下町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "074225",
+    "muniName": "湯川村"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "074233",
+    "muniName": "柳津町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "074446",
+    "muniName": "三島町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "074454",
+    "muniName": "金山町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "074462",
+    "muniName": "昭和村"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "074471",
+    "muniName": "会津美里町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "074616",
+    "muniName": "西郷村"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "074641",
+    "muniName": "泉崎村"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "074659",
+    "muniName": "中島村"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "074667",
+    "muniName": "矢吹町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "074811",
+    "muniName": "棚倉町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "074829",
+    "muniName": "矢祭町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "074837",
+    "muniName": "塙町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "074845",
+    "muniName": "鮫川村"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "075019",
+    "muniName": "石川町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "075027",
+    "muniName": "玉川村"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "075035",
+    "muniName": "平田村"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "075043",
+    "muniName": "浅川町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "075051",
+    "muniName": "古殿町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "075213",
+    "muniName": "三春町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "075221",
+    "muniName": "小野町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "075418",
+    "muniName": "広野町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "075426",
+    "muniName": "楢葉町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "075434",
+    "muniName": "富岡町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "075442",
+    "muniName": "川内村"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "075451",
+    "muniName": "大熊町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "075469",
+    "muniName": "双葉町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "075477",
+    "muniName": "浪江町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "075485",
+    "muniName": "葛尾村"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "075612",
+    "muniName": "新地町"
+  },
+  {
+    "prefCode": "07",
+    "prefName": "福島県",
+    "muniCode": "075647",
+    "muniName": "飯舘村"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082015",
+    "muniName": "水戸市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082023",
+    "muniName": "日立市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082031",
+    "muniName": "土浦市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082040",
+    "muniName": "古河市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082058",
+    "muniName": "石岡市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082074",
+    "muniName": "結城市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082082",
+    "muniName": "龍ケ崎市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082104",
+    "muniName": "下妻市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082112",
+    "muniName": "常総市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082121",
+    "muniName": "常陸太田市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082147",
+    "muniName": "高萩市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082155",
+    "muniName": "北茨城市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082163",
+    "muniName": "笠間市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082171",
+    "muniName": "取手市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082198",
+    "muniName": "牛久市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082201",
+    "muniName": "つくば市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082210",
+    "muniName": "ひたちなか市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082228",
+    "muniName": "鹿嶋市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082236",
+    "muniName": "潮来市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082244",
+    "muniName": "守谷市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082252",
+    "muniName": "常陸大宮市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082261",
+    "muniName": "那珂市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082279",
+    "muniName": "筑西市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082287",
+    "muniName": "坂東市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082295",
+    "muniName": "稲敷市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082309",
+    "muniName": "かすみがうら市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082317",
+    "muniName": "桜川市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082325",
+    "muniName": "神栖市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082333",
+    "muniName": "行方市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082341",
+    "muniName": "鉾田市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082350",
+    "muniName": "つくばみらい市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "082368",
+    "muniName": "小美玉市"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "083020",
+    "muniName": "茨城町"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "083097",
+    "muniName": "大洗町"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "083101",
+    "muniName": "城里町"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "083411",
+    "muniName": "東海村"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "083640",
+    "muniName": "大子町"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "084425",
+    "muniName": "美浦村"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "084433",
+    "muniName": "阿見町"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "084476",
+    "muniName": "河内町"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "085219",
+    "muniName": "八千代町"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "085421",
+    "muniName": "五霞町"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "085464",
+    "muniName": "境町"
+  },
+  {
+    "prefCode": "08",
+    "prefName": "茨城県",
+    "muniCode": "085642",
+    "muniName": "利根町"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "092011",
+    "muniName": "宇都宮市"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "092029",
+    "muniName": "足利市"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "092037",
+    "muniName": "栃木市"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "092045",
+    "muniName": "佐野市"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "092053",
+    "muniName": "鹿沼市"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "092061",
+    "muniName": "日光市"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "092088",
+    "muniName": "小山市"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "092096",
+    "muniName": "真岡市"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "092100",
+    "muniName": "大田原市"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "092118",
+    "muniName": "矢板市"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "092134",
+    "muniName": "那須塩原市"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "092142",
+    "muniName": "さくら市"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "092151",
+    "muniName": "那須烏山市"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "092169",
+    "muniName": "下野市"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "093017",
+    "muniName": "上三川町"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "093424",
+    "muniName": "益子町"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "093432",
+    "muniName": "茂木町"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "093441",
+    "muniName": "市貝町"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "093459",
+    "muniName": "芳賀町"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "093611",
+    "muniName": "壬生町"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "093645",
+    "muniName": "野木町"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "093840",
+    "muniName": "塩谷町"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "093866",
+    "muniName": "高根沢町"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "094072",
+    "muniName": "那須町"
+  },
+  {
+    "prefCode": "09",
+    "prefName": "栃木県",
+    "muniCode": "094111",
+    "muniName": "那珂川町"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "102016",
+    "muniName": "前橋市"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "102024",
+    "muniName": "高崎市"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "102032",
+    "muniName": "桐生市"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "102041",
+    "muniName": "伊勢崎市"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "102059",
+    "muniName": "太田市"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "102067",
+    "muniName": "沼田市"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "102075",
+    "muniName": "館林市"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "102083",
+    "muniName": "渋川市"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "102091",
+    "muniName": "藤岡市"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "102105",
+    "muniName": "富岡市"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "102113",
+    "muniName": "安中市"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "102121",
+    "muniName": "みどり市"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "103446",
+    "muniName": "榛東村"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "103454",
+    "muniName": "吉岡町"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "103667",
+    "muniName": "上野村"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "103675",
+    "muniName": "神流町"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "103829",
+    "muniName": "下仁田町"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "103837",
+    "muniName": "南牧村"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "103845",
+    "muniName": "甘楽町"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "104213",
+    "muniName": "中之条町"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "104248",
+    "muniName": "長野原町"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "104256",
+    "muniName": "嬬恋村"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "104264",
+    "muniName": "草津町"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "104281",
+    "muniName": "高山村"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "104299",
+    "muniName": "東吾妻町"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "104434",
+    "muniName": "片品村"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "104442",
+    "muniName": "川場村"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "104485",
+    "muniName": "昭和村"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "104493",
+    "muniName": "みなかみ町"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "104647",
+    "muniName": "玉村町"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "105210",
+    "muniName": "板倉町"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "105228",
+    "muniName": "明和町"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "105236",
+    "muniName": "千代田町"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "105244",
+    "muniName": "大泉町"
+  },
+  {
+    "prefCode": "10",
+    "prefName": "群馬県",
+    "muniCode": "105252",
+    "muniName": "邑楽町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "111007",
+    "muniName": "さいたま市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112011",
+    "muniName": "川越市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112020",
+    "muniName": "熊谷市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112038",
+    "muniName": "川口市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112062",
+    "muniName": "行田市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112071",
+    "muniName": "秩父市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112089",
+    "muniName": "所沢市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112097",
+    "muniName": "飯能市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112101",
+    "muniName": "加須市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112119",
+    "muniName": "本庄市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112127",
+    "muniName": "東松山市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112143",
+    "muniName": "春日部市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112151",
+    "muniName": "狭山市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112160",
+    "muniName": "羽生市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112178",
+    "muniName": "鴻巣市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112186",
+    "muniName": "深谷市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112194",
+    "muniName": "上尾市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112216",
+    "muniName": "草加市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112224",
+    "muniName": "越谷市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112232",
+    "muniName": "蕨市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112241",
+    "muniName": "戸田市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112259",
+    "muniName": "入間市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112275",
+    "muniName": "朝霞市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112283",
+    "muniName": "志木市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112291",
+    "muniName": "和光市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112305",
+    "muniName": "新座市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112313",
+    "muniName": "桶川市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112321",
+    "muniName": "久喜市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112330",
+    "muniName": "北本市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112348",
+    "muniName": "八潮市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112356",
+    "muniName": "富士見市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112372",
+    "muniName": "三郷市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112381",
+    "muniName": "蓮田市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112399",
+    "muniName": "坂戸市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112402",
+    "muniName": "幸手市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112411",
+    "muniName": "鶴ヶ島市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112429",
+    "muniName": "日高市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112437",
+    "muniName": "吉川市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112453",
+    "muniName": "ふじみ野市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "112461",
+    "muniName": "白岡市"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "113018",
+    "muniName": "伊奈町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "113247",
+    "muniName": "三芳町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "113263",
+    "muniName": "毛呂山町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "113271",
+    "muniName": "越生町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "113417",
+    "muniName": "滑川町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "113425",
+    "muniName": "嵐山町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "113433",
+    "muniName": "小川町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "113468",
+    "muniName": "川島町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "113476",
+    "muniName": "吉見町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "113484",
+    "muniName": "鳩山町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "113492",
+    "muniName": "ときがわ町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "113611",
+    "muniName": "横瀬町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "113620",
+    "muniName": "皆野町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "113638",
+    "muniName": "長瀞町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "113654",
+    "muniName": "小鹿野町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "113697",
+    "muniName": "東秩父村"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "113816",
+    "muniName": "美里町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "113832",
+    "muniName": "神川町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "113859",
+    "muniName": "上里町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "114081",
+    "muniName": "寄居町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "114421",
+    "muniName": "宮代町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "114642",
+    "muniName": "杉戸町"
+  },
+  {
+    "prefCode": "11",
+    "prefName": "埼玉県",
+    "muniCode": "114651",
+    "muniName": "松伏町"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "121002",
+    "muniName": "千葉市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122025",
+    "muniName": "銚子市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122033",
+    "muniName": "市川市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122041",
+    "muniName": "船橋市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122050",
+    "muniName": "館山市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122068",
+    "muniName": "木更津市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122076",
+    "muniName": "松戸市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122084",
+    "muniName": "野田市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122106",
+    "muniName": "茂原市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122114",
+    "muniName": "成田市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122122",
+    "muniName": "佐倉市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122131",
+    "muniName": "東金市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122157",
+    "muniName": "旭市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122165",
+    "muniName": "習志野市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122173",
+    "muniName": "柏市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122181",
+    "muniName": "勝浦市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122190",
+    "muniName": "市原市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122203",
+    "muniName": "流山市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122211",
+    "muniName": "八千代市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122220",
+    "muniName": "我孫子市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122238",
+    "muniName": "鴨川市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122246",
+    "muniName": "鎌ケ谷市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122254",
+    "muniName": "君津市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122262",
+    "muniName": "富津市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122271",
+    "muniName": "浦安市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122289",
+    "muniName": "四街道市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122297",
+    "muniName": "袖ケ浦市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122301",
+    "muniName": "八街市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122319",
+    "muniName": "印西市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122327",
+    "muniName": "白井市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122335",
+    "muniName": "富里市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122343",
+    "muniName": "南房総市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122351",
+    "muniName": "匝瑳市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122360",
+    "muniName": "香取市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122378",
+    "muniName": "山武市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122386",
+    "muniName": "いすみ市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "122394",
+    "muniName": "大網白里市"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "123226",
+    "muniName": "酒々井町"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "123293",
+    "muniName": "栄町"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "123421",
+    "muniName": "神崎町"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "123471",
+    "muniName": "多古町"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "123498",
+    "muniName": "東庄町"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "124036",
+    "muniName": "九十九里町"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "124095",
+    "muniName": "芝山町"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "124109",
+    "muniName": "横芝光町"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "124214",
+    "muniName": "一宮町"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "124222",
+    "muniName": "睦沢町"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "124231",
+    "muniName": "長生村"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "124249",
+    "muniName": "白子町"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "124265",
+    "muniName": "長柄町"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "124273",
+    "muniName": "長南町"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "124419",
+    "muniName": "大多喜町"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "124435",
+    "muniName": "御宿町"
+  },
+  {
+    "prefCode": "12",
+    "prefName": "千葉県",
+    "muniCode": "124630",
+    "muniName": "鋸南町"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131016",
+    "muniName": "千代田区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131024",
+    "muniName": "中央区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131032",
+    "muniName": "港区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131041",
+    "muniName": "新宿区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131059",
+    "muniName": "文京区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131067",
+    "muniName": "台東区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131075",
+    "muniName": "墨田区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131083",
+    "muniName": "江東区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131091",
+    "muniName": "品川区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131105",
+    "muniName": "目黒区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131113",
+    "muniName": "大田区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131121",
+    "muniName": "世田谷区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131130",
+    "muniName": "渋谷区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131148",
+    "muniName": "中野区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131156",
+    "muniName": "杉並区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131164",
+    "muniName": "豊島区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131172",
+    "muniName": "北区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131181",
+    "muniName": "荒川区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131199",
+    "muniName": "板橋区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131202",
+    "muniName": "練馬区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131211",
+    "muniName": "足立区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131229",
+    "muniName": "葛飾区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "131237",
+    "muniName": "江戸川区"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132012",
+    "muniName": "八王子市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132021",
+    "muniName": "立川市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132039",
+    "muniName": "武蔵野市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132047",
+    "muniName": "三鷹市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132055",
+    "muniName": "青梅市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132063",
+    "muniName": "府中市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132071",
+    "muniName": "昭島市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132080",
+    "muniName": "調布市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132098",
+    "muniName": "町田市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132101",
+    "muniName": "小金井市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132110",
+    "muniName": "小平市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132128",
+    "muniName": "日野市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132136",
+    "muniName": "東村山市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132144",
+    "muniName": "国分寺市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132152",
+    "muniName": "国立市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132187",
+    "muniName": "福生市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132195",
+    "muniName": "狛江市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132209",
+    "muniName": "東大和市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132217",
+    "muniName": "清瀬市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132225",
+    "muniName": "東久留米市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132233",
+    "muniName": "武蔵村山市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132241",
+    "muniName": "多摩市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132250",
+    "muniName": "稲城市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132276",
+    "muniName": "羽村市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132284",
+    "muniName": "あきる野市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "132292",
+    "muniName": "西東京市"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "133035",
+    "muniName": "瑞穂町"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "133051",
+    "muniName": "日の出町"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "133078",
+    "muniName": "檜原村"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "133086",
+    "muniName": "奥多摩町"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "133612",
+    "muniName": "大島町"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "133621",
+    "muniName": "利島村"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "133639",
+    "muniName": "新島村"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "133647",
+    "muniName": "神津島村"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "133817",
+    "muniName": "三宅村"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "133825",
+    "muniName": "御蔵島村"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "134015",
+    "muniName": "八丈町"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "134023",
+    "muniName": "青ヶ島村"
+  },
+  {
+    "prefCode": "13",
+    "prefName": "東京都",
+    "muniCode": "134210",
+    "muniName": "小笠原村"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "141003",
+    "muniName": "横浜市"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "141305",
+    "muniName": "川崎市"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "141500",
+    "muniName": "相模原市"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "142018",
+    "muniName": "横須賀市"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "142034",
+    "muniName": "平塚市"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "142042",
+    "muniName": "鎌倉市"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "142051",
+    "muniName": "藤沢市"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "142069",
+    "muniName": "小田原市"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "142077",
+    "muniName": "茅ヶ崎市"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "142085",
+    "muniName": "逗子市"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "142107",
+    "muniName": "三浦市"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "142115",
+    "muniName": "秦野市"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "142123",
+    "muniName": "厚木市"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "142131",
+    "muniName": "大和市"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "142140",
+    "muniName": "伊勢原市"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "142158",
+    "muniName": "海老名市"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "142166",
+    "muniName": "座間市"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "142174",
+    "muniName": "南足柄市"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "142182",
+    "muniName": "綾瀬市"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "143014",
+    "muniName": "葉山町"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "143219",
+    "muniName": "寒川町"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "143413",
+    "muniName": "大磯町"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "143421",
+    "muniName": "二宮町"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "143618",
+    "muniName": "中井町"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "143626",
+    "muniName": "大井町"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "143634",
+    "muniName": "松田町"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "143642",
+    "muniName": "山北町"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "143669",
+    "muniName": "開成町"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "143821",
+    "muniName": "箱根町"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "143839",
+    "muniName": "真鶴町"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "143847",
+    "muniName": "湯河原町"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "144011",
+    "muniName": "愛川町"
+  },
+  {
+    "prefCode": "14",
+    "prefName": "神奈川県",
+    "muniCode": "144029",
+    "muniName": "清川村"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "151009",
+    "muniName": "新潟市"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "152021",
+    "muniName": "長岡市"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "152048",
+    "muniName": "三条市"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "152056",
+    "muniName": "柏崎市"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "152064",
+    "muniName": "新発田市"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "152081",
+    "muniName": "小千谷市"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "152099",
+    "muniName": "加茂市"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "152102",
+    "muniName": "十日町市"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "152111",
+    "muniName": "見附市"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "152129",
+    "muniName": "村上市"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "152137",
+    "muniName": "燕市"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "152161",
+    "muniName": "糸魚川市"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "152170",
+    "muniName": "妙高市"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "152188",
+    "muniName": "五泉市"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "152226",
+    "muniName": "上越市"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "152234",
+    "muniName": "阿賀野市"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "152242",
+    "muniName": "佐渡市"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "152251",
+    "muniName": "魚沼市"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "152269",
+    "muniName": "南魚沼市"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "152277",
+    "muniName": "胎内市"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "153079",
+    "muniName": "聖籠町"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "153427",
+    "muniName": "弥彦村"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "153613",
+    "muniName": "田上町"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "153851",
+    "muniName": "阿賀町"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "154059",
+    "muniName": "出雲崎町"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "154610",
+    "muniName": "湯沢町"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "154822",
+    "muniName": "津南町"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "155047",
+    "muniName": "刈羽村"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "155811",
+    "muniName": "関川村"
+  },
+  {
+    "prefCode": "15",
+    "prefName": "新潟県",
+    "muniCode": "155861",
+    "muniName": "粟島浦村"
+  },
+  {
+    "prefCode": "16",
+    "prefName": "富山県",
+    "muniCode": "162019",
+    "muniName": "富山市"
+  },
+  {
+    "prefCode": "16",
+    "prefName": "富山県",
+    "muniCode": "162027",
+    "muniName": "高岡市"
+  },
+  {
+    "prefCode": "16",
+    "prefName": "富山県",
+    "muniCode": "162043",
+    "muniName": "魚津市"
+  },
+  {
+    "prefCode": "16",
+    "prefName": "富山県",
+    "muniCode": "162051",
+    "muniName": "氷見市"
+  },
+  {
+    "prefCode": "16",
+    "prefName": "富山県",
+    "muniCode": "162060",
+    "muniName": "滑川市"
+  },
+  {
+    "prefCode": "16",
+    "prefName": "富山県",
+    "muniCode": "162078",
+    "muniName": "黒部市"
+  },
+  {
+    "prefCode": "16",
+    "prefName": "富山県",
+    "muniCode": "162086",
+    "muniName": "砺波市"
+  },
+  {
+    "prefCode": "16",
+    "prefName": "富山県",
+    "muniCode": "162094",
+    "muniName": "小矢部市"
+  },
+  {
+    "prefCode": "16",
+    "prefName": "富山県",
+    "muniCode": "162108",
+    "muniName": "南砺市"
+  },
+  {
+    "prefCode": "16",
+    "prefName": "富山県",
+    "muniCode": "162116",
+    "muniName": "射水市"
+  },
+  {
+    "prefCode": "16",
+    "prefName": "富山県",
+    "muniCode": "163210",
+    "muniName": "舟橋村"
+  },
+  {
+    "prefCode": "16",
+    "prefName": "富山県",
+    "muniCode": "163228",
+    "muniName": "上市町"
+  },
+  {
+    "prefCode": "16",
+    "prefName": "富山県",
+    "muniCode": "163236",
+    "muniName": "立山町"
+  },
+  {
+    "prefCode": "16",
+    "prefName": "富山県",
+    "muniCode": "163422",
+    "muniName": "入善町"
+  },
+  {
+    "prefCode": "16",
+    "prefName": "富山県",
+    "muniCode": "163431",
+    "muniName": "朝日町"
+  },
+  {
+    "prefCode": "17",
+    "prefName": "石川県",
+    "muniCode": "172014",
+    "muniName": "金沢市"
+  },
+  {
+    "prefCode": "17",
+    "prefName": "石川県",
+    "muniCode": "172022",
+    "muniName": "七尾市"
+  },
+  {
+    "prefCode": "17",
+    "prefName": "石川県",
+    "muniCode": "172031",
+    "muniName": "小松市"
+  },
+  {
+    "prefCode": "17",
+    "prefName": "石川県",
+    "muniCode": "172049",
+    "muniName": "輪島市"
+  },
+  {
+    "prefCode": "17",
+    "prefName": "石川県",
+    "muniCode": "172057",
+    "muniName": "珠洲市"
+  },
+  {
+    "prefCode": "17",
+    "prefName": "石川県",
+    "muniCode": "172065",
+    "muniName": "加賀市"
+  },
+  {
+    "prefCode": "17",
+    "prefName": "石川県",
+    "muniCode": "172073",
+    "muniName": "羽咋市"
+  },
+  {
+    "prefCode": "17",
+    "prefName": "石川県",
+    "muniCode": "172090",
+    "muniName": "かほく市"
+  },
+  {
+    "prefCode": "17",
+    "prefName": "石川県",
+    "muniCode": "172103",
+    "muniName": "白山市"
+  },
+  {
+    "prefCode": "17",
+    "prefName": "石川県",
+    "muniCode": "172111",
+    "muniName": "能美市"
+  },
+  {
+    "prefCode": "17",
+    "prefName": "石川県",
+    "muniCode": "172120",
+    "muniName": "野々市市"
+  },
+  {
+    "prefCode": "17",
+    "prefName": "石川県",
+    "muniCode": "173240",
+    "muniName": "川北町"
+  },
+  {
+    "prefCode": "17",
+    "prefName": "石川県",
+    "muniCode": "173614",
+    "muniName": "津幡町"
+  },
+  {
+    "prefCode": "17",
+    "prefName": "石川県",
+    "muniCode": "173657",
+    "muniName": "内灘町"
+  },
+  {
+    "prefCode": "17",
+    "prefName": "石川県",
+    "muniCode": "173843",
+    "muniName": "志賀町"
+  },
+  {
+    "prefCode": "17",
+    "prefName": "石川県",
+    "muniCode": "173860",
+    "muniName": "宝達志水町"
+  },
+  {
+    "prefCode": "17",
+    "prefName": "石川県",
+    "muniCode": "174076",
+    "muniName": "中能登町"
+  },
+  {
+    "prefCode": "17",
+    "prefName": "石川県",
+    "muniCode": "174611",
+    "muniName": "穴水町"
+  },
+  {
+    "prefCode": "17",
+    "prefName": "石川県",
+    "muniCode": "174637",
+    "muniName": "能登町"
+  },
+  {
+    "prefCode": "18",
+    "prefName": "福井県",
+    "muniCode": "182010",
+    "muniName": "福井市"
+  },
+  {
+    "prefCode": "18",
+    "prefName": "福井県",
+    "muniCode": "182028",
+    "muniName": "敦賀市"
+  },
+  {
+    "prefCode": "18",
+    "prefName": "福井県",
+    "muniCode": "182044",
+    "muniName": "小浜市"
+  },
+  {
+    "prefCode": "18",
+    "prefName": "福井県",
+    "muniCode": "182052",
+    "muniName": "大野市"
+  },
+  {
+    "prefCode": "18",
+    "prefName": "福井県",
+    "muniCode": "182061",
+    "muniName": "勝山市"
+  },
+  {
+    "prefCode": "18",
+    "prefName": "福井県",
+    "muniCode": "182079",
+    "muniName": "鯖江市"
+  },
+  {
+    "prefCode": "18",
+    "prefName": "福井県",
+    "muniCode": "182087",
+    "muniName": "あわら市"
+  },
+  {
+    "prefCode": "18",
+    "prefName": "福井県",
+    "muniCode": "182095",
+    "muniName": "越前市"
+  },
+  {
+    "prefCode": "18",
+    "prefName": "福井県",
+    "muniCode": "182109",
+    "muniName": "坂井市"
+  },
+  {
+    "prefCode": "18",
+    "prefName": "福井県",
+    "muniCode": "183229",
+    "muniName": "永平寺町"
+  },
+  {
+    "prefCode": "18",
+    "prefName": "福井県",
+    "muniCode": "183822",
+    "muniName": "池田町"
+  },
+  {
+    "prefCode": "18",
+    "prefName": "福井県",
+    "muniCode": "184047",
+    "muniName": "南越前町"
+  },
+  {
+    "prefCode": "18",
+    "prefName": "福井県",
+    "muniCode": "184233",
+    "muniName": "越前町"
+  },
+  {
+    "prefCode": "18",
+    "prefName": "福井県",
+    "muniCode": "184420",
+    "muniName": "美浜町"
+  },
+  {
+    "prefCode": "18",
+    "prefName": "福井県",
+    "muniCode": "184811",
+    "muniName": "高浜町"
+  },
+  {
+    "prefCode": "18",
+    "prefName": "福井県",
+    "muniCode": "184837",
+    "muniName": "おおい町"
+  },
+  {
+    "prefCode": "18",
+    "prefName": "福井県",
+    "muniCode": "185019",
+    "muniName": "若狭町"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "192015",
+    "muniName": "甲府市"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "192023",
+    "muniName": "富士吉田市"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "192040",
+    "muniName": "都留市"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "192058",
+    "muniName": "山梨市"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "192066",
+    "muniName": "大月市"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "192074",
+    "muniName": "韮崎市"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "192082",
+    "muniName": "南アルプス市"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "192091",
+    "muniName": "北杜市"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "192104",
+    "muniName": "甲斐市"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "192112",
+    "muniName": "笛吹市"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "192121",
+    "muniName": "上野原市"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "192139",
+    "muniName": "甲州市"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "192147",
+    "muniName": "中央市"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "193461",
+    "muniName": "市川三郷町"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "193640",
+    "muniName": "早川町"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "193658",
+    "muniName": "身延町"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "193666",
+    "muniName": "南部町"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "193682",
+    "muniName": "富士川町"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "193844",
+    "muniName": "昭和町"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "194221",
+    "muniName": "道志村"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "194239",
+    "muniName": "西桂町"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "194247",
+    "muniName": "忍野村"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "194255",
+    "muniName": "山中湖村"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "194298",
+    "muniName": "鳴沢村"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "194301",
+    "muniName": "富士河口湖町"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "194425",
+    "muniName": "小菅村"
+  },
+  {
+    "prefCode": "19",
+    "prefName": "山梨県",
+    "muniCode": "194433",
+    "muniName": "丹波山村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "202011",
+    "muniName": "長野市"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "202029",
+    "muniName": "松本市"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "202037",
+    "muniName": "上田市"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "202045",
+    "muniName": "岡谷市"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "202053",
+    "muniName": "飯田市"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "202061",
+    "muniName": "諏訪市"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "202070",
+    "muniName": "須坂市"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "202088",
+    "muniName": "小諸市"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "202096",
+    "muniName": "伊那市"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "202100",
+    "muniName": "駒ヶ根市"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "202118",
+    "muniName": "中野市"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "202126",
+    "muniName": "大町市"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "202134",
+    "muniName": "飯山市"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "202142",
+    "muniName": "茅野市"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "202151",
+    "muniName": "塩尻市"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "202177",
+    "muniName": "佐久市"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "202185",
+    "muniName": "千曲市"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "202193",
+    "muniName": "東御市"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "202207",
+    "muniName": "安曇野市"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "203033",
+    "muniName": "小海町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "203041",
+    "muniName": "川上村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "203050",
+    "muniName": "南牧村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "203068",
+    "muniName": "南相木村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "203076",
+    "muniName": "北相木村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "203092",
+    "muniName": "佐久穂町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "203211",
+    "muniName": "軽井沢町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "203238",
+    "muniName": "御代田町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "203246",
+    "muniName": "立科町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "203491",
+    "muniName": "青木村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "203505",
+    "muniName": "長和町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "203611",
+    "muniName": "下諏訪町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "203629",
+    "muniName": "富士見町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "203637",
+    "muniName": "原村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "203823",
+    "muniName": "辰野町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "203831",
+    "muniName": "箕輪町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "203840",
+    "muniName": "飯島町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "203858",
+    "muniName": "南箕輪村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "203866",
+    "muniName": "中川村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "203882",
+    "muniName": "宮田村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204021",
+    "muniName": "松川町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204030",
+    "muniName": "高森町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204048",
+    "muniName": "阿南町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204072",
+    "muniName": "阿智村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204099",
+    "muniName": "平谷村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204102",
+    "muniName": "根羽村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204111",
+    "muniName": "下條村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204129",
+    "muniName": "売木村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204137",
+    "muniName": "天龍村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204145",
+    "muniName": "泰阜村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204153",
+    "muniName": "喬木村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204161",
+    "muniName": "豊丘村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204170",
+    "muniName": "大鹿村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204226",
+    "muniName": "上松町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204234",
+    "muniName": "南木曽町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204251",
+    "muniName": "木祖村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204293",
+    "muniName": "王滝村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204307",
+    "muniName": "大桑村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204323",
+    "muniName": "木曽町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204463",
+    "muniName": "麻績村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204480",
+    "muniName": "生坂村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204501",
+    "muniName": "山形村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204510",
+    "muniName": "朝日村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204528",
+    "muniName": "筑北村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204811",
+    "muniName": "池田町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204820",
+    "muniName": "松川村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204854",
+    "muniName": "白馬村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "204862",
+    "muniName": "小谷村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "205214",
+    "muniName": "坂城町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "205419",
+    "muniName": "小布施町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "205435",
+    "muniName": "高山村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "205613",
+    "muniName": "山ノ内町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "205621",
+    "muniName": "木島平村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "205630",
+    "muniName": "野沢温泉村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "205834",
+    "muniName": "信濃町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "205885",
+    "muniName": "小川村"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "205907",
+    "muniName": "飯綱町"
+  },
+  {
+    "prefCode": "20",
+    "prefName": "長野県",
+    "muniCode": "206024",
+    "muniName": "栄村"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "212016",
+    "muniName": "岐阜市"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "212024",
+    "muniName": "大垣市"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "212032",
+    "muniName": "高山市"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "212041",
+    "muniName": "多治見市"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "212059",
+    "muniName": "関市"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "212067",
+    "muniName": "中津川市"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "212075",
+    "muniName": "美濃市"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "212083",
+    "muniName": "瑞浪市"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "212091",
+    "muniName": "羽島市"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "212105",
+    "muniName": "恵那市"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "212113",
+    "muniName": "美濃加茂市"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "212121",
+    "muniName": "土岐市"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "212130",
+    "muniName": "各務原市"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "212148",
+    "muniName": "可児市"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "212156",
+    "muniName": "山県市"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "212164",
+    "muniName": "瑞穂市"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "212172",
+    "muniName": "飛騨市"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "212181",
+    "muniName": "本巣市"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "212199",
+    "muniName": "郡上市"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "212202",
+    "muniName": "下呂市"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "212211",
+    "muniName": "海津市"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "213021",
+    "muniName": "岐南町"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "213039",
+    "muniName": "笠松町"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "213411",
+    "muniName": "養老町"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "213616",
+    "muniName": "垂井町"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "213624",
+    "muniName": "関ケ原町"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "213811",
+    "muniName": "神戸町"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "213829",
+    "muniName": "輪之内町"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "213837",
+    "muniName": "安八町"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "214019",
+    "muniName": "揖斐川町"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "214035",
+    "muniName": "大野町"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "214043",
+    "muniName": "池田町"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "214213",
+    "muniName": "北方町"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "215015",
+    "muniName": "坂祝町"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "215023",
+    "muniName": "富加町"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "215031",
+    "muniName": "川辺町"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "215040",
+    "muniName": "七宗町"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "215058",
+    "muniName": "八百津町"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "215066",
+    "muniName": "白川町"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "215074",
+    "muniName": "東白川村"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "215210",
+    "muniName": "御嵩町"
+  },
+  {
+    "prefCode": "21",
+    "prefName": "岐阜県",
+    "muniCode": "216046",
+    "muniName": "白川村"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "221007",
+    "muniName": "静岡市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "221309",
+    "muniName": "浜松市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "222038",
+    "muniName": "沼津市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "222054",
+    "muniName": "熱海市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "222062",
+    "muniName": "三島市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "222071",
+    "muniName": "富士宮市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "222089",
+    "muniName": "伊東市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "222097",
+    "muniName": "島田市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "222101",
+    "muniName": "富士市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "222119",
+    "muniName": "磐田市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "222127",
+    "muniName": "焼津市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "222135",
+    "muniName": "掛川市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "222143",
+    "muniName": "藤枝市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "222151",
+    "muniName": "御殿場市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "222160",
+    "muniName": "袋井市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "222194",
+    "muniName": "下田市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "222208",
+    "muniName": "裾野市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "222216",
+    "muniName": "湖西市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "222224",
+    "muniName": "伊豆市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "222232",
+    "muniName": "御前崎市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "222241",
+    "muniName": "菊川市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "222259",
+    "muniName": "伊豆の国市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "222267",
+    "muniName": "牧之原市"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "223018",
+    "muniName": "東伊豆町"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "223026",
+    "muniName": "河津町"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "223042",
+    "muniName": "南伊豆町"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "223051",
+    "muniName": "松崎町"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "223069",
+    "muniName": "西伊豆町"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "223255",
+    "muniName": "函南町"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "223417",
+    "muniName": "清水町"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "223425",
+    "muniName": "長泉町"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "223441",
+    "muniName": "小山町"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "224243",
+    "muniName": "吉田町"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "224294",
+    "muniName": "川根本町"
+  },
+  {
+    "prefCode": "22",
+    "prefName": "静岡県",
+    "muniCode": "224618",
+    "muniName": "森町"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "231002",
+    "muniName": "名古屋市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232017",
+    "muniName": "豊橋市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232025",
+    "muniName": "岡崎市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232033",
+    "muniName": "一宮市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232041",
+    "muniName": "瀬戸市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232050",
+    "muniName": "半田市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232068",
+    "muniName": "春日井市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232076",
+    "muniName": "豊川市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232084",
+    "muniName": "津島市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232092",
+    "muniName": "碧南市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232106",
+    "muniName": "刈谷市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232114",
+    "muniName": "豊田市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232122",
+    "muniName": "安城市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232131",
+    "muniName": "西尾市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232149",
+    "muniName": "蒲郡市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232157",
+    "muniName": "犬山市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232165",
+    "muniName": "常滑市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232173",
+    "muniName": "江南市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232190",
+    "muniName": "小牧市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232203",
+    "muniName": "稲沢市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232211",
+    "muniName": "新城市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232220",
+    "muniName": "東海市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232238",
+    "muniName": "大府市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232246",
+    "muniName": "知多市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232254",
+    "muniName": "知立市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232262",
+    "muniName": "尾張旭市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232271",
+    "muniName": "高浜市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232289",
+    "muniName": "岩倉市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232297",
+    "muniName": "豊明市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232301",
+    "muniName": "日進市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232319",
+    "muniName": "田原市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232327",
+    "muniName": "愛西市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232335",
+    "muniName": "清須市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232343",
+    "muniName": "北名古屋市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232351",
+    "muniName": "弥富市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232360",
+    "muniName": "みよし市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232378",
+    "muniName": "あま市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "232386",
+    "muniName": "長久手市"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "233021",
+    "muniName": "東郷町"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "233421",
+    "muniName": "豊山町"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "233617",
+    "muniName": "大口町"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "233625",
+    "muniName": "扶桑町"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "234249",
+    "muniName": "大治町"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "234257",
+    "muniName": "蟹江町"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "234273",
+    "muniName": "飛島村"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "234419",
+    "muniName": "阿久比町"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "234427",
+    "muniName": "東浦町"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "234451",
+    "muniName": "南知多町"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "234460",
+    "muniName": "美浜町"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "234478",
+    "muniName": "武豊町"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "235016",
+    "muniName": "幸田町"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "235610",
+    "muniName": "設楽町"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "235628",
+    "muniName": "東栄町"
+  },
+  {
+    "prefCode": "23",
+    "prefName": "愛知県",
+    "muniCode": "235636",
+    "muniName": "豊根村"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "242012",
+    "muniName": "津市"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "242021",
+    "muniName": "四日市市"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "242039",
+    "muniName": "伊勢市"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "242047",
+    "muniName": "松阪市"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "242055",
+    "muniName": "桑名市"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "242071",
+    "muniName": "鈴鹿市"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "242080",
+    "muniName": "名張市"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "242098",
+    "muniName": "尾鷲市"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "242101",
+    "muniName": "亀山市"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "242110",
+    "muniName": "鳥羽市"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "242128",
+    "muniName": "熊野市"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "242144",
+    "muniName": "いなべ市"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "242152",
+    "muniName": "志摩市"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "242161",
+    "muniName": "伊賀市"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "243035",
+    "muniName": "木曽岬町"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "243248",
+    "muniName": "東員町"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "243418",
+    "muniName": "菰野町"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "243434",
+    "muniName": "朝日町"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "243442",
+    "muniName": "川越町"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "244414",
+    "muniName": "多気町"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "244422",
+    "muniName": "明和町"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "244431",
+    "muniName": "大台町"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "244619",
+    "muniName": "玉城町"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "244708",
+    "muniName": "度会町"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "244716",
+    "muniName": "大紀町"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "244724",
+    "muniName": "南伊勢町"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "245437",
+    "muniName": "紀北町"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "245615",
+    "muniName": "御浜町"
+  },
+  {
+    "prefCode": "24",
+    "prefName": "三重県",
+    "muniCode": "245623",
+    "muniName": "紀宝町"
+  },
+  {
+    "prefCode": "25",
+    "prefName": "滋賀県",
+    "muniCode": "252018",
+    "muniName": "大津市"
+  },
+  {
+    "prefCode": "25",
+    "prefName": "滋賀県",
+    "muniCode": "252026",
+    "muniName": "彦根市"
+  },
+  {
+    "prefCode": "25",
+    "prefName": "滋賀県",
+    "muniCode": "252034",
+    "muniName": "長浜市"
+  },
+  {
+    "prefCode": "25",
+    "prefName": "滋賀県",
+    "muniCode": "252042",
+    "muniName": "近江八幡市"
+  },
+  {
+    "prefCode": "25",
+    "prefName": "滋賀県",
+    "muniCode": "252069",
+    "muniName": "草津市"
+  },
+  {
+    "prefCode": "25",
+    "prefName": "滋賀県",
+    "muniCode": "252077",
+    "muniName": "守山市"
+  },
+  {
+    "prefCode": "25",
+    "prefName": "滋賀県",
+    "muniCode": "252085",
+    "muniName": "栗東市"
+  },
+  {
+    "prefCode": "25",
+    "prefName": "滋賀県",
+    "muniCode": "252093",
+    "muniName": "甲賀市"
+  },
+  {
+    "prefCode": "25",
+    "prefName": "滋賀県",
+    "muniCode": "252107",
+    "muniName": "野洲市"
+  },
+  {
+    "prefCode": "25",
+    "prefName": "滋賀県",
+    "muniCode": "252115",
+    "muniName": "湖南市"
+  },
+  {
+    "prefCode": "25",
+    "prefName": "滋賀県",
+    "muniCode": "252123",
+    "muniName": "高島市"
+  },
+  {
+    "prefCode": "25",
+    "prefName": "滋賀県",
+    "muniCode": "252131",
+    "muniName": "東近江市"
+  },
+  {
+    "prefCode": "25",
+    "prefName": "滋賀県",
+    "muniCode": "252140",
+    "muniName": "米原市"
+  },
+  {
+    "prefCode": "25",
+    "prefName": "滋賀県",
+    "muniCode": "253839",
+    "muniName": "日野町"
+  },
+  {
+    "prefCode": "25",
+    "prefName": "滋賀県",
+    "muniCode": "253847",
+    "muniName": "竜王町"
+  },
+  {
+    "prefCode": "25",
+    "prefName": "滋賀県",
+    "muniCode": "254258",
+    "muniName": "愛荘町"
+  },
+  {
+    "prefCode": "25",
+    "prefName": "滋賀県",
+    "muniCode": "254410",
+    "muniName": "豊郷町"
+  },
+  {
+    "prefCode": "25",
+    "prefName": "滋賀県",
+    "muniCode": "254428",
+    "muniName": "甲良町"
+  },
+  {
+    "prefCode": "25",
+    "prefName": "滋賀県",
+    "muniCode": "254436",
+    "muniName": "多賀町"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "261009",
+    "muniName": "京都市"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "262013",
+    "muniName": "福知山市"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "262021",
+    "muniName": "舞鶴市"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "262030",
+    "muniName": "綾部市"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "262048",
+    "muniName": "宇治市"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "262056",
+    "muniName": "宮津市"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "262064",
+    "muniName": "亀岡市"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "262072",
+    "muniName": "城陽市"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "262081",
+    "muniName": "向日市"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "262099",
+    "muniName": "長岡京市"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "262102",
+    "muniName": "八幡市"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "262111",
+    "muniName": "京田辺市"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "262129",
+    "muniName": "京丹後市"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "262137",
+    "muniName": "南丹市"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "262145",
+    "muniName": "木津川市"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "263036",
+    "muniName": "大山崎町"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "263222",
+    "muniName": "久御山町"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "263435",
+    "muniName": "井手町"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "263443",
+    "muniName": "宇治田原町"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "263648",
+    "muniName": "笠置町"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "263656",
+    "muniName": "和束町"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "263664",
+    "muniName": "精華町"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "263672",
+    "muniName": "南山城村"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "264075",
+    "muniName": "京丹波町"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "264636",
+    "muniName": "伊根町"
+  },
+  {
+    "prefCode": "26",
+    "prefName": "京都府",
+    "muniCode": "264652",
+    "muniName": "与謝野町"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "271004",
+    "muniName": "大阪市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "271403",
+    "muniName": "堺市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272027",
+    "muniName": "岸和田市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272035",
+    "muniName": "豊中市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272043",
+    "muniName": "池田市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272051",
+    "muniName": "吹田市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272060",
+    "muniName": "泉大津市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272078",
+    "muniName": "高槻市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272086",
+    "muniName": "貝塚市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272094",
+    "muniName": "守口市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272108",
+    "muniName": "枚方市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272116",
+    "muniName": "茨木市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272124",
+    "muniName": "八尾市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272132",
+    "muniName": "泉佐野市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272141",
+    "muniName": "富田林市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272159",
+    "muniName": "寝屋川市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272167",
+    "muniName": "河内長野市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272175",
+    "muniName": "松原市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272183",
+    "muniName": "大東市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272191",
+    "muniName": "和泉市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272205",
+    "muniName": "箕面市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272213",
+    "muniName": "柏原市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272221",
+    "muniName": "羽曳野市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272230",
+    "muniName": "門真市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272248",
+    "muniName": "摂津市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272256",
+    "muniName": "高石市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272264",
+    "muniName": "藤井寺市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272272",
+    "muniName": "東大阪市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272281",
+    "muniName": "泉南市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272299",
+    "muniName": "四條畷市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272302",
+    "muniName": "交野市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272311",
+    "muniName": "大阪狭山市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "272329",
+    "muniName": "阪南市"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "273015",
+    "muniName": "島本町"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "273210",
+    "muniName": "豊能町"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "273228",
+    "muniName": "能勢町"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "273414",
+    "muniName": "忠岡町"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "273619",
+    "muniName": "熊取町"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "273627",
+    "muniName": "田尻町"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "273660",
+    "muniName": "岬町"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "273813",
+    "muniName": "太子町"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "273821",
+    "muniName": "河南町"
+  },
+  {
+    "prefCode": "27",
+    "prefName": "大阪府",
+    "muniCode": "273830",
+    "muniName": "千早赤阪村"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "281000",
+    "muniName": "神戸市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282014",
+    "muniName": "姫路市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282022",
+    "muniName": "尼崎市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282031",
+    "muniName": "明石市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282049",
+    "muniName": "西宮市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282057",
+    "muniName": "洲本市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282065",
+    "muniName": "芦屋市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282073",
+    "muniName": "伊丹市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282081",
+    "muniName": "相生市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282090",
+    "muniName": "豊岡市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282103",
+    "muniName": "加古川市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282120",
+    "muniName": "赤穂市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282138",
+    "muniName": "西脇市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282146",
+    "muniName": "宝塚市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282154",
+    "muniName": "三木市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282162",
+    "muniName": "高砂市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282171",
+    "muniName": "川西市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282189",
+    "muniName": "小野市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282197",
+    "muniName": "三田市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282201",
+    "muniName": "加西市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282219",
+    "muniName": "丹波篠山市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282227",
+    "muniName": "養父市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282235",
+    "muniName": "丹波市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282243",
+    "muniName": "南あわじ市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282251",
+    "muniName": "朝来市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282260",
+    "muniName": "淡路市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282278",
+    "muniName": "宍粟市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282286",
+    "muniName": "加東市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "282294",
+    "muniName": "たつの市"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "283011",
+    "muniName": "猪名川町"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "283657",
+    "muniName": "多可町"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "283819",
+    "muniName": "稲美町"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "283827",
+    "muniName": "播磨町"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "284424",
+    "muniName": "市川町"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "284432",
+    "muniName": "福崎町"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "284467",
+    "muniName": "神河町"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "284645",
+    "muniName": "太子町"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "284815",
+    "muniName": "上郡町"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "285013",
+    "muniName": "佐用町"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "285854",
+    "muniName": "香美町"
+  },
+  {
+    "prefCode": "28",
+    "prefName": "兵庫県",
+    "muniCode": "285862",
+    "muniName": "新温泉町"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "292010",
+    "muniName": "奈良市"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "292028",
+    "muniName": "大和高田市"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "292036",
+    "muniName": "大和郡山市"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "292044",
+    "muniName": "天理市"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "292052",
+    "muniName": "橿原市"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "292061",
+    "muniName": "桜井市"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "292079",
+    "muniName": "五條市"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "292087",
+    "muniName": "御所市"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "292095",
+    "muniName": "生駒市"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "292109",
+    "muniName": "香芝市"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "292117",
+    "muniName": "葛城市"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "292125",
+    "muniName": "宇陀市"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "293229",
+    "muniName": "山添村"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "293423",
+    "muniName": "平群町"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "293431",
+    "muniName": "三郷町"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "293440",
+    "muniName": "斑鳩町"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "293458",
+    "muniName": "安堵町"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "293610",
+    "muniName": "川西町"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "293628",
+    "muniName": "三宅町"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "293636",
+    "muniName": "田原本町"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "293857",
+    "muniName": "曽爾村"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "293865",
+    "muniName": "御杖村"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "294012",
+    "muniName": "高取町"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "294021",
+    "muniName": "明日香村"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "294241",
+    "muniName": "上牧町"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "294250",
+    "muniName": "王寺町"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "294268",
+    "muniName": "広陵町"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "294276",
+    "muniName": "河合町"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "294411",
+    "muniName": "吉野町"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "294420",
+    "muniName": "大淀町"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "294438",
+    "muniName": "下市町"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "294446",
+    "muniName": "黒滝村"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "294462",
+    "muniName": "天川村"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "294471",
+    "muniName": "野迫川村"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "294497",
+    "muniName": "十津川村"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "294501",
+    "muniName": "下北山村"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "294519",
+    "muniName": "上北山村"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "294527",
+    "muniName": "川上村"
+  },
+  {
+    "prefCode": "29",
+    "prefName": "奈良県",
+    "muniCode": "294535",
+    "muniName": "東吉野村"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "302015",
+    "muniName": "和歌山市"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "302023",
+    "muniName": "海南市"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "302031",
+    "muniName": "橋本市"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "302040",
+    "muniName": "有田市"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "302058",
+    "muniName": "御坊市"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "302066",
+    "muniName": "田辺市"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "302074",
+    "muniName": "新宮市"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "302082",
+    "muniName": "紀の川市"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "302091",
+    "muniName": "岩出市"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "303046",
+    "muniName": "紀美野町"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "303411",
+    "muniName": "かつらぎ町"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "303437",
+    "muniName": "九度山町"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "303445",
+    "muniName": "高野町"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "303615",
+    "muniName": "湯浅町"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "303623",
+    "muniName": "広川町"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "303666",
+    "muniName": "有田川町"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "303810",
+    "muniName": "美浜町"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "303828",
+    "muniName": "日高町"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "303836",
+    "muniName": "由良町"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "303909",
+    "muniName": "印南町"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "303917",
+    "muniName": "みなべ町"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "303925",
+    "muniName": "日高川町"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "304018",
+    "muniName": "白浜町"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "304042",
+    "muniName": "上富田町"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "304069",
+    "muniName": "すさみ町"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "304212",
+    "muniName": "那智勝浦町"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "304221",
+    "muniName": "太地町"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "304247",
+    "muniName": "古座川町"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "304271",
+    "muniName": "北山村"
+  },
+  {
+    "prefCode": "30",
+    "prefName": "和歌山県",
+    "muniCode": "304280",
+    "muniName": "串本町"
+  },
+  {
+    "prefCode": "31",
+    "prefName": "鳥取県",
+    "muniCode": "312011",
+    "muniName": "鳥取市"
+  },
+  {
+    "prefCode": "31",
+    "prefName": "鳥取県",
+    "muniCode": "312029",
+    "muniName": "米子市"
+  },
+  {
+    "prefCode": "31",
+    "prefName": "鳥取県",
+    "muniCode": "312037",
+    "muniName": "倉吉市"
+  },
+  {
+    "prefCode": "31",
+    "prefName": "鳥取県",
+    "muniCode": "312045",
+    "muniName": "境港市"
+  },
+  {
+    "prefCode": "31",
+    "prefName": "鳥取県",
+    "muniCode": "313025",
+    "muniName": "岩美町"
+  },
+  {
+    "prefCode": "31",
+    "prefName": "鳥取県",
+    "muniCode": "313254",
+    "muniName": "若桜町"
+  },
+  {
+    "prefCode": "31",
+    "prefName": "鳥取県",
+    "muniCode": "313289",
+    "muniName": "智頭町"
+  },
+  {
+    "prefCode": "31",
+    "prefName": "鳥取県",
+    "muniCode": "313297",
+    "muniName": "八頭町"
+  },
+  {
+    "prefCode": "31",
+    "prefName": "鳥取県",
+    "muniCode": "313645",
+    "muniName": "三朝町"
+  },
+  {
+    "prefCode": "31",
+    "prefName": "鳥取県",
+    "muniCode": "313700",
+    "muniName": "湯梨浜町"
+  },
+  {
+    "prefCode": "31",
+    "prefName": "鳥取県",
+    "muniCode": "313718",
+    "muniName": "琴浦町"
+  },
+  {
+    "prefCode": "31",
+    "prefName": "鳥取県",
+    "muniCode": "313726",
+    "muniName": "北栄町"
+  },
+  {
+    "prefCode": "31",
+    "prefName": "鳥取県",
+    "muniCode": "313840",
+    "muniName": "日吉津村"
+  },
+  {
+    "prefCode": "31",
+    "prefName": "鳥取県",
+    "muniCode": "313866",
+    "muniName": "大山町"
+  },
+  {
+    "prefCode": "31",
+    "prefName": "鳥取県",
+    "muniCode": "313891",
+    "muniName": "南部町"
+  },
+  {
+    "prefCode": "31",
+    "prefName": "鳥取県",
+    "muniCode": "313904",
+    "muniName": "伯耆町"
+  },
+  {
+    "prefCode": "31",
+    "prefName": "鳥取県",
+    "muniCode": "314013",
+    "muniName": "日南町"
+  },
+  {
+    "prefCode": "31",
+    "prefName": "鳥取県",
+    "muniCode": "314021",
+    "muniName": "日野町"
+  },
+  {
+    "prefCode": "31",
+    "prefName": "鳥取県",
+    "muniCode": "314030",
+    "muniName": "江府町"
+  },
+  {
+    "prefCode": "32",
+    "prefName": "島根県",
+    "muniCode": "322016",
+    "muniName": "松江市"
+  },
+  {
+    "prefCode": "32",
+    "prefName": "島根県",
+    "muniCode": "322024",
+    "muniName": "浜田市"
+  },
+  {
+    "prefCode": "32",
+    "prefName": "島根県",
+    "muniCode": "322032",
+    "muniName": "出雲市"
+  },
+  {
+    "prefCode": "32",
+    "prefName": "島根県",
+    "muniCode": "322041",
+    "muniName": "益田市"
+  },
+  {
+    "prefCode": "32",
+    "prefName": "島根県",
+    "muniCode": "322059",
+    "muniName": "大田市"
+  },
+  {
+    "prefCode": "32",
+    "prefName": "島根県",
+    "muniCode": "322067",
+    "muniName": "安来市"
+  },
+  {
+    "prefCode": "32",
+    "prefName": "島根県",
+    "muniCode": "322075",
+    "muniName": "江津市"
+  },
+  {
+    "prefCode": "32",
+    "prefName": "島根県",
+    "muniCode": "322091",
+    "muniName": "雲南市"
+  },
+  {
+    "prefCode": "32",
+    "prefName": "島根県",
+    "muniCode": "323438",
+    "muniName": "奥出雲町"
+  },
+  {
+    "prefCode": "32",
+    "prefName": "島根県",
+    "muniCode": "323861",
+    "muniName": "飯南町"
+  },
+  {
+    "prefCode": "32",
+    "prefName": "島根県",
+    "muniCode": "324418",
+    "muniName": "川本町"
+  },
+  {
+    "prefCode": "32",
+    "prefName": "島根県",
+    "muniCode": "324485",
+    "muniName": "美郷町"
+  },
+  {
+    "prefCode": "32",
+    "prefName": "島根県",
+    "muniCode": "324493",
+    "muniName": "邑南町"
+  },
+  {
+    "prefCode": "32",
+    "prefName": "島根県",
+    "muniCode": "325015",
+    "muniName": "津和野町"
+  },
+  {
+    "prefCode": "32",
+    "prefName": "島根県",
+    "muniCode": "325058",
+    "muniName": "吉賀町"
+  },
+  {
+    "prefCode": "32",
+    "prefName": "島根県",
+    "muniCode": "325252",
+    "muniName": "海士町"
+  },
+  {
+    "prefCode": "32",
+    "prefName": "島根県",
+    "muniCode": "325261",
+    "muniName": "西ノ島町"
+  },
+  {
+    "prefCode": "32",
+    "prefName": "島根県",
+    "muniCode": "325279",
+    "muniName": "知夫村"
+  },
+  {
+    "prefCode": "32",
+    "prefName": "島根県",
+    "muniCode": "325287",
+    "muniName": "隠岐の島町"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "331007",
+    "muniName": "岡山市"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "332020",
+    "muniName": "倉敷市"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "332038",
+    "muniName": "津山市"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "332046",
+    "muniName": "玉野市"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "332054",
+    "muniName": "笠岡市"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "332071",
+    "muniName": "井原市"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "332089",
+    "muniName": "総社市"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "332097",
+    "muniName": "高梁市"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "332101",
+    "muniName": "新見市"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "332119",
+    "muniName": "備前市"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "332127",
+    "muniName": "瀬戸内市"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "332135",
+    "muniName": "赤磐市"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "332143",
+    "muniName": "真庭市"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "332151",
+    "muniName": "美作市"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "332160",
+    "muniName": "浅口市"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "333468",
+    "muniName": "和気町"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "334235",
+    "muniName": "早島町"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "334456",
+    "muniName": "里庄町"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "334618",
+    "muniName": "矢掛町"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "335860",
+    "muniName": "新庄村"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "336068",
+    "muniName": "鏡野町"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "336220",
+    "muniName": "勝央町"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "336238",
+    "muniName": "奈義町"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "336432",
+    "muniName": "西粟倉村"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "336637",
+    "muniName": "久米南町"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "336661",
+    "muniName": "美咲町"
+  },
+  {
+    "prefCode": "33",
+    "prefName": "岡山県",
+    "muniCode": "336815",
+    "muniName": "吉備中央町"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "341002",
+    "muniName": "広島市"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "342025",
+    "muniName": "呉市"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "342033",
+    "muniName": "竹原市"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "342041",
+    "muniName": "三原市"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "342050",
+    "muniName": "尾道市"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "342076",
+    "muniName": "福山市"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "342084",
+    "muniName": "府中市"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "342092",
+    "muniName": "三次市"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "342106",
+    "muniName": "庄原市"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "342114",
+    "muniName": "大竹市"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "342122",
+    "muniName": "東広島市"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "342131",
+    "muniName": "廿日市市"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "342149",
+    "muniName": "安芸高田市"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "342157",
+    "muniName": "江田島市"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "343021",
+    "muniName": "府中町"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "343048",
+    "muniName": "海田町"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "343072",
+    "muniName": "熊野町"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "343099",
+    "muniName": "坂町"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "343684",
+    "muniName": "安芸太田町"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "343692",
+    "muniName": "北広島町"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "344311",
+    "muniName": "大崎上島町"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "344621",
+    "muniName": "世羅町"
+  },
+  {
+    "prefCode": "34",
+    "prefName": "広島県",
+    "muniCode": "345458",
+    "muniName": "神石高原町"
+  },
+  {
+    "prefCode": "35",
+    "prefName": "山口県",
+    "muniCode": "352012",
+    "muniName": "下関市"
+  },
+  {
+    "prefCode": "35",
+    "prefName": "山口県",
+    "muniCode": "352021",
+    "muniName": "宇部市"
+  },
+  {
+    "prefCode": "35",
+    "prefName": "山口県",
+    "muniCode": "352039",
+    "muniName": "山口市"
+  },
+  {
+    "prefCode": "35",
+    "prefName": "山口県",
+    "muniCode": "352047",
+    "muniName": "萩市"
+  },
+  {
+    "prefCode": "35",
+    "prefName": "山口県",
+    "muniCode": "352063",
+    "muniName": "防府市"
+  },
+  {
+    "prefCode": "35",
+    "prefName": "山口県",
+    "muniCode": "352071",
+    "muniName": "下松市"
+  },
+  {
+    "prefCode": "35",
+    "prefName": "山口県",
+    "muniCode": "352080",
+    "muniName": "岩国市"
+  },
+  {
+    "prefCode": "35",
+    "prefName": "山口県",
+    "muniCode": "352101",
+    "muniName": "光市"
+  },
+  {
+    "prefCode": "35",
+    "prefName": "山口県",
+    "muniCode": "352110",
+    "muniName": "長門市"
+  },
+  {
+    "prefCode": "35",
+    "prefName": "山口県",
+    "muniCode": "352128",
+    "muniName": "柳井市"
+  },
+  {
+    "prefCode": "35",
+    "prefName": "山口県",
+    "muniCode": "352136",
+    "muniName": "美祢市"
+  },
+  {
+    "prefCode": "35",
+    "prefName": "山口県",
+    "muniCode": "352152",
+    "muniName": "周南市"
+  },
+  {
+    "prefCode": "35",
+    "prefName": "山口県",
+    "muniCode": "352161",
+    "muniName": "山陽小野田市"
+  },
+  {
+    "prefCode": "35",
+    "prefName": "山口県",
+    "muniCode": "353051",
+    "muniName": "周防大島町"
+  },
+  {
+    "prefCode": "35",
+    "prefName": "山口県",
+    "muniCode": "353213",
+    "muniName": "和木町"
+  },
+  {
+    "prefCode": "35",
+    "prefName": "山口県",
+    "muniCode": "353418",
+    "muniName": "上関町"
+  },
+  {
+    "prefCode": "35",
+    "prefName": "山口県",
+    "muniCode": "353434",
+    "muniName": "田布施町"
+  },
+  {
+    "prefCode": "35",
+    "prefName": "山口県",
+    "muniCode": "353442",
+    "muniName": "平生町"
+  },
+  {
+    "prefCode": "35",
+    "prefName": "山口県",
+    "muniCode": "355020",
+    "muniName": "阿武町"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "362018",
+    "muniName": "徳島市"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "362026",
+    "muniName": "鳴門市"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "362034",
+    "muniName": "小松島市"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "362042",
+    "muniName": "阿南市"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "362051",
+    "muniName": "吉野川市"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "362069",
+    "muniName": "阿波市"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "362077",
+    "muniName": "美馬市"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "362085",
+    "muniName": "三好市"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "363014",
+    "muniName": "勝浦町"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "363022",
+    "muniName": "上勝町"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "363219",
+    "muniName": "佐那河内村"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "363413",
+    "muniName": "石井町"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "363421",
+    "muniName": "神山町"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "363685",
+    "muniName": "那賀町"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "363839",
+    "muniName": "牟岐町"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "363871",
+    "muniName": "美波町"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "363880",
+    "muniName": "海陽町"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "364011",
+    "muniName": "松茂町"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "364029",
+    "muniName": "北島町"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "364037",
+    "muniName": "藍住町"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "364045",
+    "muniName": "板野町"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "364053",
+    "muniName": "上板町"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "364681",
+    "muniName": "つるぎ町"
+  },
+  {
+    "prefCode": "36",
+    "prefName": "徳島県",
+    "muniCode": "364894",
+    "muniName": "東みよし町"
+  },
+  {
+    "prefCode": "37",
+    "prefName": "香川県",
+    "muniCode": "372013",
+    "muniName": "高松市"
+  },
+  {
+    "prefCode": "37",
+    "prefName": "香川県",
+    "muniCode": "372021",
+    "muniName": "丸亀市"
+  },
+  {
+    "prefCode": "37",
+    "prefName": "香川県",
+    "muniCode": "372030",
+    "muniName": "坂出市"
+  },
+  {
+    "prefCode": "37",
+    "prefName": "香川県",
+    "muniCode": "372048",
+    "muniName": "善通寺市"
+  },
+  {
+    "prefCode": "37",
+    "prefName": "香川県",
+    "muniCode": "372056",
+    "muniName": "観音寺市"
+  },
+  {
+    "prefCode": "37",
+    "prefName": "香川県",
+    "muniCode": "372064",
+    "muniName": "さぬき市"
+  },
+  {
+    "prefCode": "37",
+    "prefName": "香川県",
+    "muniCode": "372072",
+    "muniName": "東かがわ市"
+  },
+  {
+    "prefCode": "37",
+    "prefName": "香川県",
+    "muniCode": "372081",
+    "muniName": "三豊市"
+  },
+  {
+    "prefCode": "37",
+    "prefName": "香川県",
+    "muniCode": "373222",
+    "muniName": "土庄町"
+  },
+  {
+    "prefCode": "37",
+    "prefName": "香川県",
+    "muniCode": "373249",
+    "muniName": "小豆島町"
+  },
+  {
+    "prefCode": "37",
+    "prefName": "香川県",
+    "muniCode": "373419",
+    "muniName": "三木町"
+  },
+  {
+    "prefCode": "37",
+    "prefName": "香川県",
+    "muniCode": "373648",
+    "muniName": "直島町"
+  },
+  {
+    "prefCode": "37",
+    "prefName": "香川県",
+    "muniCode": "373869",
+    "muniName": "宇多津町"
+  },
+  {
+    "prefCode": "37",
+    "prefName": "香川県",
+    "muniCode": "373877",
+    "muniName": "綾川町"
+  },
+  {
+    "prefCode": "37",
+    "prefName": "香川県",
+    "muniCode": "374032",
+    "muniName": "琴平町"
+  },
+  {
+    "prefCode": "37",
+    "prefName": "香川県",
+    "muniCode": "374041",
+    "muniName": "多度津町"
+  },
+  {
+    "prefCode": "37",
+    "prefName": "香川県",
+    "muniCode": "374067",
+    "muniName": "まんのう町"
+  },
+  {
+    "prefCode": "38",
+    "prefName": "愛媛県",
+    "muniCode": "382019",
+    "muniName": "松山市"
+  },
+  {
+    "prefCode": "38",
+    "prefName": "愛媛県",
+    "muniCode": "382027",
+    "muniName": "今治市"
+  },
+  {
+    "prefCode": "38",
+    "prefName": "愛媛県",
+    "muniCode": "382035",
+    "muniName": "宇和島市"
+  },
+  {
+    "prefCode": "38",
+    "prefName": "愛媛県",
+    "muniCode": "382043",
+    "muniName": "八幡浜市"
+  },
+  {
+    "prefCode": "38",
+    "prefName": "愛媛県",
+    "muniCode": "382051",
+    "muniName": "新居浜市"
+  },
+  {
+    "prefCode": "38",
+    "prefName": "愛媛県",
+    "muniCode": "382060",
+    "muniName": "西条市"
+  },
+  {
+    "prefCode": "38",
+    "prefName": "愛媛県",
+    "muniCode": "382078",
+    "muniName": "大洲市"
+  },
+  {
+    "prefCode": "38",
+    "prefName": "愛媛県",
+    "muniCode": "382108",
+    "muniName": "伊予市"
+  },
+  {
+    "prefCode": "38",
+    "prefName": "愛媛県",
+    "muniCode": "382132",
+    "muniName": "四国中央市"
+  },
+  {
+    "prefCode": "38",
+    "prefName": "愛媛県",
+    "muniCode": "382141",
+    "muniName": "西予市"
+  },
+  {
+    "prefCode": "38",
+    "prefName": "愛媛県",
+    "muniCode": "382159",
+    "muniName": "東温市"
+  },
+  {
+    "prefCode": "38",
+    "prefName": "愛媛県",
+    "muniCode": "383562",
+    "muniName": "上島町"
+  },
+  {
+    "prefCode": "38",
+    "prefName": "愛媛県",
+    "muniCode": "383864",
+    "muniName": "久万高原町"
+  },
+  {
+    "prefCode": "38",
+    "prefName": "愛媛県",
+    "muniCode": "384011",
+    "muniName": "松前町"
+  },
+  {
+    "prefCode": "38",
+    "prefName": "愛媛県",
+    "muniCode": "384020",
+    "muniName": "砥部町"
+  },
+  {
+    "prefCode": "38",
+    "prefName": "愛媛県",
+    "muniCode": "384224",
+    "muniName": "内子町"
+  },
+  {
+    "prefCode": "38",
+    "prefName": "愛媛県",
+    "muniCode": "384429",
+    "muniName": "伊方町"
+  },
+  {
+    "prefCode": "38",
+    "prefName": "愛媛県",
+    "muniCode": "384844",
+    "muniName": "松野町"
+  },
+  {
+    "prefCode": "38",
+    "prefName": "愛媛県",
+    "muniCode": "384887",
+    "muniName": "鬼北町"
+  },
+  {
+    "prefCode": "38",
+    "prefName": "愛媛県",
+    "muniCode": "385069",
+    "muniName": "愛南町"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "392014",
+    "muniName": "高知市"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "392022",
+    "muniName": "室戸市"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "392031",
+    "muniName": "安芸市"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "392049",
+    "muniName": "南国市"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "392057",
+    "muniName": "土佐市"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "392065",
+    "muniName": "須崎市"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "392081",
+    "muniName": "宿毛市"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "392090",
+    "muniName": "土佐清水市"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "392103",
+    "muniName": "四万十市"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "392111",
+    "muniName": "香南市"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "392120",
+    "muniName": "香美市"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "393011",
+    "muniName": "東洋町"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "393029",
+    "muniName": "奈半利町"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "393037",
+    "muniName": "田野町"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "393045",
+    "muniName": "安田町"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "393053",
+    "muniName": "北川村"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "393061",
+    "muniName": "馬路村"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "393070",
+    "muniName": "芸西村"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "393410",
+    "muniName": "本山町"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "393444",
+    "muniName": "大豊町"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "393631",
+    "muniName": "土佐町"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "393649",
+    "muniName": "大川村"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "393860",
+    "muniName": "いの町"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "393878",
+    "muniName": "仁淀川町"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "394017",
+    "muniName": "中土佐町"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "394025",
+    "muniName": "佐川町"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "394033",
+    "muniName": "越知町"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "394050",
+    "muniName": "梼原町"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "394106",
+    "muniName": "日高村"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "394114",
+    "muniName": "津野町"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "394122",
+    "muniName": "四万十町"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "394246",
+    "muniName": "大月町"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "394271",
+    "muniName": "三原村"
+  },
+  {
+    "prefCode": "39",
+    "prefName": "高知県",
+    "muniCode": "394289",
+    "muniName": "黒潮町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "401005",
+    "muniName": "北九州市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "401307",
+    "muniName": "福岡市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402028",
+    "muniName": "大牟田市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402036",
+    "muniName": "久留米市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402044",
+    "muniName": "直方市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402052",
+    "muniName": "飯塚市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402061",
+    "muniName": "田川市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402079",
+    "muniName": "柳川市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402109",
+    "muniName": "八女市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402117",
+    "muniName": "筑後市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402125",
+    "muniName": "大川市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402133",
+    "muniName": "行橋市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402141",
+    "muniName": "豊前市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402150",
+    "muniName": "中間市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402168",
+    "muniName": "小郡市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402176",
+    "muniName": "筑紫野市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402184",
+    "muniName": "春日市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402192",
+    "muniName": "大野城市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402206",
+    "muniName": "宗像市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402214",
+    "muniName": "太宰府市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402231",
+    "muniName": "古賀市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402249",
+    "muniName": "福津市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402257",
+    "muniName": "うきは市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402265",
+    "muniName": "宮若市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402273",
+    "muniName": "嘉麻市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402281",
+    "muniName": "朝倉市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402290",
+    "muniName": "みやま市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402303",
+    "muniName": "糸島市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "402311",
+    "muniName": "那珂川市"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "403415",
+    "muniName": "宇美町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "403423",
+    "muniName": "篠栗町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "403431",
+    "muniName": "志免町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "403440",
+    "muniName": "須恵町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "403458",
+    "muniName": "新宮町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "403482",
+    "muniName": "久山町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "403491",
+    "muniName": "粕屋町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "403814",
+    "muniName": "芦屋町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "403822",
+    "muniName": "水巻町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "403831",
+    "muniName": "岡垣町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "403849",
+    "muniName": "遠賀町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "404012",
+    "muniName": "小竹町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "404021",
+    "muniName": "鞍手町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "404217",
+    "muniName": "桂川町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "404471",
+    "muniName": "筑前町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "404489",
+    "muniName": "東峰村"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "405035",
+    "muniName": "大刀洗町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "405221",
+    "muniName": "大木町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "405442",
+    "muniName": "広川町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "406015",
+    "muniName": "香春町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "406023",
+    "muniName": "添田町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "406040",
+    "muniName": "糸田町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "406058",
+    "muniName": "川崎町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "406082",
+    "muniName": "大任町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "406091",
+    "muniName": "赤村"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "406104",
+    "muniName": "福智町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "406210",
+    "muniName": "苅田町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "406252",
+    "muniName": "みやこ町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "406422",
+    "muniName": "吉富町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "406465",
+    "muniName": "上毛町"
+  },
+  {
+    "prefCode": "40",
+    "prefName": "福岡県",
+    "muniCode": "406473",
+    "muniName": "築上町"
+  },
+  {
+    "prefCode": "41",
+    "prefName": "佐賀県",
+    "muniCode": "412015",
+    "muniName": "佐賀市"
+  },
+  {
+    "prefCode": "41",
+    "prefName": "佐賀県",
+    "muniCode": "412023",
+    "muniName": "唐津市"
+  },
+  {
+    "prefCode": "41",
+    "prefName": "佐賀県",
+    "muniCode": "412031",
+    "muniName": "鳥栖市"
+  },
+  {
+    "prefCode": "41",
+    "prefName": "佐賀県",
+    "muniCode": "412040",
+    "muniName": "多久市"
+  },
+  {
+    "prefCode": "41",
+    "prefName": "佐賀県",
+    "muniCode": "412058",
+    "muniName": "伊万里市"
+  },
+  {
+    "prefCode": "41",
+    "prefName": "佐賀県",
+    "muniCode": "412066",
+    "muniName": "武雄市"
+  },
+  {
+    "prefCode": "41",
+    "prefName": "佐賀県",
+    "muniCode": "412074",
+    "muniName": "鹿島市"
+  },
+  {
+    "prefCode": "41",
+    "prefName": "佐賀県",
+    "muniCode": "412082",
+    "muniName": "小城市"
+  },
+  {
+    "prefCode": "41",
+    "prefName": "佐賀県",
+    "muniCode": "412091",
+    "muniName": "嬉野市"
+  },
+  {
+    "prefCode": "41",
+    "prefName": "佐賀県",
+    "muniCode": "412104",
+    "muniName": "神埼市"
+  },
+  {
+    "prefCode": "41",
+    "prefName": "佐賀県",
+    "muniCode": "413275",
+    "muniName": "吉野ヶ里町"
+  },
+  {
+    "prefCode": "41",
+    "prefName": "佐賀県",
+    "muniCode": "413411",
+    "muniName": "基山町"
+  },
+  {
+    "prefCode": "41",
+    "prefName": "佐賀県",
+    "muniCode": "413453",
+    "muniName": "上峰町"
+  },
+  {
+    "prefCode": "41",
+    "prefName": "佐賀県",
+    "muniCode": "413461",
+    "muniName": "みやき町"
+  },
+  {
+    "prefCode": "41",
+    "prefName": "佐賀県",
+    "muniCode": "413879",
+    "muniName": "玄海町"
+  },
+  {
+    "prefCode": "41",
+    "prefName": "佐賀県",
+    "muniCode": "414018",
+    "muniName": "有田町"
+  },
+  {
+    "prefCode": "41",
+    "prefName": "佐賀県",
+    "muniCode": "414239",
+    "muniName": "大町町"
+  },
+  {
+    "prefCode": "41",
+    "prefName": "佐賀県",
+    "muniCode": "414247",
+    "muniName": "江北町"
+  },
+  {
+    "prefCode": "41",
+    "prefName": "佐賀県",
+    "muniCode": "414255",
+    "muniName": "白石町"
+  },
+  {
+    "prefCode": "41",
+    "prefName": "佐賀県",
+    "muniCode": "414417",
+    "muniName": "太良町"
+  },
+  {
+    "prefCode": "42",
+    "prefName": "長崎県",
+    "muniCode": "422011",
+    "muniName": "長崎市"
+  },
+  {
+    "prefCode": "42",
+    "prefName": "長崎県",
+    "muniCode": "422029",
+    "muniName": "佐世保市"
+  },
+  {
+    "prefCode": "42",
+    "prefName": "長崎県",
+    "muniCode": "422037",
+    "muniName": "島原市"
+  },
+  {
+    "prefCode": "42",
+    "prefName": "長崎県",
+    "muniCode": "422045",
+    "muniName": "諫早市"
+  },
+  {
+    "prefCode": "42",
+    "prefName": "長崎県",
+    "muniCode": "422053",
+    "muniName": "大村市"
+  },
+  {
+    "prefCode": "42",
+    "prefName": "長崎県",
+    "muniCode": "422070",
+    "muniName": "平戸市"
+  },
+  {
+    "prefCode": "42",
+    "prefName": "長崎県",
+    "muniCode": "422088",
+    "muniName": "松浦市"
+  },
+  {
+    "prefCode": "42",
+    "prefName": "長崎県",
+    "muniCode": "422096",
+    "muniName": "対馬市"
+  },
+  {
+    "prefCode": "42",
+    "prefName": "長崎県",
+    "muniCode": "422100",
+    "muniName": "壱岐市"
+  },
+  {
+    "prefCode": "42",
+    "prefName": "長崎県",
+    "muniCode": "422118",
+    "muniName": "五島市"
+  },
+  {
+    "prefCode": "42",
+    "prefName": "長崎県",
+    "muniCode": "422126",
+    "muniName": "西海市"
+  },
+  {
+    "prefCode": "42",
+    "prefName": "長崎県",
+    "muniCode": "422134",
+    "muniName": "雲仙市"
+  },
+  {
+    "prefCode": "42",
+    "prefName": "長崎県",
+    "muniCode": "422142",
+    "muniName": "南島原市"
+  },
+  {
+    "prefCode": "42",
+    "prefName": "長崎県",
+    "muniCode": "423076",
+    "muniName": "長与町"
+  },
+  {
+    "prefCode": "42",
+    "prefName": "長崎県",
+    "muniCode": "423084",
+    "muniName": "時津町"
+  },
+  {
+    "prefCode": "42",
+    "prefName": "長崎県",
+    "muniCode": "423211",
+    "muniName": "東彼杵町"
+  },
+  {
+    "prefCode": "42",
+    "prefName": "長崎県",
+    "muniCode": "423220",
+    "muniName": "川棚町"
+  },
+  {
+    "prefCode": "42",
+    "prefName": "長崎県",
+    "muniCode": "423238",
+    "muniName": "波佐見町"
+  },
+  {
+    "prefCode": "42",
+    "prefName": "長崎県",
+    "muniCode": "423831",
+    "muniName": "小値賀町"
+  },
+  {
+    "prefCode": "42",
+    "prefName": "長崎県",
+    "muniCode": "423912",
+    "muniName": "佐々町"
+  },
+  {
+    "prefCode": "42",
+    "prefName": "長崎県",
+    "muniCode": "424111",
+    "muniName": "新上五島町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "431001",
+    "muniName": "熊本市"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "432024",
+    "muniName": "八代市"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "432032",
+    "muniName": "人吉市"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "432041",
+    "muniName": "荒尾市"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "432059",
+    "muniName": "水俣市"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "432067",
+    "muniName": "玉名市"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "432083",
+    "muniName": "山鹿市"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "432105",
+    "muniName": "菊池市"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "432113",
+    "muniName": "宇土市"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "432121",
+    "muniName": "上天草市"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "432130",
+    "muniName": "宇城市"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "432148",
+    "muniName": "阿蘇市"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "432156",
+    "muniName": "天草市"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "432164",
+    "muniName": "合志市"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "433489",
+    "muniName": "美里町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "433641",
+    "muniName": "玉東町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "433675",
+    "muniName": "南関町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "433683",
+    "muniName": "長洲町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "433691",
+    "muniName": "和水町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "434035",
+    "muniName": "大津町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "434043",
+    "muniName": "菊陽町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "434230",
+    "muniName": "南小国町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "434248",
+    "muniName": "小国町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "434256",
+    "muniName": "産山村"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "434281",
+    "muniName": "高森町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "434329",
+    "muniName": "西原村"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "434337",
+    "muniName": "南阿蘇村"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "434418",
+    "muniName": "御船町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "434426",
+    "muniName": "嘉島町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "434434",
+    "muniName": "益城町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "434442",
+    "muniName": "甲佐町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "434477",
+    "muniName": "山都町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "434680",
+    "muniName": "氷川町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "434825",
+    "muniName": "芦北町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "434841",
+    "muniName": "津奈木町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "435015",
+    "muniName": "錦町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "435058",
+    "muniName": "多良木町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "435066",
+    "muniName": "湯前町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "435074",
+    "muniName": "水上村"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "435104",
+    "muniName": "相良村"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "435112",
+    "muniName": "五木村"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "435121",
+    "muniName": "山江村"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "435139",
+    "muniName": "球磨村"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "435147",
+    "muniName": "あさぎり町"
+  },
+  {
+    "prefCode": "43",
+    "prefName": "熊本県",
+    "muniCode": "435317",
+    "muniName": "苓北町"
+  },
+  {
+    "prefCode": "44",
+    "prefName": "大分県",
+    "muniCode": "442011",
+    "muniName": "大分市"
+  },
+  {
+    "prefCode": "44",
+    "prefName": "大分県",
+    "muniCode": "442020",
+    "muniName": "別府市"
+  },
+  {
+    "prefCode": "44",
+    "prefName": "大分県",
+    "muniCode": "442038",
+    "muniName": "中津市"
+  },
+  {
+    "prefCode": "44",
+    "prefName": "大分県",
+    "muniCode": "442046",
+    "muniName": "日田市"
+  },
+  {
+    "prefCode": "44",
+    "prefName": "大分県",
+    "muniCode": "442054",
+    "muniName": "佐伯市"
+  },
+  {
+    "prefCode": "44",
+    "prefName": "大分県",
+    "muniCode": "442062",
+    "muniName": "臼杵市"
+  },
+  {
+    "prefCode": "44",
+    "prefName": "大分県",
+    "muniCode": "442071",
+    "muniName": "津久見市"
+  },
+  {
+    "prefCode": "44",
+    "prefName": "大分県",
+    "muniCode": "442089",
+    "muniName": "竹田市"
+  },
+  {
+    "prefCode": "44",
+    "prefName": "大分県",
+    "muniCode": "442097",
+    "muniName": "豊後高田市"
+  },
+  {
+    "prefCode": "44",
+    "prefName": "大分県",
+    "muniCode": "442101",
+    "muniName": "杵築市"
+  },
+  {
+    "prefCode": "44",
+    "prefName": "大分県",
+    "muniCode": "442119",
+    "muniName": "宇佐市"
+  },
+  {
+    "prefCode": "44",
+    "prefName": "大分県",
+    "muniCode": "442127",
+    "muniName": "豊後大野市"
+  },
+  {
+    "prefCode": "44",
+    "prefName": "大分県",
+    "muniCode": "442135",
+    "muniName": "由布市"
+  },
+  {
+    "prefCode": "44",
+    "prefName": "大分県",
+    "muniCode": "442143",
+    "muniName": "国東市"
+  },
+  {
+    "prefCode": "44",
+    "prefName": "大分県",
+    "muniCode": "443221",
+    "muniName": "姫島村"
+  },
+  {
+    "prefCode": "44",
+    "prefName": "大分県",
+    "muniCode": "443417",
+    "muniName": "日出町"
+  },
+  {
+    "prefCode": "44",
+    "prefName": "大分県",
+    "muniCode": "444618",
+    "muniName": "九重町"
+  },
+  {
+    "prefCode": "44",
+    "prefName": "大分県",
+    "muniCode": "444626",
+    "muniName": "玖珠町"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "452017",
+    "muniName": "宮崎市"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "452025",
+    "muniName": "都城市"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "452033",
+    "muniName": "延岡市"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "452041",
+    "muniName": "日南市"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "452050",
+    "muniName": "小林市"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "452068",
+    "muniName": "日向市"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "452076",
+    "muniName": "串間市"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "452084",
+    "muniName": "西都市"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "452092",
+    "muniName": "えびの市"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "453412",
+    "muniName": "三股町"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "453617",
+    "muniName": "高原町"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "453820",
+    "muniName": "国富町"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "453838",
+    "muniName": "綾町"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "454010",
+    "muniName": "高鍋町"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "454028",
+    "muniName": "新富町"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "454036",
+    "muniName": "西米良村"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "454044",
+    "muniName": "木城町"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "454052",
+    "muniName": "川南町"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "454061",
+    "muniName": "都農町"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "454214",
+    "muniName": "門川町"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "454290",
+    "muniName": "諸塚村"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "454303",
+    "muniName": "椎葉村"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "454311",
+    "muniName": "美郷町"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "454419",
+    "muniName": "高千穂町"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "454427",
+    "muniName": "日之影町"
+  },
+  {
+    "prefCode": "45",
+    "prefName": "宮崎県",
+    "muniCode": "454435",
+    "muniName": "五ヶ瀬町"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "462012",
+    "muniName": "鹿児島市"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "462039",
+    "muniName": "鹿屋市"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "462047",
+    "muniName": "枕崎市"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "462063",
+    "muniName": "阿久根市"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "462080",
+    "muniName": "出水市"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "462101",
+    "muniName": "指宿市"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "462136",
+    "muniName": "西之表市"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "462144",
+    "muniName": "垂水市"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "462152",
+    "muniName": "薩摩川内市"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "462161",
+    "muniName": "日置市"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "462179",
+    "muniName": "曽於市"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "462187",
+    "muniName": "霧島市"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "462195",
+    "muniName": "いちき串木野市"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "462209",
+    "muniName": "南さつま市"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "462217",
+    "muniName": "志布志市"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "462225",
+    "muniName": "奄美市"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "462233",
+    "muniName": "南九州市"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "462241",
+    "muniName": "伊佐市"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "462250",
+    "muniName": "姶良市"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "463035",
+    "muniName": "三島村"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "463043",
+    "muniName": "十島村"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "463922",
+    "muniName": "さつま町"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "464040",
+    "muniName": "長島町"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "464520",
+    "muniName": "湧水町"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "464686",
+    "muniName": "大崎町"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "464821",
+    "muniName": "東串良町"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "464902",
+    "muniName": "錦江町"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "464911",
+    "muniName": "南大隅町"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "464929",
+    "muniName": "肝付町"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "465011",
+    "muniName": "中種子町"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "465020",
+    "muniName": "南種子町"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "465054",
+    "muniName": "屋久島町"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "465232",
+    "muniName": "大和村"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "465241",
+    "muniName": "宇検村"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "465259",
+    "muniName": "瀬戸内町"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "465275",
+    "muniName": "龍郷町"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "465291",
+    "muniName": "喜界町"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "465305",
+    "muniName": "徳之島町"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "465313",
+    "muniName": "天城町"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "465321",
+    "muniName": "伊仙町"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "465330",
+    "muniName": "和泊町"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "465348",
+    "muniName": "知名町"
+  },
+  {
+    "prefCode": "46",
+    "prefName": "鹿児島県",
+    "muniCode": "465356",
+    "muniName": "与論町"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "472018",
+    "muniName": "那覇市"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "472051",
+    "muniName": "宜野湾市"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "472077",
+    "muniName": "石垣市"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "472085",
+    "muniName": "浦添市"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "472093",
+    "muniName": "名護市"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "472107",
+    "muniName": "糸満市"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "472115",
+    "muniName": "沖縄市"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "472123",
+    "muniName": "豊見城市"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "472131",
+    "muniName": "うるま市"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "472140",
+    "muniName": "宮古島市"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "472158",
+    "muniName": "南城市"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473014",
+    "muniName": "国頭村"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473022",
+    "muniName": "大宜味村"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473031",
+    "muniName": "東村"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473065",
+    "muniName": "今帰仁村"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473081",
+    "muniName": "本部町"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473111",
+    "muniName": "恩納村"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473138",
+    "muniName": "宜野座村"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473146",
+    "muniName": "金武町"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473154",
+    "muniName": "伊江村"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473243",
+    "muniName": "読谷村"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473251",
+    "muniName": "嘉手納町"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473260",
+    "muniName": "北谷町"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473278",
+    "muniName": "北中城村"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473286",
+    "muniName": "中城村"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473294",
+    "muniName": "西原町"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473481",
+    "muniName": "与那原町"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473502",
+    "muniName": "南風原町"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473537",
+    "muniName": "渡嘉敷村"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473545",
+    "muniName": "座間味村"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473553",
+    "muniName": "粟国村"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473561",
+    "muniName": "渡名喜村"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473570",
+    "muniName": "南大東村"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473588",
+    "muniName": "北大東村"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473596",
+    "muniName": "伊平屋村"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473600",
+    "muniName": "伊是名村"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473618",
+    "muniName": "久米島町"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473626",
+    "muniName": "八重瀬町"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473758",
+    "muniName": "多良間村"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473812",
+    "muniName": "竹富町"
+  },
+  {
+    "prefCode": "47",
+    "prefName": "沖縄県",
+    "muniCode": "473821",
+    "muniName": "与那国町"
+  }
+]

@@ -27,7 +27,7 @@ const ANIMATION_MS = 220;
 export function useDrawer() {
   const ctx = useContext(DrawerContext);
   if (!ctx) {
-    return { openDrawer: () => {}, closeDrawer: () => {}, isOpen: false };
+    return { openDrawer: () => { }, closeDrawer: () => { }, isOpen: false };
   }
   return ctx;
 }
@@ -176,41 +176,41 @@ function DrawerOverlay({
 const drawerItems = [
   { label: '設定', route: '/settings' },
   { label: 'MySafetyPinCard', route: '/mysafety' },
-  { label: '注意・免責事項', route: '/disclaimer' },
-  { label: 'お知らせ', route: '/notices' },
-  { label: '出典', route: '/sources' },
+  { label: '情報ソース', route: '/sources' },
+  { label: '免責事項', route: '/disclaimer' },
+  { label: '注意事項', route: '/notices' },
 ];
 
 const createStyles = (colors: { background: string; border: string; text: string }) =>
   StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-start',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
-  },
-  drawer: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: colors.background,
-    paddingHorizontal: spacing.lg,
-  },
-  drawerTitle: {
-    ...typography.subtitle,
-    color: colors.text,
-    marginBottom: spacing.md,
-  },
-  drawerItem: {
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  drawerItemText: {
-    ...typography.body,
-    color: colors.text,
-  },
-});
+    overlay: {
+      flex: 1,
+      justifyContent: 'flex-start',
+    },
+    backdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    },
+    drawer: {
+      position: 'absolute',
+      right: 0,
+      top: 0,
+      bottom: 0,
+      backgroundColor: colors.background,
+      paddingHorizontal: spacing.lg,
+    },
+    drawerTitle: {
+      ...typography.subtitle,
+      color: colors.text,
+      marginBottom: spacing.md,
+    },
+    drawerItem: {
+      paddingVertical: spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    drawerItemText: {
+      ...typography.body,
+      color: colors.text,
+    },
+  });

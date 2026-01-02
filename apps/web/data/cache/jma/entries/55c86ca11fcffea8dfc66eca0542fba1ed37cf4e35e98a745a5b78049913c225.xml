@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_add="http://xml.kishou.go.jp/jmaxml1/addition1/">
+<Control>
+<Title>府県気象情報</Title>
+<DateTime>2026-01-01T07:25:40Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>広島地方気象台</EditorialOffice>
+<PublishingOffice>広島地方気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>大雪に関する広島県気象情報</Title>
+<ReportDateTime>2026-01-01T16:25:00+09:00</ReportDateTime>
+<TargetDateTime>2026-01-01T16:25:00+09:00</TargetDateTime>
+<EventID>JPHR250167</EventID>
+<InfoType>発表</InfoType>
+<Serial>3</Serial>
+<InfoKind>同一現象用平文情報</InfoKind>
+<InfoKindVersion>1.0_0</InfoKindVersion>
+<Headline>
+<Text>広島県では、２日昼過ぎから３日にかけて大雪となるでしょう。南部の平地でも大雪となる所がある見込みです。積雪や路面の凍結による交通障害に十分注意してください。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/">
+<Notice/>
+<Comment>
+<Text type="本文">［気象概況］
+　中国地方は冬型の気圧配置となっています。２日は、中国地方の上空約５５００メートルに氷点下３６度以下のこの冬一番の強い寒気が流れ込み、冬型の気圧配置が強まるでしょう。
+
+［雪の予想］
+広島県では、２日昼過ぎから夕方に降雪が強まり、積雪が急速に増える見込みです。広島市の中心部でも積雪となるおそれがあり、北部だけでなく、普段雪の少ない南部の平地でも大雪となる所があるでしょう。雪雲が現在の予想以上に発達し、同じ所で降り続いた場合には警報級の大雪となる可能性があります。
+１日１８時から２日１８時までに予想される２４時間降雪量は多い所で、
+　　南部　山地　３０センチ
+　　南部　平地　１０センチ
+　　北部　山地　４０センチ
+　　北部　平地　１５センチ
+その後、２日１８時から３日１８時までに予想される２４時間降雪量は多い所で、
+　　南部　山地　２０センチ
+　　南部　平地　　５センチ
+　　北部　山地　３０センチ
+　　北部　平地　１０センチ
+
+［防災事項］
+積雪や路面の凍結による交通障害に十分注意してください。
+着雪による倒木や電線切断に注意してください。
+カーポートなどの簡易な建築物や老朽化している建築物などは倒壊のおそれがあるため、近寄らないように注意してください。
+ビニールハウスは倒壊のおそれがあるため注意してください。
+農作物や農業施設の管理に注意してください。
+
+［補足事項］
+年始の移動時期と重なります。今後発表する防災気象情報に留意してください。
+次の「大雪に関する広島県気象情報」は、２日６時頃に発表する予定です。</Text>
+</Comment>
+</Body>
+</Report>

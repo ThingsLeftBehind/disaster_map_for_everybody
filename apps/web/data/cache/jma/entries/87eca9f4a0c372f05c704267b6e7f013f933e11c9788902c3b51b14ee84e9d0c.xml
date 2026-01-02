@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_add="http://xml.kishou.go.jp/jmaxml1/addition1/">
+<Control>
+<Title>全般気象情報</Title>
+<DateTime>2026-01-01T07:47:48Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>気象庁本庁</EditorialOffice>
+<PublishingOffice>気象庁</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>大雪と雷及び突風に関する全般気象情報</Title>
+<ReportDateTime>2026-01-01T16:47:00+09:00</ReportDateTime>
+<TargetDateTime>2026-01-01T16:47:00+09:00</TargetDateTime>
+<EventID>JPTK250291</EventID>
+<InfoType>発表</InfoType>
+<Serial>3</Serial>
+<InfoKind>同一現象用平文情報</InfoKind>
+<InfoKindVersion>1.0_0</InfoKindVersion>
+<Headline>
+<Text>東北地方では１日は、大雪による交通障害に警戒してください。北日本では２日にかけて、東日本と西日本では３日にかけて、大雪に注意・警戒してください。また、北日本から西日本では、落雷や竜巻などの激しい突風にも注意してください。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/">
+<Notice/>
+<Comment>
+<Text type="本文">［気象概況］
+日本付近は強い冬型の気圧配置となっています。３日はじめにかけて強い冬型の気圧配置が続き、北日本から西日本の上空約５５００メートルには氷点下３６度以下の強い寒気が流れ込むでしょう。また、上空の強い寒気や気圧の谷の影響で大気の状態が非常に不安定となる所がある見込みです。
+
+［雪の予想］
+北日本から西日本では、日本海側を中心に大雪となる所があるでしょう。東日本と西日本の普段雪の少ない地域でも大雪となる所がある見込みです。
+１日１８時から２日１８時までに予想される２４時間降雪量は多い所で、
+　　北海道地方　　５０センチ
+　　東北地方　　　５０センチ
+　　関東甲信地方　３０センチ
+　　北陸地方　　　７０センチ
+　　近畿地方　　　６０センチ
+　　中国地方　　　５０センチ
+　　九州北部地方　４０センチ
+その後、２日１８時から３日１８時までに予想される２４時間降雪量は多い所で、
+　　関東甲信地方　４０センチ
+　　北陸地方　　　７０センチ
+　　近畿地方　　　５０センチ
+　　中国地方　　　４０センチ
+　　九州北部地方　２０センチ
+
+［防災事項］
+東北地方では１日は、大雪による交通障害に警戒し、北日本では２日にかけて、東日本と西日本では３日にかけて、大雪に注意・警戒してください。また、着雪やなだれにも注意してください。北日本から西日本では、落雷や竜巻などの激しい突風にも注意してください。発達した積乱雲の近づく兆しがある場合には、建物内に移動するなど、安全確保に努めてください。降ひょうのおそれもありますので、農作物や農業施設の管理にも注意してください。
+
+［補足事項］
+今後発表する防災気象情報に留意してください。
+この情報は「大雪に関する全般気象情報」を引き継ぐものです。
+次の「大雪と雷及び突風に関する全般気象情報」は、２日５時頃に発表する予定です。</Text>
+</Comment>
+</Body>
+</Report>

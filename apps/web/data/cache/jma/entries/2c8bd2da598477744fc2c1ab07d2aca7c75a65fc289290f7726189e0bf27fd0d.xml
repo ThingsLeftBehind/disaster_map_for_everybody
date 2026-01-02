@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_add="http://xml.kishou.go.jp/jmaxml1/addition1/">
+<Control>
+<Title>府県気象情報</Title>
+<DateTime>2026-01-01T07:25:37Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>長崎地方気象台</EditorialOffice>
+<PublishingOffice>長崎地方気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>大雪に関する長崎県気象情報</Title>
+<ReportDateTime>2026-01-01T16:25:00+09:00</ReportDateTime>
+<TargetDateTime>2026-01-01T16:25:00+09:00</TargetDateTime>
+<EventID>JPFE250140</EventID>
+<InfoType>発表</InfoType>
+<Serial>4</Serial>
+<InfoKind>同一現象用平文情報</InfoKind>
+<InfoKindVersion>1.0_0</InfoKindVersion>
+<Headline>
+<Text>長崎県では、２日明け方から３日午前中にかけて平地、山地ともに大雪に注意してください。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/">
+<Notice/>
+<Comment>
+<Text type="本文">［気象概況］
+　九州北部地方の上空約５５００メートルには、２日から３日にかけて氷点下３０度以下の強い寒気が流れ込み、冬型の気圧配置が強まる見込みです。
+　このため長崎県では、２日明け方から３日午前中にかけて山地、平地ともに大雪となるおそれがあります。
+
+［雪の予想］
+１日１８時から２日１８時までに予想される２４時間降雪量は多い所で、
+　　南部山地　１０センチ
+　　北部山地　１０センチ
+　　南部平地　　５センチ
+　　北部平地　　５センチ
+　　五島　　　　５センチ
+その後、２日１８時から３日１８時までに予想される２４時間降雪量は多い所で、
+　　南部山地　　５センチ
+　　北部山地　　５センチ
+　　南部平地　　３センチ
+　　北部平地　　３センチ
+　　五島　　　　３センチ
+（山地は標高２００メートルを超える地域）
+
+［防災事項］
+　積雪や路面凍結による交通障害、農作物や農業施設の管理、雪による視程障害、電線や樹木等への着雪に注意してください。
+
+［補足事項］
+　今後発表する注意報、気象情報などに留意してください。
+
+　次の情報は、２日６時頃に発表する予定です。</Text>
+</Comment>
+</Body>
+</Report>

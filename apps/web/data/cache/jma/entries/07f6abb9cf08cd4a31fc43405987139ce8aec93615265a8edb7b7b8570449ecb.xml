@@ -1,0 +1,1180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_add="http://xml.kishou.go.jp/jmaxml1/addition1/">
+<Control>
+<Title>警報級の可能性（明日まで）</Title>
+<DateTime>2026-01-01T10:40:00Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>山形地方気象台</EditorialOffice>
+<PublishingOffice>山形地方気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>山形県警報級の可能性（明日まで）</Title>
+<ReportDateTime>2026-01-01T20:00:00+09:00</ReportDateTime>
+<TargetDateTime>2026-01-01T20:00:00+09:00</TargetDateTime>
+<TargetDuration>P1DT4H</TargetDuration>
+<EventID/>
+<InfoType>発表</InfoType>
+<Serial/>
+<InfoKind>警報級の可能性（明日まで）</InfoKind>
+<InfoKindVersion>1.2_0</InfoKindVersion>
+<Headline>
+<Text/>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/" xmlns:jmx_eb="http://xml.kishou.go.jp/jmaxml1/elementBasis1/">
+<MeteorologicalInfos type="区域予報">
+<MeteorologicalInfo>
+<DateTime>2026-01-02T00:00:00+09:00</DateTime>
+<Duration>P1D</Duration>
+<Name>２日</Name>
+<Item>
+<Kind>
+<Property>
+<Type>２４時間最大雨量</Type>
+<DetailForecast>
+<PrecipitationForecastPart>
+<Sentence>５０ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="２４時間最大雨量" unit="mm" condition="以下" description="５０ミリ以下">50</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>２４時間最大降雪量</Type>
+<DetailForecast>
+<SnowfallDepthForecastPart>
+<Sentence>３０から５０センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="２４時間最大降雪量（範囲の下端）" unit="cm" description="３０センチ">30</jmx_eb:SnowfallDepth>
+<jmx_eb:SnowfallDepth type="２４時間最大降雪量（範囲の上端）" unit="cm" description="５０センチ">50</jmx_eb:SnowfallDepth>
+</Base>
+</SnowfallDepthForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Area>
+<Name>村山</Name>
+<Code>060010</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Property>
+<Type>２４時間最大雨量</Type>
+<DetailForecast>
+<PrecipitationForecastPart>
+<Sentence>５０ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="２４時間最大雨量" unit="mm" condition="以下" description="５０ミリ以下">50</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>２４時間最大降雪量</Type>
+<DetailForecast>
+<SnowfallDepthForecastPart>
+<Sentence>３０から５０センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="２４時間最大降雪量（範囲の下端）" unit="cm" description="３０センチ">30</jmx_eb:SnowfallDepth>
+<jmx_eb:SnowfallDepth type="２４時間最大降雪量（範囲の上端）" unit="cm" description="５０センチ">50</jmx_eb:SnowfallDepth>
+</Base>
+</SnowfallDepthForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Area>
+<Name>置賜</Name>
+<Code>060020</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Property>
+<Type>２４時間最大雨量</Type>
+<DetailForecast>
+<PrecipitationForecastPart>
+<Sentence>５０ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="２４時間最大雨量" unit="mm" condition="以下" description="５０ミリ以下">50</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>２４時間最大降雪量</Type>
+<DetailForecast>
+<SnowfallDepthForecastPart>
+<Sentence>３０から５０センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="２４時間最大降雪量（範囲の下端）" unit="cm" description="３０センチ">30</jmx_eb:SnowfallDepth>
+<jmx_eb:SnowfallDepth type="２４時間最大降雪量（範囲の上端）" unit="cm" description="５０センチ">50</jmx_eb:SnowfallDepth>
+</Base>
+</SnowfallDepthForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Area>
+<Name>庄内</Name>
+<Code>060030</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Property>
+<Type>２４時間最大雨量</Type>
+<DetailForecast>
+<PrecipitationForecastPart>
+<Sentence>５０ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="２４時間最大雨量" unit="mm" condition="以下" description="５０ミリ以下">50</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>２４時間最大降雪量</Type>
+<DetailForecast>
+<SnowfallDepthForecastPart>
+<Sentence>３０から５０センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="２４時間最大降雪量（範囲の下端）" unit="cm" description="３０センチ">30</jmx_eb:SnowfallDepth>
+<jmx_eb:SnowfallDepth type="２４時間最大降雪量（範囲の上端）" unit="cm" description="５０センチ">50</jmx_eb:SnowfallDepth>
+</Base>
+</SnowfallDepthForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Area>
+<Name>最上</Name>
+<Code>060040</Code>
+</Area>
+</Item>
+</MeteorologicalInfo>
+<TimeSeriesInfo>
+<TimeDefines>
+<TimeDefine timeId="1">
+<DateTime>2026-01-01T18:00:00+09:00</DateTime>
+<Duration>PT6H</Duration>
+<Name>１日１８時から２４時</Name>
+</TimeDefine>
+<TimeDefine timeId="2">
+<DateTime>2026-01-02T00:00:00+09:00</DateTime>
+<Duration>PT6H</Duration>
+<Name>２日００時から０６時</Name>
+</TimeDefine>
+<TimeDefine timeId="3">
+<DateTime>2026-01-02T06:00:00+09:00</DateTime>
+<Duration>PT6H</Duration>
+<Name>２日０６時から１２時</Name>
+</TimeDefine>
+<TimeDefine timeId="4">
+<DateTime>2026-01-02T12:00:00+09:00</DateTime>
+<Duration>PT6H</Duration>
+<Name>２日１２時から１８時</Name>
+</TimeDefine>
+<TimeDefine timeId="5">
+<DateTime>2026-01-02T18:00:00+09:00</DateTime>
+<Duration>PT6H</Duration>
+<Name>２日１８時から２４時</Name>
+</TimeDefine>
+</TimeDefines>
+<Item>
+<Kind>
+<Property>
+<Type>１時間最大雨量</Type>
+<DetailForecast>
+<PrecipitationForecastPart refID="1">
+<Sentence>１５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="１時間最大雨量" unit="mm" condition="以下" description="１５ミリ以下">15</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="2">
+<Sentence>１５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="１時間最大雨量" unit="mm" condition="以下" description="１５ミリ以下">15</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="3">
+<Sentence>１５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="１時間最大雨量" unit="mm" condition="以下" description="１５ミリ以下">15</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="4">
+<Sentence>１５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="１時間最大雨量" unit="mm" condition="以下" description="１５ミリ以下">15</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="5">
+<Sentence>１５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="１時間最大雨量" unit="mm" condition="以下" description="１５ミリ以下">15</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>３時間最大雨量</Type>
+<DetailForecast>
+<PrecipitationForecastPart refID="1">
+<Sentence>２５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="３時間最大雨量" unit="mm" condition="以下" description="２５ミリ以下">25</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="2">
+<Sentence>２５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="３時間最大雨量" unit="mm" condition="以下" description="２５ミリ以下">25</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="3">
+<Sentence>２５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="３時間最大雨量" unit="mm" condition="以下" description="２５ミリ以下">25</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="4">
+<Sentence>２５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="３時間最大雨量" unit="mm" condition="以下" description="２５ミリ以下">25</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="5">
+<Sentence>２５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="３時間最大雨量" unit="mm" condition="以下" description="２５ミリ以下">25</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>６時間最大降雪量</Type>
+<DetailForecast>
+<SnowfallDepthForecastPart refID="1">
+<Sentence>１５センチ　山沿いでは２０センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１５センチ">15</jmx_eb:SnowfallDepth>
+</Base>
+<SubArea>
+<AreaName>山沿い</AreaName>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="２０センチ">20</jmx_eb:SnowfallDepth>
+</Base>
+</SubArea>
+</SnowfallDepthForecastPart>
+<SnowfallDepthForecastPart refID="2">
+<Sentence>１０センチ　山沿いでは１５センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１０センチ">10</jmx_eb:SnowfallDepth>
+</Base>
+<SubArea>
+<AreaName>山沿い</AreaName>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１５センチ">15</jmx_eb:SnowfallDepth>
+</Base>
+</SubArea>
+</SnowfallDepthForecastPart>
+<SnowfallDepthForecastPart refID="3">
+<Sentence>５センチ　山沿いでは１０センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="５センチ">5</jmx_eb:SnowfallDepth>
+</Base>
+<SubArea>
+<AreaName>山沿い</AreaName>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１０センチ">10</jmx_eb:SnowfallDepth>
+</Base>
+</SubArea>
+</SnowfallDepthForecastPart>
+<SnowfallDepthForecastPart refID="4">
+<Sentence>５センチ　山沿いでは１０センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="５センチ">5</jmx_eb:SnowfallDepth>
+</Base>
+<SubArea>
+<AreaName>山沿い</AreaName>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１０センチ">10</jmx_eb:SnowfallDepth>
+</Base>
+</SubArea>
+</SnowfallDepthForecastPart>
+<SnowfallDepthForecastPart refID="5">
+<Sentence>１０センチ　山沿いでは１５センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１０センチ">10</jmx_eb:SnowfallDepth>
+</Base>
+<SubArea>
+<AreaName>山沿い</AreaName>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１５センチ">15</jmx_eb:SnowfallDepth>
+</Base>
+</SubArea>
+</SnowfallDepthForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>最大風速</Type>
+<DetailForecast>
+<WindForecastPart refID="1">
+<Sentence>９メートル以下</Sentence>
+<Base>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" condition="以下" description="９メートル以下">9</jmx_eb:WindSpeed>
+</Base>
+</WindForecastPart>
+<WindForecastPart refID="2">
+<Sentence>９メートル以下</Sentence>
+<Base>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" condition="以下" description="９メートル以下">9</jmx_eb:WindSpeed>
+</Base>
+</WindForecastPart>
+<WindForecastPart refID="3">
+<Sentence>９メートル以下</Sentence>
+<Base>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" condition="以下" description="９メートル以下">9</jmx_eb:WindSpeed>
+</Base>
+</WindForecastPart>
+<WindForecastPart refID="4">
+<Sentence>９メートル以下</Sentence>
+<Base>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" condition="以下" description="９メートル以下">9</jmx_eb:WindSpeed>
+</Base>
+</WindForecastPart>
+<WindForecastPart refID="5">
+<Sentence>９メートル以下</Sentence>
+<Base>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" condition="以下" description="９メートル以下">9</jmx_eb:WindSpeed>
+</Base>
+</WindForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Area>
+<Name>村山</Name>
+<Code>060010</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Property>
+<Type>１時間最大雨量</Type>
+<DetailForecast>
+<PrecipitationForecastPart refID="1">
+<Sentence>１５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="１時間最大雨量" unit="mm" condition="以下" description="１５ミリ以下">15</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="2">
+<Sentence>１５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="１時間最大雨量" unit="mm" condition="以下" description="１５ミリ以下">15</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="3">
+<Sentence>１５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="１時間最大雨量" unit="mm" condition="以下" description="１５ミリ以下">15</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="4">
+<Sentence>１５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="１時間最大雨量" unit="mm" condition="以下" description="１５ミリ以下">15</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="5">
+<Sentence>１５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="１時間最大雨量" unit="mm" condition="以下" description="１５ミリ以下">15</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>３時間最大雨量</Type>
+<DetailForecast>
+<PrecipitationForecastPart refID="1">
+<Sentence>２５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="３時間最大雨量" unit="mm" condition="以下" description="２５ミリ以下">25</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="2">
+<Sentence>２５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="３時間最大雨量" unit="mm" condition="以下" description="２５ミリ以下">25</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="3">
+<Sentence>２５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="３時間最大雨量" unit="mm" condition="以下" description="２５ミリ以下">25</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="4">
+<Sentence>２５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="３時間最大雨量" unit="mm" condition="以下" description="２５ミリ以下">25</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="5">
+<Sentence>２５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="３時間最大雨量" unit="mm" condition="以下" description="２５ミリ以下">25</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>６時間最大降雪量</Type>
+<DetailForecast>
+<SnowfallDepthForecastPart refID="1">
+<Sentence>１５センチ　山沿いでは２０センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１５センチ">15</jmx_eb:SnowfallDepth>
+</Base>
+<SubArea>
+<AreaName>山沿い</AreaName>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="２０センチ">20</jmx_eb:SnowfallDepth>
+</Base>
+</SubArea>
+</SnowfallDepthForecastPart>
+<SnowfallDepthForecastPart refID="2">
+<Sentence>１０センチ　山沿いでは１５センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１０センチ">10</jmx_eb:SnowfallDepth>
+</Base>
+<SubArea>
+<AreaName>山沿い</AreaName>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１５センチ">15</jmx_eb:SnowfallDepth>
+</Base>
+</SubArea>
+</SnowfallDepthForecastPart>
+<SnowfallDepthForecastPart refID="3">
+<Sentence>５センチ　山沿いでは１０センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="５センチ">5</jmx_eb:SnowfallDepth>
+</Base>
+<SubArea>
+<AreaName>山沿い</AreaName>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１０センチ">10</jmx_eb:SnowfallDepth>
+</Base>
+</SubArea>
+</SnowfallDepthForecastPart>
+<SnowfallDepthForecastPart refID="4">
+<Sentence>５センチ　山沿いでは１０センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="５センチ">5</jmx_eb:SnowfallDepth>
+</Base>
+<SubArea>
+<AreaName>山沿い</AreaName>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１０センチ">10</jmx_eb:SnowfallDepth>
+</Base>
+</SubArea>
+</SnowfallDepthForecastPart>
+<SnowfallDepthForecastPart refID="5">
+<Sentence>１０センチ　山沿いでは１５センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１０センチ">10</jmx_eb:SnowfallDepth>
+</Base>
+<SubArea>
+<AreaName>山沿い</AreaName>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１５センチ">15</jmx_eb:SnowfallDepth>
+</Base>
+</SubArea>
+</SnowfallDepthForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>最大風速</Type>
+<DetailForecast>
+<WindForecastPart refID="1">
+<Sentence>９メートル以下</Sentence>
+<Base>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" condition="以下" description="９メートル以下">9</jmx_eb:WindSpeed>
+</Base>
+</WindForecastPart>
+<WindForecastPart refID="2">
+<Sentence>９メートル以下</Sentence>
+<Base>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" condition="以下" description="９メートル以下">9</jmx_eb:WindSpeed>
+</Base>
+</WindForecastPart>
+<WindForecastPart refID="3">
+<Sentence>９メートル以下</Sentence>
+<Base>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" condition="以下" description="９メートル以下">9</jmx_eb:WindSpeed>
+</Base>
+</WindForecastPart>
+<WindForecastPart refID="4">
+<Sentence>９メートル以下</Sentence>
+<Base>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" condition="以下" description="９メートル以下">9</jmx_eb:WindSpeed>
+</Base>
+</WindForecastPart>
+<WindForecastPart refID="5">
+<Sentence>９メートル以下</Sentence>
+<Base>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" condition="以下" description="９メートル以下">9</jmx_eb:WindSpeed>
+</Base>
+</WindForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Area>
+<Name>置賜</Name>
+<Code>060020</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Property>
+<Type>１時間最大雨量</Type>
+<DetailForecast>
+<PrecipitationForecastPart refID="1">
+<Sentence>１５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="１時間最大雨量" unit="mm" condition="以下" description="１５ミリ以下">15</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="2">
+<Sentence>１５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="１時間最大雨量" unit="mm" condition="以下" description="１５ミリ以下">15</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="3">
+<Sentence>１５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="１時間最大雨量" unit="mm" condition="以下" description="１５ミリ以下">15</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="4">
+<Sentence>１５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="１時間最大雨量" unit="mm" condition="以下" description="１５ミリ以下">15</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="5">
+<Sentence>１５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="１時間最大雨量" unit="mm" condition="以下" description="１５ミリ以下">15</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>３時間最大雨量</Type>
+<DetailForecast>
+<PrecipitationForecastPart refID="1">
+<Sentence>２５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="３時間最大雨量" unit="mm" condition="以下" description="２５ミリ以下">25</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="2">
+<Sentence>２５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="３時間最大雨量" unit="mm" condition="以下" description="２５ミリ以下">25</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="3">
+<Sentence>２５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="３時間最大雨量" unit="mm" condition="以下" description="２５ミリ以下">25</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="4">
+<Sentence>２５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="３時間最大雨量" unit="mm" condition="以下" description="２５ミリ以下">25</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="5">
+<Sentence>２５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="３時間最大雨量" unit="mm" condition="以下" description="２５ミリ以下">25</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>６時間最大降雪量</Type>
+<DetailForecast>
+<SnowfallDepthForecastPart refID="1">
+<Sentence>１５センチ　山沿いでは２０センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１５センチ">15</jmx_eb:SnowfallDepth>
+</Base>
+<SubArea>
+<AreaName>山沿い</AreaName>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="２０センチ">20</jmx_eb:SnowfallDepth>
+</Base>
+</SubArea>
+</SnowfallDepthForecastPart>
+<SnowfallDepthForecastPart refID="2">
+<Sentence>１０センチ　山沿いでは１５センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１０センチ">10</jmx_eb:SnowfallDepth>
+</Base>
+<SubArea>
+<AreaName>山沿い</AreaName>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１５センチ">15</jmx_eb:SnowfallDepth>
+</Base>
+</SubArea>
+</SnowfallDepthForecastPart>
+<SnowfallDepthForecastPart refID="3">
+<Sentence>５センチ　山沿いでは１０センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="５センチ">5</jmx_eb:SnowfallDepth>
+</Base>
+<SubArea>
+<AreaName>山沿い</AreaName>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１０センチ">10</jmx_eb:SnowfallDepth>
+</Base>
+</SubArea>
+</SnowfallDepthForecastPart>
+<SnowfallDepthForecastPart refID="4">
+<Sentence>５センチ　山沿いでは１０センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="５センチ">5</jmx_eb:SnowfallDepth>
+</Base>
+<SubArea>
+<AreaName>山沿い</AreaName>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１０センチ">10</jmx_eb:SnowfallDepth>
+</Base>
+</SubArea>
+</SnowfallDepthForecastPart>
+<SnowfallDepthForecastPart refID="5">
+<Sentence>１０センチ　山沿いでは１５センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１０センチ">10</jmx_eb:SnowfallDepth>
+</Base>
+<SubArea>
+<AreaName>山沿い</AreaName>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１５センチ">15</jmx_eb:SnowfallDepth>
+</Base>
+</SubArea>
+</SnowfallDepthForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>最大風速</Type>
+<DetailForecast>
+<WindForecastPart refID="1">
+<Sentence>陸上１３メートル　海上では１５メートル</Sentence>
+<Base>
+<Local>
+<AreaName>陸上</AreaName>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" description="１３メートル">13</jmx_eb:WindSpeed>
+</Local>
+<Local>
+<AreaName>海上</AreaName>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" description="１５メートル">15</jmx_eb:WindSpeed>
+</Local>
+</Base>
+</WindForecastPart>
+<WindForecastPart refID="2">
+<Sentence>陸上９メートル以下　海上では１０メートル</Sentence>
+<Base>
+<Local>
+<AreaName>陸上</AreaName>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" condition="以下" description="９メートル以下">9</jmx_eb:WindSpeed>
+</Local>
+<Local>
+<AreaName>海上</AreaName>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" description="１０メートル">10</jmx_eb:WindSpeed>
+</Local>
+</Base>
+</WindForecastPart>
+<WindForecastPart refID="3">
+<Sentence>陸上９メートル以下　海上では９メートル以下</Sentence>
+<Base>
+<Local>
+<AreaName>陸上</AreaName>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" condition="以下" description="９メートル以下">9</jmx_eb:WindSpeed>
+</Local>
+<Local>
+<AreaName>海上</AreaName>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" condition="以下" description="９メートル以下">9</jmx_eb:WindSpeed>
+</Local>
+</Base>
+</WindForecastPart>
+<WindForecastPart refID="4">
+<Sentence>陸上９メートル以下　海上では９メートル以下</Sentence>
+<Base>
+<Local>
+<AreaName>陸上</AreaName>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" condition="以下" description="９メートル以下">9</jmx_eb:WindSpeed>
+</Local>
+<Local>
+<AreaName>海上</AreaName>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" condition="以下" description="９メートル以下">9</jmx_eb:WindSpeed>
+</Local>
+</Base>
+</WindForecastPart>
+<WindForecastPart refID="5">
+<Sentence>陸上９メートル以下　海上では１０メートル</Sentence>
+<Base>
+<Local>
+<AreaName>陸上</AreaName>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" condition="以下" description="９メートル以下">9</jmx_eb:WindSpeed>
+</Local>
+<Local>
+<AreaName>海上</AreaName>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" description="１０メートル">10</jmx_eb:WindSpeed>
+</Local>
+</Base>
+</WindForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>波</Type>
+<DetailForecast>
+<WaveHeightForecastPart refID="1">
+<Sentence>５メートル</Sentence>
+<Base>
+<jmx_eb:WaveHeight type="波高" unit="m" description="５メートル">5</jmx_eb:WaveHeight>
+</Base>
+</WaveHeightForecastPart>
+<WaveHeightForecastPart refID="2">
+<Sentence>４メートル</Sentence>
+<Base>
+<jmx_eb:WaveHeight type="波高" unit="m" description="４メートル">4</jmx_eb:WaveHeight>
+</Base>
+</WaveHeightForecastPart>
+<WaveHeightForecastPart refID="3">
+<Sentence>３メートル</Sentence>
+<Base>
+<jmx_eb:WaveHeight type="波高" unit="m" description="３メートル">3</jmx_eb:WaveHeight>
+</Base>
+</WaveHeightForecastPart>
+<WaveHeightForecastPart refID="4">
+<Sentence>２．５メートル</Sentence>
+<Base>
+<jmx_eb:WaveHeight type="波高" unit="m" description="２．５メートル">2.5</jmx_eb:WaveHeight>
+</Base>
+</WaveHeightForecastPart>
+<WaveHeightForecastPart refID="5">
+<Sentence>２．５メートル</Sentence>
+<Base>
+<jmx_eb:WaveHeight type="波高" unit="m" description="２．５メートル">2.5</jmx_eb:WaveHeight>
+</Base>
+</WaveHeightForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Area>
+<Name>庄内</Name>
+<Code>060030</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Property>
+<Type>１時間最大雨量</Type>
+<DetailForecast>
+<PrecipitationForecastPart refID="1">
+<Sentence>１５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="１時間最大雨量" unit="mm" condition="以下" description="１５ミリ以下">15</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="2">
+<Sentence>１５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="１時間最大雨量" unit="mm" condition="以下" description="１５ミリ以下">15</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="3">
+<Sentence>１５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="１時間最大雨量" unit="mm" condition="以下" description="１５ミリ以下">15</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="4">
+<Sentence>１５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="１時間最大雨量" unit="mm" condition="以下" description="１５ミリ以下">15</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="5">
+<Sentence>１５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="１時間最大雨量" unit="mm" condition="以下" description="１５ミリ以下">15</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>３時間最大雨量</Type>
+<DetailForecast>
+<PrecipitationForecastPart refID="1">
+<Sentence>２５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="３時間最大雨量" unit="mm" condition="以下" description="２５ミリ以下">25</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="2">
+<Sentence>２５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="３時間最大雨量" unit="mm" condition="以下" description="２５ミリ以下">25</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="3">
+<Sentence>２５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="３時間最大雨量" unit="mm" condition="以下" description="２５ミリ以下">25</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="4">
+<Sentence>２５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="３時間最大雨量" unit="mm" condition="以下" description="２５ミリ以下">25</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+<PrecipitationForecastPart refID="5">
+<Sentence>２５ミリ以下</Sentence>
+<Base>
+<jmx_eb:Precipitation type="３時間最大雨量" unit="mm" condition="以下" description="２５ミリ以下">25</jmx_eb:Precipitation>
+</Base>
+</PrecipitationForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>６時間最大降雪量</Type>
+<DetailForecast>
+<SnowfallDepthForecastPart refID="1">
+<Sentence>２０センチ　山沿いでは３０センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="２０センチ">20</jmx_eb:SnowfallDepth>
+</Base>
+<SubArea>
+<AreaName>山沿い</AreaName>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="３０センチ">30</jmx_eb:SnowfallDepth>
+</Base>
+</SubArea>
+</SnowfallDepthForecastPart>
+<SnowfallDepthForecastPart refID="2">
+<Sentence>１０センチ　山沿いでは１５センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１０センチ">10</jmx_eb:SnowfallDepth>
+</Base>
+<SubArea>
+<AreaName>山沿い</AreaName>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１５センチ">15</jmx_eb:SnowfallDepth>
+</Base>
+</SubArea>
+</SnowfallDepthForecastPart>
+<SnowfallDepthForecastPart refID="3">
+<Sentence>５センチ　山沿いでは１０センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="５センチ">5</jmx_eb:SnowfallDepth>
+</Base>
+<SubArea>
+<AreaName>山沿い</AreaName>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１０センチ">10</jmx_eb:SnowfallDepth>
+</Base>
+</SubArea>
+</SnowfallDepthForecastPart>
+<SnowfallDepthForecastPart refID="4">
+<Sentence>５センチ　山沿いでは１０センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="５センチ">5</jmx_eb:SnowfallDepth>
+</Base>
+<SubArea>
+<AreaName>山沿い</AreaName>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１０センチ">10</jmx_eb:SnowfallDepth>
+</Base>
+</SubArea>
+</SnowfallDepthForecastPart>
+<SnowfallDepthForecastPart refID="5">
+<Sentence>１０センチ　山沿いでは１５センチ</Sentence>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１０センチ">10</jmx_eb:SnowfallDepth>
+</Base>
+<SubArea>
+<AreaName>山沿い</AreaName>
+<Base>
+<jmx_eb:SnowfallDepth type="６時間最大降雪量" unit="cm" description="１５センチ">15</jmx_eb:SnowfallDepth>
+</Base>
+</SubArea>
+</SnowfallDepthForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>最大風速</Type>
+<DetailForecast>
+<WindForecastPart refID="1">
+<Sentence>９メートル以下</Sentence>
+<Base>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" condition="以下" description="９メートル以下">9</jmx_eb:WindSpeed>
+</Base>
+</WindForecastPart>
+<WindForecastPart refID="2">
+<Sentence>９メートル以下</Sentence>
+<Base>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" condition="以下" description="９メートル以下">9</jmx_eb:WindSpeed>
+</Base>
+</WindForecastPart>
+<WindForecastPart refID="3">
+<Sentence>９メートル以下</Sentence>
+<Base>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" condition="以下" description="９メートル以下">9</jmx_eb:WindSpeed>
+</Base>
+</WindForecastPart>
+<WindForecastPart refID="4">
+<Sentence>９メートル以下</Sentence>
+<Base>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" condition="以下" description="９メートル以下">9</jmx_eb:WindSpeed>
+</Base>
+</WindForecastPart>
+<WindForecastPart refID="5">
+<Sentence>９メートル以下</Sentence>
+<Base>
+<jmx_eb:WindSpeed type="最大風速" unit="m/s" condition="以下" description="９メートル以下">9</jmx_eb:WindSpeed>
+</Base>
+</WindForecastPart>
+</DetailForecast>
+</Property>
+</Kind>
+<Area>
+<Name>最上</Name>
+<Code>060040</Code>
+</Area>
+</Item>
+</TimeSeriesInfo>
+<TimeSeriesInfo>
+<TimeDefines>
+<TimeDefine timeId="1">
+<DateTime>2026-01-01T18:00:00+09:00</DateTime>
+<Duration>PT12H</Duration>
+<Name>１日夜のはじめ頃から２日明け方</Name>
+</TimeDefine>
+<TimeDefine timeId="2">
+<DateTime>2026-01-02T06:00:00+09:00</DateTime>
+<Duration>PT18H</Duration>
+<Name>２日朝から夜遅く</Name>
+</TimeDefine>
+</TimeDefines>
+<Item>
+<Kind>
+<Property>
+<Type>雨の警報級の可能性</Type>
+<PossibilityRankOfWarningPart>
+<jmx_eb:PossibilityRankOfWarning refID="1" type="雨の警報級の可能性" condition="値なし"/>
+<jmx_eb:PossibilityRankOfWarning refID="2" type="雨の警報級の可能性" condition="値なし"/>
+</PossibilityRankOfWarningPart>
+<Text>村山では、２日明け方までの期間内に、大雪警報を発表する可能性がある。</Text>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>雪の警報級の可能性</Type>
+<PossibilityRankOfWarningPart>
+<jmx_eb:PossibilityRankOfWarning refID="1" type="雪の警報級の可能性">中</jmx_eb:PossibilityRankOfWarning>
+<jmx_eb:PossibilityRankOfWarning refID="2" type="雪の警報級の可能性" condition="値なし"/>
+</PossibilityRankOfWarningPart>
+<Text>村山では、２日明け方までの期間内に、大雪警報を発表する可能性がある。</Text>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>風（風雪）の警報級の可能性</Type>
+<PossibilityRankOfWarningPart>
+<jmx_eb:PossibilityRankOfWarning refID="1" type="風（風雪）の警報級の可能性" condition="値なし"/>
+<jmx_eb:PossibilityRankOfWarning refID="2" type="風（風雪）の警報級の可能性" condition="値なし"/>
+</PossibilityRankOfWarningPart>
+<Text>村山では、２日明け方までの期間内に、大雪警報を発表する可能性がある。</Text>
+</Property>
+</Kind>
+<Area>
+<Name>村山</Name>
+<Code>060010</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Property>
+<Type>雨の警報級の可能性</Type>
+<PossibilityRankOfWarningPart>
+<jmx_eb:PossibilityRankOfWarning refID="1" type="雨の警報級の可能性" condition="値なし"/>
+<jmx_eb:PossibilityRankOfWarning refID="2" type="雨の警報級の可能性" condition="値なし"/>
+</PossibilityRankOfWarningPart>
+<Text>置賜では、２日明け方までの期間内に、大雪警報を発表する可能性がある。</Text>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>雪の警報級の可能性</Type>
+<PossibilityRankOfWarningPart>
+<jmx_eb:PossibilityRankOfWarning refID="1" type="雪の警報級の可能性">中</jmx_eb:PossibilityRankOfWarning>
+<jmx_eb:PossibilityRankOfWarning refID="2" type="雪の警報級の可能性" condition="値なし"/>
+</PossibilityRankOfWarningPart>
+<Text>置賜では、２日明け方までの期間内に、大雪警報を発表する可能性がある。</Text>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>風（風雪）の警報級の可能性</Type>
+<PossibilityRankOfWarningPart>
+<jmx_eb:PossibilityRankOfWarning refID="1" type="風（風雪）の警報級の可能性" condition="値なし"/>
+<jmx_eb:PossibilityRankOfWarning refID="2" type="風（風雪）の警報級の可能性" condition="値なし"/>
+</PossibilityRankOfWarningPart>
+<Text>置賜では、２日明け方までの期間内に、大雪警報を発表する可能性がある。</Text>
+</Property>
+</Kind>
+<Area>
+<Name>置賜</Name>
+<Code>060020</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Property>
+<Type>雨の警報級の可能性</Type>
+<PossibilityRankOfWarningPart>
+<jmx_eb:PossibilityRankOfWarning refID="1" type="雨の警報級の可能性" condition="値なし"/>
+<jmx_eb:PossibilityRankOfWarning refID="2" type="雨の警報級の可能性" condition="値なし"/>
+</PossibilityRankOfWarningPart>
+<Text>庄内では、２日明け方までの期間内に、大雪警報を発表する可能性がある。</Text>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>雪の警報級の可能性</Type>
+<PossibilityRankOfWarningPart>
+<jmx_eb:PossibilityRankOfWarning refID="1" type="雪の警報級の可能性">中</jmx_eb:PossibilityRankOfWarning>
+<jmx_eb:PossibilityRankOfWarning refID="2" type="雪の警報級の可能性" condition="値なし"/>
+</PossibilityRankOfWarningPart>
+<Text>庄内では、２日明け方までの期間内に、大雪警報を発表する可能性がある。</Text>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>風（風雪）の警報級の可能性</Type>
+<PossibilityRankOfWarningPart>
+<jmx_eb:PossibilityRankOfWarning refID="1" type="風（風雪）の警報級の可能性" condition="値なし"/>
+<jmx_eb:PossibilityRankOfWarning refID="2" type="風（風雪）の警報級の可能性" condition="値なし"/>
+</PossibilityRankOfWarningPart>
+<Text>庄内では、２日明け方までの期間内に、大雪警報を発表する可能性がある。</Text>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>波の警報級の可能性</Type>
+<PossibilityRankOfWarningPart>
+<jmx_eb:PossibilityRankOfWarning refID="1" type="波の警報級の可能性" condition="値なし"/>
+<jmx_eb:PossibilityRankOfWarning refID="2" type="波の警報級の可能性" condition="値なし"/>
+</PossibilityRankOfWarningPart>
+<Text>庄内では、２日明け方までの期間内に、大雪警報を発表する可能性がある。</Text>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>潮位の警報級の可能性</Type>
+<PossibilityRankOfWarningPart>
+<jmx_eb:PossibilityRankOfWarning refID="1" type="潮位の警報級の可能性" condition="値なし"/>
+<jmx_eb:PossibilityRankOfWarning refID="2" type="潮位の警報級の可能性" condition="値なし"/>
+</PossibilityRankOfWarningPart>
+<Text>庄内では、２日明け方までの期間内に、大雪警報を発表する可能性がある。</Text>
+</Property>
+</Kind>
+<Area>
+<Name>庄内</Name>
+<Code>060030</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Property>
+<Type>雨の警報級の可能性</Type>
+<PossibilityRankOfWarningPart>
+<jmx_eb:PossibilityRankOfWarning refID="1" type="雨の警報級の可能性" condition="値なし"/>
+<jmx_eb:PossibilityRankOfWarning refID="2" type="雨の警報級の可能性" condition="値なし"/>
+</PossibilityRankOfWarningPart>
+<Text>最上では、２日明け方までの期間内に、大雪警報を発表する可能性がある。</Text>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>雪の警報級の可能性</Type>
+<PossibilityRankOfWarningPart>
+<jmx_eb:PossibilityRankOfWarning refID="1" type="雪の警報級の可能性">中</jmx_eb:PossibilityRankOfWarning>
+<jmx_eb:PossibilityRankOfWarning refID="2" type="雪の警報級の可能性" condition="値なし"/>
+</PossibilityRankOfWarningPart>
+<Text>最上では、２日明け方までの期間内に、大雪警報を発表する可能性がある。</Text>
+</Property>
+</Kind>
+<Kind>
+<Property>
+<Type>風（風雪）の警報級の可能性</Type>
+<PossibilityRankOfWarningPart>
+<jmx_eb:PossibilityRankOfWarning refID="1" type="風（風雪）の警報級の可能性" condition="値なし"/>
+<jmx_eb:PossibilityRankOfWarning refID="2" type="風（風雪）の警報級の可能性" condition="値なし"/>
+</PossibilityRankOfWarningPart>
+<Text>最上では、２日明け方までの期間内に、大雪警報を発表する可能性がある。</Text>
+</Property>
+</Kind>
+<Area>
+<Name>最上</Name>
+<Code>060040</Code>
+</Area>
+</Item>
+</TimeSeriesInfo>
+</MeteorologicalInfos>
+</Body>
+</Report>

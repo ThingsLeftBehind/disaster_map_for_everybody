@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Linking,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -24,8 +22,8 @@ const STORAGE_KEY = 'hinanavi_hazard_layer_v1';
 const DEFAULT_REGION: HazardMapRegion = {
   latitude: 35.6812,
   longitude: 139.7671,
-  latitudeDelta: 0.6,
-  longitudeDelta: 0.6,
+  latitudeDelta: 0.05,
+  longitudeDelta: 0.05,
 };
 
 const FALLBACK_LAYERS: HazardLayer[] = [
@@ -84,9 +82,11 @@ type LayerMeta = {
   legend: LegendItem[];
   meaning: string;
   actions: string[];
-  detail: {
-    about: string;
-    guidance: string[];
+  explanation: {
+    what: string;
+    where: string;
+    danger: string;
+    point: string;
   };
 };
 
@@ -94,46 +94,52 @@ const LAYER_META: Record<string, LayerMeta> = {
   flood: {
     label: '洪水',
     legend: [
-      { color: '#E0F2FE', label: '0.5m未満' },
-      { color: '#7DD3FC', label: '0.5–3m' },
-      { color: '#38BDF8', label: '3–5m' },
       { color: '#0284C7', label: '5m以上' },
+      { color: '#38BDF8', label: '3–5m' },
+      { color: '#7DD3FC', label: '0.5–3m' },
+      { color: '#E0F2FE', label: '0.5m未満' },
     ],
     meaning: '浸水の深さの想定です。',
     actions: ['高い場所へ移動', '河川から離れる', '避難情報を確認'],
-    detail: {
-      about: '洪水時に想定される浸水深を示します。',
-      guidance: ['避難情報に従う', '早めの移動', '道路冠水に注意'],
-    },
+    explanation: {
+      what: '大雨により河川の水が増え、堤防を越えたり決壊して水が溢れ出す現象です。',
+      where: '河川の周辺や、周囲より低い土地（低地・窪地）で発生しやすいです。',
+      danger: '急激な水位上昇による逃げ遅れや、濁流による溺水、建物の浸水被害があります。',
+      point: '「避難指示」が出たら速やかに指定避難所へ。移動が危険な場合は、建物の2階以上（垂直避難）や崖・川から離れた部屋へ移動してください。'
+    }
   },
   landslide: {
     label: '土砂災害',
     legend: [
-      { color: '#FDE68A', label: '土石流警戒区域' },
       { color: '#F59E0B', label: '急傾斜地崩壊' },
       { color: '#B45309', label: '地すべり' },
+      { color: '#FDE68A', label: '土石流警戒区域' },
     ],
     meaning: '土砂災害の警戒区域です。',
     actions: ['斜面から離れる', '雨が強い時は早め避難', '周囲の異変に注意'],
-    detail: {
-      about: '土砂災害の危険が高い区域を示します。',
-      guidance: ['土砂災害警戒情報を確認', '夜間の避難は早めに判断', '避難先を事前に確認'],
-    },
+    explanation: {
+      what: '大雨や地震により、山や崖が崩れ落ちたり、土石流が発生する現象です。',
+      where: 'がけ崩れは急な斜面、地すべりは緩やかな斜面、土石流は谷の出口で発生しやすいです。',
+      danger: '逃げ遅れると土砂に巻き込まれ、家屋ごと押し流される危険性が極めて高いです。',
+      point: '前兆現象（地鳴り、濁った湧き水）や「土砂災害警戒情報」に注意し、崖から離れた安全な場所へ早めに避難してください。'
+    }
   },
   tsunami: {
     label: '津波',
     legend: [
-      { color: '#C7D2FE', label: '1m未満' },
-      { color: '#818CF8', label: '1–3m' },
-      { color: '#4F46E5', label: '3–5m' },
       { color: '#312E81', label: '5m以上' },
+      { color: '#4F46E5', label: '3–5m' },
+      { color: '#818CF8', label: '1–3m' },
+      { color: '#C7D2FE', label: '1m未満' },
     ],
     meaning: '津波浸水の想定範囲です。',
     actions: ['すぐ高台へ', '海岸から離れる', '避難指示に従う'],
-    detail: {
-      about: '津波による浸水範囲の想定を示します。',
-      guidance: ['揺れを感じたら即避難', '車より徒歩を優先', '引き返さない'],
-    },
+    explanation: {
+      what: '地震などにより海底が隆起・沈降し、海水が巨大な波となって押し寄せる現象です。',
+      where: '海岸付近や河口付近の低地で被害が拡大しやすいです。遡上により内陸深くまで到達することもあります。',
+      danger: '強力な水圧と漂流物により建物が破壊され、逃げ遅れると命に関わります。',
+      point: '強い揺れや「大津波警報・津波警報」が出たら、直ちに高台や津波避難ビルへ避難してください。警報が解除されるまで絶対に戻らないでください。'
+    }
   },
   liquefaction: {
     label: '液状化',
@@ -145,10 +151,12 @@ const LAYER_META: Record<string, LayerMeta> = {
     ],
     meaning: '液状化の可能性を示します。',
     actions: ['道路の段差に注意', '建物周辺の沈下に注意', '避難経路を確認'],
-    detail: {
-      about: '地盤の液状化の可能性を示します。',
-      guidance: ['避難時は足元に注意', '避難経路を複数確認', '倒壊の恐れから離れる'],
-    },
+    explanation: {
+      what: '地震の揺れで地盤が液体状になり、水や砂が噴き出したり地面が沈下する現象です。',
+      where: '埋立地や、かつて河川や池だった場所、地下水位の高い砂地盤で発生しやすいです。',
+      danger: '建物の傾斜・沈下、道路の亀裂・隆起、マンホールの突出、水道管の破損などが起きます。',
+      point: '発災後は足元に十分注意して行動してください。自宅が傾いた場合は余震による倒壊に注意し、危険なら避難所へ移動してください。'
+    }
   },
 };
 
@@ -156,15 +164,17 @@ function buildFallbackMeta(colors: { surfaceStrong: string; statusBgWarning: str
   return {
     label: 'ハザード',
     legend: [
-      { color: colors.surfaceStrong, label: '注意' },
       { color: colors.statusBgWarning, label: '危険' },
+      { color: colors.surfaceStrong, label: '注意' },
     ],
     meaning: 'ハザード情報の参考表示です。',
     actions: ['公式情報を確認', '周囲の安全確保', '避難情報に注意'],
-    detail: {
-      about: 'ハザードの想定情報を示します。',
-      guidance: ['自治体の指示に従う', '危険区域から離れる'],
-    },
+    explanation: {
+      what: 'ハザード情報です。',
+      where: '指定された区域。',
+      danger: '災害種別によります。',
+      point: '自治体の指示に従ってください。'
+    }
   };
 }
 
@@ -181,8 +191,6 @@ export default function HazardScreen() {
   const [error, setError] = useState<ApiError | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
-  const [sourceUrl, setSourceUrl] = useState<string | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
   const [mapNotice, setMapNotice] = useState<string | null>(null);
   const [storageReady, setStorageReady] = useState(false);
 
@@ -194,7 +202,6 @@ export default function HazardScreen() {
       const data = await fetchJson<HazardLayersResponse>('/api/gsi/hazard-layers');
       setLayers(data.layers ?? []);
       setUpdatedAt(data.updatedAt ?? null);
-      setSourceUrl(data.source?.portalUrl ?? data.source?.metadataUrl ?? null);
       if (data.fetchStatus && data.fetchStatus !== 'OK') {
         setNotice(data.lastError ?? '更新が遅れています');
       }
@@ -338,23 +345,19 @@ export default function HazardScreen() {
         </View>
       ) : null}
 
-      <HazardLayerChips layers={sortedLayers} selectedKey={selectedLayerKey} onSelect={handleSelectLayer} />
-
-      {selectedLayerKey ? (
-        <HazardLegendCard
-          meta={selectedMeta}
-          isLoading={isLoading}
-          tileAvailable={tileSources.length > 0}
-          onOpenDetail={() => setDetailOpen(true)}
-        />
-      ) : null}
-
-      <HazardDetailSheet
-        visible={detailOpen}
-        onClose={() => setDetailOpen(false)}
-        meta={selectedMeta}
-        sourceUrl={sourceUrl}
-      />
+      <View style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <HazardLayerChips layers={sortedLayers} selectedKey={selectedLayerKey} onSelect={handleSelectLayer} />
+          {selectedLayerKey ? (
+            <HazardLegendCard
+              meta={selectedMeta}
+              isLoading={isLoading}
+              tileAvailable={tileSources.length > 0}
+            />
+          ) : null}
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </View>
     </TabScreen>
   );
 }
@@ -371,10 +374,6 @@ function HazardHeader({
   const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.headerBlock}>
-      <View style={styles.statusRow}>
-        <Text style={styles.statusText}>レイヤー: {layerLabel}</Text>
-        {updatedAt ? <Text style={styles.statusText}>最終更新: {formatTimeShort(updatedAt)}</Text> : null}
-      </View>
       {notice ? <Text style={styles.noticeText}>{notice}</Text> : null}
     </View>
   );
@@ -413,21 +412,16 @@ function HazardLegendCard({
   meta,
   isLoading,
   tileAvailable,
-  onOpenDetail,
 }: {
   meta: LayerMeta;
   isLoading: boolean;
   tileAvailable: boolean;
-  onOpenDetail: () => void;
 }) {
   const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.legendCard}>
       <View style={styles.legendHeader}>
-        <Text style={styles.legendTitle}>凡例</Text>
-        <Pressable onPress={onOpenDetail}>
-          <Text style={styles.legendLink}>詳細を見る</Text>
-        </Pressable>
+        <Text style={styles.legendTitle}>凡例（危険度：高→低）</Text>
       </View>
       {isLoading ? (
         <View style={styles.legendSkeleton}>
@@ -446,61 +440,31 @@ function HazardLegendCard({
         </View>
       )}
       {!tileAvailable ? <Text style={styles.noticeText}>レイヤーの地図は準備中です。</Text> : null}
-      <Text style={styles.legendSubtitle}>意味 / いまやること</Text>
-      <Text style={styles.legendText}>{meta.meaning}</Text>
-      <View style={styles.actionList}>
-        {meta.actions.map((action) => (
-          <Text key={action} style={styles.actionText}>{`• ${action}`}</Text>
-        ))}
+
+      <View style={styles.separator} />
+
+      <Text style={styles.legendSubtitle}>概要・危険性</Text>
+      <View style={styles.explanationBox}>
+        <Text style={styles.explanationLabel}>【何が起きる？】</Text>
+        <Text style={styles.explanationText}>{meta.explanation.what}</Text>
+
+        <Text style={styles.explanationLabel}>【場所・条件】</Text>
+        <Text style={styles.explanationText}>{meta.explanation.where}</Text>
+
+        <Text style={styles.explanationLabel}>【主な危険】</Text>
+        <Text style={styles.explanationText}>{meta.explanation.danger}</Text>
+      </View>
+
+      <Text style={styles.legendSubtitle}>避難の考え方・行動</Text>
+      <View style={[styles.explanationBox, styles.guidanceBox]}>
+        <Text style={styles.explanationText}>{meta.explanation.point}</Text>
       </View>
     </View>
   );
 }
 
-function HazardDetailSheet({
-  visible,
-  onClose,
-  meta,
-  sourceUrl,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  meta: LayerMeta;
-  sourceUrl: string | null;
-}) {
-  const styles = useThemedStyles(createStyles);
-  return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.sheetOverlay}>
-        <Pressable style={styles.sheetBackdrop} onPress={onClose} />
-        <View style={styles.sheetCard}>
-          <View style={styles.sheetHandle} />
-          <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>詳細</Text>
-            <Pressable onPress={onClose} hitSlop={10}>
-              <Text style={styles.sheetClose}>閉じる</Text>
-            </Pressable>
-          </View>
-          <View style={styles.sheetSection}>
-            <Text style={styles.sheetLabel}>このレイヤーについて</Text>
-            <Text style={styles.sheetText}>{meta.detail.about}</Text>
-          </View>
-          <View style={styles.sheetSection}>
-            <Text style={styles.sheetLabel}>避難の考え方</Text>
-            {meta.detail.guidance.map((item) => (
-              <Text key={item} style={styles.sheetText}>{`• ${item}`}</Text>
-            ))}
-          </View>
-          {sourceUrl ? (
-            <View style={styles.sheetSection}>
-              <SecondaryButton label="公式情報を見る" onPress={() => Linking.openURL(sourceUrl)} />
-            </View>
-          ) : null}
-        </View>
-      </View>
-    </Modal>
-  );
-}
+// DetailSheet Removed
+
 
 function FetchStateBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
   const styles = useThemedStyles(createStyles);
@@ -555,11 +519,6 @@ function regionToZoom(region: HazardMapRegion) {
   return Number.isFinite(zoom) ? Math.round(zoom) : 0;
 }
 
-function formatTimeShort(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-}
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
@@ -605,210 +564,179 @@ const createStyles = (colors: {
   surfaceStrong: string;
 }) =>
   StyleSheet.create({
-  headerBlock: {
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    alignItems: 'center',
-  },
-  statusText: {
-    ...typography.caption,
-    color: colors.muted,
-  },
-  noticeText: {
-    ...typography.caption,
-    color: colors.muted,
-  },
-  banner: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.md,
-    padding: spacing.sm,
-    backgroundColor: colors.surface,
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  bannerText: {
-    ...typography.body,
-    color: colors.text,
-  },
-  mapContainer: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.lg,
-    overflow: 'hidden',
-    backgroundColor: colors.background,
-    position: 'relative',
-  },
-  locationButton: {
-    position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  locationButtonText: {
-    ...typography.caption,
-    color: colors.text,
-  },
-  zoomControls: {
-    position: 'absolute',
-    bottom: spacing.sm,
-    right: spacing.sm,
-    gap: spacing.xs,
-  },
-  zoomButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.background,
-  },
-  zoomButtonText: {
-    ...typography.body,
-    color: colors.text,
-  },
-  mapHintRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    marginTop: spacing.sm,
-  },
-  mapHint: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    backgroundColor: colors.surface,
-  },
-  mapHintText: {
-    ...typography.caption,
-    color: colors.text,
-  },
-  chipRow: {
-    marginTop: spacing.md,
-    gap: spacing.xs,
-    paddingRight: spacing.md,
-    alignItems: 'center',
-  },
-  legendCard: {
-    marginTop: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    backgroundColor: colors.background,
-    gap: spacing.sm,
-  },
-  legendHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  legendTitle: {
-    ...typography.subtitle,
-    color: colors.text,
-  },
-  legendLink: {
-    ...typography.caption,
-    color: colors.text,
-  },
-  legendList: {
-    gap: spacing.xs,
-  },
-  legendRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  legendSwatch: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  legendLabel: {
-    ...typography.caption,
-    color: colors.text,
-  },
-  legendSubtitle: {
-    ...typography.label,
-    color: colors.text,
-  },
-  legendText: {
-    ...typography.body,
-    color: colors.text,
-  },
-  legendSkeleton: {
-    gap: spacing.xs,
-  },
-  actionList: {
-    gap: spacing.xs,
-  },
-  actionText: {
-    ...typography.body,
-    color: colors.text,
-  },
-  sheetOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.35)',
-  },
-  sheetBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  sheetCard: {
-    backgroundColor: colors.background,
-    padding: spacing.lg,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: Platform.OS === 'web' ? '90%' : '85%',
-  },
-  sheetHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.border,
-    alignSelf: 'center',
-    marginBottom: spacing.sm,
-  },
-  sheetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  sheetTitle: {
-    ...typography.subtitle,
-    color: colors.text,
-  },
-  sheetClose: {
-    ...typography.caption,
-    color: colors.text,
-  },
-  sheetSection: {
-    marginBottom: spacing.md,
-    gap: spacing.xs,
-  },
-  sheetLabel: {
-    ...typography.label,
-    color: colors.text,
-  },
-  sheetText: {
-    ...typography.body,
-    color: colors.text,
-  },
-});
+    headerBlock: {
+      gap: spacing.xs,
+      margin: spacing.sm,
+    },
+    scrollContent: {
+      paddingBottom: spacing.lg,
+    },
+    statusRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+      alignItems: 'center',
+    },
+    statusText: {
+      ...typography.caption,
+      color: colors.muted,
+    },
+    noticeText: {
+      ...typography.caption,
+      color: colors.muted,
+    },
+    banner: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radii.md,
+      padding: spacing.sm,
+      backgroundColor: colors.surface,
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    bannerText: {
+      ...typography.body,
+      color: colors.text,
+    },
+    mapContainer: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radii.lg,
+      overflow: 'hidden',
+      backgroundColor: colors.background,
+      position: 'relative',
+    },
+    locationButton: {
+      position: 'absolute',
+      top: spacing.sm,
+      right: spacing.sm,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: radii.pill,
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    locationButtonText: {
+      ...typography.caption,
+      color: colors.text,
+    },
+    zoomControls: {
+      position: 'absolute',
+      bottom: spacing.sm,
+      right: spacing.sm,
+      gap: spacing.xs,
+    },
+    zoomButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.background,
+    },
+    zoomButtonText: {
+      ...typography.body,
+      color: colors.text,
+    },
+    mapHintRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.xs,
+      marginTop: spacing.sm,
+    },
+    mapHint: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radii.pill,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      backgroundColor: colors.surface,
+    },
+    mapHintText: {
+      ...typography.caption,
+      color: colors.text,
+    },
+    chipRow: {
+      marginTop: spacing.md,
+      gap: spacing.xs,
+      paddingRight: spacing.md,
+      alignItems: 'center',
+    },
+    legendCard: {
+      marginTop: spacing.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radii.lg,
+      padding: spacing.md,
+      backgroundColor: colors.background,
+      gap: spacing.sm,
+    },
+    legendHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    legendTitle: {
+      ...typography.subtitle,
+      color: colors.text,
+    },
+    legendLink: {
+      ...typography.caption,
+      color: colors.text,
+    },
+    legendList: {
+      gap: spacing.xs,
+    },
+    legendRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    legendSwatch: {
+      width: 18,
+      height: 18,
+      borderRadius: 4,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    legendLabel: {
+      ...typography.caption,
+      color: colors.text,
+    },
+    legendSubtitle: {
+      ...typography.label,
+      color: colors.text,
+    },
+    legendText: {
+      ...typography.body,
+      color: colors.text,
+    },
+    legendSkeleton: {
+      gap: spacing.xs,
+    },
+    separator: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: spacing.sm,
+    },
+    explanationBox: {
+      gap: 4,
+    },
+    explanationLabel: {
+      ...typography.label,
+      color: colors.muted,
+      marginTop: 8,
+    },
+    explanationText: {
+      ...typography.body,
+      color: colors.text,
+    },
+    guidanceBox: {
+      backgroundColor: colors.surface,
+      borderRadius: radii.md,
+      padding: spacing.sm,
+    },
+  });

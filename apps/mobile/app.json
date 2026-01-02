@@ -19,7 +19,10 @@
         "NSLocationWhenInUseUsageDescription": "周辺の避難所を表示するために位置情報を使用します。",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "災害情報の通知と周辺避難所の更新のため、バックグラウンドでも位置情報を使用します。",
         "NSLocationAlwaysUsageDescription": "災害情報の通知と周辺避難所の更新のため、バックグラウンドでも位置情報を使用します。",
-        "UIBackgroundModes": ["location", "remote-notification"]
+        "UIBackgroundModes": [
+          "location",
+          "remote-notification"
+        ]
       }
     },
     "android": {
@@ -42,7 +45,10 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-    "plugins": ["expo-router", "expo-notifications"],
+    "plugins": [
+      "expo-router",
+      "expo-notifications"
+    ],
     "experiments": {
       "typedRoutes": true
     }

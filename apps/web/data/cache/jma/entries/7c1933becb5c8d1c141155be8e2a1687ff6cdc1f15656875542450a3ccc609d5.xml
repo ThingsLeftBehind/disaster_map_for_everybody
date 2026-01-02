@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_add="http://xml.kishou.go.jp/jmaxml1/addition1/">
+<Control>
+<Title>府県気象情報</Title>
+<DateTime>2026-01-01T11:04:05Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>山形地方気象台</EditorialOffice>
+<PublishingOffice>山形地方気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>大雪と雷及び突風に関する山形県気象情報</Title>
+<ReportDateTime>2026-01-01T20:04:00+09:00</ReportDateTime>
+<TargetDateTime>2026-01-01T20:04:00+09:00</TargetDateTime>
+<EventID>JPDD250075</EventID>
+<InfoType>発表</InfoType>
+<Serial>7</Serial>
+<InfoKind>同一現象用平文情報</InfoKind>
+<InfoKindVersion>1.0_0</InfoKindVersion>
+<Headline>
+<Text>村山と最上では、冬型の気圧配置が続くため２日明け方にかけて、大雪に注意してください。また、山形県では２日昼前から夜遅くにかけて、竜巻などの激しい突風や落雷に注意してください。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/">
+<Notice/>
+<Comment>
+<Text type="本文">［気象概況］
+　日本付近は２日にかけて冬型の気圧配置が続く見込みです。東北地方の上空約５０００メートルには、氷点下３６度以下の寒気が流れ込み、大気の状態が非常に不安定となるでしょう。
+　このため、村山と最上で大雪となる所がある見込みです。また、山形県では２日は積乱雲が発達し、雷の発生する所があるでしょう。
+
+［雪の実況］
+１日１９時現在の２４時間降雪量（アメダスによる速報値）
+　　大蔵村肘折　　５５センチ
+　　尾花沢　　　　５３センチ
+　　新庄　　　　　４４センチ
+　　小国　　　　　３３センチ
+　　西川町大井沢　３１センチ
+１日１９時現在の積雪の深さ（アメダスによる速報値）
+　　大蔵村肘折　　１４３センチ
+　　西川町大井沢　　８０センチ
+　　櫛引　　　　　　６１センチ
+　　尾花沢　　　　　６１センチ
+　　新庄　　　　　　５４センチ
+
+［雪の予想］
+１日２１時から２日２１時までに予想される２４時間降雪量は多い所で、
+　　村山　山沿い　４０センチ
+　　村山　平地　　２０センチ
+　　置賜　山沿い　４０センチ
+　　置賜　平地　　２０センチ
+　　庄内　山沿い　４０センチ
+　　庄内　平地　　２０センチ
+　　最上　山沿い　４０センチ
+　　最上　平地　　２０センチ
+
+［防災事項］
+　村山・最上では、２日明け方にかけて、大雪による交通障害、屋根からの落雪、建物や農業施設等への被害、なだれに注意してください。また、山形県では２日昼前から夜遅くにかけて、竜巻などの激しい突風や落雷に注意してください。発達した積乱雲の近づく兆しがある場合には、頑丈な建物内に移動するなど、安全確保に努めてください。
+
+［補足事項］
+今後発表する防災気象情報に留意してください。
+次の「大雪と雷及び突風に関する山形県気象情報」は、２日６時頃に発表する予定です。</Text>
+</Comment>
+</Body>
+</Report>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_add="http://xml.kishou.go.jp/jmaxml1/addition1/">
+<Control>
+<Title>府県気象情報</Title>
+<DateTime>2026-01-01T07:22:20Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>高松地方気象台</EditorialOffice>
+<PublishingOffice>高松地方気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>大雪に関する香川県気象情報</Title>
+<ReportDateTime>2026-01-01T16:22:00+09:00</ReportDateTime>
+<TargetDateTime>2026-01-01T16:22:00+09:00</TargetDateTime>
+<EventID>JPMT250136</EventID>
+<InfoType>発表</InfoType>
+<Serial>3</Serial>
+<InfoKind>同一現象用平文情報</InfoKind>
+<InfoKindVersion>1.0_0</InfoKindVersion>
+<Headline>
+<Text>香川県では、２日夕方から３日午前中にかけて、山沿いを中心に大雪となる見込みです。積雪や路面の凍結による交通障害に注意してください。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/">
+<Notice/>
+<Comment>
+<Text type="本文">［気象概況］
+　四国地方では、２日から３日にかけて冬型の気圧配置が強まり、上空約１５００メートルには、氷点下９度以下の強い寒気が流れ込む見込みです。
+
+［雪の予想］
+　２日夕方から３日午前中にかけて、山沿いを中心に大雪となる見込みです。
+１日１８時から２日１８時までに予想される２４時間降雪量は多い所で、
+　　香川県　２センチ
+その後、２日１８時から３日１８時までに予想される２４時間降雪量は多い所で、
+　　香川県　５センチ
+
+［防災事項］
+　積雪や路面の凍結による交通障害に注意してください。
+　また、農作物やビニールハウスなど農業施設の管理に注意してください。
+　雪による交通機関への影響が予想されますので、時間に余裕をもった行動を心がけてください。
+
+［補足事項］
+　今後発表する防災気象情報に留意してください。
+　次の「香川県気象情報」は２日６時頃に発表する予定です。</Text>
+</Comment>
+</Body>
+</Report>

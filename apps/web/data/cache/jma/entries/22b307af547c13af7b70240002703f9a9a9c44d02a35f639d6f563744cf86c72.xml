@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_add="http://xml.kishou.go.jp/jmaxml1/addition1/">
+<Control>
+<Title>府県気象情報</Title>
+<DateTime>2026-01-01T07:28:17Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>津地方気象台</EditorialOffice>
+<PublishingOffice>津地方気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>大雪に関する三重県気象情報</Title>
+<ReportDateTime>2026-01-01T16:28:00+09:00</ReportDateTime>
+<TargetDateTime>2026-01-01T16:28:00+09:00</TargetDateTime>
+<EventID>JPGC260001</EventID>
+<InfoType>発表</InfoType>
+<Serial>1</Serial>
+<InfoKind>同一現象用平文情報</InfoKind>
+<InfoKindVersion>1.0_0</InfoKindVersion>
+<Headline>
+<Text>三重県の北部や伊賀を中心に２日夜から３日午前中にかけて、大雪となる所があるでしょう。大雪や路面の凍結による交通障害に注意・警戒してください。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/">
+<Notice/>
+<Comment>
+<Text type="本文">［気象概況］
+日本付近は、冬型の気圧配置となっています。２日は、東海地方の上空約５５００メートルに氷点下３６度以下のこの冬一番の強い寒気が流れ込み、冬型の気圧配置が強まるでしょう。このため、三重県では北部と伊賀を中心に２日夜から３日午前中にかけて大雪となる所がある見込みです。伊賀では、雪雲が同じ所に流れ込んだ場合や予想より降雪が強まった場合は、警報級の大雪となる可能性があります。
+
+［雪の予想］
+１日１８時から２日１８時までに予想される２４時間降雪量は多い所で、
+　　北部　　　　　２センチ
+　　中部　　　　　１センチ
+　　伊賀　　　　　２センチ
+　　伊勢志摩　　　０センチ
+　　紀勢・東紀州　０センチ
+その後、２日１８時から３日１８時までに予想される２４時間降雪量は多い所で、
+　　北部　　　　　１０センチ
+　　中部　　　　　　３センチ
+　　伊賀　　　　　１０センチ
+　　伊勢志摩　　　　０センチ
+　　紀勢・東紀州　　１センチ
+
+［防災事項］
+大雪や路面の凍結による交通障害に注意・警戒してください。ビニールハウスなどの農業施設の被害に注意してください。また、交通機関への影響が予想されますので時間に余裕を持った行動を心がけてください。
+
+［補足事項］
+今後発表する防災気象情報に留意してください。
+次の「大雪に関する三重県気象情報」は、２日６時頃に発表する予定です。</Text>
+</Comment>
+</Body>
+</Report>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_add="http://xml.kishou.go.jp/jmaxml1/addition1/">
+<Control>
+<Title>府県気象情報</Title>
+<DateTime>2026-01-01T07:20:46Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>前橋地方気象台</EditorialOffice>
+<PublishingOffice>前橋地方気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>雪に関する群馬県気象情報</Title>
+<ReportDateTime>2026-01-01T16:20:00+09:00</ReportDateTime>
+<TargetDateTime>2026-01-01T16:20:00+09:00</TargetDateTime>
+<EventID>JPTB260001</EventID>
+<InfoType>発表</InfoType>
+<Serial>2</Serial>
+<InfoKind>同一現象用平文情報</InfoKind>
+<InfoKindVersion>1.0_0</InfoKindVersion>
+<Headline>
+<Text>群馬県では、２日は昼過ぎから雪や雨となり、南部の平地でも積雪となる所がある見込みです。雪による交通障害や路面の凍結に留意してください。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/">
+<Notice/>
+<Comment>
+<Text type="本文">［気象概況］
+日本付近は強い冬型の気圧配置となっており、関東甲信地方には２日から３日にかけて、上空約５５００メートルに氷点下３６度以下の強い寒気が流れ込む見込みです。
+群馬県では、２日は昼過ぎから雪や雨となり、南部の平地でも積雪となる所がある見込みです。
+
+［雪の予想］
+１日１８時から２日１８時までに予想される２４時間降雪量は多い所で、
+　　利根・沼田地域　山地　１０センチ
+　　吾妻地域　山地　　　　　６センチ
+　　北部　平地　　　　　　　４センチ
+　　南部　山地　　　　　　　４センチ
+　　南部　平地　　　　　　　１センチ
+その後、２日１８時から３日１８時までに予想される２４時間降雪量は多い所で、
+　　利根・沼田地域　山地　４０センチ
+　　吾妻地域　山地　　　　３０センチ
+　　北部　平地　　　　　　　５センチ
+　　南部　山地　　　　　　　５センチ
+　　南部　平地　　　　　　　０センチ
+※山地は標高５００メートル以上の地域です。
+
+［防災事項］
+群馬県では、雪による交通障害や路面の凍結に留意してください。
+
+［補足事項］
+今後発表する防災気象情報に留意してください。
+これで、「雪に関する群馬県気象情報」は終了します。</Text>
+</Comment>
+</Body>
+</Report>

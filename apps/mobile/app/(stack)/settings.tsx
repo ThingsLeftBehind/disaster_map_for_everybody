@@ -59,22 +59,22 @@ export default function SettingsScreen() {
   }, [refreshStatus]);
 
   return (
-    <ScreenContainer title="Settings" leftAction={{ label: 'Back', onPress: () => router.back() }}>
+    <ScreenContainer title="設定" leftAction={{ icon: 'chevron-left', label: '戻る', onPress: () => router.back() }}>
       <SectionCard title="表示">
         <View style={styles.row}>
           <Text style={styles.rowLabel}>ダークモード</Text>
           <Switch
             value={themeName === 'dark'}
             onValueChange={(value) => setThemeName(value ? 'dark' : 'light')}
-            trackColor={{ false: colors.border, true: colors.text }}
-            thumbColor={colors.background}
+            trackColor={{ false: colors.border, true: '#007AFF' }} // Blue for active (ios default-ish, definitely not green)
+            thumbColor={'#FFFFFF'}
           />
         </View>
       </SectionCard>
 
       <SectionCard title="Background Alerts">
         <StatusPill label={alertsEnabled ? '有効' : '無効'} tone={alertsEnabled ? 'ok' : 'neutral'} />
-        <TextLine label="説明" value="災害通知と周辺避難所の更新に通知と位置情報の許可が必要です。" />
+        <Text style={styles.textValue}>災害通知と周辺避難所のリアルタイム更新のため、位置情報の許可が必要です。</Text>
         {error ? <Text style={styles.mutedText}>{error}</Text> : null}
         <PrimaryButton label="有効にする" onPress={handleEnable} disabled={isWorking} />
         <SecondaryButton label="無効にする" onPress={handleDisable} disabled={isWorking} />
@@ -86,8 +86,11 @@ export default function SettingsScreen() {
       </SectionCard>
 
       <SectionCard title="Links">
-        <SecondaryButton label="Sources" onPress={() => router.push('/sources')} />
-        <SecondaryButton label="Disclaimer" onPress={() => router.push('/disclaimer')} />
+        <SecondaryButton label="MySafetyPinCard" onPress={() => router.push('/mysafety')} />
+        <SecondaryButton label="情報ソース" onPress={() => router.push('/sources')} />
+        <SecondaryButton label="免責事項" onPress={() => router.push('/disclaimer')} />
+        <SecondaryButton label="注意事項" onPress={() => router.push('/notices')} />
+        <SecondaryButton label="ライセンス" onPress={() => router.push('/licenses')} />
       </SectionCard>
     </ScreenContainer>
   );
@@ -105,30 +108,30 @@ function TextLine({ label, value }: { label: string; value: string }) {
 
 const createStyles = (colors: { text: string; muted: string; border: string }) =>
   StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  rowLabel: {
-    ...typography.body,
-    color: colors.text,
-  },
-  textLine: {
-    marginBottom: spacing.sm,
-  },
-  textLabel: {
-    ...typography.label,
-    color: colors.text,
-  },
-  textValue: {
-    ...typography.body,
-    color: colors.muted,
-    marginTop: spacing.xs,
-  },
-  mutedText: {
-    ...typography.caption,
-    color: colors.muted,
-    marginTop: spacing.xs,
-  },
-});
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    rowLabel: {
+      ...typography.body,
+      color: colors.text,
+    },
+    textLine: {
+      marginBottom: spacing.sm,
+    },
+    textLabel: {
+      ...typography.label,
+      color: colors.text,
+    },
+    textValue: {
+      ...typography.body,
+      color: colors.muted,
+      marginTop: spacing.xs,
+    },
+    mutedText: {
+      ...typography.caption,
+      color: colors.muted,
+      marginTop: spacing.xs,
+    },
+  });

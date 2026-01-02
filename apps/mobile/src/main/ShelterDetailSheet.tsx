@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
+import { HAZARD_OPTIONS } from '@/src/constants/hazards';
 import { fetchJson, getApiBaseUrl, toApiError, type ApiError } from '@/src/api/client';
 import type { CrowdVoteValue, Shelter, ShelterCommunityResponse } from '@/src/api/types';
 import { getPushState } from '@/src/push/state';
@@ -265,6 +266,7 @@ export function ShelterDetailSheet({
               <View style={styles.hazardRow}>
                 {HAZARD_OPTIONS.map((option) => {
                   const active = Boolean(hazardFlags?.[option.key]);
+                  // Active: Black BG, White Text. Inactive: White BG, Black Border, Black Text.
                   return (
                     <View
                       key={option.key}
@@ -364,16 +366,7 @@ function formatUpdatedAt(value: string) {
   return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
-const HAZARD_OPTIONS = [
-  { key: 'flood', label: '洪水' },
-  { key: 'landslide', label: '土砂災害' },
-  { key: 'storm_surge', label: '高潮' },
-  { key: 'earthquake', label: '地震' },
-  { key: 'tsunami', label: '津波' },
-  { key: 'large_fire', label: '大規模火災' },
-  { key: 'inland_flood', label: '内水氾濫' },
-  { key: 'volcano', label: '火山' },
-] as const;
+// HAZARD_OPTIONS removed, imported from constants
 
 const createStyles = (colors: {
   background: string;

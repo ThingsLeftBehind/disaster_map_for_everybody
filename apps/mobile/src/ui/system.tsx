@@ -114,14 +114,10 @@ export function ScreenContainer({
 
 export function TabScreen({
   title,
-  subtitle,
-  titleAlign = 'left',
   children,
   scrollRef,
 }: {
   title: string;
-  subtitle?: string | null;
-  titleAlign?: 'left' | 'center';
   children: ReactNode;
   scrollRef?: RefObject<ScrollView>;
 }) {
@@ -133,20 +129,15 @@ export function TabScreen({
   const paddingBottom = Math.max(insets.bottom, Platform.OS === 'web' ? 10 : 6);
   const contentPaddingBottom = spacing.lg + baseHeight + paddingBottom;
 
+  // C4, C4-2: Header clean up
+  // - Always left aligned
+  // - No subtitle (removed "Current Location" line capability)
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.appBar}>
-        {titleAlign === 'left' ? (
-          <View style={styles.appBarTitleGroup}>
-            <Text style={styles.appBarTitleLeft}>{title}</Text>
-            {subtitle ? <Text style={styles.appBarSubtitle}>{subtitle}</Text> : null}
-          </View>
-        ) : (
-          <>
-            <View style={styles.appBarSide} />
-            <Text style={styles.appBarTitle}>{title}</Text>
-          </>
-        )}
+        <View style={styles.appBarTitleGroup}>
+          <Text style={styles.appBarTitleLeft}>{title}</Text>
+        </View>
         <Pressable onPress={openDrawer} hitSlop={10} style={styles.appBarButton}>
           <FontAwesome name="bars" size={18} color={colors.text} />
         </Pressable>
@@ -370,214 +361,214 @@ const createStyles = (colors: {
   statusDanger: string;
 }) =>
   StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.background,
-  },
-  headerTitle: {
-    ...typography.title,
-    color: colors.text,
-  },
-  headerSide: {
-    minWidth: 72,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  headerSideRight: {
-    minWidth: 72,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  headerAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-  },
-  headerActionCompact: {
-    paddingHorizontal: 0,
-  },
-  headerActionText: {
-    ...typography.label,
-    color: colors.text,
-  },
-  headerActionRight: {
-    textAlign: 'right',
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-  },
-  card: {
-    backgroundColor: colors.background,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.md,
-  },
-  appBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  appBarSide: {
-    width: 36,
-  },
-  appBarTitle: {
-    ...typography.title,
-    color: colors.text,
-    flex: 1,
-    textAlign: 'center',
-  },
-  appBarTitleGroup: {
-    flex: 1,
-  },
-  appBarTitleLeft: {
-    ...typography.title,
-    color: colors.text,
-  },
-  appBarSubtitle: {
-    ...typography.caption,
-    color: colors.muted,
-    marginTop: spacing.xxs,
-  },
-  appBarButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.background,
-  },
-  tabContent: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    alignSelf: 'center',
-    width: '100%',
-    maxWidth: 420,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  cardTitle: {
-    ...typography.subtitle,
-    color: colors.text,
-  },
-  button: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing.sm,
-  },
-  buttonPrimary: {
-    backgroundColor: colors.text,
-  },
-  buttonSecondary: {
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.text,
-  },
-  buttonTextPrimary: {
-    ...typography.subtitle,
-    color: colors.background,
-  },
-  buttonTextSecondary: {
-    ...typography.subtitle,
-    color: colors.text,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  chip: {
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderWidth: 1,
-  },
-  chipSelected: {
-    backgroundColor: colors.text,
-    borderColor: colors.text,
-  },
-  chipIdle: {
-    backgroundColor: colors.background,
-    borderColor: colors.border,
-  },
-  chipDisabled: {
-    opacity: 0.5,
-  },
-  chipText: {
-    ...typography.label,
-    color: colors.text,
-  },
-  chipTextSelected: {
-    ...typography.label,
-    color: colors.background,
-  },
-  statusPill: {
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderWidth: 1,
-    alignSelf: 'flex-start',
-  },
-  statusText: {
-    ...typography.label,
-  },
-  stateWrap: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    backgroundColor: colors.background,
-  },
-  stateTitle: {
-    ...typography.subtitle,
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  stateMessage: {
-    ...typography.body,
-    color: colors.muted,
-  },
-  skeleton: {
-    backgroundColor: colors.surfaceStrong,
-    borderRadius: radii.sm,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    fontSize: typography.body.fontSize,
-    color: colors.text,
-    backgroundColor: colors.background,
-  },
-  inputMultiline: {
-    minHeight: 96,
-    textAlignVertical: 'top',
-  },
-});
+    safe: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      backgroundColor: colors.background,
+    },
+    headerTitle: {
+      ...typography.title,
+      color: colors.text,
+    },
+    headerSide: {
+      minWidth: 72,
+      alignItems: 'flex-start',
+      justifyContent: 'center',
+    },
+    headerSideRight: {
+      minWidth: 72,
+      alignItems: 'flex-end',
+      justifyContent: 'center',
+    },
+    headerAction: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.sm,
+    },
+    headerActionCompact: {
+      paddingHorizontal: 0,
+    },
+    headerActionText: {
+      ...typography.label,
+      color: colors.text,
+    },
+    headerActionRight: {
+      textAlign: 'right',
+    },
+    content: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.lg,
+    },
+    card: {
+      backgroundColor: colors.background,
+      borderRadius: radii.lg,
+      padding: spacing.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: spacing.md,
+    },
+    appBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    appBarSide: {
+      width: 36,
+    },
+    appBarTitle: {
+      ...typography.title,
+      color: colors.text,
+      flex: 1,
+      textAlign: 'center',
+    },
+    appBarTitleGroup: {
+      flex: 1,
+    },
+    appBarTitleLeft: {
+      ...typography.title,
+      color: colors.text,
+    },
+    appBarSubtitle: {
+      ...typography.caption,
+      color: colors.muted,
+      marginTop: spacing.xxs,
+    },
+    appBarButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.background,
+    },
+    tabContent: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      alignSelf: 'center',
+      width: '100%',
+      maxWidth: 420,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: spacing.sm,
+    },
+    cardTitle: {
+      ...typography.subtitle,
+      color: colors.text,
+    },
+    button: {
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      borderRadius: radii.sm,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: spacing.sm,
+    },
+    buttonPrimary: {
+      backgroundColor: colors.text,
+    },
+    buttonSecondary: {
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.text,
+    },
+    buttonTextPrimary: {
+      ...typography.subtitle,
+      color: colors.background,
+    },
+    buttonTextSecondary: {
+      ...typography.subtitle,
+      color: colors.text,
+    },
+    buttonDisabled: {
+      opacity: 0.5,
+    },
+    chip: {
+      borderRadius: radii.pill,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderWidth: 1,
+    },
+    chipSelected: {
+      backgroundColor: colors.text,
+      borderColor: colors.text,
+    },
+    chipIdle: {
+      backgroundColor: colors.background,
+      borderColor: colors.border,
+    },
+    chipDisabled: {
+      opacity: 0.5,
+    },
+    chipText: {
+      ...typography.label,
+      color: colors.text,
+    },
+    chipTextSelected: {
+      ...typography.label,
+      color: colors.background,
+    },
+    statusPill: {
+      borderRadius: radii.pill,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderWidth: 1,
+      alignSelf: 'flex-start',
+    },
+    statusText: {
+      ...typography.label,
+    },
+    stateWrap: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radii.md,
+      padding: spacing.md,
+      backgroundColor: colors.background,
+    },
+    stateTitle: {
+      ...typography.subtitle,
+      color: colors.text,
+      marginBottom: spacing.xs,
+    },
+    stateMessage: {
+      ...typography.body,
+      color: colors.muted,
+    },
+    skeleton: {
+      backgroundColor: colors.surfaceStrong,
+      borderRadius: radii.sm,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radii.sm,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.sm,
+      fontSize: typography.body.fontSize,
+      color: colors.text,
+      backgroundColor: colors.background,
+    },
+    inputMultiline: {
+      minHeight: 96,
+      textAlignVertical: 'top',
+    },
+  });

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { HAZARD_OPTIONS } from '@/src/constants/hazards';
 import type { Shelter } from '@/src/api/types';
 import { EmptyState, ErrorState, SecondaryButton, Skeleton } from '@/src/ui/system';
 import { radii, spacing, typography, useThemedStyles } from '@/src/ui/theme';
@@ -174,16 +175,7 @@ function getHazardLabels(shelter: Shelter) {
   return active.slice(0, 2).map((option) => option.label);
 }
 
-const HAZARD_OPTIONS = [
-  { key: 'flood', label: '洪水' },
-  { key: 'landslide', label: '土砂' },
-  { key: 'storm_surge', label: '高潮' },
-  { key: 'earthquake', label: '地震' },
-  { key: 'tsunami', label: '津波' },
-  { key: 'large_fire', label: '大規模火災' },
-  { key: 'inland_flood', label: '内水' },
-  { key: 'volcano', label: '火山' },
-] as const;
+// HAZARD_OPTIONS removed, imported from constants
 
 const createStyles = (colors: {
   background: string;

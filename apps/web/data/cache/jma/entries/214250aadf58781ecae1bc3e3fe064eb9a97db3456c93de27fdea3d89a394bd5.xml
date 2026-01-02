@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_add="http://xml.kishou.go.jp/jmaxml1/addition1/">
+<Control>
+<Title>府県気象情報</Title>
+<DateTime>2026-01-01T07:10:28Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>旭川地方気象台</EditorialOffice>
+<PublishingOffice>旭川地方気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>風雪と雷及び突風に関する上川・留萌地方気象情報</Title>
+<ReportDateTime>2026-01-01T16:10:00+09:00</ReportDateTime>
+<TargetDateTime>2026-01-01T16:10:00+09:00</TargetDateTime>
+<EventID>JPSC250048</EventID>
+<InfoType>発表</InfoType>
+<Serial>3</Serial>
+<InfoKind>同一現象用平文情報</InfoKind>
+<InfoKindVersion>1.0_0</InfoKindVersion>
+<Headline>
+<Text>留萌南部では、１日夜遅くにかけて、ふぶきや吹きだまりによる交通障害に十分注意してください。上川・留萌地方では、２日明け方にかけて、竜巻などの激しい突風や落雷に注意してください。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/">
+<Notice/>
+<Comment>
+<Text type="本文">［気象概況］
+北海道付近は、２日にかけて冬型の気圧配置が続きますが、２日朝にかけて日本海北部を南下する低気圧を含む気圧の谷が通過する見込みです。
+
+［風の予想］
+１日に予想される最大風速（最大瞬間風速）
+　　上川地方　　　　１０メートル　（２０メートル）
+　　留萌地方の陸上　１５メートル　（３０メートル）
+　　留萌地方の海上　１８メートル　（３０メートル）
+
+［波の予想］
+１日に予想される波の高さ
+　　留萌地方　４メートル
+
+［防災事項］
+　留萌南部では、１日夜遅くにかけて、西または北西の風が雪を伴って強まり、海はしける見込みです。ふぶきや吹きだまりによる交通障害に十分注意し、強風や高波にも注意してください。低気圧の動向によっては、暴風雪となるおそれがあります。
+　上川・留萌地方では、２日明け方にかけて、竜巻などの激しい突風や落雷のおそれがあります。屋外での活動や農作物の管理などに注意してください。
+　発達した積乱雲の近づく兆しがある場合には、頑丈な建物内に移動するなど、安全確保に努めてください。
+
+［補足事項］
+　今後、気象台が発表する防災気象情報に留意してください。
+　市町村毎の早期注意情報（警報級の可能性）、警報・注意報の期間などの詳細については、気象庁ホームページをご覧ください。
+
+　次の「風雪と雷及び突風に関する上川・留萌地方気象情報」は、１日夜遅くに発表する予定です。</Text>
+</Comment>
+</Body>
+</Report>
