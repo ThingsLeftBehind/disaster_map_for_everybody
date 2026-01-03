@@ -11,6 +11,7 @@ import {
 
 const DEFAULT_API_BASE_URL = 'https://www.hinanavi.com';
 const DEFAULT_TIMEOUT_MS = 10000;
+let didLogApiBaseUrl = false;
 
 export type ApiError = {
   message: string;
@@ -32,13 +33,27 @@ type CacheConfig = {
 
 export function getApiBaseUrl() {
   const envValue = process.env.EXPO_PUBLIC_API_BASE_URL;
+  let resolved = '';
   if (envValue && envValue.trim().length > 0) {
-    return envValue.trim();
+    resolved = envValue.trim();
+  } else if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    const { hostname, port, origin } = window.location;
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+    const expoDevPorts = new Set(['8081', '19006', '19000', '19001']);
+    if (isLocalhost && expoDevPorts.has(port)) {
+      resolved = 'http://127.0.0.1:3000';
+    } else if (origin) {
+      resolved = origin;
+    }
   }
-  if (Platform.OS === 'web' && process.env.NODE_ENV !== 'production') {
-    return '';
+  if (!resolved) {
+    resolved = DEFAULT_API_BASE_URL;
   }
-  return DEFAULT_API_BASE_URL;
+  if (__DEV__ && !didLogApiBaseUrl) {
+    didLogApiBaseUrl = true;
+    console.log(`[API] baseUrl=${resolved}`);
+  }
+  return resolved;
 }
 
 function buildUrl(path: string) {
@@ -59,9 +74,10 @@ export function buildCacheKey(path: string, params: URLSearchParams) {
 export async function fetchJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   const controller = init.signal ? null : new AbortController();
   const timeoutId = controller ? setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS) : null;
+  const url = buildUrl(path);
 
   try {
-    const response = await fetch(buildUrl(path), {
+    const response = await fetch(url, {
       ...init,
       headers: {
         Accept: 'application/json',
@@ -72,8 +88,19 @@ export async function fetchJson<T>(path: string, init: RequestInit = {}): Promis
 
     if (!response.ok) {
       const text = await response.text().catch(() => '');
-      const message = text ? `Request failed ${response.status}: ${text}` : `Request failed ${response.status}`;
+      const snippet = formatResponseSnippet(text);
+      const message = snippet
+        ? `Request failed ${response.status}: ${snippet}`
+        : `Request failed ${response.status}`;
       throw createApiError(message, response.status, 'http');
+    }
+
+    const contentType = response.headers.get('content-type') ?? '';
+    if (!contentType.includes('application/json')) {
+      const text = await response.text().catch(() => '');
+      const snippet = formatResponseSnippet(text);
+      const detail = `Expected JSON, got ${contentType || 'unknown'}. (${response.url})`;
+      throw createApiError(snippet ? `${detail} ${snippet}` : detail, response.status, 'http');
     }
 
     return (await response.json()) as T;
@@ -145,6 +172,13 @@ function shouldCacheResponse(value: unknown) {
 
 function createApiError(message: string, status: number | null, kind: ApiError['kind']): ApiError {
   return { message, status, kind };
+}
+
+function formatResponseSnippet(text: string) {
+  if (!text) return '';
+  const withoutTags = text.replace(/<[^>]+>/g, ' ');
+  const compact = withoutTags.replace(/\s+/g, ' ').trim();
+  return compact.slice(0, 200);
 }
 
 function isApiError(value: unknown): value is ApiError {
