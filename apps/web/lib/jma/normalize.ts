@@ -1,10 +1,12 @@
 import crypto from 'node:crypto';
+import path from 'node:path';
 import { NORMALIZATION_LIMITS } from './config';
 import { parseAtomFeed } from './atom';
 import { fileExists, readJsonFile, readTextFile, atomicWriteJson } from './cache';
 import { atomEntryHash } from './fetchers';
 import {
   jmaAreaConstPath,
+  getRepoRootDir,
   jmaEntryXmlPath,
   jmaFeedXmlPath,
   jmaNormalizedQuakesPath,
@@ -138,6 +140,15 @@ function normalizeDepthKm(raw: unknown): number | null {
 
 function pickDepthKm(value: unknown): number | null {
   if (!value || typeof value !== 'object') return null;
+  const coord =
+    (value as any).cod ??
+    (value as any).coord ??
+    (value as any).coordinate ??
+    (value as any).Coordinate;
+  if (typeof coord === 'string') {
+    const parsed = extractDepthKmFromCoordinate(coord);
+    if (parsed !== null) return parsed;
+  }
   const v =
     (value as any).depth ??
     (value as any).dep ??
@@ -148,11 +159,40 @@ function pickDepthKm(value: unknown): number | null {
   return normalizeDepthKm(v);
 }
 
+function pickReportType(value: unknown): string | null {
+  if (!value || typeof value !== 'object') return null;
+  const v =
+    (value as any).infoKind ??
+    (value as any).reportType ??
+    (value as any).kind ??
+    (value as any).type ??
+    (value as any).report ??
+    (value as any).headline;
+  return typeof v === 'string' && v.trim() ? v.trim() : null;
+}
+
+function isSokuhouReport(reportType: string | null, title: string | null): boolean {
+  if (reportType && reportType.includes('速報')) return true;
+  if (!reportType && title && title.includes('速報')) return true;
+  return false;
+}
+
 function extractMagnitude(xml: string): string | null {
   return (
     xmlTextBetween(xml, 'jmx_eb:Magnitude') ??
     xmlTextBetween(xml, 'Magnitude') ??
     xmlTextBetween(xml, 'magnitude')
+  );
+}
+
+function extractReportType(xml: string): string | null {
+  return (
+    xmlTextBetween(xml, 'jmx_eb:InfoKind') ??
+    xmlTextBetween(xml, 'InfoKind') ??
+    xmlTextBetween(xml, 'jmx_eb:ReportKind') ??
+    xmlTextBetween(xml, 'ReportKind') ??
+    xmlTextBetween(xml, 'jmx_eb:ControlTitle') ??
+    xmlTextBetween(xml, 'ControlTitle')
   );
 }
 
@@ -181,7 +221,11 @@ function extractDepthKm(xml: string): number | null {
   const depthMatch = desc.match(/深さ\s*([0-9]+(?:\.[0-9]+)?)\s*km/i);
   if (depthMatch) return Number(depthMatch[1]);
 
-  const coordText = normalizeFullWidthDigits(coordMatch[1] ?? '').trim();
+  return extractDepthKmFromCoordinate(coordMatch[1] ?? '');
+}
+
+function extractDepthKmFromCoordinate(raw: string): number | null {
+  const coordText = normalizeFullWidthDigits(raw ?? '').trim();
   const parts = coordText.match(/[+-]\d+(?:\.\d+)?/g);
   if (parts && parts.length >= 3) {
     const depthMeters = Math.abs(Number(parts[2]));
@@ -239,6 +283,60 @@ function extractIntensityAreas(xml: string): Array<{ intensity: string; areas: s
   return result;
 }
 
+function extractIntensityAreasFromWebJson(
+  row: any,
+  areaConst: AreaConst | null,
+  prefNamesByCode: Record<string, string> | null
+): Array<{ intensity: string; areas: string[] }> | null {
+  if (!row || typeof row !== 'object') return null;
+  const entries = (row as any).int;
+  if (!Array.isArray(entries)) return null;
+
+  const grouped = new Map<string, Set<string>>();
+  for (const pref of entries) {
+    if (!pref || typeof pref !== 'object') continue;
+    const prefIntensity = normalizeIntensityLabel((pref as any).maxi ?? (pref as any).maxInt);
+    const cities = Array.isArray((pref as any).city) ? (pref as any).city : [];
+    for (const city of cities) {
+      if (!city || typeof city !== 'object') continue;
+      const intensity = normalizeIntensityLabel((city as any).maxi ?? (city as any).maxInt) ?? prefIntensity;
+      if (!intensity) continue;
+      const code = typeof (city as any).code === 'string' ? (city as any).code : String((city as any).code ?? '');
+      if (!code) continue;
+      const name = formatAreaNameFromClass20(code, areaConst, prefNamesByCode);
+      if (!name) continue;
+      const set = grouped.get(intensity) ?? new Set<string>();
+      set.add(name);
+      grouped.set(intensity, set);
+    }
+  }
+
+  if (grouped.size === 0) return null;
+  const result = Array.from(grouped.entries()).map(([intensity, areas]) => ({
+    intensity,
+    areas: Array.from(areas),
+  }));
+  result.sort((a, b) => intensityScore(b.intensity) - intensityScore(a.intensity));
+  return result;
+}
+
+function formatAreaNameFromClass20(
+  code: string,
+  areaConst: AreaConst | null,
+  prefNamesByCode: Record<string, string> | null
+): string | null {
+  if (!code || !areaConst?.class20s) return null;
+  const entry = areaConst.class20s[code];
+  const baseName = entry?.name?.trim();
+  if (!baseName) return null;
+  const prefCode = code.slice(0, 2);
+  const prefName = prefNamesByCode?.[prefCode];
+  if (prefName && !baseName.startsWith(prefName)) {
+    return `${prefName}${baseName}`;
+  }
+  return baseName;
+}
+
 function computeFetchStatus(updatedAt: string | null, lastError: string | null): FetchStatus {
   if (!updatedAt) return 'DEGRADED';
   if (lastError) return 'DEGRADED';
@@ -265,7 +363,11 @@ function buildQuakeTitle(args: { maxi: string | null; epicenter: string | null; 
   return parts.length > 0 ? parts.join(' ') : '地震情報';
 }
 
-function normalizeQuakesFromWebJson(raw: unknown): NormalizedQuakeItem[] {
+function normalizeQuakesFromWebJson(
+  raw: unknown,
+  areaConst: AreaConst | null,
+  prefNamesByCode: Record<string, string> | null
+): NormalizedQuakeItem[] {
   if (!Array.isArray(raw)) return [];
 
   const parsed: NormalizedQuakeItem[] = [];
@@ -282,6 +384,10 @@ function normalizeQuakesFromWebJson(raw: unknown): NormalizedQuakeItem[] {
     const depthKm = pickDepthKm(row);
     const link = pickFirstString(row, ['url', 'link', 'href', 'detailUrl', 'detail', 'page']);
     const title = pickFirstString(row, ['ttl', 'title', 'headline', 'text']) ?? buildQuakeTitle({ maxi: maxIntensity, epicenter, magnitude });
+    const reportType = pickFirstString(row, ['ttl', 'title']) ?? pickReportType(row);
+    const intensityAreas = extractIntensityAreasFromWebJson(row, areaConst, prefNamesByCode);
+
+    if (isSokuhouReport(reportType, title)) continue;
 
     const idBasis = JSON.stringify({ time, title, link });
     const id = crypto.createHash('sha256').update(idBasis).digest('hex').slice(0, 16);
@@ -289,12 +395,13 @@ function normalizeQuakesFromWebJson(raw: unknown): NormalizedQuakeItem[] {
       id,
       time,
       title,
+      reportType: reportType ?? null,
       link,
       maxIntensity: maxIntensity ?? null,
       magnitude,
       epicenter,
       depthKm,
-      intensityAreas: undefined,
+      intensityAreas,
       source: 'webjson',
     });
     if (parsed.length >= NORMALIZATION_LIMITS.quakesItems) break;
@@ -310,6 +417,31 @@ function normalizeQuakesFromWebJson(raw: unknown): NormalizedQuakeItem[] {
   });
 
   return dedupeQuakeItems(sorted);
+}
+
+function quakeMergeKey(item: NormalizedQuakeItem): string {
+  const minute = toMinuteKey(item.time) ?? '';
+  const center = item.epicenter ?? '';
+  const intensity = item.maxIntensity ?? '';
+  return `${minute}|${center}|${intensity}`;
+}
+
+function mergeQuakeItems(primary: NormalizedQuakeItem[], secondary: NormalizedQuakeItem[]): NormalizedQuakeItem[] {
+  const out: NormalizedQuakeItem[] = [];
+  const seen = new Set<string>();
+  for (const item of primary) {
+    const key = quakeMergeKey(item);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(item);
+  }
+  for (const item of secondary) {
+    const key = quakeMergeKey(item);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(item);
+  }
+  return out;
 }
 
 export async function rebuildNormalizedStatus(): Promise<NormalizedStatusSnapshot> {
@@ -368,12 +500,9 @@ export async function rebuildNormalizedQuakes(): Promise<NormalizedQuakesSnapsho
   const webUpdatedAt = state.webjson.quakeList.lastSuccessfulUpdateTime;
   const pullUpdatedAt = state.feeds.eqvol.lastSuccessfulUpdateTime;
 
-  const webItems = normalizeQuakesFromWebJson(quakeListRaw);
-  if (webItems.length > 0) {
-    const snapshot: NormalizedQuakesSnapshot = { updatedAt: webUpdatedAt ?? previous?.updatedAt ?? null, items: webItems };
-    await atomicWriteJson(jmaNormalizedQuakesPath(), snapshot);
-    return snapshot;
-  }
+  const areaConst = await readAreaConst();
+  const prefNamesByCode = await readPrefNamesByCode();
+  const webItems = normalizeQuakesFromWebJson(quakeListRaw, areaConst, prefNamesByCode);
 
   const quakeHintsByMinute = new Map<string, { magnitude: string | null; epicenter: string | null }>();
   if (Array.isArray(quakeListRaw)) {
@@ -389,61 +518,69 @@ export async function rebuildNormalizedQuakes(): Promise<NormalizedQuakesSnapsho
   }
 
   const feedXml = await readTextFile(jmaFeedXmlPath('eqvol'));
-  if (!feedXml) {
+  const pullItems: NormalizedQuakeItem[] = [];
+  if (feedXml) {
+    const { entries } = parseAtomFeed(feedXml);
+
+    for (const entry of entries.slice(0, NORMALIZATION_LIMITS.quakesItems)) {
+      const hash = atomEntryHash(entry);
+      const detailPath = jmaEntryXmlPath(hash);
+
+      let magnitude: string | null = null;
+      let epicenter: string | null = null;
+      let depthKm: number | null = null;
+      let maxIntensity: string | null = null;
+      let intensityAreas: Array<{ intensity: string; areas: string[] }> | null = null;
+      let reportType: string | null = null;
+      if (await fileExists(detailPath)) {
+        const detailXml = await readTextFile(detailPath);
+        if (detailXml) {
+          magnitude = extractMagnitude(detailXml);
+          epicenter = extractEpicenter(detailXml);
+          depthKm = extractDepthKm(detailXml);
+          maxIntensity = extractMaxIntensity(detailXml);
+          intensityAreas = extractIntensityAreas(detailXml) ?? null;
+          reportType = extractReportType(detailXml);
+        }
+      }
+
+      if (isSokuhouReport(reportType, entry.title)) continue;
+
+      const minuteKey = toMinuteKey(entry.updated ?? entry.published);
+      const hint = minuteKey ? quakeHintsByMinute.get(minuteKey) : null;
+      if (hint) {
+        magnitude ||= hint.magnitude;
+        epicenter ||= hint.epicenter;
+      }
+
+      const id = crypto.createHash('sha256').update(entry.id).digest('hex').slice(0, 16);
+      pullItems.push({
+        id,
+        time: entry.updated ?? entry.published,
+        title: entry.title,
+        reportType: reportType ?? null,
+        link: entry.link,
+        maxIntensity,
+        magnitude,
+        epicenter,
+        depthKm,
+        intensityAreas,
+        source: 'pull',
+      });
+    }
+  }
+
+  const merged = mergeQuakeItems(pullItems, webItems);
+  if (merged.length === 0) {
     if (previous) return previous;
-    const empty: NormalizedQuakesSnapshot = { updatedAt: pullUpdatedAt ?? null, items: [] };
+    const empty: NormalizedQuakesSnapshot = { updatedAt: maxIso(webUpdatedAt, pullUpdatedAt), items: [] };
     await atomicWriteJson(jmaNormalizedQuakesPath(), empty);
     return empty;
   }
 
-  const { entries } = parseAtomFeed(feedXml);
-  const items: NormalizedQuakeItem[] = [];
-
-  for (const entry of entries.slice(0, NORMALIZATION_LIMITS.quakesItems)) {
-    const id = crypto.createHash('sha256').update(entry.id).digest('hex').slice(0, 16);
-    const hash = atomEntryHash(entry);
-    const detailPath = jmaEntryXmlPath(hash);
-
-    let magnitude: string | null = null;
-    let epicenter: string | null = null;
-    let depthKm: number | null = null;
-    let maxIntensity: string | null = null;
-    let intensityAreas: Array<{ intensity: string; areas: string[] }> | undefined = undefined;
-    if (await fileExists(detailPath)) {
-      const detailXml = await readTextFile(detailPath);
-      if (detailXml) {
-        magnitude = extractMagnitude(detailXml);
-        epicenter = extractEpicenter(detailXml);
-        depthKm = extractDepthKm(detailXml);
-        maxIntensity = extractMaxIntensity(detailXml);
-        intensityAreas = extractIntensityAreas(detailXml) ?? undefined;
-      }
-    }
-
-    const minuteKey = toMinuteKey(entry.updated ?? entry.published);
-    const hint = minuteKey ? quakeHintsByMinute.get(minuteKey) : null;
-    if (hint) {
-      magnitude ||= hint.magnitude;
-      epicenter ||= hint.epicenter;
-    }
-
-    items.push({
-      id,
-      time: entry.updated ?? entry.published,
-      title: entry.title,
-      link: entry.link,
-      maxIntensity,
-      magnitude,
-      epicenter,
-      depthKm,
-      intensityAreas,
-      source: 'pull',
-    });
-  }
-
   const snapshot: NormalizedQuakesSnapshot = {
-    updatedAt: pullUpdatedAt ?? previous?.updatedAt ?? null,
-    items: dedupeQuakeItems(items),
+    updatedAt: maxIso(webUpdatedAt, pullUpdatedAt) ?? previous?.updatedAt ?? null,
+    items: dedupeQuakeItems(merged),
   };
   await atomicWriteJson(jmaNormalizedQuakesPath(), snapshot);
   return snapshot;
@@ -458,6 +595,7 @@ type AreaConst = {
 };
 
 let cachedAreaConst: AreaConst | null = null;
+let cachedPrefNamesByCode: Record<string, string> | null = null;
 
 async function readAreaConst(): Promise<AreaConst | null> {
   if (cachedAreaConst) return cachedAreaConst;
@@ -465,6 +603,22 @@ async function readAreaConst(): Promise<AreaConst | null> {
   if (!json) return null;
   cachedAreaConst = json;
   return cachedAreaConst;
+}
+
+async function readPrefNamesByCode(): Promise<Record<string, string> | null> {
+  if (cachedPrefNamesByCode) return cachedPrefNamesByCode;
+  const filePath = path.join(getRepoRootDir(), 'data', 'generated', 'municipalities.json');
+  const rows = await readJsonFile<Array<{ prefCode?: string; prefName?: string }>>(filePath);
+  if (!rows || !Array.isArray(rows)) return null;
+  const map: Record<string, string> = {};
+  for (const row of rows) {
+    const code = row?.prefCode;
+    const name = row?.prefName;
+    if (!code || !name || map[code]) continue;
+    map[code] = name;
+  }
+  cachedPrefNamesByCode = map;
+  return cachedPrefNamesByCode;
 }
 
 export async function areaNameFromConst(area: string): Promise<string | null> {

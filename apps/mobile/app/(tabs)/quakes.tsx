@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { fetchJson, toApiError, type ApiError } from '@/src/api/client';
@@ -69,6 +69,9 @@ export default function QuakesScreen() {
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
   const [guideExpanded, setGuideExpanded] = useState<Record<string, boolean>>({});
   const [strongExpandedIds, setStrongExpandedIds] = useState<Record<string, boolean>>({});
+  const loggedKeysRef = useRef(false);
+  const loggedDepthRef = useRef(false);
+  const loggedFilterRef = useRef('');
 
   const loadQuakes = useCallback(async () => {
     setIsLoading(true);
@@ -92,20 +95,52 @@ export default function QuakesScreen() {
     void loadQuakes();
   }, [loadQuakes]);
 
-  const [strongLimit, setStrongLimit] = useState(3);
-  const [listLimit, setListLimit] = useState(10);
+  useEffect(() => {
+    if (!__DEV__ || !quakes?.items?.length) return;
+    if (!loggedKeysRef.current) {
+      loggedKeysRef.current = true;
+      console.log('[Quakes] item keys', Object.keys(quakes.items[0] ?? {}));
+    }
+    if (!loggedDepthRef.current) {
+      const sample = quakes.items.find((item) => typeof item.depthKm === 'number');
+      if (sample) {
+        loggedDepthRef.current = true;
+        console.log('[Quakes] depth sample', { id: sample.id, depthKm: sample.depthKm, title: sample.title });
+      }
+    }
+  }, [quakes]);
 
-  const items = useMemo(() => {
+  const [strongVisibleCount, setStrongVisibleCount] = useState(3);
+  const [recentVisibleCount, setRecentVisibleCount] = useState(10);
+
+  const { filteredItems, filterStats } = useMemo(() => {
     const all = quakes?.items ?? [];
-    // Filter non-final or invalid items
-    return all.filter(item => {
-      // Exclude "震度速報" (Intensity Flash) or items without maxIntensity
-      if (item.title?.includes('速報')) return false;
-      // Also strictly exclude if kind is "震度速報" if that field existed, but title check is robust for JMA feeds.
+    const stats = { removed: 0, byReportType: 0, byTitle: 0 };
+    const next = all.filter((item) => {
       if (!item.maxIntensity) return false;
+      const reason = getSokuhouReason(item);
+      if (reason) {
+        stats.removed += 1;
+        if (reason === 'reportType') stats.byReportType += 1;
+        if (reason === 'title') stats.byTitle += 1;
+        return false;
+      }
       return true;
     });
+    return { filteredItems: next, filterStats: stats };
   }, [quakes]);
+
+  useEffect(() => {
+    if (!__DEV__) return;
+    const key = JSON.stringify(filterStats);
+    if (key === loggedFilterRef.current) return;
+    loggedFilterRef.current = key;
+    if (filterStats.removed > 0) {
+      console.log('[Quakes] filtered sokuhou', filterStats);
+    }
+  }, [filterStats]);
+
+  const items = filteredItems;
 
   const latestItem = useMemo(() => pickLatestItem(items), [items]);
 
@@ -130,8 +165,13 @@ export default function QuakesScreen() {
     }).slice(0, 9);
   }, [items]);
 
-  const visibleStrong = strongItems.slice(0, strongLimit);
-  const visibleList = items.slice(0, listLimit);
+  const strongCap = Math.min(9, strongItems.length);
+  const recentCap = Math.min(100, items.length);
+  const canShowMoreStrong = strongVisibleCount < strongCap;
+  const canShowMoreRecent = recentVisibleCount < recentCap;
+
+  const visibleStrong = strongItems.slice(0, strongVisibleCount);
+  const visibleList = items.slice(0, recentVisibleCount);
 
   const lastUpdated = quakes?.updatedAt ?? latestItem?.time ?? null;
   const emptyState = !isLoading && !error && items.length === 0;
@@ -158,10 +198,8 @@ export default function QuakesScreen() {
               {strongItems.length > 0 ? (
                 <StrongQuakesSection
                   items={visibleStrong}
-                  hasMore={strongLimit < strongItems.length}
-                  onShowMore={() => setStrongLimit(prev => Math.min(prev + 3, 9))}
-                  onCollapse={() => setStrongLimit(3)}
-                  isExpanded={strongLimit > 3}
+                  canShowMore={canShowMoreStrong}
+                  onShowMore={() => setStrongVisibleCount(prev => Math.min(prev + 3, 9))}
                   expandedIds={strongExpandedIds}
                   onToggle={(id) => setStrongExpandedIds(prev => ({ ...prev, [id]: !prev[id] }))}
                 />
@@ -177,10 +215,8 @@ export default function QuakesScreen() {
                     [id]: !prev[id],
                   }))
                 }
-                hasMore={listLimit < items.length && listLimit < 100}
-                onShowMore={() => setListLimit((prev) => Math.min(prev + 10, 100))}
-                onCollapse={() => setListLimit(10)}
-                isExpanded={listLimit > 10}
+                canShowMore={canShowMoreRecent}
+                onShowMore={() => setRecentVisibleCount((prev) => Math.min(prev + 10, 100))}
               />
             </>
           ) : null}
@@ -263,19 +299,15 @@ function QuakeList({
   items,
   expandedIds,
   onToggle,
-  hasMore,
+  canShowMore,
   onShowMore,
-  onCollapse,
-  isExpanded,
 }: {
   title: string;
   items: JmaQuakeItem[];
   expandedIds: Record<string, boolean>;
   onToggle: (id: string) => void;
-  hasMore: boolean;
+  canShowMore: boolean;
   onShowMore: () => void;
-  onCollapse: () => void;
-  isExpanded: boolean;
 }) {
   const styles = useThemedStyles(createStyles);
   return (
@@ -291,18 +323,9 @@ function QuakeList({
           />
         ))}
       </View>
-      {(hasMore || isExpanded) ? (
+      {canShowMore ? (
         <View style={styles.paginationRow}>
-          {hasMore ? (
-            <Pressable style={styles.smallOutlineButton} onPress={onShowMore}>
-              <Text style={styles.smallOutlineButtonText}>もっと見る</Text>
-            </Pressable>
-          ) : null}
-          {isExpanded ? (
-            <Pressable style={styles.smallOutlineButton} onPress={onCollapse}>
-              <Text style={styles.smallOutlineButtonText}>閉じる</Text>
-            </Pressable>
-          ) : null}
+          <LoadMoreButton onPress={onShowMore} />
         </View>
       ) : null}
     </View>
@@ -310,13 +333,11 @@ function QuakeList({
 }
 
 function StrongQuakesSection({
-  items, hasMore, onShowMore, onCollapse, isExpanded, expandedIds, onToggle
+  items, canShowMore, onShowMore, expandedIds, onToggle
 }: {
   items: JmaQuakeItem[];
-  hasMore: boolean;
+  canShowMore: boolean;
   onShowMore: () => void;
-  onCollapse: () => void;
-  isExpanded: boolean;
   expandedIds: Record<string, boolean>;
   onToggle: (id: string) => void;
 }) {
@@ -334,21 +355,21 @@ function StrongQuakesSection({
           />
         ))}
       </View>
-      {(hasMore || isExpanded) ? (
+      {canShowMore ? (
         <View style={styles.paginationRow}>
-          {hasMore ? (
-            <Pressable style={styles.smallOutlineButton} onPress={onShowMore}>
-              <Text style={styles.smallOutlineButtonText}>もっと見る</Text>
-            </Pressable>
-          ) : null}
-          {isExpanded ? (
-            <Pressable style={styles.smallOutlineButton} onPress={onCollapse}>
-              <Text style={styles.smallOutlineButtonText}>閉じる</Text>
-            </Pressable>
-          ) : null}
+          <LoadMoreButton onPress={onShowMore} />
         </View>
       ) : null}
     </View>
+  );
+}
+
+function LoadMoreButton({ onPress }: { onPress: () => void }) {
+  const styles = useThemedStyles(createStyles);
+  return (
+    <Pressable style={styles.loadMoreButton} onPress={onPress}>
+      <Text style={styles.loadMoreButtonText}>もっと見る</Text>
+    </Pressable>
   );
 }
 
@@ -356,9 +377,7 @@ function QuakeCard({ item, expanded, onToggle }: { item: JmaQuakeItem; expanded:
   const styles = useThemedStyles(createStyles);
   const intensity = formatIntensityLabel(item.maxIntensity);
   const metaLine = formatMetaLine(item);
-  const depth = item.depthKm !== undefined && item.depthKm !== null
-    ? `${item.depthKm}km`
-    : item.title ? extractDepth(item.title) : null;
+  const depth = formatDepthKm(item.depthKm) ?? (item.title ? extractDepth(item.title) : null);
 
   return (
     <View style={styles.quakeCard}>
@@ -376,11 +395,9 @@ function QuakeCard({ item, expanded, onToggle }: { item: JmaQuakeItem; expanded:
           {item.magnitude ? <Text style={styles.detailText}>規模: M{item.magnitude}</Text> : null}
           {depth ? <Text style={styles.detailText}>深さ: {depth}</Text> : null}
 
-          {item.intensityAreas ? (
+          {item.intensityAreas && item.intensityAreas.length > 0 ? (
             <FeltPointsList areas={item.intensityAreas} />
-          ) : (
-            <Text style={styles.detailText}>震度詳細情報はありません。</Text>
-          )}
+          ) : null}
 
           {item.link ? (
             <SecondaryButton label="気象庁HPで見る" onPress={() => Linking.openURL(item.link as string)} />
@@ -393,17 +410,14 @@ function QuakeCard({ item, expanded, onToggle }: { item: JmaQuakeItem; expanded:
 
 function FeltPointsList({ areas }: { areas: { intensity: string; areas: string[] }[] }) {
   const styles = useThemedStyles(createStyles);
+  const rows = buildFeltAreaLines(areas);
+  if (rows.length === 0) return null;
   return (
     <View style={styles.pointsStack}>
-      {areas.map((group) => (
-        <View key={group.intensity} style={styles.pointGroup}>
-          <View style={styles.pointHeader}>
-            <IntensityBadge value={group.intensity} compact />
-          </View>
-          <Text style={styles.pointBody}>
-            {group.areas.join('、')}
-          </Text>
-        </View>
+      {rows.map((row) => (
+        <Text key={row.label} style={styles.feltLine}>
+          {`震度${row.label}：${row.text}`}
+        </Text>
       ))}
     </View>
   );
@@ -627,6 +641,12 @@ function intensityRank(value: string | null) {
   return getRank(label);
 }
 
+function getSokuhouReason(item: JmaQuakeItem): 'reportType' | 'title' | null {
+  const reportType = item.reportType?.trim();
+  if (reportType) return reportType.includes('速報') ? 'reportType' : null;
+  return item.title?.includes('速報') ? 'title' : null;
+}
+
 function isStrongIntensity(value: string | null) {
   // 5- (Rank 5) or higher
   return intensityRank(value) >= 3; // "Strong" usually means 3 or 4+?
@@ -668,11 +688,28 @@ function pickMaxIntensityItem(items: JmaQuakeItem[]) {
 function formatMetaLine(item: JmaQuakeItem) {
   const time = item.time ? formatTimeLong(item.time) : '日時不明';
   const magnitude = item.magnitude ? `M${item.magnitude}` : 'M不明';
-  const depth = item.depthKm !== undefined && item.depthKm !== null
-    ? `${item.depthKm}km`
-    : item.title ? extractDepth(item.title) : null;
+  const depth = formatDepthKm(item.depthKm) ?? (item.title ? extractDepth(item.title) : null);
   const depthText = depth ? `深さ${depth}` : '深さ不明';
   return `${time} · ${magnitude} · ${depthText}`;
+}
+
+function formatDepthKm(value: number | null | undefined) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  const rounded = value < 10 ? value.toFixed(1) : String(Math.round(value));
+  return `${rounded}km`;
+}
+
+function buildFeltAreaLines(areas: { intensity: string; areas: string[] }[]) {
+  const sorted = [...areas].sort((a, b) => intensityRank(b.intensity) - intensityRank(a.intensity));
+  const limit = 8;
+  return sorted.map((group) => {
+    const list = group.areas ?? [];
+    const shown = list.slice(0, limit);
+    const remaining = list.length - shown.length;
+    const tail = remaining > 0 ? `ほか${remaining}市区町村` : null;
+    const text = [...shown, tail].filter(Boolean).join('、');
+    return { label: displayIntensity(group.intensity), text };
+  });
 }
 
 function extractDepth(title: string) {
@@ -792,19 +829,18 @@ const createStyles = (colors: {
       gap: spacing.sm,
     },
 
-    smallOutlineButton: {
+    loadMoreButton: {
       alignSelf: 'center',
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: radii.sm,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.xs + 2,
-      minWidth: 100,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      minWidth: 88,
       alignItems: 'center',
       backgroundColor: colors.surface,
-      marginTop: spacing.sm,
     },
-    smallOutlineButtonText: {
+    loadMoreButtonText: {
       ...typography.caption,
       color: colors.text,
       fontWeight: '600',
@@ -876,6 +912,11 @@ const createStyles = (colors: {
       paddingTop: spacing.xs,
       borderTopWidth: 1,
       borderTopColor: colors.border,
+    },
+    feltLine: {
+      ...typography.caption,
+      color: colors.text,
+      lineHeight: 20,
     },
     pointGroup: {
       flexDirection: 'row',

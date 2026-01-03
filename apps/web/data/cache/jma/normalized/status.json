@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-01-03T13:46:42.872Z",
+  "updatedAt": "2026-01-03T14:43:35.476Z",
   "fetchStatus": "OK",
   "feeds": {
     "regular": {
@@ -14,7 +14,7 @@
     },
     "eqvol": {
       "fetchStatus": "OK",
-      "updatedAt": "2026-01-03T13:46:42.807Z",
+      "updatedAt": "2026-01-03T14:43:34.927Z",
       "lastError": null
     },
     "other": {
@@ -26,7 +26,7 @@
   "webjson": {
     "quakeList": {
       "fetchStatus": "OK",
-      "updatedAt": "2026-01-03T13:46:42.872Z",
+      "updatedAt": "2026-01-03T14:43:35.476Z",
       "lastError": null
     }
   }

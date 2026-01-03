@@ -91,7 +91,20 @@ export async function getJmaQuakes(): Promise<{
     void triggerQuakesRefresh(false);
   }
 
-  const refreshed = cached.updatedAt ? cached : await readCachedQuakes();
+  let refreshed = cached.updatedAt ? cached : await readCachedQuakes();
+  const missingFields = refreshed.items.some((item: any) => {
+    if (!item || typeof item !== 'object') return false;
+    return !('depthKm' in item) || !('reportType' in item) || !('intensityAreas' in item);
+  });
+  const hasAnyDepth = refreshed.items.some((item: any) => typeof item?.depthKm === 'number');
+  const hasAnyIntensityAreas = refreshed.items.some(
+    (item: any) => Array.isArray(item?.intensityAreas) && item.intensityAreas.length > 0
+  );
+  const needsSchemaUpgrade = missingFields || (!hasAnyDepth && !hasAnyIntensityAreas);
+  if (needsSchemaUpgrade) {
+    await rebuildNormalizedQuakes();
+    refreshed = await readCachedQuakes();
+  }
   const state = await readJmaState();
 
   const hasWebItems = refreshed.items.some((i: any) => i?.source === 'webjson');

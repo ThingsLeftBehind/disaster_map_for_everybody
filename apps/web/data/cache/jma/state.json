@@ -22,11 +22,11 @@
     "eqvol": {
       "url": "https://www.data.jma.go.jp/developer/xml/feed/eqvol.xml",
       "intervalMs": 60000,
-      "lastAttemptTime": "2026-01-03T13:46:42.475Z",
-      "lastSuccessfulUpdateTime": "2026-01-03T13:46:42.807Z",
+      "lastAttemptTime": "2026-01-03T14:43:34.615Z",
+      "lastSuccessfulUpdateTime": "2026-01-03T14:43:34.927Z",
       "lastError": null,
-      "etag": "W/\"eb9646fd8504e59c86a44d6cbc58a384\"",
-      "lastModified": "Sat, 03 Jan 2026 11:01:24 GMT"
+      "etag": "W/\"709ba30ab68fe9e10516ad4238da5830\"",
+      "lastModified": "Sat, 03 Jan 2026 14:01:25 GMT"
     },
     "other": {
       "url": "https://www.data.jma.go.jp/developer/xml/feed/other.xml",
@@ -40,8 +40,8 @@
   },
   "webjson": {
     "quakeList": {
-      "lastAttemptTime": "2026-01-03T13:46:42.823Z",
-      "lastSuccessfulUpdateTime": "2026-01-03T13:46:42.872Z",
+      "lastAttemptTime": "2026-01-03T14:43:34.933Z",
+      "lastSuccessfulUpdateTime": "2026-01-03T14:43:35.476Z",
       "lastError": null,
       "etag": "W/\"01543a606102012e0e049e12f1d0dd9e\"",
       "lastModified": "Sat, 03 Jan 2026 03:02:25 GMT"

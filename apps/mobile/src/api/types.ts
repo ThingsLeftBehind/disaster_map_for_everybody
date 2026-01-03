@@ -107,12 +107,13 @@ export type JmaQuakeItem = {
   id: string;
   time: string | null;
   title: string;
+  reportType?: string | null;
   link: string | null;
   maxIntensity: string | null;
   magnitude: string | null;
   epicenter: string | null;
   depthKm?: number | null;
-  intensityAreas?: { intensity: string; areas: string[] }[];
+  intensityAreas?: { intensity: string; areas: string[] }[] | null;
 };
 
 export type JmaQuakesResponse = {

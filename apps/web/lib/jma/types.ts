@@ -52,12 +52,13 @@ export type NormalizedQuakeItem = {
   id: string;
   time: string | null;
   title: string;
+  reportType?: string | null;
   link: string | null;
   maxIntensity: string | null;
   magnitude: string | null;
   epicenter: string | null;
   depthKm: number | null;
-  intensityAreas?: Array<{ intensity: string; areas: string[] }>;
+  intensityAreas?: Array<{ intensity: string; areas: string[] }> | null;
   source: 'pull' | 'webjson';
 };
 

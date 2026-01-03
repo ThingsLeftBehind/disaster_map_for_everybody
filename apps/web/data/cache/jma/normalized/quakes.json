@@ -1,532 +1,1600 @@
 {
-  "updatedAt": "2026-01-03T13:46:42.872Z",
+  "updatedAt": "2026-01-03T14:43:35.476Z",
   "items": [
+    {
+      "id": "abce498b797f5109",
+      "time": "2026-01-03T14:00:00Z",
+      "title": "降灰予報（定時）",
+      "reportType": "降灰予報",
+      "link": "https://www.data.jma.go.jp/developer/xml/data/20260103140041_0_VFVO53_010000.xml",
+      "maxIntensity": null,
+      "magnitude": null,
+      "epicenter": null,
+      "depthKm": null,
+      "intensityAreas": null,
+      "source": "pull"
+    },
+    {
+      "id": "281f21c44bf3fa43",
+      "time": "2026-01-03T11:00:00Z",
+      "title": "降灰予報（定時）",
+      "reportType": "降灰予報",
+      "link": "https://www.data.jma.go.jp/developer/xml/data/20260103110049_0_VFVO53_010000.xml",
+      "maxIntensity": null,
+      "magnitude": null,
+      "epicenter": null,
+      "depthKm": null,
+      "intensityAreas": null,
+      "source": "pull"
+    },
+    {
+      "id": "144437165e7a3efb",
+      "time": "2026-01-03T08:00:00Z",
+      "title": "降灰予報（定時）",
+      "reportType": "降灰予報",
+      "link": "https://www.data.jma.go.jp/developer/xml/data/20260103080041_0_VFVO53_010000.xml",
+      "maxIntensity": null,
+      "magnitude": null,
+      "epicenter": null,
+      "depthKm": null,
+      "intensityAreas": null,
+      "source": "pull"
+    },
+    {
+      "id": "0f408f269195caa1",
+      "time": "2026-01-03T05:00:00Z",
+      "title": "降灰予報（定時）",
+      "reportType": "降灰予報",
+      "link": "https://www.data.jma.go.jp/developer/xml/data/20260103050056_0_VFVO53_010000.xml",
+      "maxIntensity": null,
+      "magnitude": null,
+      "epicenter": null,
+      "depthKm": null,
+      "intensityAreas": null,
+      "source": "pull"
+    },
     {
       "id": "a628a07d5daed048",
       "time": "2026-01-01T23:43:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "2",
       "magnitude": "3.7",
       "epicenter": "奄美大島近海",
-      "depthKm": null,
+      "depthKm": 20,
+      "intensityAreas": [
+        {
+          "intensity": "2",
+          "areas": [
+            "鹿児島県天城町"
+          ]
+        },
+        {
+          "intensity": "1",
+          "areas": [
+            "鹿児島県徳之島町",
+            "鹿児島県伊仙町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "f50259960f704c65",
       "time": "2026-01-01T22:49:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "2",
       "magnitude": "3.7",
       "epicenter": "紀伊水道",
-      "depthKm": null,
+      "depthKm": 40,
+      "intensityAreas": [
+        {
+          "intensity": "2",
+          "areas": [
+            "徳島県阿南市",
+            "徳島県那賀町",
+            "徳島県牟岐町",
+            "徳島県美波町"
+          ]
+        },
+        {
+          "intensity": "1",
+          "areas": [
+            "徳島県徳島市",
+            "徳島県吉野川市",
+            "徳島県三好市",
+            "徳島県石井町",
+            "徳島県神山町",
+            "徳島県上勝町",
+            "徳島県海陽町",
+            "兵庫県洲本市",
+            "和歌山県海南市",
+            "和歌山県有田市",
+            "和歌山県御坊市",
+            "和歌山県湯浅町",
+            "和歌山県由良町",
+            "和歌山県白浜町",
+            "香川県さぬき市",
+            "香川県丸亀市",
+            "香川県綾川町",
+            "香川県多度津町",
+            "高知県東洋町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "3e5b9dcc0b154f4c",
       "time": "2026-01-01T17:32:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "3.7",
       "epicenter": "奄美大島近海",
-      "depthKm": null,
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "鹿児島県知名町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "8970af553e23cdc2",
       "time": "2026-01-01T08:06:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "2.3",
       "epicenter": "種子島近海",
-      "depthKm": null,
+      "depthKm": 0,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "鹿児島県中種子町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "a37a8a94b203e28a",
       "time": "2026-01-01T02:22:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "3.7",
       "epicenter": "青森県東方沖",
-      "depthKm": null,
+      "depthKm": 40,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "青森県野辺地町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "14efbc81e7408b22",
       "time": "2026-01-01T02:11:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "2.6",
       "epicenter": "大阪府北部",
-      "depthKm": null,
+      "depthKm": 20,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "京都府亀岡市",
+            "大阪府能勢町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "5d6315094daade5a",
       "time": "2025-12-31T21:29:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "2",
       "magnitude": "3.3",
       "epicenter": "熊本県阿蘇地方",
-      "depthKm": null,
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "2",
+          "areas": [
+            "熊本県阿蘇市",
+            "熊本県産山村",
+            "熊本県南阿蘇村"
+          ]
+        },
+        {
+          "intensity": "1",
+          "areas": [
+            "熊本県南小国町",
+            "熊本県小国町",
+            "熊本県高森町",
+            "熊本県菊池市",
+            "福岡県八女市",
+            "大分県竹田市",
+            "大分県九重町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "fb0775663bfb06c0",
       "time": "2025-12-31T16:30:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "2",
       "magnitude": "4.8",
       "epicenter": "青森県東方沖",
-      "depthKm": null,
+      "depthKm": 30,
+      "intensityAreas": [
+        {
+          "intensity": "2",
+          "areas": [
+            "青森県五戸町",
+            "岩手県盛岡市"
+          ]
+        },
+        {
+          "intensity": "1",
+          "areas": [
+            "青森県八戸市",
+            "青森県三沢市",
+            "青森県野辺地町",
+            "青森県七戸町",
+            "青森県六戸町",
+            "青森県横浜町",
+            "青森県東北町",
+            "青森県おいらせ町",
+            "青森県三戸町",
+            "青森県南部町",
+            "青森県階上町",
+            "青森県平内町",
+            "青森県外ヶ浜町",
+            "青森県むつ市",
+            "青森県東通村",
+            "岩手県八幡平市",
+            "北海道函館市",
+            "北海道浦河町",
+            "宮城県登米市"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "e37d136803d2c65f",
       "time": "2025-12-31T15:42:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "3.9",
       "epicenter": "奄美大島近海",
-      "depthKm": null,
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "鹿児島県天城町",
+            "鹿児島県伊仙町",
+            "鹿児島県和泊町",
+            "鹿児島県知名町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "6fa179e87ffbfd42",
       "time": "2025-12-31T15:16:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "3.0",
       "epicenter": "奄美大島近海",
-      "depthKm": null,
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "鹿児島県伊仙町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "3bedfa1fa9257efd",
       "time": "2025-12-31T14:50:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "2",
       "magnitude": "3.9",
       "epicenter": "岩手県沖",
-      "depthKm": null,
+      "depthKm": 50,
+      "intensityAreas": [
+        {
+          "intensity": "2",
+          "areas": [
+            "岩手県宮古市",
+            "岩手県山田町"
+          ]
+        },
+        {
+          "intensity": "1",
+          "areas": [
+            "岩手県釜石市",
+            "岩手県住田町",
+            "岩手県大槌町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "c48a6fd30f8cabec",
       "time": "2025-12-31T14:27:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "4",
       "magnitude": "5.7",
       "epicenter": "岩手県沖",
-      "depthKm": null,
+      "depthKm": 30,
+      "intensityAreas": [
+        {
+          "intensity": "4",
+          "areas": [
+            "岩手県盛岡市"
+          ]
+        },
+        {
+          "intensity": "3",
+          "areas": [
+            "岩手県二戸市",
+            "岩手県八幡平市",
+            "岩手県滝沢市",
+            "岩手県岩手町",
+            "岩手県紫波町",
+            "岩手県矢巾町",
+            "岩手県宮古市",
+            "岩手県普代村",
+            "岩手県野田村",
+            "岩手県釜石市",
+            "岩手県花巻市",
+            "岩手県北上市",
+            "岩手県遠野市",
+            "岩手県奥州市",
+            "青森県平内町",
+            "青森県八戸市",
+            "青森県野辺地町",
+            "青森県七戸町",
+            "青森県東北町",
+            "青森県おいらせ町",
+            "青森県三戸町",
+            "青森県五戸町",
+            "青森県南部町",
+            "青森県階上町",
+            "青森県むつ市",
+            "青森県東通村",
+            "宮城県登米市",
+            "宮城県涌谷町",
+            "宮城県石巻市"
+          ]
+        },
+        {
+          "intensity": "2",
+          "areas": [
+            "岩手県雫石町",
+            "岩手県葛巻町",
+            "岩手県軽米町",
+            "岩手県九戸村",
+            "岩手県一戸町",
+            "岩手県久慈市",
+            "岩手県山田町",
+            "岩手県岩泉町",
+            "岩手県田野畑村",
+            "岩手県洋野町",
+            "岩手県大船渡市",
+            "岩手県陸前高田市",
+            "岩手県住田町",
+            "岩手県大槌町",
+            "岩手県一関市",
+            "岩手県西和賀町",
+            "岩手県金ケ崎町",
+            "岩手県平泉町",
+            "青森県青森市",
+            "青森県つがる市",
+            "青森県蓬田村",
+            "青森県外ヶ浜町",
+            "青森県中泊町",
+            "青森県十和田市",
+            "青森県三沢市",
+            "青森県六戸町",
+            "青森県横浜町",
+            "青森県六ヶ所村",
+            "青森県田子町",
+            "青森県新郷村",
+            "青森県佐井村",
+            "青森県藤崎町",
+            "宮城県気仙沼市",
+            "宮城県色麻町",
+            "宮城県加美町",
+            "宮城県美里町",
+            "宮城県東松島市",
+            "宮城県松島町",
+            "宮城県利府町",
+            "宮城県大衡村",
+            "宮城県名取市",
+            "宮城県角田市",
+            "宮城県岩沼市",
+            "宮城県蔵王町",
+            "宮城県大河原町",
+            "宮城県川崎町",
+            "宮城県丸森町",
+            "宮城県亘理町",
+            "宮城県山元町",
+            "北海道新篠津村",
+            "北海道函館市",
+            "北海道木古内町",
+            "北海道南幌町",
+            "北海道室蘭市",
+            "北海道厚真町",
+            "北海道安平町",
+            "北海道むかわ町",
+            "北海道新冠町",
+            "北海道様似町",
+            "北海道標津町",
+            "秋田県能代市",
+            "秋田県三種町",
+            "秋田県井川町",
+            "秋田県秋田市",
+            "秋田県由利本荘市",
+            "秋田県にかほ市",
+            "秋田県大館市",
+            "秋田県鹿角市",
+            "秋田県北秋田市",
+            "秋田県横手市",
+            "秋田県大仙市",
+            "秋田県仙北市",
+            "秋田県美郷町",
+            "秋田県羽後町",
+            "山形県酒田市",
+            "山形県村山市",
+            "山形県天童市",
+            "山形県中山町",
+            "山形県川西町",
+            "山形県白鷹町",
+            "福島県桑折町",
+            "福島県国見町",
+            "福島県相馬市",
+            "福島県双葉町",
+            "新潟県村上市"
+          ]
+        },
+        {
+          "intensity": "1",
+          "areas": [
+            "青森県五所川原市",
+            "青森県今別町",
+            "青森県板柳町",
+            "青森県鶴田町",
+            "青森県大間町",
+            "青森県風間浦村",
+            "青森県弘前市",
+            "青森県黒石市",
+            "青森県平川市",
+            "青森県鰺ヶ沢町",
+            "青森県西目屋村",
+            "青森県大鰐町",
+            "青森県田舎館村",
+            "宮城県南三陸町",
+            "宮城県塩竈市",
+            "宮城県多賀城市",
+            "宮城県富谷市",
+            "宮城県七ヶ浜町",
+            "宮城県大郷町",
+            "宮城県女川町",
+            "宮城県白石市",
+            "宮城県村田町",
+            "宮城県柴田町",
+            "北海道北斗市",
+            "北海道七飯町",
+            "北海道鹿部町",
+            "北海道森町",
+            "北海道福島町",
+            "北海道知内町",
+            "北海道長沼町",
+            "北海道苫小牧市",
+            "北海道登別市",
+            "北海道白老町",
+            "北海道新ひだか町",
+            "北海道浦河町",
+            "北海道江別市",
+            "北海道千歳市",
+            "北海道北広島市",
+            "北海道壮瞥町",
+            "北海道平取町",
+            "北海道新得町",
+            "北海道足寄町",
+            "北海道帯広市",
+            "北海道清水町",
+            "北海道浦幌町",
+            "北海道大樹町",
+            "北海道弟子屈町",
+            "北海道厚岸町",
+            "北海道標茶町",
+            "北海道白糠町",
+            "北海道別海町",
+            "北海道根室市",
+            "秋田県潟上市",
+            "秋田県藤里町",
+            "秋田県五城目町",
+            "秋田県八郎潟町",
+            "秋田県小坂町",
+            "秋田県上小阿仁村",
+            "秋田県湯沢市",
+            "秋田県東成瀬村",
+            "山形県鶴岡市",
+            "山形県三川町",
+            "山形県庄内町",
+            "山形県遊佐町",
+            "山形県山形市",
+            "山形県寒河江市",
+            "山形県上山市",
+            "山形県東根市",
+            "山形県尾花沢市",
+            "山形県山辺町",
+            "山形県河北町",
+            "山形県朝日町",
+            "山形県大江町",
+            "山形県大石田町",
+            "山形県米沢市",
+            "山形県南陽市",
+            "山形県高畠町",
+            "山形県小国町",
+            "山形県飯豊町",
+            "山形県最上町",
+            "山形県舟形町",
+            "山形県真室川町",
+            "山形県大蔵村",
+            "山形県鮭川村",
+            "山形県戸沢村",
+            "福島県福島市",
+            "福島県須賀川市",
+            "福島県田村市",
+            "福島県伊達市",
+            "福島県本宮市",
+            "福島県大玉村",
+            "福島県玉川村",
+            "福島県浅川町",
+            "福島県いわき市",
+            "福島県南相馬市",
+            "福島県大熊町",
+            "福島県浪江町",
+            "福島県新地町",
+            "茨城県笠間市",
+            "茨城県石岡市",
+            "茨城県筑西市",
+            "埼玉県加須市",
+            "埼玉県宮代町",
+            "山梨県忍野村"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "8ecc2a7cbebcf17e",
       "time": "2025-12-31T14:27:00.000Z",
       "title": "震源に関する情報",
+      "reportType": "震源に関する情報",
       "link": null,
       "maxIntensity": null,
       "magnitude": "5.7",
       "epicenter": "岩手県沖",
-      "depthKm": null,
-      "source": "webjson"
-    },
-    {
-      "id": "8727196c76081e21",
-      "time": "2025-12-31T14:27:00.000Z",
-      "title": "震度速報",
-      "link": null,
-      "maxIntensity": "4",
-      "magnitude": null,
-      "epicenter": null,
-      "depthKm": null,
+      "depthKm": 30,
+      "intensityAreas": null,
       "source": "webjson"
     },
     {
       "id": "289f7e465819746b",
       "time": "2025-12-31T11:52:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "2.7",
       "epicenter": "熊本県阿蘇地方",
-      "depthKm": null,
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "熊本県阿蘇市",
+            "熊本県産山村",
+            "熊本県南阿蘇村"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "47d633b96f0631f6",
       "time": "2025-12-31T11:26:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "2",
       "magnitude": "3.1",
       "epicenter": "熊本県阿蘇地方",
-      "depthKm": null,
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "2",
+          "areas": [
+            "熊本県阿蘇市",
+            "熊本県産山村"
+          ]
+        },
+        {
+          "intensity": "1",
+          "areas": [
+            "熊本県小国町",
+            "熊本県高森町",
+            "熊本県南阿蘇村",
+            "大分県豊後大野市",
+            "大分県竹田市",
+            "大分県九重町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "7a752d667eda1f4c",
       "time": "2025-12-31T07:43:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "2",
       "magnitude": "4.1",
       "epicenter": "奄美大島近海",
-      "depthKm": null,
+      "depthKm": 20,
+      "intensityAreas": [
+        {
+          "intensity": "2",
+          "areas": [
+            "鹿児島県天城町",
+            "鹿児島県伊仙町"
+          ]
+        },
+        {
+          "intensity": "1",
+          "areas": [
+            "鹿児島県徳之島町",
+            "鹿児島県和泊町",
+            "鹿児島県知名町",
+            "鹿児島県与論町",
+            "鹿児島県瀬戸内町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "16b41db6b82fd092",
       "time": "2025-12-31T05:22:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "2.9",
       "epicenter": "奄美大島近海",
-      "depthKm": null,
+      "depthKm": 30,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "鹿児島県瀬戸内町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "b81a485a492c17ea",
       "time": "2025-12-31T01:33:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "3.0",
       "epicenter": "石川県加賀地方",
-      "depthKm": null,
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "富山県高岡市",
+            "富山県小矢部市",
+            "石川県津幡町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "6f5f736352b972ed",
       "time": "2025-12-30T23:51:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "2",
       "magnitude": "4.4",
       "epicenter": "岩手県沖",
-      "depthKm": null,
+      "depthKm": 30,
+      "intensityAreas": [
+        {
+          "intensity": "2",
+          "areas": [
+            "岩手県盛岡市"
+          ]
+        },
+        {
+          "intensity": "1",
+          "areas": [
+            "岩手県二戸市",
+            "岩手県八幡平市",
+            "岩手県滝沢市",
+            "岩手県雫石町",
+            "岩手県葛巻町",
+            "岩手県岩手町",
+            "岩手県矢巾町",
+            "岩手県軽米町",
+            "岩手県九戸村",
+            "岩手県一戸町",
+            "岩手県宮古市",
+            "岩手県久慈市",
+            "岩手県山田町",
+            "岩手県普代村",
+            "岩手県野田村",
+            "岩手県大船渡市",
+            "岩手県陸前高田市",
+            "岩手県釜石市",
+            "岩手県住田町",
+            "岩手県大槌町",
+            "岩手県花巻市",
+            "岩手県北上市",
+            "岩手県遠野市",
+            "岩手県一関市",
+            "岩手県奥州市",
+            "岩手県西和賀町",
+            "青森県八戸市",
+            "青森県三沢市",
+            "青森県七戸町",
+            "青森県東北町",
+            "青森県おいらせ町",
+            "青森県三戸町",
+            "青森県五戸町",
+            "青森県南部町",
+            "青森県階上町",
+            "青森県東通村",
+            "宮城県気仙沼市",
+            "宮城県登米市",
+            "宮城県涌谷町",
+            "宮城県南三陸町",
+            "宮城県岩沼市",
+            "宮城県石巻市",
+            "宮城県松島町",
+            "秋田県大仙市"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "325839a5026740a1",
       "time": "2025-12-30T22:19:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "2",
       "magnitude": "4.8",
       "epicenter": "三陸沖",
-      "depthKm": null,
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "2",
+          "areas": [
+            "岩手県盛岡市"
+          ]
+        },
+        {
+          "intensity": "1",
+          "areas": [
+            "岩手県八幡平市",
+            "岩手県宮古市",
+            "岩手県山田町",
+            "岩手県釜石市",
+            "岩手県花巻市",
+            "岩手県遠野市",
+            "岩手県一関市",
+            "宮城県気仙沼市",
+            "宮城県登米市",
+            "宮城県加美町",
+            "宮城県涌谷町",
+            "宮城県美里町",
+            "宮城県石巻市"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "2c2597e2f68a9361",
       "time": "2025-12-30T19:03:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "3.6",
       "epicenter": "奄美大島近海",
-      "depthKm": null,
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "鹿児島県天城町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "cae94858a295a3a9",
       "time": "2025-12-30T08:48:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "2",
       "magnitude": "4.1",
       "epicenter": "奄美大島近海",
-      "depthKm": null,
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "2",
+          "areas": [
+            "鹿児島県天城町",
+            "鹿児島県伊仙町",
+            "鹿児島県知名町"
+          ]
+        },
+        {
+          "intensity": "1",
+          "areas": [
+            "鹿児島県徳之島町",
+            "鹿児島県和泊町",
+            "鹿児島県瀬戸内町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "9bd4139dea517f05",
       "time": "2025-12-30T08:32:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "3.4",
       "epicenter": "奄美大島近海",
-      "depthKm": null,
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "鹿児島県天城町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "acaa9d810a6037c4",
       "time": "2025-12-30T08:23:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "4.1",
       "epicenter": "奄美大島近海",
-      "depthKm": null,
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "鹿児島県伊仙町",
+            "鹿児島県和泊町",
+            "鹿児島県知名町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "78e339113a415c45",
       "time": "2025-12-30T08:16:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "3.1",
       "epicenter": "奄美大島近海",
-      "depthKm": null,
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "鹿児島県伊仙町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "9ddaa595736d87c5",
       "time": "2025-12-30T08:12:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "4",
       "magnitude": "5.6",
       "epicenter": "奄美大島近海",
-      "depthKm": null,
+      "depthKm": 0,
+      "intensityAreas": [
+        {
+          "intensity": "4",
+          "areas": [
+            "鹿児島県徳之島町",
+            "鹿児島県天城町",
+            "鹿児島県伊仙町"
+          ]
+        },
+        {
+          "intensity": "3",
+          "areas": [
+            "鹿児島県和泊町",
+            "鹿児島県知名町",
+            "鹿児島県瀬戸内町"
+          ]
+        },
+        {
+          "intensity": "2",
+          "areas": [
+            "鹿児島県与論町",
+            "鹿児島県奄美市",
+            "鹿児島県大和村",
+            "鹿児島県宇検村",
+            "鹿児島県龍郷町",
+            "鹿児島県喜界町",
+            "鹿児島県十島村",
+            "沖縄県名護市",
+            "沖縄県国頭村",
+            "沖縄県今帰仁村",
+            "沖縄県本部町",
+            "沖縄県恩納村",
+            "沖縄県伊平屋村",
+            "沖縄県うるま市",
+            "沖縄県西原町"
+          ]
+        },
+        {
+          "intensity": "1",
+          "areas": [
+            "沖縄県大宜味村",
+            "沖縄県東村",
+            "沖縄県伊是名村",
+            "沖縄県那覇市",
+            "沖縄県沖縄市",
+            "沖縄県南城市",
+            "沖縄県読谷村",
+            "沖縄県北谷町",
+            "沖縄県中城村",
+            "沖縄県座間味村",
+            "沖縄県八重瀬町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "0a00379ecaebb5cb",
       "time": "2025-12-30T08:12:00.000Z",
       "title": "震源に関する情報",
+      "reportType": "震源に関する情報",
       "link": null,
       "maxIntensity": null,
       "magnitude": "5.6",
       "epicenter": "奄美大島近海",
-      "depthKm": null,
-      "source": "webjson"
-    },
-    {
-      "id": "66fe20e1473d19f0",
-      "time": "2025-12-30T08:12:00.000Z",
-      "title": "震度速報",
-      "link": null,
-      "maxIntensity": "4",
-      "magnitude": null,
-      "epicenter": null,
-      "depthKm": null,
+      "depthKm": 0,
+      "intensityAreas": null,
       "source": "webjson"
     },
     {
       "id": "ce5bc3d55b08b52f",
       "time": "2025-12-30T03:24:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "2.1",
       "epicenter": "熊本県熊本地方",
-      "depthKm": null,
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "熊本県宇城市"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "fa61cd2223d882a6",
       "time": "2025-12-30T01:08:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "2.3",
       "epicenter": "千葉県南東沖",
-      "depthKm": null,
+      "depthKm": 0,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "千葉県勝浦市"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "77b52f50e2903711",
       "time": "2025-12-29T23:07:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "2.6",
       "epicenter": "新潟県上越地方",
-      "depthKm": null,
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "新潟県妙高市",
+            "新潟県上越市"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "0b4c4f64642457f6",
       "time": "2025-12-29T12:08:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "3.5",
       "epicenter": "埼玉県南部",
-      "depthKm": null,
+      "depthKm": 90,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "茨城県古河市",
+            "栃木県宇都宮市"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "c54096222aa53c37",
       "time": "2025-12-28T23:33:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "3.1",
       "epicenter": "豊後水道",
-      "depthKm": null,
+      "depthKm": 40,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "愛媛県宇和島市",
+            "愛媛県大洲市",
+            "愛媛県西予市",
+            "愛媛県松野町",
+            "愛媛県鬼北町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "6110f2e9d830068f",
       "time": "2025-12-28T22:51:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "3",
       "magnitude": "3.3",
       "epicenter": "トカラ列島近海",
-      "depthKm": null,
+      "depthKm": 20,
+      "intensityAreas": [
+        {
+          "intensity": "3",
+          "areas": [
+            "鹿児島県十島村"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "988467434ce9b240",
       "time": "2025-12-28T22:37:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "2.4",
       "epicenter": "熊本県阿蘇地方",
-      "depthKm": null,
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "熊本県阿蘇市"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "7564cbd1e5ed4afb",
       "time": "2025-12-28T22:35:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "3",
       "magnitude": "4.0",
       "epicenter": "熊本県阿蘇地方",
-      "depthKm": null,
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "3",
+          "areas": [
+            "熊本県阿蘇市",
+            "熊本県産山村",
+            "熊本県南阿蘇村"
+          ]
+        },
+        {
+          "intensity": "2",
+          "areas": [
+            "熊本県南小国町",
+            "熊本県小国町",
+            "熊本県高森町",
+            "熊本県菊池市",
+            "福岡県八女市",
+            "大分県豊後大野市",
+            "大分県竹田市",
+            "大分県九重町"
+          ]
+        },
+        {
+          "intensity": "1",
+          "areas": [
+            "熊本県玉名市",
+            "熊本県山鹿市",
+            "熊本県合志市",
+            "熊本県和水町",
+            "熊本県大津町",
+            "熊本県菊陽町",
+            "熊本県西原村",
+            "熊本県山都町",
+            "福岡県大牟田市",
+            "福岡県久留米市",
+            "福岡県柳川市",
+            "福岡県朝倉市",
+            "福岡県みやま市",
+            "福岡県大木町",
+            "福岡県みやこ町",
+            "福岡県飯塚市",
+            "福岡県嘉麻市",
+            "福岡県赤村",
+            "大分県佐伯市",
+            "大分県日田市",
+            "大分県玖珠町",
+            "大分県中津市",
+            "大分県大分市",
+            "大分県津久見市",
+            "大分県由布市",
+            "佐賀県吉野ヶ里町",
+            "佐賀県上峰町",
+            "佐賀県みやき町",
+            "宮崎県延岡市",
+            "宮崎県西都市",
+            "宮崎県川南町",
+            "宮崎県都農町",
+            "宮崎県門川町",
+            "宮崎県諸塚村",
+            "宮崎県美郷町",
+            "宮崎県高千穂町",
+            "宮崎県小林市"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "e214118ce706ba79",
       "time": "2025-12-28T22:35:00.000Z",
       "title": "震源に関する情報",
+      "reportType": "震源に関する情報",
       "link": null,
       "maxIntensity": null,
       "magnitude": "4.0",
       "epicenter": "熊本県阿蘇地方",
-      "depthKm": null,
-      "source": "webjson"
-    },
-    {
-      "id": "c94995134d477b18",
-      "time": "2025-12-28T22:35:00.000Z",
-      "title": "震度速報",
-      "link": null,
-      "maxIntensity": "3",
-      "magnitude": null,
-      "epicenter": null,
-      "depthKm": null,
+      "depthKm": 10,
+      "intensityAreas": null,
       "source": "webjson"
     },
     {
       "id": "c55f2efeb12c1d99",
       "time": "2025-12-28T21:12:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "2",
       "magnitude": "2.9",
       "epicenter": "熊本県阿蘇地方",
-      "depthKm": null,
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "2",
+          "areas": [
+            "熊本県産山村",
+            "熊本県南阿蘇村"
+          ]
+        },
+        {
+          "intensity": "1",
+          "areas": [
+            "熊本県阿蘇市",
+            "熊本県高森町",
+            "大分県竹田市"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "8b8ecef63e0f5ebd",
       "time": "2025-12-28T09:08:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "2.1",
       "epicenter": "トカラ列島近海",
-      "depthKm": null,
+      "depthKm": 0,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "鹿児島県十島村"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "90fd0dc2a2e7e7db",
       "time": "2025-12-28T07:40:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "3.5",
       "epicenter": "岩手県沖",
-      "depthKm": null,
+      "depthKm": 40,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "岩手県大船渡市",
+            "岩手県釜石市",
+            "岩手県大槌町"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "0187625f199ac944",
       "time": "2025-12-28T00:02:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "1.8",
       "epicenter": "福島県会津",
-      "depthKm": null,
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "福島県檜枝岐村"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "55ed5dffb946ce97",
       "time": "2025-12-27T17:19:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "2",
       "magnitude": "2.8",
       "epicenter": "熊本県阿蘇地方",
-      "depthKm": null,
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "2",
+          "areas": [
+            "熊本県南阿蘇村"
+          ]
+        },
+        {
+          "intensity": "1",
+          "areas": [
+            "熊本県阿蘇市",
+            "大分県竹田市"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "5890c097258ef846",
       "time": "2025-12-27T15:06:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "3",
       "magnitude": "6.7",
       "epicenter": "台湾付近",
-      "depthKm": null,
+      "depthKm": 40,
+      "intensityAreas": [
+        {
+          "intensity": "3",
+          "areas": [
+            "沖縄県石垣市",
+            "沖縄県与那国町",
+            "沖縄県竹富町"
+          ]
+        },
+        {
+          "intensity": "1",
+          "areas": [
+            "沖縄県宮古島市",
+            "沖縄県多良間村"
+          ]
+        }
+      ],
       "source": "webjson"
     },
     {
       "id": "c390ea976d6dba90",
       "time": "2025-12-27T15:06:00.000Z",
       "title": "震源に関する情報",
+      "reportType": "震源に関する情報",
       "link": null,
       "maxIntensity": null,
       "magnitude": "6.7",
       "epicenter": "台湾付近",
-      "depthKm": null,
-      "source": "webjson"
-    },
-    {
-      "id": "39699fe6ca9d507d",
-      "time": "2025-12-27T15:06:00.000Z",
-      "title": "震度速報",
-      "link": null,
-      "maxIntensity": "3",
-      "magnitude": null,
-      "epicenter": null,
-      "depthKm": null,
+      "depthKm": 40,
+      "intensityAreas": null,
       "source": "webjson"
     },
     {
       "id": "bb1ab005c310f9b3",
       "time": "2025-12-27T09:56:00.000Z",
       "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
       "link": null,
       "maxIntensity": "1",
       "magnitude": "3.1",
       "epicenter": "豊後水道",
-      "depthKm": null,
+      "depthKm": 40,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "愛媛県愛南町",
+            "高知県宿毛市",
+            "大分県津久見市"
+          ]
+        }
+      ],
+      "source": "webjson"
+    },
+    {
+      "id": "d535c42c28a5b8ef",
+      "time": "2025-12-27T03:55:00.000Z",
+      "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
+      "link": null,
+      "maxIntensity": "2",
+      "magnitude": "4.2",
+      "epicenter": "釧路沖",
+      "depthKm": 40,
+      "intensityAreas": [
+        {
+          "intensity": "2",
+          "areas": [
+            "北海道浜中町",
+            "北海道根室市"
+          ]
+        },
+        {
+          "intensity": "1",
+          "areas": [
+            "北海道標津町",
+            "北海道別海町"
+          ]
+        }
+      ],
+      "source": "webjson"
+    },
+    {
+      "id": "b39dbb57c64f6e4b",
+      "time": "2025-12-27T00:33:00.000Z",
+      "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
+      "link": null,
+      "maxIntensity": "1",
+      "magnitude": "3.6",
+      "epicenter": "釧路沖",
+      "depthKm": 50,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "北海道浜中町"
+          ]
+        }
+      ],
+      "source": "webjson"
+    },
+    {
+      "id": "bb5449efd1ec3c98",
+      "time": "2025-12-26T23:26:00.000Z",
+      "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
+      "link": null,
+      "maxIntensity": "2",
+      "magnitude": "3.6",
+      "epicenter": "兵庫県北方沖",
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "2",
+          "areas": [
+            "兵庫県豊岡市"
+          ]
+        },
+        {
+          "intensity": "1",
+          "areas": [
+            "兵庫県朝来市",
+            "京都府京丹後市",
+            "京都府与謝野町"
+          ]
+        }
+      ],
+      "source": "webjson"
+    },
+    {
+      "id": "d772bd87c3fc904c",
+      "time": "2025-12-25T18:29:00.000Z",
+      "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
+      "link": null,
+      "maxIntensity": "2",
+      "magnitude": "2.3",
+      "epicenter": "トカラ列島近海",
+      "depthKm": 10,
+      "intensityAreas": [
+        {
+          "intensity": "2",
+          "areas": [
+            "鹿児島県十島村"
+          ]
+        }
+      ],
+      "source": "webjson"
+    },
+    {
+      "id": "9d3d9ea9f6cecc24",
+      "time": "2025-12-25T18:18:00.000Z",
+      "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
+      "link": null,
+      "maxIntensity": "1",
+      "magnitude": "3.4",
+      "epicenter": "奄美大島近海",
+      "depthKm": 20,
+      "intensityAreas": [
+        {
+          "intensity": "1",
+          "areas": [
+            "鹿児島県天城町"
+          ]
+        }
+      ],
+      "source": "webjson"
+    },
+    {
+      "id": "70d7f6963c0778c2",
+      "time": "2025-12-25T17:56:00.000Z",
+      "title": "震源・震度情報",
+      "reportType": "震源・震度情報",
+      "link": null,
+      "maxIntensity": "2",
+      "magnitude": "2.7",
+      "epicenter": "熊本県熊本地方",
+      "depthKm": 10,
+      "intensityAreas": null,
       "source": "webjson"
     }
   ]
