@@ -14,7 +14,7 @@ import { formatPrefMuniLabel, useAreaName } from '../lib/client/areaName';
 import ShareMenu from '../components/ShareMenu';
 import { buildUrl, formatShelterShareText } from '../lib/client/share';
 
-import { normalizeMuniCode } from 'lib/muni-helper';
+import { normalizeMuniCode, toJmaClass20 } from 'lib/muni-helper';
 import { addSavedShelters } from 'lib/shelters/savedShelters';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -427,7 +427,10 @@ export default function ListPage() {
   // Removed previous auto-fetch useEffect since it's now handled in initial load logic.
 
   const effectiveJmaAreaCode = selectedJmaAreaCode ?? null;
-  const warningsUrl = effectiveJmaAreaCode ? `/api/jma/warnings?area=${effectiveJmaAreaCode}` : null;
+  const class20 = toJmaClass20(selectedArea?.muniCode ?? null);
+  const warningsUrl = effectiveJmaAreaCode
+    ? `/api/jma/warnings?area=${effectiveJmaAreaCode}${class20 ? `&class20=${class20}` : ''}`
+    : null;
   const { data: warnings } = useSWR(warningsUrl, fetcher, { refreshInterval: refreshMs, dedupingInterval: 10_000 });
   const warningsActive =
     Array.isArray(warnings?.items) && warnings.items.some((it: any) => !isJmaLowPriorityWarning(it?.kind));

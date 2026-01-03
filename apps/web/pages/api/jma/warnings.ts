@@ -6,9 +6,14 @@ import { readCachedWarnings } from 'lib/jma/normalize';
 import { readJsonFile } from 'lib/jma/cache';
 import { jmaAreaConstPath, jmaWebJsonWarningPath } from 'lib/jma/paths';
 import { TOKYO_GROUP_AREA_CODES, type TokyoGroupKey } from 'lib/alerts/tokyoScope';
+import { toJmaClass20 } from 'lib/muni-helper';
 
 const CACHE_TTL_MS = 120_000;
 const memoryCache = new Map<string, { expiresAt: number; payload: any }>();
+
+function buildCacheKey(area: string, class20: string | null): string {
+  return `${area}:${class20 ?? ''}`;
+}
 
 type AreaConst = {
   offices?: Record<string, { name?: string; parent?: string }>;
@@ -188,18 +193,18 @@ async function buildForecastAreaBreakdown(
 let cachedAreaIndex: Map<string, AreaNode> | null = null;
 let cachedAreaIndexAt = 0;
 
-function getCached(area: string) {
-  const hit = memoryCache.get(area);
+function getCached(cacheKey: string) {
+  const hit = memoryCache.get(cacheKey);
   if (!hit) return null;
   if (Date.now() > hit.expiresAt) {
-    memoryCache.delete(area);
+    memoryCache.delete(cacheKey);
     return null;
   }
   return hit.payload;
 }
 
-function setCached(area: string, payload: any) {
-  memoryCache.set(area, { expiresAt: Date.now() + CACHE_TTL_MS, payload });
+function setCached(cacheKey: string, payload: any) {
+  memoryCache.set(cacheKey, { expiresAt: Date.now() + CACHE_TTL_MS, payload });
 }
 
 async function readAreaIndex(): Promise<Map<string, AreaNode> | null> {
@@ -244,8 +249,6 @@ function shouldSkipWarningStatus(status: string | null): boolean {
   if (/解除/.test(s)) return true;
   if (/発表警報・注意報は?なし/.test(s)) return true;
   if (/発表警報・注意報は?ありません/.test(s)) return true;
-  // Filter out forecast-like items (not active)
-  if (/明日|明後日|見込み|予報/.test(s)) return true;
   return false;
 }
 
@@ -410,39 +413,57 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Invalid parameters', details: parsed.error.flatten() });
   }
 
-  const cached = getCached(parsed.data.area);
+  const area = parsed.data.area;
+  const rawClass20 = parsed.data.class20 ?? null;
+  const normalizedClass20 = toJmaClass20(rawClass20);
+  const class20 =
+    normalizedClass20 && normalizedClass20.startsWith(area.slice(0, 2)) ? normalizedClass20 : null;
+  const cacheKey = buildCacheKey(area, normalizedClass20 ?? null);
+  const cached = getCached(cacheKey);
   if (cached) {
     return res.status(200).json(cached);
   }
 
   try {
     const [data, tokyoGroups, subAreaInfo] = await Promise.all([
-      getJmaWarnings(parsed.data.area),
-      buildTokyoGroups(parsed.data.area),
-      buildForecastAreaBreakdown(parsed.data.area, process.env.NODE_ENV !== 'production' && req.query.debug === '1'),
+      getJmaWarnings(area),
+      buildTokyoGroups(area),
+      buildForecastAreaBreakdown(area, process.env.NODE_ENV !== 'production' && req.query.debug === '1'),
     ]);
 
-
+    let items = data.items;
+    if (class20 && subAreaInfo?.muniMap && subAreaInfo?.breakdown) {
+      const forecastCode = subAreaInfo.muniMap[class20] ?? null;
+      if (forecastCode && subAreaInfo.breakdown[forecastCode]) {
+        items = subAreaInfo.breakdown[forecastCode].items;
+      }
+    }
 
     const payload = {
       ...data,
+      items,
       tokyoGroups: tokyoGroups?.groups ?? null,
       breakdown: subAreaInfo?.breakdown ?? null,
       muniMap: subAreaInfo?.muniMap ?? null
     };
 
-    setCached(parsed.data.area, payload);
+    if (process.env.NODE_ENV !== 'production' && req.query.debug === '1') {
+      // eslint-disable-next-line no-console
+      console.debug('[JMA] warnings', { area, rawClass20, normalizedClass20, items: items.length });
+    }
+
+    setCached(cacheKey, payload);
     return res.status(200).json(payload);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     try {
       const cached = await readCachedWarnings();
-      const snap = cached.areas[parsed.data.area] ?? null;
+      const snap = cached.areas[area] ?? null;
       const payload = {
         fetchStatus: 'DEGRADED',
         updatedAt: snap?.updatedAt ?? null,
         lastError: message,
-        area: parsed.data.area,
+        area,
         areaName: snap?.areaName ?? null,
         confidence: 'LOW',
         confidenceNotes: ['internal error; serving last cached snapshot if available'],
@@ -451,14 +472,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         breakdown: null,
         muniMap: null,
       };
-      setCached(parsed.data.area, payload);
+      setCached(cacheKey, payload);
       return res.status(200).json(payload);
     } catch {
       const payload = {
         fetchStatus: 'DEGRADED',
         updatedAt: null,
         lastError: message,
-        area: parsed.data.area,
+        area,
         areaName: null,
         confidence: 'LOW',
         confidenceNotes: ['internal error'],
@@ -467,7 +488,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         breakdown: null,
         muniMap: null,
       };
-      setCached(parsed.data.area, payload);
+      setCached(cacheKey, payload);
       return res.status(200).json(payload);
     }
   }

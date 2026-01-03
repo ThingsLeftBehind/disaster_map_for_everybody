@@ -6,6 +6,7 @@ import { reverseGeocodeGsi, type Coords } from '../lib/client/location';
 import { formatPrefMuniLabel, useAreaName } from '../lib/client/areaName';
 import { getJmaWarningPriority } from '../lib/jma/filters';
 import { inferTokyoGroup, type TokyoGroupKey } from '../lib/alerts/tokyoScope';
+import { toJmaClass20 } from '../lib/muni-helper';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -182,23 +183,33 @@ export function MyAreaWarningsSection() {
     };
 
     // Warning Checks
-    const myAreaCodes = useMemo(() => {
-        const codes = savedAreas
-            .map((a) => a.jmaAreaCode ?? `${a.prefCode}0000`)
-            .filter((v): v is string => typeof v === 'string' && /^\d{6}$/.test(v));
-        return Array.from(new Set(codes)).slice(0, 5);
+    const myAreaKeys = useMemo(() => {
+        const keys = savedAreas
+            .map((area) => {
+                const areaCode = area.jmaAreaCode ?? `${area.prefCode}0000`;
+                if (typeof areaCode !== 'string' || !/^\d{6}$/.test(areaCode)) return null;
+                const class20 = toJmaClass20(area.muniCode ?? null);
+                return `${areaCode}:${class20 ?? ''}`;
+            })
+            .filter((v): v is string => typeof v === 'string');
+        return Array.from(new Set(keys)).slice(0, 5);
     }, [savedAreas]);
 
-    const myAreaKey = myAreaCodes.length > 0 ? ['my-areas', myAreaCodes.join(',')] : null;
+    const myAreaKey = myAreaKeys.length > 0 ? ['my-areas', myAreaKeys.join(',')] : null;
     const { data: myAreaWarnings } = useSWR(
         myAreaKey,
         async ([, list]) => {
-            const codes = String(list).split(',').filter(Boolean);
+            const keys = String(list).split(',').filter(Boolean);
             const responses = await Promise.all(
-                codes.map(async (code) => {
-                    const res = await fetch(`/api/jma/warnings?area=${encodeURIComponent(code)}`);
+                keys.map(async (key) => {
+                    const [areaCodeRaw, class20Raw] = key.split(':');
+                    const areaCode = areaCodeRaw?.trim();
+                    const class20 = class20Raw?.trim();
+                    if (!areaCode) return { key, data: null };
+                    const url = `/api/jma/warnings?area=${encodeURIComponent(areaCode)}${class20 ? `&class20=${encodeURIComponent(class20)}` : ''}`;
+                    const res = await fetch(url);
                     const json = await res.json().catch(() => null);
-                    return { code, data: json };
+                    return { key, data: json };
                 })
             );
             return responses;
@@ -206,10 +217,10 @@ export function MyAreaWarningsSection() {
         { refreshInterval: refreshMs, dedupingInterval: 10_000 }
     );
 
-    const warningsByCode = useMemo(() => {
+    const warningsByKey = useMemo(() => {
         const map = new Map<string, any>();
         for (const entry of myAreaWarnings ?? []) {
-            if (entry?.code) map.set(entry.code, entry.data ?? null);
+            if (entry?.key) map.set(entry.key, entry.data ?? null);
         }
         return map;
     }, [myAreaWarnings]);
@@ -218,7 +229,9 @@ export function MyAreaWarningsSection() {
         () =>
             savedAreas.map((area) => {
                 const areaCode = area.jmaAreaCode ?? `${area.prefCode}0000`;
-                const warnings = warningsByCode.get(areaCode) ?? null;
+                const class20 = toJmaClass20(area.muniCode ?? null);
+                const areaKey = `${areaCode}:${class20 ?? ''}`;
+                const warnings = warningsByKey.get(areaKey) ?? null;
                 const items: WarningItem[] = warnings?.items ?? [];
                 const tokyoGroups = (warnings?.tokyoGroups as Record<TokyoGroupKey, { items: WarningItem[] }> | null) ?? null;
                 let targetItems = items;
@@ -247,7 +260,7 @@ export function MyAreaWarningsSection() {
                     topAdvisory: summary.topAdvisory,
                 };
             }),
-        [savedAreas, warningsByCode]
+        [savedAreas, warningsByKey]
     );
 
     return (

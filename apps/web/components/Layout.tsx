@@ -7,6 +7,7 @@ import { useRouter } from 'next/router';
 import { useAreaName } from '../lib/client/areaName';
 import { toDisplayFetchStatus } from '../lib/ui/fetchStatusLabel';
 import { Footer } from './Footer';
+import { toJmaClass20 } from '../lib/muni-helper';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -198,12 +199,15 @@ export default function Layout({ children }: { children: ReactNode }) {
   const { data: bannerData } = useSWR('/api/store/banner', fetcher, { dedupingInterval: 10_000 });
   const bannerText: string | null = bannerData?.banner?.text ?? null;
 
-  const selectedWarningsUrl = selectedJmaAreaCode ? `/api/jma/warnings?area=${selectedJmaAreaCode}` : null;
-  const { data: selectedWarnings } = useSWR(selectedWarningsUrl, fetcher, { refreshInterval: refreshMs, dedupingInterval: 10_000 });
   const selectedArea =
     device?.settings?.selectedAreaId && device?.savedAreas
       ? device.savedAreas.find((a) => a.id === device.settings.selectedAreaId) ?? null
       : null;
+  const selectedClass20 = toJmaClass20(selectedArea?.muniCode ?? null);
+  const selectedWarningsUrl = selectedJmaAreaCode
+    ? `/api/jma/warnings?area=${selectedJmaAreaCode}${selectedClass20 ? `&class20=${selectedClass20}` : ''}`
+    : null;
+  const { data: selectedWarnings } = useSWR(selectedWarningsUrl, fetcher, { refreshInterval: refreshMs, dedupingInterval: 10_000 });
   const selectedShape = useMemo(
     () =>
       shapeAlertWarnings({
@@ -219,8 +223,11 @@ export default function Layout({ children }: { children: ReactNode }) {
   const selectedCount = selectedShape.counts.total;
   const selectedCounts = selectedShape.counts;
 
+  const currentClass20 = toJmaClass20(coarseArea?.muniCode ?? null);
   const currentWarningsUrl =
-    currentJmaAreaCode && currentJmaAreaCode !== selectedJmaAreaCode ? `/api/jma/warnings?area=${currentJmaAreaCode}` : null;
+    currentJmaAreaCode && currentJmaAreaCode !== selectedJmaAreaCode
+      ? `/api/jma/warnings?area=${currentJmaAreaCode}${currentClass20 ? `&class20=${currentClass20}` : ''}`
+      : null;
   const { data: currentWarnings } = useSWR(currentWarningsUrl, fetcher, { refreshInterval: refreshMs, dedupingInterval: 10_000 });
   const currentShape = useMemo(
     () =>

@@ -7,6 +7,15 @@ export type JmaFeedKey = z.infer<typeof JmaFeedKeySchema>;
 
 export const JmaWarningsQuerySchema = z.object({
   area: z.preprocess((value) => (Array.isArray(value) ? value[0] : value), z.string().regex(/^\d{6}$/)),
+  class20: z.preprocess(
+    (value) => {
+      const raw = Array.isArray(value) ? value[0] : value;
+      if (typeof raw !== 'string') return undefined;
+      const trimmed = raw.trim();
+      return trimmed ? trimmed : undefined;
+    },
+    z.string().regex(/^\d{5,7}$/).optional()
+  ),
 });
 
 export const JmaRawQuerySchema = z.object({
@@ -64,12 +73,9 @@ export type NormalizedQuakesSnapshot = {
   items: NormalizedQuakeItem[];
 };
 
-export type WarningLevel = 'advisory' | 'warning' | 'special';
-
 export type NormalizedWarningItem = {
   id: string;
   kind: string;
-  level?: WarningLevel;
   status: string | null;
   source: 'webjson' | 'pull';
 };
