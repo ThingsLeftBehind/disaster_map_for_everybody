@@ -29,6 +29,7 @@ const LON_CANDIDATES = ['longitude', 'lon', 'lng', 'keido', 'x', 'lon_deg', 'x_d
 
 const CACHE_TTL_MS = 5 * 60_000;
 let cached: { checkedAtMs: number; value: EvacSitesSchemaResult } | null = null;
+let cachedOk: EvacSitesSchemaOk | null = null;
 
 function quoteIdent(value: string): string {
   return `"${value.replaceAll('"', '""')}"`;
@@ -191,6 +192,7 @@ async function readSampleCoords(args: { schema: string; relation: string; latCol
 }
 
 export async function getEvacSitesSchema(): Promise<EvacSitesSchemaResult> {
+  if (cachedOk) return cachedOk;
   const now = Date.now();
   if (cached && now - cached.checkedAtMs < CACHE_TTL_MS) return cached.value;
 
@@ -250,6 +252,7 @@ export async function getEvacSitesSchema(): Promise<EvacSitesSchemaResult> {
       candidates: { lat: [...LAT_CANDIDATES], lon: [...LON_CANDIDATES] },
     };
     cached = { checkedAtMs: now, value: result };
+    cachedOk = result;
     return result;
   } catch (error) {
     const message = redactErrorMessage(String((error as any)?.message ?? error ?? 'Unknown error'));

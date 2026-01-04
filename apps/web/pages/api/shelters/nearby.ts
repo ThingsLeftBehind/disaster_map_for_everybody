@@ -18,6 +18,30 @@ function qIdent(name: string): string {
   return `"${name.replaceAll('"', '""')}"`;
 }
 
+function buildColumnMap(columns: string[]): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const col of columns) {
+    if (!col) continue;
+    const key = col.toLowerCase();
+    if (!map.has(key)) map.set(key, col);
+  }
+  return map;
+}
+
+function pickColumn(map: Map<string, string>, name: string): string | null {
+  return map.get(name.toLowerCase()) ?? null;
+}
+
+function addSelectColumn(list: Sql[], map: Map<string, string>, name: string, selected?: Set<string>): string | null {
+  const col = pickColumn(map, name);
+  if (!col) return null;
+  const key = col.toLowerCase();
+  if (selected && selected.has(key)) return col;
+  list.push(Prisma.raw(qIdent(col)));
+  if (selected) selected.add(key);
+  return col;
+}
+
 function toFiniteNumber(value: unknown): number | null {
   if (typeof value === 'number') return Number.isFinite(value) ? value : null;
   if (typeof value === 'bigint') return Number.isFinite(Number(value)) ? Number(value) : null;
@@ -93,6 +117,42 @@ function hazardCount(hazards: Record<string, boolean> | null | undefined): numbe
 
 function hasAnyHazard(hazards: Record<string, boolean> | null | undefined): boolean {
   return hazardCount(hazards) > 0;
+}
+
+function parseHazardsValue(raw: unknown): Record<string, boolean> | null {
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) return raw as Record<string, boolean>;
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (!trimmed.startsWith('{')) return null;
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed as Record<string, boolean>;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+function buildHazards(
+  row: Record<string, unknown>,
+  hazardBoolCols: Partial<Record<(typeof hazardKeys)[number], string>>
+): Record<string, boolean> {
+  const raw = parseHazardsValue(row.hazards);
+  if (raw) {
+    const normalized: Record<string, boolean> = {};
+    for (const key of hazardKeys) normalized[key] = Boolean((raw as any)[key]);
+    return normalized;
+  }
+  const hazards: Record<string, boolean> = {};
+  let hasBool = false;
+  for (const key of hazardKeys) {
+    const col = hazardBoolCols[key];
+    if (!col) continue;
+    hasBool = true;
+    hazards[key] = Boolean((row as any)[col]);
+  }
+  return hasBool ? hazards : {};
 }
 
 // Dedupe key: prefer shared id, else name + address + rounded coords for stability.
@@ -190,7 +250,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { lat, lon, hazardTypes, limit, radiusKm, hideIneligible, q } = parsed.data;
+    const { lat, lon, hazardTypes, limit, radiusKm, hideIneligible: hideIneligibleParam, q } = parsed.data;
+    const hideIneligible = hideIneligibleParam ?? false;
     const hazardFilters = hazardTypes ?? [];
     const textQuery = typeof q === 'string' ? q.trim().toLowerCase() : '';
     const requestedRadiusKm = radiusKm ?? 30;
@@ -206,6 +267,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const table = Prisma.raw(schemaResult.tableName);
     const latColRaw = Prisma.raw(qIdent(schemaResult.latCol));
     const lonColRaw = Prisma.raw(qIdent(schemaResult.lonCol));
+    const columnMap = buildColumnMap(schemaResult.discoveredColumns);
+    const selectCols: Sql[] = [];
+    const selectedCols = new Set<string>();
+    const idCol = pickColumn(columnMap, 'id') ?? 'id';
+    selectCols.push(Prisma.raw(qIdent(idCol)));
+    selectedCols.add(idCol.toLowerCase());
+    addSelectColumn(selectCols, columnMap, 'common_id', selectedCols);
+    addSelectColumn(selectCols, columnMap, 'pref_city', selectedCols);
+    addSelectColumn(selectCols, columnMap, 'name', selectedCols);
+    addSelectColumn(selectCols, columnMap, 'address', selectedCols);
+    const hazardsCol = addSelectColumn(selectCols, columnMap, 'hazards', selectedCols);
+    const hazardBoolCols: Partial<Record<(typeof hazardKeys)[number], string>> = {};
+    for (const key of hazardKeys) {
+      const col = pickColumn(columnMap, key) ?? pickColumn(columnMap, `hazard_${key}`);
+      if (!col) continue;
+      hazardBoolCols[key] = col;
+      const colKey = col.toLowerCase();
+      if (selectedCols.has(colKey)) continue;
+      selectCols.push(Prisma.raw(qIdent(col)));
+      selectedCols.add(colKey);
+    }
+    const hasHazardColumns = Boolean(hazardsCol) || Object.keys(hazardBoolCols).length > 0;
+    addSelectColumn(selectCols, columnMap, 'is_same_address_as_shelter', selectedCols);
+    addSelectColumn(selectCols, columnMap, 'shelter_fields', selectedCols);
+    addSelectColumn(selectCols, columnMap, 'notes', selectedCols);
+    addSelectColumn(selectCols, columnMap, 'source_updated_at', selectedCols);
+    addSelectColumn(selectCols, columnMap, 'created_at', selectedCols);
+    addSelectColumn(selectCols, columnMap, 'updated_at', selectedCols);
+    selectCols.push(Prisma.sql`${latColRaw} AS lat`);
+    selectCols.push(Prisma.sql`${lonColRaw} AS lon`);
     const scaleClauses = buildScaleClauses({
       latCol: latColRaw,
       lonCol: lonColRaw,
@@ -222,28 +313,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const rows = (await prisma.$queryRaw(
       Prisma.sql`
-        SELECT *
-        FROM (
-          SELECT
-            id,
-            common_id,
-            pref_city,
-            name,
-            address,
-            ${latColRaw} AS lat,
-            ${lonColRaw} AS lon,
-            hazards,
-            is_same_address_as_shelter,
-            shelter_fields,
-            notes,
-            source_updated_at,
-            updated_at,
-            ${distanceCase} AS distance_km
-          FROM ${table}
-          WHERE (${bboxOr})
-        ) t
-        WHERE t.distance_km <= ${requestedRadiusKm}
-        ORDER BY t.distance_km ASC
+        SELECT ${Prisma.join(selectCols, ', ')}, ${distanceCase} AS distance_km
+        FROM ${table}
+        WHERE (${bboxOr})
+          AND ${distanceCase} <= ${requestedRadiusKm}
+        ORDER BY ${distanceCase} ASC
         LIMIT ${bufferTake}
       `
     )) as Array<Record<string, unknown>>;
@@ -253,7 +327,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const coords = normalizeLatLon({ lat: site.lat, lon: site.lon, factor });
         if (!coords) return null;
         const distanceKm = toFiniteNumber(site.distance_km) ?? haversineDistance(lat, lon, coords.lat, coords.lon);
-        const flags = (site.hazards ?? {}) as Record<string, boolean>;
+        const flags = buildHazards(site, hazardBoolCols);
         const matches = hazardFilters.length === 0 ? true : hazardFilters.every((key: any) => Boolean(flags?.[key]));
         const missing = hazardFilters.filter((key: any) => !Boolean(flags?.[key]));
         return {
@@ -273,7 +347,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const devDiagnostics = isDev ? buildDiagnostics(enriched) : null;
     const deduped = dedupeSites(enriched);
-    const hazardFiltered = deduped.filter((site: any) => hasAnyHazard(site.hazards));
+    const hasHazardData = deduped.some((site: any) => hazardCount(site.hazards) > 0);
+    const hazardFiltered = hasHazardData ? deduped.filter((site: any) => hasAnyHazard(site.hazards)) : deduped;
     const filtered = hazardFiltered
       .filter((site: any) => {
         if (!textQuery) return true;
@@ -284,6 +359,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
       .filter((site: any) => (hideIneligible ? Boolean(site.matchesHazards) : true))
       .slice(0, requestedLimit);
+
+    if (isDev) {
+      const latLonPresent = rows.some((row) => toFiniteNumber(row.lat) !== null && toFiniteNumber(row.lon) !== null);
+      const eligibleCol =
+        pickColumn(columnMap, 'eligible') ??
+        pickColumn(columnMap, 'is_active') ??
+        pickColumn(columnMap, 'isactive') ??
+        pickColumn(columnMap, 'active') ??
+        pickColumn(columnMap, 'enabled') ??
+        pickColumn(columnMap, 'is_enabled');
+      console.log('[nearby] response', {
+        rawCount: rows.length,
+        finalCount: filtered.length,
+        hideIneligible,
+        latLonPresent,
+        eligiblePresent: Boolean(eligibleCol),
+        hazardColumnsPresent: hasHazardColumns,
+        hazardDataPresent: hasHazardData,
+      });
+      if (devDiagnostics?.countWithin5Km && devDiagnostics.countWithin5Km > 0 && filtered.length === 0) {
+        console.warn('[nearby] all rows dropped after mapping/filter', {
+          rawCount: rows.length,
+          hideIneligible,
+          hazardColumnsPresent: hasHazardColumns,
+          hazardDataPresent: hasHazardData,
+        });
+      }
+    }
 
     return res.status(200).json({
       fetchStatus: 'OK',
@@ -308,7 +411,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
-      const { lat, lon, hazardTypes, limit, radiusKm, hideIneligible, q } = parsed.data;
+      const { lat, lon, hazardTypes, limit, radiusKm, hideIneligible: hideIneligibleParam, q } = parsed.data;
+      const hideIneligible = hideIneligibleParam ?? false;
       const requestedRadiusKm = radiusKm ?? 30;
       const requestedLimit = limit ?? DEFAULT_MAIN_LIMIT;
       const overfetchLimit = Math.max(DEFAULT_MAIN_LIMIT * 4, requestedLimit * 4, 24);
@@ -325,7 +429,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       const textQuery = typeof q === 'string' ? q.trim().toLowerCase() : '';
       const dedupedFallback = dedupeSites(fallback.sites ?? []);
-      const hazardFilteredFallback = dedupedFallback.filter((site: any) => hasAnyHazard(site.hazards));
+      const hasHazardFallback = dedupedFallback.some((site: any) => hazardCount(site.hazards) > 0);
+      const hazardFilteredFallback = hasHazardFallback ? dedupedFallback.filter((site: any) => hasAnyHazard(site.hazards)) : dedupedFallback;
       const fallbackSites = hazardFilteredFallback
         .filter((site: any) => {
           if (!textQuery) return true;

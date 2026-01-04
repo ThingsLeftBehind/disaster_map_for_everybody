@@ -21,6 +21,7 @@ import { radii, spacing, typography, useThemedStyles } from '@/src/ui/theme';
 
 const DEFAULT_RADIUS_KM = 20;
 const DEFAULT_LIMIT = 20;
+const NEARBY_TIMEOUT_MS = 15000;
 const DEFAULT_AREA = '130000';
 const DEFAULT_MAP_REGION: ShelterMapRegion = {
     latitude: 35.6812,
@@ -101,6 +102,7 @@ export default function MainScreen() {
             setNotice(options?.notice ?? null);
             setUiNotice(null);
             setCacheInfo(null);
+            let timeoutId: ReturnType<typeof setTimeout> | null = null;
             try {
                 await checkShelterVersion();
                 const params = new URLSearchParams({
@@ -110,10 +112,12 @@ export default function MainScreen() {
                     radiusKm: String(DEFAULT_RADIUS_KM),
                     hideIneligible: 'false',
                 });
+                const controller = new AbortController();
+                timeoutId = setTimeout(() => controller.abort(), NEARBY_TIMEOUT_MS);
                 const cacheKey = buildCacheKey('/api/shelters/nearby', params);
                 const result = await fetchJsonWithCache<SheltersNearbyResponse>(
                     `/api/shelters/nearby?${params.toString()}`,
-                    {},
+                    { signal: controller.signal },
                     { key: cacheKey, kind: 'nearby' }
                 );
                 const data = result.data;
@@ -125,6 +129,9 @@ export default function MainScreen() {
                 setError(toApiError(err));
                 setShelters([]);
             } finally {
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                }
                 setIsLoading(false);
             }
         },

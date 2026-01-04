@@ -58,6 +58,37 @@ function qIdent(name: string): string {
   return `"${name.replaceAll('"', '""')}"`;
 }
 
+function buildSelectColumns(meta: EvacSiteMeta): Sql[] {
+  const cols = new Set<string>();
+  const add = (value?: string | null) => {
+    if (value) cols.add(value);
+  };
+
+  add(meta.idCol);
+  add(meta.commonIdCol);
+  add(meta.prefCityCol);
+  add(meta.prefectureCol);
+  add(meta.cityCol);
+  add(meta.municipalityCodeCol);
+  add(meta.nameCol);
+  add(meta.addressCol);
+  add(meta.latCol);
+  add(meta.lonCol);
+  add(meta.hazardsCol);
+  add(meta.isSameAddressCol);
+  add(meta.shelterFieldsCol);
+  add(meta.notesCol);
+  add(meta.sourceUpdatedAtCol);
+  add(meta.createdAtCol);
+  add(meta.updatedAtCol);
+
+  for (const col of Object.values(meta.hazardBoolCols)) {
+    if (col) cols.add(col);
+  }
+
+  return Array.from(cols).map((col) => raw(qIdent(col)));
+}
+
 function toFiniteNumber(value: unknown): number | null {
   if (typeof value === 'number') return Number.isFinite(value) ? value : null;
   if (typeof value === 'bigint') return Number.isFinite(Number(value)) ? Number(value) : null;
@@ -233,6 +264,7 @@ export async function fallbackNearbyShelters(
   const lonColRaw = raw(qIdent(context.meta.lonCol));
   const activeColRaw = context.meta.isActiveCol ? raw(qIdent(context.meta.isActiveCol)) : null;
   const activeClause = activeColRaw ? Prisma.sql`AND ${activeColRaw} = true` : Prisma.sql``;
+  const selectCols = buildSelectColumns(context.meta);
 
   const scaleClauses = buildScaleClauses({
     latCol: latColRaw,
@@ -250,15 +282,12 @@ export async function fallbackNearbyShelters(
 
   const rows = (await prisma.$queryRaw(
     Prisma.sql`
-      SELECT *
-      FROM (
-        SELECT *, ${distanceCase} AS distance_km
-        FROM ${table}
-        WHERE (${bboxOr})
-          ${activeClause}
-      ) t
-      WHERE t.distance_km <= ${requestedRadiusKm}
-      ORDER BY t.distance_km ASC
+      SELECT ${Prisma.join(selectCols, ', ')}, ${distanceCase} AS distance_km
+      FROM ${table}
+      WHERE (${bboxOr})
+        ${activeClause}
+        AND ${distanceCase} <= ${requestedRadiusKm}
+      ORDER BY ${distanceCase} ASC
       LIMIT ${bufferTake}
     `
   )) as Array<Record<string, unknown>>;
