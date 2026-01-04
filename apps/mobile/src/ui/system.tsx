@@ -116,10 +116,12 @@ export function TabScreen({
   title,
   children,
   scrollRef,
+  rightAccessory,
 }: {
   title: string;
   children: ReactNode;
   scrollRef?: RefObject<ScrollView>;
+  rightAccessory?: ReactNode;
 }) {
   const { openDrawer } = useDrawer();
   const { colors } = useTheme();
@@ -138,9 +140,12 @@ export function TabScreen({
         <View style={styles.appBarTitleGroup}>
           <Text style={styles.appBarTitleLeft}>{title}</Text>
         </View>
-        <Pressable onPress={openDrawer} hitSlop={10} style={styles.appBarButton}>
-          <FontAwesome name="bars" size={18} color={colors.text} />
-        </Pressable>
+        <View style={styles.appBarActions}>
+          {rightAccessory}
+          <Pressable onPress={openDrawer} hitSlop={10} style={styles.appBarButton}>
+            <FontAwesome name="bars" size={18} color={colors.text} />
+          </Pressable>
+        </View>
       </View>
       <ScrollView
         ref={scrollRef}
@@ -442,6 +447,11 @@ const createStyles = (colors: {
     appBarTitleLeft: {
       ...typography.title,
       color: colors.text,
+    },
+    appBarActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
     },
     appBarSubtitle: {
       ...typography.caption,

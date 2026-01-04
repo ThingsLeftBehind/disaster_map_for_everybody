@@ -12,17 +12,18 @@ import {
 } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
-import { HAZARD_OPTIONS } from '@/src/constants/hazards';
 import { fetchJson, getApiBaseUrl, toApiError, type ApiError } from '@/src/api/client';
 import type { CrowdVoteValue, Shelter, ShelterCommunityResponse } from '@/src/api/types';
 import { getPushState } from '@/src/push/state';
 import { radii, spacing, typography, useThemedStyles, useTheme } from '@/src/ui/theme';
+import { capabilityChipsFromShelter } from '@/src/utils/hazardCapability';
 
 type Props = {
   visible: boolean;
   shelter: Shelter | null;
   distanceLabel: string | null;
   isFavorite: boolean;
+  focusCommunity?: boolean;
   onClose: () => void;
   onToggleFavorite: () => void;
   onDirections: () => void;
@@ -42,6 +43,7 @@ export function ShelterDetailSheet({
   shelter,
   distanceLabel,
   isFavorite,
+  focusCommunity = false,
   onClose,
   onToggleFavorite,
   onDirections,
@@ -50,6 +52,7 @@ export function ShelterDetailSheet({
   const styles = useThemedStyles(createStyles);
   const { colors } = useTheme();
   const translateY = useRef(new Animated.Value(0)).current;
+  const scrollRef = useRef<ScrollView>(null);
 
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [community, setCommunity] = useState<ShelterCommunityResponse | null>(null);
@@ -101,6 +104,16 @@ export function ShelterDetailSheet({
       active = false;
     };
   }, [shelter, visible]);
+
+  useEffect(() => {
+    if (!visible || !focusCommunity) return;
+    const timer = setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }, 200);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [focusCommunity, visible]);
 
   const topVote = useMemo(() => {
     const summary = community?.votesSummary ?? {};
@@ -226,7 +239,7 @@ export function ShelterDetailSheet({
 
   if (!visible || !shelter) return null;
 
-  const hazardFlags = shelter.hazards ?? {};
+  const hazardChips = capabilityChipsFromShelter(shelter);
   const updatedAtLabel = community?.updatedAt ? formatUpdatedAt(community.updatedAt) : '不明';
   const comments = community?.comments ?? [];
 
@@ -242,7 +255,7 @@ export function ShelterDetailSheet({
               <Text style={styles.closeText}>閉じる</Text>
             </Pressable>
           </View>
-          <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+          <ScrollView ref={scrollRef} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
             {shelter.address ? <Text style={styles.address}>{shelter.address}</Text> : null}
             {distanceLabel ? <Text style={styles.distance}>{distanceLabel}</Text> : null}
 
@@ -264,18 +277,16 @@ export function ShelterDetailSheet({
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>対応ハザード</Text>
               <View style={styles.hazardRow}>
-                {HAZARD_OPTIONS.map((option) => {
-                  const active = Boolean(hazardFlags?.[option.key]);
-                  // Active: Black BG, White Text. Inactive: White BG, Black Border, Black Text.
-                  return (
-                    <View
-                      key={option.key}
-                      style={[styles.hazardChip, active ? styles.hazardChipActive : styles.hazardChipInactive]}
-                    >
-                      <Text style={active ? styles.hazardTextActive : styles.hazardTextInactive}>{option.label}</Text>
-                    </View>
-                  );
-                })}
+                {hazardChips.map((chip) => (
+                  <View
+                    key={chip.key}
+                    style={[styles.hazardChip, chip.supported ? styles.hazardChipActive : styles.hazardChipInactive]}
+                  >
+                    <Text style={chip.supported ? styles.hazardTextActive : styles.hazardTextInactive}>
+                      {chip.label}
+                    </Text>
+                  </View>
+                ))}
               </View>
             </View>
 
@@ -365,8 +376,6 @@ function formatUpdatedAt(value: string) {
   if (Number.isNaN(date.getTime())) return value;
   return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
-
-// HAZARD_OPTIONS removed, imported from constants
 
 const createStyles = (colors: {
   background: string;

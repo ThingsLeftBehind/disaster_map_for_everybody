@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Linking, Pressable, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as Location from 'expo-location';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 
 import { buildCacheKey, checkShelterVersion, fetchJson, fetchJsonWithCache, toApiError, type ApiError } from '@/src/api/client';
 import type { JmaWarningsResponse, Shelter, SheltersNearbyResponse } from '@/src/api/types';
+import { getEmergencyState, type EmergencyState } from '@/src/emergency/state';
 import { NearbySheltersCard } from '@/src/main/NearbySheltersCard';
 import { FAVORITE_LIMIT, loadFavorites, saveFavorites, toFavoriteShelter, type FavoriteShelter } from '@/src/main/favorites';
 import { ShelterDetailSheet } from '@/src/main/ShelterDetailSheet';
@@ -17,10 +18,12 @@ import { subscribeMainRefresh } from '@/src/push/events';
 import { loadLastKnownLocation } from '@/src/push/service';
 import { setLastKnownLocation } from '@/src/push/state';
 import { PrimaryButton, SecondaryButton, Skeleton, TabScreen } from '@/src/ui/system';
-import { radii, spacing, typography, useThemedStyles } from '@/src/ui/theme';
+import { ensureHazardCoverage } from '@/src/storage/hazardCoverage';
+import { radii, spacing, typography, useThemedStyles, useTheme } from '@/src/ui/theme';
 
 const DEFAULT_RADIUS_KM = 20;
 const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 50;
 const NEARBY_TIMEOUT_MS = 15000;
 const DEFAULT_AREA = '130000';
 const DEFAULT_MAP_REGION: ShelterMapRegion = {
@@ -47,6 +50,7 @@ export default function MainScreen() {
     const router = useRouter();
     const { height } = useWindowDimensions();
     const styles = useThemedStyles(createStyles);
+    const { colors } = useTheme();
     const mapHeight = Math.max(220, Math.min(340, Math.round(height * 0.42)));
 
     const [permission, setPermission] = useState<PermissionState>('unknown');
@@ -74,6 +78,7 @@ export default function MainScreen() {
     const [warningsData, setWarningsData] = useState<JmaWarningsResponse | null>(null);
     const [referenceWarningsData, setReferenceWarningsData] = useState<JmaWarningsResponse[]>([]);
     const [warningsError, setWarningsError] = useState<ApiError | null>(null);
+    const [emergencyState, setEmergencyState] = useState<EmergencyState | null>(null);
 
     useEffect(() => {
         let active = true;
@@ -95,6 +100,40 @@ export default function MainScreen() {
         void saveFavorites(favorites);
     }, [favorites]);
 
+    useEffect(() => {
+        let active = true;
+        getEmergencyState()
+            .then((state) => {
+                if (!active) return;
+                setEmergencyState(state);
+            })
+            .catch(() => {
+                if (!active) return;
+                setEmergencyState(null);
+            });
+        return () => {
+            active = false;
+        };
+    }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            let active = true;
+            getEmergencyState()
+                .then((state) => {
+                    if (!active) return;
+                    setEmergencyState(state);
+                })
+                .catch(() => {
+                    if (!active) return;
+                    setEmergencyState(null);
+                });
+            return () => {
+                active = false;
+            };
+        }, [])
+    );
+
     const fetchShelters = useCallback(
         async (coords: LatLng, options?: { notice?: string | null }) => {
             setIsLoading(true);
@@ -105,10 +144,11 @@ export default function MainScreen() {
             let timeoutId: ReturnType<typeof setTimeout> | null = null;
             try {
                 await checkShelterVersion();
+                const limit = Math.min(DEFAULT_LIMIT, MAX_LIMIT);
                 const params = new URLSearchParams({
                     lat: coords.lat.toString(),
                     lon: coords.lon.toString(),
-                    limit: String(DEFAULT_LIMIT),
+                    limit: String(limit),
                     radiusKm: String(DEFAULT_RADIUS_KM),
                     hideIneligible: 'false',
                 });
@@ -125,6 +165,7 @@ export default function MainScreen() {
                 items.sort((a, b) => getDistance(a) - getDistance(b));
                 setShelters(items);
                 setCacheInfo({ fromCache: result.fromCache, cachedAt: result.cachedAt, updatedAt: result.updatedAt });
+                void ensureHazardCoverage('current', coords, items, data.updatedAt ?? null);
             } catch (err) {
                 setError(toApiError(err));
                 setShelters([]);
@@ -383,6 +424,8 @@ export default function MainScreen() {
     );
 
     const hasAlerts = viewModel.countedWarnings.length > 0 && !warningsError;
+    const useMyAreaAlert = emergencyState?.baseMode === 'myArea' && Boolean(emergencyState?.myArea);
+    const alertIconActive = useMyAreaAlert ? emergencyState?.myAreaHasWarnings === true : hasAlerts;
     const areaLabel = viewModel.meta.areaDisplayName
         ? `対象: ${viewModel.meta.areaDisplayName}`
         : `対象: ${viewModel.meta.primaryJmaAreaName ?? '現在地周辺'}`;
@@ -473,8 +516,20 @@ export default function MainScreen() {
     const detailDistance = selectedShelter ? formatDistance(getDistance(selectedShelter)) : null;
     const noticeLabel = notice ?? uiNotice;
 
+    const emergencyIcon = (
+        <Pressable style={styles.alertIconButton} onPress={() => router.push('/emergency')} hitSlop={8}>
+            <View
+                style={[
+                    styles.alertTriangle,
+                    { borderBottomColor: alertIconActive ? colors.statusDanger : colors.text },
+                ]}
+            />
+            <Text style={[styles.alertTriangleText, { color: alertIconActive ? '#ffffff' : colors.background }]}>!</Text>
+        </Pressable>
+    );
+
     return (
-        <TabScreen title="避難ナビ">
+        <TabScreen title="避難ナビ" rightAccessory={emergencyIcon}>
             {permission !== 'granted' && !permissionDismissed ? (
                 <View style={styles.permissionCard}>
                     <View style={styles.permissionHeader}>
@@ -644,6 +699,27 @@ const createStyles = (colors: { background: string; border: string; text: string
             ...typography.caption,
             color: colors.muted,
             marginBottom: spacing.sm,
+        },
+        alertIconButton: {
+            width: 30,
+            height: 26,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        alertTriangle: {
+            width: 0,
+            height: 0,
+            borderLeftWidth: 10,
+            borderRightWidth: 10,
+            borderBottomWidth: 18,
+            borderLeftColor: 'transparent',
+            borderRightColor: 'transparent',
+        },
+        alertTriangleText: {
+            position: 'absolute',
+            top: 4,
+            fontSize: 12,
+            fontWeight: '700',
         },
         mapCard: {
             borderWidth: 1,

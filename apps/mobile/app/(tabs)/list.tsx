@@ -33,12 +33,20 @@ import type {
 } from '@/src/api/types';
 import { ShelterMap, type ShelterMapRegion, type ShelterMarker } from '@/src/map/ShelterMap';
 import { setLastKnownLocation } from '@/src/push/state';
+import { ensureHazardCoverage } from '@/src/storage/hazardCoverage';
 import { clearShelterCache } from '@/src/storage/shelterCache';
 import { Chip, EmptyState, PrimaryButton, SecondaryButton, Skeleton, TabScreen, TextField } from '@/src/ui/system';
 import { radii, spacing, typography, useThemedStyles } from '@/src/ui/theme';
+import {
+  HAZARD_CAPABILITY_UI,
+  type HazardCapabilityKey,
+  capabilityChipsFromShelter,
+  matchesAllCapabilities,
+} from '@/src/utils/hazardCapability';
 
 const DEFAULT_RADIUS_KM = 30;
 const DEFAULT_LIMIT = 50;
+const MAX_LIMIT = 50;
 const LIMIT_OPTIONS = [20, 30, 40, 50];
 const RADIUS_OPTIONS = [5, 10, 20, 30, 40, 50];
 const SAVED_LIMIT = 5;
@@ -68,18 +76,8 @@ type CacheInfo = {
   updatedAt: string | null;
 };
 
-type HazardKey =
-  | 'flood'
-  | 'landslide'
-  | 'storm_surge'
-  | 'earthquake'
-  | 'tsunami'
-  | 'large_fire'
-  | 'inland_flood'
-  | 'volcano';
-
 type FilterState = {
-  hazardKeys: HazardKey[];
+  hazardKeys: HazardCapabilityKey[];
   radiusKm: number;
   limit: number;
   includeIneligible: boolean;
@@ -94,17 +92,6 @@ type SavedShelter = {
   distance: number | null;
   hazards: Record<string, boolean> | null;
 };
-
-const HAZARD_OPTIONS: { key: HazardKey; label: string }[] = [
-  { key: 'flood', label: '洪水' },
-  { key: 'landslide', label: '土砂災害' },
-  { key: 'storm_surge', label: '高潮' },
-  { key: 'earthquake', label: '地震' },
-  { key: 'tsunami', label: '津波' },
-  { key: 'large_fire', label: '大規模火災' },
-  { key: 'inland_flood', label: '内水氾濫' },
-  { key: 'volcano', label: '火山' },
-];
 
 const DEFAULT_FILTERS: FilterState = {
   hazardKeys: [],
@@ -180,10 +167,11 @@ export default function ListScreen() {
     setCacheInfo(null);
     try {
       await checkShelterVersion();
+      const limit = clampLimit(activeFilters.limit);
       const params = new URLSearchParams({
         lat: coords.lat.toString(),
         lon: coords.lon.toString(),
-        limit: String(activeFilters.limit),
+        limit: String(limit),
         radiusKm: String(activeFilters.radiusKm),
         hideIneligible: String(!activeFilters.includeIneligible),
       });
@@ -197,8 +185,11 @@ export default function ListScreen() {
         { key: cacheKey, kind: 'nearby' }
       );
       const data = result.data;
-      setShelters(sortShelters(data.items ?? data.sites ?? []));
+      const rawShelters = data.items ?? data.sites ?? [];
+      const filteredShelters = applyHazardFilters(rawShelters, activeFilters.hazardKeys);
+      setShelters(sortShelters(filteredShelters));
       setCacheInfo({ fromCache: result.fromCache, cachedAt: result.cachedAt, updatedAt: result.updatedAt });
+      void ensureHazardCoverage('current', coords, rawShelters, data.updatedAt ?? null);
       if (!result.fromCache && data.fetchStatus !== 'OK') {
         setNotice(data.lastError ?? '更新が遅れています');
       }
@@ -308,10 +299,11 @@ export default function ListScreen() {
       setCacheInfo(null);
       try {
         await checkShelterVersion();
+        const limit = clampLimit(activeFilters.limit);
         const params = new URLSearchParams({
           mode: 'AREA',
           prefCode: selectedPref.prefCode,
-          limit: String(activeFilters.limit),
+          limit: String(limit),
           radiusKm: String(activeFilters.radiusKm),
           hideIneligible: String(!activeFilters.includeIneligible),
           includeHazardless: String(activeFilters.includeIneligible),
@@ -329,7 +321,9 @@ export default function ListScreen() {
           { key: cacheKey, kind: 'search' }
         );
         const data = result.data;
-        setShelters(sortShelters(data.items ?? data.sites ?? []));
+        const rawShelters = data.items ?? data.sites ?? [];
+        const filteredShelters = applyHazardFilters(rawShelters, activeFilters.hazardKeys);
+        setShelters(sortShelters(filteredShelters));
         setCacheInfo({ fromCache: result.fromCache, cachedAt: result.cachedAt, updatedAt: result.updatedAt });
         if (!result.fromCache && data.fetchStatus !== 'OK') {
           setNotice(data.lastError ?? '更新が遅れています');
@@ -358,10 +352,11 @@ export default function ListScreen() {
       setCacheInfo(null);
       try {
         await checkShelterVersion();
+        const limit = clampLimit(activeFilters.limit);
         const params = new URLSearchParams({
           mode: 'KEYWORD',
           q: keyword.trim(),
-          limit: String(activeFilters.limit),
+          limit: String(limit),
           radiusKm: String(activeFilters.radiusKm),
           hideIneligible: String(!activeFilters.includeIneligible),
           includeHazardless: String(activeFilters.includeIneligible),
@@ -376,7 +371,9 @@ export default function ListScreen() {
           { key: cacheKey, kind: 'search' }
         );
         const data = result.data;
-        setShelters(sortShelters(data.items ?? data.sites ?? []));
+        const rawShelters = data.items ?? data.sites ?? [];
+        const filteredShelters = applyHazardFilters(rawShelters, activeFilters.hazardKeys);
+        setShelters(sortShelters(filteredShelters));
         setCacheInfo({ fromCache: result.fromCache, cachedAt: result.cachedAt, updatedAt: result.updatedAt });
         if (!result.fromCache && data.fetchStatus !== 'OK') {
           setNotice(data.lastError ?? '更新が遅れています');
@@ -522,7 +519,7 @@ export default function ListScreen() {
     setFilterDraft(DEFAULT_FILTERS);
   }, []);
 
-  const handleToggleHazard = useCallback((key: HazardKey) => {
+  const handleToggleHazard = useCallback((key: HazardCapabilityKey) => {
     setFilterDraft((prev) => {
       const exists = prev.hazardKeys.includes(key);
       return {
@@ -729,7 +726,6 @@ export default function ListScreen() {
           {!isLoading ? (
             <ShelterList
               shelters={shelters}
-              selectedHazards={filters.hazardKeys}
               savedIds={savedIds}
               expandedIds={expandedIds}
               onToggleExpand={handleToggleExpand}
@@ -823,7 +819,6 @@ function SearchModeBar({ mode, onChange }: { mode: SearchMode; onChange: (next: 
 
 function ShelterList({
   shelters,
-  selectedHazards,
   savedIds,
   expandedIds,
   onToggleExpand,
@@ -832,7 +827,6 @@ function ShelterList({
   onOpenDetail,
 }: {
   shelters: Shelter[];
-  selectedHazards: HazardKey[];
   savedIds: Set<string>;
   expandedIds: Record<string, boolean>;
   onToggleExpand: (id: string) => void;
@@ -847,7 +841,6 @@ function ShelterList({
         <ShelterCard
           key={String(shelter.id)}
           shelter={shelter}
-          selectedHazards={selectedHazards}
           saved={savedIds.has(String(shelter.id))}
           expanded={!!expandedIds[String(shelter.id)]}
           onToggleExpand={() => onToggleExpand(String(shelter.id))}
@@ -862,7 +855,6 @@ function ShelterList({
 
 function ShelterCard({
   shelter,
-  selectedHazards,
   saved,
   expanded,
   onToggleExpand,
@@ -871,7 +863,6 @@ function ShelterCard({
   onOpenDetail,
 }: {
   shelter: Shelter;
-  selectedHazards: HazardKey[];
   saved: boolean;
   expanded: boolean;
   onToggleExpand: () => void;
@@ -880,7 +871,7 @@ function ShelterCard({
   onOpenDetail: () => void;
 }) {
   const styles = useThemedStyles(createStyles);
-  const hazardBadges = getShelterHazardBadges(shelter, selectedHazards);
+  const hazardChips = getShelterHazardChips(shelter).filter((chip) => chip.supported);
   const distanceLabel = formatDistance(getDistance(shelter));
 
   return (
@@ -891,16 +882,16 @@ function ShelterCard({
           <Text style={styles.cardAddress} numberOfLines={1} ellipsizeMode="tail">
             {shelter.address ?? '住所不明'}
           </Text>
-          {hazardBadges.length > 0 ? (
+          {hazardChips.length > 0 ? (
             <View style={styles.badgeRow}>
-              {hazardBadges.map((label) => (
-                <View key={label} style={styles.badge}>
-                  <Text style={styles.badgeText}>{label}</Text>
+              {hazardChips.map((chip) => (
+                <View key={chip.key} style={[styles.badge, styles.badgeActive]}>
+                  <Text style={styles.badgeTextActive}>{chip.label}</Text>
                 </View>
               ))}
             </View>
           ) : (
-            <Text style={styles.badgeEmpty}>ハザード情報なし</Text>
+            <Text style={styles.badgeEmpty}>対応ハザード: 情報なし</Text>
           )}
         </View>
         <Text style={styles.cardDistance}>{distanceLabel}</Text>
@@ -946,7 +937,7 @@ function FilterSheet({
   visible: boolean;
   onClose: () => void;
   draft: FilterState;
-  onToggleHazard: (key: HazardKey) => void;
+  onToggleHazard: (key: HazardCapabilityKey) => void;
   onUpdateRadius: (next: number) => void;
   onUpdateLimit: (next: number) => void;
   onToggleIneligible: () => void;
@@ -981,7 +972,7 @@ function FilterSheet({
           <View style={styles.sheetSection}>
             <Text style={styles.sheetLabel}>ハザード対応</Text>
             <View style={styles.hazardGrid}>
-              {HAZARD_OPTIONS.map((item) => (
+              {HAZARD_CAPABILITY_UI.map((item) => (
                 <Chip
                   key={item.key}
                   label={item.label}
@@ -1231,6 +1222,16 @@ function sortShelters(items: Shelter[]) {
     .sort((a, b) => getDistance(a) - getDistance(b) || String(a.id).localeCompare(String(b.id)));
 }
 
+function applyHazardFilters(items: Shelter[], required: HazardCapabilityKey[]) {
+  if (!required || required.length === 0) return items;
+  return items.filter((shelter) => matchesAllCapabilities(shelter, required));
+}
+
+function clampLimit(value: number) {
+  if (!Number.isFinite(value)) return MAX_LIMIT;
+  return Math.min(MAX_LIMIT, Math.max(1, Math.floor(value)));
+}
+
 function getDistance(shelter: Shelter) {
   const distance = shelter.distanceKm ?? shelter.distance ?? null;
   if (typeof distance === 'number' && Number.isFinite(distance)) return distance;
@@ -1264,24 +1265,16 @@ function toSavedShelter(shelter: Shelter): SavedShelter {
   };
 }
 
-function getShelterHazardBadges(shelter: Shelter, selected: HazardKey[]) {
-  const flags = shelter.hazards ?? {};
-  if (selected.length > 0) {
-    return selected.filter((key) => Boolean(flags?.[key])).map((key) => hazardLabel(key));
-  }
-  const active = HAZARD_OPTIONS.filter((option) => Boolean(flags?.[option.key]));
-  return active.slice(0, 2).map((option) => option.label);
+function getShelterHazardChips(shelter: Shelter) {
+  return capabilityChipsFromShelter(shelter);
 }
 
 function formatHazardList(shelter: Shelter) {
-  const flags = shelter.hazards ?? {};
-  const labels = HAZARD_OPTIONS.filter((option) => Boolean(flags?.[option.key])).map((option) => option.label);
+  const labels = capabilityChipsFromShelter(shelter)
+    .filter((chip) => chip.supported)
+    .map((chip) => chip.label);
   if (labels.length === 0) return null;
   return labels.join(' / ');
-}
-
-function hazardLabel(key: HazardKey) {
-  return HAZARD_OPTIONS.find((option) => option.key === key)?.label ?? key;
 }
 
 const createStyles = (colors: {
@@ -1526,11 +1519,22 @@ const createStyles = (colors: {
     borderRadius: radii.pill,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
-    backgroundColor: colors.surface,
   },
-  badgeText: {
+  badgeActive: {
+    backgroundColor: colors.text,
+    borderColor: colors.text,
+  },
+  badgeInactive: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+  },
+  badgeTextActive: {
     ...typography.caption,
-    color: colors.text,
+    color: colors.background,
+  },
+  badgeTextInactive: {
+    ...typography.caption,
+    color: colors.muted,
   },
   badgeEmpty: {
     ...typography.caption,

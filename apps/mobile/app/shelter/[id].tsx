@@ -13,6 +13,7 @@ import {
   Skeleton,
 } from '@/src/ui/system';
 import { spacing, typography, useThemedStyles } from '@/src/ui/theme';
+import { capabilityChipsFromShelter } from '@/src/utils/hazardCapability';
 
 export default function ShelterDetailScreen() {
   const router = useRouter();
@@ -56,12 +57,7 @@ export default function ShelterDetailScreen() {
     };
   }, [shelterId]);
 
-  const hazardKeys = useMemo(() => {
-    const flags = shelter?.hazards ?? {};
-    return Object.entries(flags)
-      .filter(([, value]) => Boolean(value))
-      .map(([key]) => key);
-  }, [shelter?.hazards]);
+  const hazardChips = useMemo(() => capabilityChipsFromShelter(shelter), [shelter]);
 
   return (
     <ScreenContainer title="Shelter" leftAction={{ label: 'Back', onPress: () => router.back() }}>
@@ -84,11 +80,11 @@ export default function ShelterDetailScreen() {
         <Text style={styles.mutedText}>この設定は端末内のみで管理されます。</Text>
       </SectionCard>
 
-      <SectionCard title="Hazards">
-        {hazardKeys.length === 0 ? <EmptyState message="ハザード情報はありません。" /> : null}
+      <SectionCard title="対応ハザード">
+        {hazardChips.every((chip) => !chip.supported) ? <EmptyState message="ハザード情報はありません。" /> : null}
         <View style={styles.rowWrap}>
-          {hazardKeys.map((key) => (
-            <Chip key={key} label={key} />
+          {hazardChips.map((chip) => (
+            <Chip key={chip.key} label={chip.label} selected={chip.supported} />
           ))}
         </View>
       </SectionCard>

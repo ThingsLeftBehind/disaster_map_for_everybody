@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { HAZARD_OPTIONS } from '@/src/constants/hazards';
 import type { Shelter } from '@/src/api/types';
 import { EmptyState, ErrorState, SecondaryButton, Skeleton } from '@/src/ui/system';
 import { radii, spacing, typography, useThemedStyles } from '@/src/ui/theme';
+import { capabilityChipsFromShelter } from '@/src/utils/hazardCapability';
 
 import type { FavoriteShelter } from './favorites';
 
@@ -125,7 +125,7 @@ function ShelterRow({
 }) {
   const styles = useThemedStyles(createStyles);
   const distanceLabel = formatDistance(getDistance(shelter));
-  const hazardLabels = getHazardLabels(shelter);
+  const hazardChips = capabilityChipsFromShelter(shelter).filter((chip) => chip.supported);
 
   return (
     <Pressable style={[styles.row, selected ? styles.rowSelected : null]} onPress={onPress}>
@@ -134,15 +134,17 @@ function ShelterRow({
         <Text style={styles.rowAddress} numberOfLines={1}>
           {shelter.address ?? '住所不明'}
         </Text>
-        {hazardLabels.length > 0 ? (
+        {hazardChips.length > 0 ? (
           <View style={styles.badgeRow}>
-            {hazardLabels.map((label) => (
-              <View key={label} style={styles.badge}>
-                <Text style={styles.badgeText}>{label}</Text>
+            {hazardChips.map((chip) => (
+              <View key={chip.key} style={[styles.badge, styles.badgeActive]}>
+                <Text style={styles.badgeTextActive}>{chip.label}</Text>
               </View>
             ))}
           </View>
-        ) : null}
+        ) : (
+          <Text style={styles.badgeEmpty}>対応ハザード: 情報なし</Text>
+        )}
       </View>
       <View style={styles.rowRight}>
         <View style={styles.distanceBlock}>
@@ -168,14 +170,6 @@ function formatDistance(distance: number) {
   if (distance < 1) return `${Math.round(distance * 1000)}m`;
   return `${distance.toFixed(1)}km`;
 }
-
-function getHazardLabels(shelter: Shelter) {
-  const flags = shelter.hazards ?? {};
-  const active = HAZARD_OPTIONS.filter((option) => Boolean(flags?.[option.key]));
-  return active.slice(0, 2).map((option) => option.label);
-}
-
-// HAZARD_OPTIONS removed, imported from constants
 
 const createStyles = (colors: {
   background: string;
@@ -289,9 +283,26 @@ const createStyles = (colors: {
       paddingHorizontal: spacing.xs,
       paddingVertical: 2,
     },
-    badgeText: {
+    badgeActive: {
+      backgroundColor: colors.text,
+      borderColor: colors.text,
+    },
+    badgeInactive: {
+      backgroundColor: colors.background,
+      borderColor: colors.border,
+    },
+    badgeTextActive: {
       ...typography.caption,
-      color: colors.text,
+      color: colors.background,
+    },
+    badgeTextInactive: {
+      ...typography.caption,
+      color: colors.muted,
+    },
+    badgeEmpty: {
+      ...typography.caption,
+      color: colors.muted,
+      marginTop: spacing.xs,
     },
     detailButton: {
       backgroundColor: colors.text,
