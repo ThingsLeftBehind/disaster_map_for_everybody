@@ -21,6 +21,23 @@ export const HAZARD_CAPABILITY_UI: { key: HazardCapabilityKey; label: string }[]
   { key: 'volcano', label: '火山' },
 ];
 
+export function hazardKeysFromHazards(hazards: Record<string, boolean> | null | undefined): HazardCapabilityKey[] {
+  if (!hazards) return [];
+  return HAZARD_CAPABILITY_UI.filter((item) => Boolean(hazards[item.key])).map((item) => item.key);
+}
+
+export function hazardChipsFromHazards(hazards: Record<string, boolean> | null | undefined): {
+  key: HazardCapabilityKey;
+  label: string;
+  supported: boolean;
+}[] {
+  return HAZARD_CAPABILITY_UI.map((item) => ({
+    key: item.key,
+    label: item.label,
+    supported: Boolean(hazards?.[item.key]),
+  }));
+}
+
 const NORMALIZED_MAP: Record<string, HazardCapabilityKey> = {
   flood: 'flood',
   洪水: 'flood',
@@ -95,11 +112,11 @@ export function capabilityKeysFromShelter(shelter: Shelter | null | undefined): 
   return HAZARD_CAPABILITY_UI.filter((item) => keys.has(item.key)).map((item) => item.key);
 }
 
-export function capabilityChipsFromShelter(shelter: Shelter | null | undefined): Array<{
+export function capabilityChipsFromShelter(shelter: Shelter | null | undefined): {
   key: HazardCapabilityKey;
   label: string;
   supported: boolean;
-}> {
+}[] {
   const active = new Set(capabilityKeysFromShelter(shelter));
   return HAZARD_CAPABILITY_UI.map((item) => ({
     key: item.key,
@@ -113,6 +130,6 @@ export function matchesAllCapabilities(
   required: HazardCapabilityKey[]
 ): boolean {
   if (!required || required.length === 0) return true;
-  const active = new Set(capabilityKeysFromShelter(shelter));
+  const active = new Set(hazardKeysFromHazards(shelter?.hazards ?? null));
   return required.every((key) => active.has(key));
 }

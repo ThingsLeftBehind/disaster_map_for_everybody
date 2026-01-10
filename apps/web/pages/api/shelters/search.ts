@@ -8,8 +8,10 @@ import { normalizeLatLon } from 'lib/shelters/coords';
 import { factorModeToScale, getEvacSitesSchema } from 'lib/shelters/evacSitesSchema';
 import {
   getEvacSiteMeta,
+  getEvacSiteHazardMeta,
   isEvacSitesTableMismatchError,
   rawFindByIds,
+  rawLoadHazardCapsBySiteIds,
   safeErrorMessage,
 } from 'lib/shelters/evacsiteCompat';
 import { normalizeMuniCode } from 'lib/muni-helper';
@@ -100,6 +102,27 @@ function hazardCount(hazards: Record<string, boolean> | null | undefined): numbe
 
 function hasAnyHazard(hazards: Record<string, boolean> | null | undefined): boolean {
   return hazardCount(hazards) > 0;
+}
+
+function parseHazardsValue(raw: unknown): Record<string, boolean> | null {
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) return raw as Record<string, boolean>;
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (!trimmed.startsWith('{')) return null;
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed as Record<string, boolean>;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+function normalizeHazards(raw: Record<string, boolean> | null | undefined): Record<string, boolean> {
+  const normalized: Record<string, boolean> = {};
+  for (const key of hazardKeys) normalized[key] = Boolean(raw?.[key]);
+  return normalized;
 }
 
 // Dedupe key: prefer shared id, else name + address + rounded coords for stability.
@@ -391,7 +414,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const applyFilters = (sites: any[]) => {
     const enriched = sites.map((site: any) => {
-      const flags = (site.hazards ?? {}) as Record<string, boolean>;
+      const flags = normalizeHazards(parseHazardsValue(site.hazards) ?? (site.hazards as Record<string, boolean> | null | undefined));
       const matches = hazardFilters.length === 0 ? true : hazardFilters.every((key: any) => Boolean(flags?.[key]));
       const missing = hazardFilters.filter((key: any) => !Boolean(flags?.[key]));
       return { ...site, hazards: flags, matchesHazards: matches, missingHazards: missing };
@@ -546,6 +569,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const ids = rawSites.map((site: any) => site.id).filter(Boolean);
       const rows = ids.length > 0 ? await rawFindByIds(prisma, evacMeta, ids) : [];
+      // Merge EvacSiteHazardCapability.hazardType into fixed hazard keys via evacsiteCompat normalization.
+      const hazardMeta = await getEvacSiteHazardMeta(prisma);
+      const hazardCapsById = await rawLoadHazardCapsBySiteIds(
+        prisma,
+        hazardMeta,
+        ids.map((id: any) => String(id))
+      );
       const coordsById = new Map<string, { lat: number; lon: number }>();
       for (const row of rows) {
         const idRaw = row[evacMeta.idCol];
@@ -558,7 +588,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const sites = rawSites
         .map((site: any) => {
           const coords = coordsById.get(String(site.id));
-          return coords ? { ...site, lat: coords.lat, lon: coords.lon } : null;
+          if (!coords) return null;
+          const rawHazards = parseHazardsValue(site.hazards);
+          const caps = hazardCapsById.get(String(site.id)) ?? null;
+          const hazards = mergeHazards(rawHazards ?? undefined, caps ?? undefined);
+          return { ...site, lat: coords.lat, lon: coords.lon, hazards };
         })
         .filter((v: any): v is NonNullable<typeof v> => Boolean(v));
 

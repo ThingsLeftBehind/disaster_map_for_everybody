@@ -5,7 +5,7 @@ import type { Shelter, SheltersNearbyResponse } from '@/src/api/types';
 import {
   HAZARD_CAPABILITY_UI,
   type HazardCapabilityKey,
-  capabilityKeysFromShelter,
+  hazardKeysFromHazards,
 } from '@/src/utils/hazardCapability';
 
 export type HazardCoverageBucket = 'current' | 'myArea';
@@ -26,8 +26,23 @@ export type HazardCoverageEntry = {
   updatedAt: string | null;
 };
 
+export type HazardCoverageDebugEntry = {
+  hazardKey: HazardCapabilityKey;
+  found: boolean;
+  radiusKm: number | null;
+  shelterId: string | null;
+  updatedAt: string | null;
+};
+
+export type HazardCoverageDebugSummary = {
+  bucket: HazardCoverageBucket;
+  generatedAt: string;
+  entries: HazardCoverageDebugEntry[];
+};
+
 const STORAGE_PREFIX = 'hinanavi_hazard_coverage_v1:';
-const RADIUS_STEPS = [5, 10, 20, 30, 50];
+const DEBUG_PREFIX = 'hinanavi_hazard_coverage_debug_v1:';
+const RADIUS_STEPS = [5, 10, 20, 30];
 const MAX_LIMIT = 50;
 
 export async function getHazardCoverage(bucket: HazardCoverageBucket): Promise<HazardCoverageEntry[]> {
@@ -44,6 +59,10 @@ export async function getHazardCoverage(bucket: HazardCoverageBucket): Promise<H
 
 export async function setHazardCoverage(bucket: HazardCoverageBucket, entries: HazardCoverageEntry[]) {
   await AsyncStorage.setItem(storageKey(bucket), JSON.stringify(entries));
+}
+
+export async function setHazardCoverageDebugSummary(bucket: HazardCoverageBucket, summary: HazardCoverageDebugSummary) {
+  await AsyncStorage.setItem(debugKey(bucket), JSON.stringify(summary));
 }
 
 export async function updateHazardCoverageFromShelters(
@@ -86,26 +105,51 @@ export async function ensureHazardCoverage(
 
   if (missing.length === 0) return;
 
+  const debugEntries: HazardCoverageDebugEntry[] = [];
+
   for (const hazardKey of missing) {
     const found = await fetchFirstShelterForHazard(base, hazardKey);
-    if (!found) continue;
+    if (!found) {
+      debugEntries.push({ hazardKey, found: false, radiusKm: null, shelterId: null, updatedAt: null });
+      continue;
+    }
     const summary = toCoverageShelter(found.shelter, found.updatedAt);
-    if (!summary) continue;
+    if (!summary) {
+      debugEntries.push({ hazardKey, found: false, radiusKm: found.radiusKm, shelterId: null, updatedAt: found.updatedAt });
+      continue;
+    }
     const next = await getHazardCoverage(bucket);
     const updated = [
       ...next.filter((entry) => entry.hazardKey !== hazardKey),
       { hazardKey, shelter: summary, updatedAt: summary.updatedAt },
     ];
     await setHazardCoverage(bucket, updated);
+    debugEntries.push({
+      hazardKey,
+      found: true,
+      radiusKm: found.radiusKm,
+      shelterId: summary.id,
+      updatedAt: summary.updatedAt,
+    });
   }
+
+  await setHazardCoverageDebugSummary(bucket, {
+    bucket,
+    generatedAt: new Date().toISOString(),
+    entries: debugEntries,
+  });
 }
 
 function storageKey(bucket: HazardCoverageBucket) {
   return `${STORAGE_PREFIX}${bucket}`;
 }
 
+function debugKey(bucket: HazardCoverageBucket) {
+  return `${DEBUG_PREFIX}${bucket}`;
+}
+
 function toCoverageShelter(shelter: Shelter, updatedAt: string | null): HazardCoverageShelter | null {
-  const hazardKeys = capabilityKeysFromShelter(shelter);
+  const hazardKeys = hazardKeysFromHazards(shelter.hazards ?? null);
   if (!Number.isFinite(shelter.lat) || !Number.isFinite(shelter.lon)) return null;
   return {
     id: String(shelter.id),
@@ -121,7 +165,7 @@ function toCoverageShelter(shelter: Shelter, updatedAt: string | null): HazardCo
 async function fetchFirstShelterForHazard(
   base: { lat: number; lon: number },
   hazardKey: HazardCapabilityKey
-): Promise<{ shelter: Shelter; updatedAt: string | null } | null> {
+): Promise<{ shelter: Shelter; updatedAt: string | null; radiusKm: number } | null> {
   for (const radiusKm of RADIUS_STEPS) {
     const params = new URLSearchParams({
       lat: base.lat.toString(),
@@ -134,9 +178,9 @@ async function fetchFirstShelterForHazard(
     try {
       const data = await fetchJson<SheltersNearbyResponse>(`/api/shelters/nearby?${params.toString()}`);
       const items = data.items ?? data.sites ?? [];
-      const matched = items.find((item) => capabilityKeysFromShelter(item).includes(hazardKey));
+      const matched = items.find((item) => hazardKeysFromHazards(item.hazards ?? null).includes(hazardKey));
       if (matched) {
-        return { shelter: matched, updatedAt: data.updatedAt ?? null };
+        return { shelter: matched, updatedAt: data.updatedAt ?? null, radiusKm };
       }
     } catch {
       continue;

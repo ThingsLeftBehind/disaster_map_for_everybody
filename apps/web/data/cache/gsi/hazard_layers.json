@@ -1,8 +1,8 @@
 {
   "version": 1,
   "updatedAt": "2026-01-03T14:47:11.771Z",
-  "fetchStatus": "OK",
-  "lastError": null,
+  "fetchStatus": "DEGRADED",
+  "lastError": "No hazard templates discovered",
   "source": {
     "metadataUrl": "https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/metadata_light.xml",
     "portalUrl": "https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/",

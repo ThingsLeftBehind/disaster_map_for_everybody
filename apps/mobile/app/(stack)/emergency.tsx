@@ -25,8 +25,8 @@ import { ShelterDetailSheet } from '@/src/main/ShelterDetailSheet';
 import { getPushState } from '@/src/push/state';
 import { ensureHazardCoverage } from '@/src/storage/hazardCoverage';
 import {
-  capabilityChipsFromShelter,
-  capabilityKeysFromShelter,
+  hazardChipsFromHazards,
+  hazardKeysFromHazards,
   type HazardCapabilityKey,
 } from '@/src/utils/hazardCapability';
 import { PrimaryButton, ScreenContainer, SecondaryButton, Skeleton } from '@/src/ui/system';
@@ -130,7 +130,7 @@ export default function EmergencyScreen() {
       const exists = prev.find((item) => item.id === id);
       if (exists) return prev.filter((item) => item.id !== id);
       if (prev.length >= 5) return prev;
-      return [...prev, toFavoriteShelter(detailShelter)];
+      return [...prev, toFavoriteShelter(detailShelter, null)];
     });
   }, [detailShelter]);
 
@@ -280,7 +280,7 @@ export default function EmergencyScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.questionTitle}>現在、避難所を探していますか？</Text>
+        <Text style={styles.questionTitle}>現在、避難場所を探していますか？</Text>
         <View style={styles.actionRow}>
           <PrimaryButton label="はい" onPress={handleProceed} />
           <SecondaryButton label="いいえ" onPress={() => router.back()} />
@@ -300,7 +300,7 @@ export default function EmergencyScreen() {
         <>
           {hasOnSiteMode && onSiteShelter ? (
             <View style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>この避難所にいますか？</Text>
+              <Text style={styles.sectionTitle}>この避難場所にいますか？</Text>
               <Text style={styles.sectionSub}>{onSiteShelter.name ?? '避難所'}</Text>
               <View style={styles.actionRow}>
                 <PrimaryButton label="はい" onPress={handleOnSiteYes} />
@@ -321,14 +321,14 @@ export default function EmergencyScreen() {
                 </Pressable>
               </View>
               <Pressable style={styles.detailButton} onPress={handleOnSiteYes}>
-                <Text style={styles.detailButtonText}>詳細を見る</Text>
+                <Text style={styles.detailButtonText}>コメントを書く</Text>
               </Pressable>
             </View>
           ) : (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>おすすめの避難所（3件）</Text>
+              <Text style={styles.sectionTitle}>おすすめの避難場所（上位3件）</Text>
               {recommendations.length === 0 ? (
-                <Text style={styles.metaText}>近くの避難所が見つかりませんでした。</Text>
+                <Text style={styles.metaText}>近くの避難場所が見つかりませんでした。</Text>
               ) : (
                 recommendations.map((item) => (
                   <View key={String(item.shelter.id)} style={styles.recommendCard}>
@@ -352,6 +352,11 @@ export default function EmergencyScreen() {
                         </Text>
                       ))}
                     </View>
+                    {item.status !== 'none' ? (
+                      <Text style={styles.cautionText}>
+                        {item.status === 'closed' ? '注意: 閉鎖の投票があります' : '注意: 混雑の投票があります'}
+                      </Text>
+                    ) : null}
                     {item.status === 'crowded' ? (
                       <View style={[styles.statusBadge, styles.statusCrowded]}>
                         <Text style={styles.statusText}>混雑</Text>
@@ -370,11 +375,12 @@ export default function EmergencyScreen() {
                         setDetailOpen(true);
                       }}
                     >
-                      <Text style={styles.detailButtonText}>詳細を見る</Text>
+                      <Text style={styles.detailButtonText}>避難所詳細</Text>
                     </Pressable>
                   </View>
                 ))
               )}
+              <SecondaryButton label="避難場所を探していない" onPress={() => router.back()} />
             </View>
           )}
         </>
@@ -482,9 +488,15 @@ async function loadEmergencyData(params: {
     }
 
     const hazardKeys = getHazardKeysFromWarnings(warningItems);
-    const shouldFilterByHazard = warningItems.length > 0 && hazardKeys.length > 0;
-    const candidates = shouldFilterByHazard
-      ? sorted.filter((shelter) => hasAnyCapability(shelter, hazardKeys))
+    const preferHazard = warningItems.length > 0 && hazardKeys.length > 0;
+    const candidates = preferHazard
+      ? sorted
+          .slice()
+          .sort(
+            (a, b) =>
+              Number(hasAnyCapability(b, hazardKeys)) - Number(hasAnyCapability(a, hazardKeys)) ||
+              getDistance(a, coords) - getDistance(b, coords)
+          )
       : sorted;
 
     const topCandidates = candidates.slice(0, 10);
@@ -500,15 +512,19 @@ async function loadEmergencyData(params: {
     );
 
     withStatus.sort((a, b) => {
+      if (preferHazard) {
+        const hazardDiff = Number(hasAnyCapability(b.shelter, hazardKeys)) - Number(hasAnyCapability(a.shelter, hazardKeys));
+        if (hazardDiff !== 0) return hazardDiff;
+      }
       if (a.distanceKm !== b.distanceKm) return a.distanceKm - b.distanceKm;
       return statusRank(a.status) - statusRank(b.status);
     });
 
     const top = withStatus.slice(0, 3).map((entry) => {
-      const hazardLabels = capabilityChipsFromShelter(entry.shelter)
+      const hazardLabels = hazardChipsFromHazards(entry.shelter.hazards ?? null)
         .filter((chip) => chip.supported)
         .map((chip) => chip.label);
-      const reasons = buildReasonLines(entry, hazardLabels, shouldFilterByHazard ? hazardKeys : []);
+      const reasons = buildReasonLines(entry, hazardLabels, preferHazard ? hazardKeys : []);
       return {
         shelter: entry.shelter,
         distanceKm: entry.distanceKm,
@@ -541,8 +557,9 @@ function buildReasonLines(
     lines.push(`対応：${hazardLabels.join('・')}`);
   }
   lines.push(`距離：${formatDistance(entry.distanceKm)}`);
-  if (entry.status === 'crowded') lines.push('混雑：投票あり（注意）');
-  if (entry.status === 'closed') lines.push('閉鎖：投票あり（危険）');
+  if (entry.status === 'none') lines.push('混雑/閉鎖の投票なし');
+  if (entry.status === 'crowded') lines.push('混雑の投票あり');
+  if (entry.status === 'closed') lines.push('閉鎖の投票あり');
   return lines;
 }
 
@@ -574,6 +591,7 @@ function getHazardKeysFromWarnings(warnings: WarningDisplayItem[]) {
 }
 
 function mapWarningToHazard(item: WarningDisplayItem): HazardCapabilityKey | null {
+  // Deterministic keyword mapping from JMA warning text to fixed hazard keys.
   const text = `${item.warningName} ${item.phenomenon}`;
   if (text.includes('洪水')) return 'flood';
   if (text.includes('土砂')) return 'landslide';
@@ -587,7 +605,7 @@ function mapWarningToHazard(item: WarningDisplayItem): HazardCapabilityKey | nul
 }
 
 function hasAnyCapability(shelter: Shelter, keys: HazardCapabilityKey[]) {
-  const active = new Set(capabilityKeysFromShelter(shelter));
+  const active = new Set(hazardKeysFromHazards(shelter.hazards ?? null));
   return keys.some((key) => active.has(key));
 }
 
@@ -727,7 +745,7 @@ async function apiRequest(path: string, init: RequestInit) {
   return { ok: response.ok, json };
 }
 
-const createStyles = (colors: { background: string; border: string; text: string; muted: string }) =>
+const createStyles = (colors: { background: string; border: string; text: string; muted: string; surface: string }) =>
   StyleSheet.create({
     section: {
       marginBottom: spacing.lg,
@@ -877,6 +895,11 @@ const createStyles = (colors: { background: string; border: string; text: string
     reasonText: {
       ...typography.caption,
       color: colors.muted,
+    },
+    cautionText: {
+      ...typography.caption,
+      color: colors.muted,
+      marginTop: spacing.xs,
     },
     statusBadge: {
       alignSelf: 'flex-start',

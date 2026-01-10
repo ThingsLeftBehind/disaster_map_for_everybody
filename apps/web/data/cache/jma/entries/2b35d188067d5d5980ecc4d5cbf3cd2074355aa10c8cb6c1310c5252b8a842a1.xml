@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/">
+<Control>
+<Title>震源・震度に関する情報</Title>
+<DateTime>2026-01-09T14:04:40Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>大阪管区気象台</EditorialOffice>
+<PublishingOffice>気象庁</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>震源・震度情報</Title>
+<ReportDateTime>2026-01-09T23:04:00+09:00</ReportDateTime>
+<TargetDateTime>2026-01-09T23:04:00+09:00</TargetDateTime>
+<EventID>20260109230151</EventID>
+<InfoType>発表</InfoType>
+<Serial>1</Serial>
+<InfoKind>地震情報</InfoKind>
+<InfoKindVersion>1.0_1</InfoKindVersion>
+<Headline>
+<Text>　９日２３時０１分ころ、地震がありました。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/seismology1/" xmlns:jmx_eb="http://xml.kishou.go.jp/jmaxml1/elementBasis1/">
+<Earthquake>
+<OriginTime>2026-01-09T23:01:00+09:00</OriginTime>
+<ArrivalTime>2026-01-09T23:01:00+09:00</ArrivalTime>
+<Hypocenter>
+<Area>
+<Name>島根県東部</Name>
+<Code type="震央地名">570</Code>
+<jmx_eb:Coordinate description="北緯３５．３度　東経１３３．２度　深さ　２０ｋｍ" >+35.3+133.2-20000/</jmx_eb:Coordinate>
+</Area>
+</Hypocenter>
+<jmx_eb:Magnitude type="Mj" description="Ｍ３．４">3.4</jmx_eb:Magnitude>
+</Earthquake>
+<Intensity>
+<Observation>
+<CodeDefine>
+<Type xpath="Pref/Code">地震情報／都道府県等</Type>
+<Type xpath="Pref/Area/Code">地震情報／細分区域</Type>
+<Type xpath="Pref/Area/City/Code">気象・地震・火山情報／市町村等</Type>
+<Type xpath="Pref/Area/City/IntensityStation/Code">震度観測点</Type>
+</CodeDefine>
+<MaxInt>2</MaxInt>
+<Pref><Name>鳥取県</Name><Code>31</Code><MaxInt>2</MaxInt>
+<Area><Name>鳥取県西部</Name><Code>563</Code><MaxInt>2</MaxInt>
+<City><Name>鳥取南部町</Name><Code>3138900</Code><MaxInt>2</MaxInt>
+<IntensityStation><Name>鳥取南部町天萬＊</Name><Code>3138931</Code><Int>2</Int></IntensityStation>
+<IntensityStation><Name>鳥取南部町法勝寺＊</Name><Code>3138930</Code><Int>1</Int></IntensityStation>
+</City>
+<City><Name>日南町</Name><Code>3140100</Code><MaxInt>2</MaxInt>
+<IntensityStation><Name>日南町生山＊</Name><Code>3140120</Code><Int>2</Int></IntensityStation>
+<IntensityStation><Name>日南町霞＊</Name><Code>3140131</Code><Int>1</Int></IntensityStation>
+</City>
+<City><Name>米子市</Name><Code>3120200</Code><MaxInt>1</MaxInt>
+<IntensityStation><Name>米子市東町＊</Name><Code>3120220</Code><Int>1</Int></IntensityStation>
+</City>
+<City><Name>境港市</Name><Code>3120400</Code><MaxInt>1</MaxInt>
+<IntensityStation><Name>境港市東本町</Name><Code>3120401</Code><Int>1</Int></IntensityStation>
+</City>
+<City><Name>伯耆町</Name><Code>3139000</Code><MaxInt>1</MaxInt>
+<IntensityStation><Name>伯耆町吉長＊</Name><Code>3139030</Code><Int>1</Int></IntensityStation>
+</City>
+<City><Name>鳥取日野町</Name><Code>3140200</Code><MaxInt>1</MaxInt>
+<IntensityStation><Name>鳥取日野町根雨＊</Name><Code>3140231</Code><Int>1</Int></IntensityStation>
+</City>
+<City><Name>江府町</Name><Code>3140300</Code><MaxInt>1</MaxInt>
+<IntensityStation><Name>江府町上之段広場＊</Name><Code>3140320</Code><Int>1</Int></IntensityStation>
+</City>
+</Area>
+</Pref>
+<Pref><Name>島根県</Name><Code>32</Code><MaxInt>1</MaxInt>
+<Area><Name>島根県東部</Name><Code>570</Code><MaxInt>1</MaxInt>
+<City><Name>松江市</Name><Code>3220100</Code><MaxInt>1</MaxInt>
+<IntensityStation><Name>松江市東出雲町揖屋＊</Name><Code>3220148</Code><Int>1</Int></IntensityStation>
+</City>
+<City><Name>安来市</Name><Code>3220600</Code><MaxInt>1</MaxInt>
+<IntensityStation><Name>安来市広瀬町広瀬祖父谷丁＊</Name><Code>3220620</Code><Int>1</Int></IntensityStation>
+<IntensityStation><Name>安来市伯太町東母里＊</Name><Code>3220635</Code><Int>1</Int></IntensityStation>
+<IntensityStation><Name>安来市安来町＊</Name><Code>3220636</Code><Int>1</Int></IntensityStation>
+</City>
+<City><Name>雲南市</Name><Code>3220900</Code><MaxInt>1</MaxInt>
+<IntensityStation><Name>雲南市大東町大東</Name><Code>3220900</Code><Int>1</Int></IntensityStation>
+<IntensityStation><Name>雲南市掛合町掛合＊</Name><Code>3220939</Code><Int>1</Int></IntensityStation>
+</City>
+<City><Name>奥出雲町</Name><Code>3234300</Code><MaxInt>1</MaxInt>
+<IntensityStation><Name>奥出雲町三成＊</Name><Code>3234334</Code><Int>1</Int></IntensityStation>
+</City>
+</Area>
+</Pref>
+<Pref><Name>広島県</Name><Code>34</Code><MaxInt>1</MaxInt>
+<Area><Name>広島県北部</Name><Code>590</Code><MaxInt>1</MaxInt>
+<City><Name>庄原市</Name><Code>3421000</Code><MaxInt>1</MaxInt>
+<IntensityStation><Name>庄原市西城町大佐＊</Name><Code>3421020</Code><Int>1</Int></IntensityStation>
+</City>
+</Area>
+</Pref>
+</Observation>
+</Intensity>
+<Comments>
+<ForecastComment codeType="固定付加文">
+<Text>この地震による津波の心配はありません。</Text>
+<Code>0215</Code>
+</ForecastComment>
+<VarComment codeType="固定付加文">
+<Text>＊印は気象庁以外の震度観測点についての情報です。</Text>
+<Code>0262</Code>
+</VarComment>
+</Comments>
+</Body>
+</Report>

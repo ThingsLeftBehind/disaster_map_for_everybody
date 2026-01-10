@@ -79,6 +79,11 @@ export default function MainScreen() {
     const [referenceWarningsData, setReferenceWarningsData] = useState<JmaWarningsResponse[]>([]);
     const [warningsError, setWarningsError] = useState<ApiError | null>(null);
     const [emergencyState, setEmergencyState] = useState<EmergencyState | null>(null);
+    const cacheLabel = useMemo(() => {
+        if (!cacheInfo?.fromCache) return null;
+        const stamp = cacheInfo.updatedAt ?? cacheInfo.cachedAt ?? null;
+        return stamp ? `キャッシュ表示: ${formatTime(stamp)}` : 'キャッシュ表示';
+    }, [cacheInfo]);
 
     useEffect(() => {
         let active = true;
@@ -517,7 +522,13 @@ export default function MainScreen() {
     const noticeLabel = notice ?? uiNotice;
 
     const emergencyIcon = (
-        <Pressable style={styles.alertIconButton} onPress={() => router.push('/emergency')} hitSlop={8}>
+        <Pressable
+            style={styles.alertIconButton}
+            onPress={() => router.push('/emergency')}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="緊急モードを開く"
+        >
             <View
                 style={[
                     styles.alertTriangle,
@@ -576,6 +587,7 @@ export default function MainScreen() {
                 selectedId={selectedShelterId}
                 isLoading={isLoading}
                 error={error}
+                cacheLabel={cacheLabel}
                 notice={noticeLabel}
                 onRetry={handleReseek}
                 onSelect={handleSelectShelter}
@@ -606,6 +618,14 @@ function formatDistance(distance: number) {
     if (!Number.isFinite(distance)) return '距離不明';
     if (distance < 1) return `${Math.round(distance * 1000)}m`;
     return `${distance.toFixed(1)}km`;
+}
+
+function formatTime(value: string) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(
+        date.getMinutes()
+    ).padStart(2, '0')}`;
 }
 
 // Updated reverse geocoder to extract muniCode

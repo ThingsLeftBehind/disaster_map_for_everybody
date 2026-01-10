@@ -40,7 +40,7 @@ import { radii, spacing, typography, useThemedStyles } from '@/src/ui/theme';
 import {
   HAZARD_CAPABILITY_UI,
   type HazardCapabilityKey,
-  capabilityChipsFromShelter,
+  hazardChipsFromHazards,
   matchesAllCapabilities,
 } from '@/src/utils/hazardCapability';
 
@@ -1266,11 +1266,11 @@ function toSavedShelter(shelter: Shelter): SavedShelter {
 }
 
 function getShelterHazardChips(shelter: Shelter) {
-  return capabilityChipsFromShelter(shelter);
+  return hazardChipsFromHazards(shelter.hazards ?? null);
 }
 
 function formatHazardList(shelter: Shelter) {
-  const labels = capabilityChipsFromShelter(shelter)
+  const labels = hazardChipsFromHazards(shelter.hazards ?? null)
     .filter((chip) => chip.supported)
     .map((chip) => chip.label);
   if (labels.length === 0) return null;

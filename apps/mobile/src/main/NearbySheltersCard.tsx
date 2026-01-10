@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { Shelter } from '@/src/api/types';
 import { EmptyState, ErrorState, SecondaryButton, Skeleton } from '@/src/ui/system';
 import { radii, spacing, typography, useThemedStyles } from '@/src/ui/theme';
-import { capabilityChipsFromShelter } from '@/src/utils/hazardCapability';
+import { hazardChipsFromHazards } from '@/src/utils/hazardCapability';
 
 import type { FavoriteShelter } from './favorites';
 
@@ -65,7 +65,7 @@ export function NearbySheltersCard({
         <Text style={styles.cardCount}>{shownCount}件</Text>
       </View>
 
-      {cacheLabel ? <Text style={styles.metaText}>キャッシュ {cacheLabel}</Text> : null}
+      {cacheLabel ? <Text style={styles.metaText}>{cacheLabel}</Text> : null}
       {notice ? <Text style={styles.noticeText}>{notice}</Text> : null}
 
       {isLoading ? (
@@ -125,7 +125,7 @@ function ShelterRow({
 }) {
   const styles = useThemedStyles(createStyles);
   const distanceLabel = formatDistance(getDistance(shelter));
-  const hazardChips = capabilityChipsFromShelter(shelter).filter((chip) => chip.supported);
+  const hazardChips = hazardChipsFromHazards(shelter.hazards ?? null).filter((chip) => chip.supported);
 
   return (
     <Pressable style={[styles.row, selected ? styles.rowSelected : null]} onPress={onPress}>

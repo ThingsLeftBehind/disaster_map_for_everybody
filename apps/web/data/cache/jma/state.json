@@ -22,11 +22,11 @@
     "eqvol": {
       "url": "https://www.data.jma.go.jp/developer/xml/feed/eqvol.xml",
       "intervalMs": 60000,
-      "lastAttemptTime": "2026-01-03T16:05:03.170Z",
-      "lastSuccessfulUpdateTime": "2026-01-03T16:05:03.464Z",
+      "lastAttemptTime": "2026-01-09T17:05:31.957Z",
+      "lastSuccessfulUpdateTime": "2026-01-09T17:05:32.567Z",
       "lastError": null,
-      "etag": "W/\"709ba30ab68fe9e10516ad4238da5830\"",
-      "lastModified": "Sat, 03 Jan 2026 14:01:25 GMT"
+      "etag": "W/\"c9a4bb30ee9cbaae189f1d90b8092ee8\"",
+      "lastModified": "Fri, 09 Jan 2026 17:01:26 GMT"
     },
     "other": {
       "url": "https://www.data.jma.go.jp/developer/xml/feed/other.xml",
@@ -40,11 +40,11 @@
   },
   "webjson": {
     "quakeList": {
-      "lastAttemptTime": "2026-01-03T16:05:03.476Z",
-      "lastSuccessfulUpdateTime": "2026-01-03T16:05:03.678Z",
+      "lastAttemptTime": "2026-01-09T17:05:34.090Z",
+      "lastSuccessfulUpdateTime": "2026-01-09T17:05:34.609Z",
       "lastError": null,
-      "etag": "W/\"9053fe63d6fb5af149a2cf04491877e0\"",
-      "lastModified": "Sat, 03 Jan 2026 15:02:33 GMT"
+      "etag": "W/\"476201f66bf742459d1d821bd243851a\"",
+      "lastModified": "Fri, 09 Jan 2026 15:02:41 GMT"
     },
     "warningsByArea": {
       "130000": {

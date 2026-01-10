@@ -6,7 +6,7 @@ import { haversineDistance, hazardKeys } from '@jp-evac/shared';
 import type { Sql } from '@prisma/client/runtime/library';
 import { normalizeLatLon } from 'lib/shelters/coords';
 import { factorModeToScale, getEvacSitesSchema } from 'lib/shelters/evacSitesSchema';
-import { isEvacSitesTableMismatchError, safeErrorMessage } from 'lib/shelters/evacsiteCompat';
+import { getEvacSiteHazardMeta, isEvacSitesTableMismatchError, rawLoadHazardCapsBySiteIds, safeErrorMessage } from 'lib/shelters/evacsiteCompat';
 import { DEFAULT_MAIN_LIMIT } from 'lib/constants';
 export const config = { runtime: 'nodejs' };
 
@@ -134,15 +134,19 @@ function parseHazardsValue(raw: unknown): Record<string, boolean> | null {
   return null;
 }
 
+function normalizeHazards(raw: Record<string, boolean> | null | undefined): Record<string, boolean> {
+  const normalized: Record<string, boolean> = {};
+  for (const key of hazardKeys) normalized[key] = Boolean(raw?.[key]);
+  return normalized;
+}
+
 function buildHazards(
   row: Record<string, unknown>,
   hazardBoolCols: Partial<Record<(typeof hazardKeys)[number], string>>
 ): Record<string, boolean> {
   const raw = parseHazardsValue(row.hazards);
   if (raw) {
-    const normalized: Record<string, boolean> = {};
-    for (const key of hazardKeys) normalized[key] = Boolean((raw as any)[key]);
-    return normalized;
+    return normalizeHazards(raw);
   }
   const hazards: Record<string, boolean> = {};
   let hasBool = false;
@@ -152,7 +156,7 @@ function buildHazards(
     hasBool = true;
     hazards[key] = Boolean((row as any)[col]);
   }
-  return hasBool ? hazards : {};
+  return normalizeHazards(hasBool ? hazards : null);
 }
 
 // Dedupe key: prefer shared id, else name + address + rounded coords for stability.
@@ -322,17 +326,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       `
     )) as Array<Record<string, unknown>>;
 
+    // Merge EvacSiteHazardCapability.hazardType into fixed hazard keys via evacsiteCompat normalization.
+    const hazardMeta = await getEvacSiteHazardMeta(prisma);
+    const hazardCapsById = await rawLoadHazardCapsBySiteIds(
+      prisma,
+      hazardMeta,
+      rows
+        .map((row) => row[idCol])
+        .filter((value) => value !== null && value !== undefined)
+        .map((value) => String(value))
+    );
+
     const enriched = rows
       .map((site: any) => {
         const coords = normalizeLatLon({ lat: site.lat, lon: site.lon, factor });
         if (!coords) return null;
         const distanceKm = toFiniteNumber(site.distance_km) ?? haversineDistance(lat, lon, coords.lat, coords.lon);
         const flags = buildHazards(site, hazardBoolCols);
-        const matches = hazardFilters.length === 0 ? true : hazardFilters.every((key: any) => Boolean(flags?.[key]));
-        const missing = hazardFilters.filter((key: any) => !Boolean(flags?.[key]));
+        const hazardCaps = hazardCapsById.get(String(site[idCol] ?? '')) ?? null;
+        const hazards = mergeHazards(flags, hazardCaps ?? undefined);
+        const matches = hazardFilters.length === 0 ? true : hazardFilters.every((key: any) => Boolean(hazards?.[key]));
+        const missing = hazardFilters.filter((key: any) => !Boolean(hazards?.[key]));
         return {
           ...site,
-          hazards: flags,
+          hazards,
           lat: coords.lat,
           lon: coords.lon,
           distanceKm,
@@ -428,7 +445,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         includeDiagnostics: isDev,
       });
       const textQuery = typeof q === 'string' ? q.trim().toLowerCase() : '';
-      const dedupedFallback = dedupeSites(fallback.sites ?? []);
+      const normalizedFallback = (fallback.sites ?? []).map((site: any) => ({
+        ...site,
+        hazards: mergeHazards(site.hazards, undefined),
+      }));
+      const dedupedFallback = dedupeSites(normalizedFallback);
       const hasHazardFallback = dedupedFallback.some((site: any) => hazardCount(site.hazards) > 0);
       const hazardFilteredFallback = hasHazardFallback ? dedupedFallback.filter((site: any) => hasAnyHazard(site.hazards)) : dedupedFallback;
       const fallbackSites = hazardFilteredFallback
