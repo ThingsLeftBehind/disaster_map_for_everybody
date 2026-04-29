@@ -64,7 +64,16 @@ export const DeviceStateSchema = z.object({
 });
 export type DeviceState = z.infer<typeof DeviceStateSchema>;
 
-export const CrowdVoteValueSchema = z.enum(['EVACUATING', 'SMOOTH', 'NORMAL', 'CROWDED', 'CLOSED']);
+export const CrowdVoteValueSchema = z.enum([
+  'OK',
+  'CROWDED',
+  'VERY_CROWDED',
+  'CLOSED',
+  'BLOCKED',
+  'EVACUATING',
+  'SMOOTH',
+  'NORMAL',
+]);
 export type CrowdVoteValue = z.infer<typeof CrowdVoteValueSchema>;
 
 export const ShelterVoteSchema = z.object({
@@ -166,6 +175,7 @@ export const ShelterVoteBodySchema = z.object({
   shelterId: z.string().min(1),
   deviceId: DeviceIdSchema,
   value: CrowdVoteValueSchema,
+  comment: z.string().max(300).nullable().optional(),
 });
 
 export const ShelterCommentBodySchema = z.object({

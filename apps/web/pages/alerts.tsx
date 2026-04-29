@@ -38,17 +38,6 @@ function shouldShowUnstable({ status, warnings }: { status?: FetchStatusPayload 
   return Date.now() - parsed > STALE_MS;
 }
 
-function formatUpdatedAt(updatedAt: string | null | undefined): string {
-  if (!updatedAt) return '未取得';
-  const t = Date.parse(updatedAt);
-  if (Number.isNaN(t)) return '未取得';
-  return new Date(t).toLocaleString();
-}
-
-function sanitizeFetchError(message: string | null | undefined): string {
-  return message ? '取得エラー' : 'なし';
-}
-
 function matchesTokyoGroup(areaCode: string, group: TokyoGroupKey | null): boolean {
   if (!group) return true;
   return getTokyoGroupFromAreaCode(areaCode) === group;
@@ -86,6 +75,7 @@ export default function AlertsPage() {
 
   const [useCurrent, setUseCurrent] = useState(true);
   const [manualPrefCode, setManualPrefCode] = useState('');
+  const [manualSubAreaCode, setManualSubAreaCode] = useState('');
 
   const [actionBusy, setActionBusy] = useState(false);
   const lastActionRef = useRef(0);
@@ -99,8 +89,8 @@ export default function AlertsPage() {
   const manualPrefLabel = manualPrefName ?? (manualPrefCode ? '選択中' : null);
 
   const manualAreaCode = manualPrefCode ? `${manualPrefCode}0000` : null;
-  const effectiveAreaCode = useCurrent ? currentJmaAreaCode : selectedJmaAreaCode ?? manualAreaCode;
-  const activeMuniCode = useCurrent ? coarseArea?.muniCode : selectedArea?.muniCode;
+  const effectiveAreaCode = useCurrent ? currentJmaAreaCode : manualAreaCode ?? selectedJmaAreaCode;
+  const activeMuniCode = useCurrent ? coarseArea?.muniCode : manualPrefCode ? null : selectedArea?.muniCode;
   const class20 = toJmaClass20(activeMuniCode ?? null);
   const warningsUrl = effectiveAreaCode
     ? `/api/jma/warnings?area=${effectiveAreaCode}${class20 ? `&class20=${class20}` : ''}`
@@ -114,18 +104,18 @@ export default function AlertsPage() {
         label: coarseAreaLabel ?? null,
       };
     }
-    if (selectedArea) {
-      return {
-        prefCode: selectedArea.prefCode ?? null,
-        muniCode: selectedArea.muniCode ?? null,
-        label: selectedArea.muniName ?? selectedArea.label ?? null,
-      };
-    }
     if (manualPrefCode) {
       return {
         prefCode: manualPrefCode,
         muniCode: null,
         label: manualPrefName ?? null,
+      };
+    }
+    if (selectedArea) {
+      return {
+        prefCode: selectedArea.prefCode ?? null,
+        muniCode: selectedArea.muniCode ?? null,
+        label: selectedArea.muniName ?? selectedArea.label ?? null,
       };
     }
     return { prefCode: null, muniCode: null, label: null };
@@ -139,20 +129,60 @@ export default function AlertsPage() {
     useCurrent,
   ]);
 
+  const breakdown = (warnings as any)?.breakdown as Record<string, { name: string; items: any[] }> | null;
+  const muniMap = (warnings as any)?.muniMap as Record<string, string> | null;
+  const subAreaOptions = useMemo(() => {
+    if (!breakdown) return [] as Array<{ code: string; name: string }>;
+    return Object.entries(breakdown)
+      .map(([code, data]) => ({ code, name: data.name || code }))
+      .sort((a, b) => a.code.localeCompare(b.code));
+  }, [breakdown]);
+
+  useEffect(() => {
+    if (useCurrent || !manualPrefCode) {
+      setManualSubAreaCode('');
+      return;
+    }
+    if (manualPrefCode === '13') {
+      setManualSubAreaCode((current) => current || '130010');
+      return;
+    }
+    if (subAreaOptions.length > 0 && !subAreaOptions.some((area) => area.code === manualSubAreaCode)) {
+      setManualSubAreaCode(subAreaOptions[0].code);
+    }
+  }, [manualPrefCode, manualSubAreaCode, subAreaOptions, useCurrent]);
+
+  const selectedSubArea = manualSubAreaCode && breakdown?.[manualSubAreaCode] ? breakdown[manualSubAreaCode] : null;
+  const scopedWarnings = useMemo(() => {
+    if (!selectedSubArea) return warnings;
+    return {
+      ...(warnings ?? {}),
+      items: selectedSubArea.items,
+      tokyoGroups: null,
+    };
+  }, [selectedSubArea, warnings]);
+
   const warningShape = useMemo(
     () =>
       shapeAlertWarnings({
-        warnings,
-        area: areaContext,
+        warnings: scopedWarnings,
+        area: selectedSubArea
+          ? { prefCode: manualPrefCode || areaContext.prefCode, muniCode: null, label: selectedSubArea.name }
+          : areaContext,
       }),
-    [areaContext.label, areaContext.muniCode, areaContext.prefCode, warnings]
+    [areaContext, manualPrefCode, scopedWarnings, selectedSubArea]
   );
 
   const warningBuckets = warningShape.buckets;
   const warningCounts = warningShape.counts;
   const tokyoGroupFilter = warningShape.isTokyoArea ? warningShape.tokyoGroup : null;
+  const selectedSubTokyoGroup = selectedSubArea ? getTokyoGroupFromAreaCode(manualSubAreaCode) : null;
   const tokyoContextFromMuni = getTokyoContextFromMuniCode(areaContext.muniCode ?? null);
-  const tokyoContext = tokyoGroupFilter ? getTokyoContextFromGroup(tokyoGroupFilter) : tokyoContextFromMuni;
+  const tokyoContext = tokyoGroupFilter
+    ? getTokyoContextFromGroup(tokyoGroupFilter)
+    : selectedSubTokyoGroup
+      ? getTokyoContextFromGroup(selectedSubTokyoGroup)
+      : tokyoContextFromMuni;
   const tokyoScopeLabel = tokyoContext === 'MAINLAND' ? '東京都' : tokyoContext === 'ISLANDS' ? '東京都（島しょ）' : null;
 
   const targetLabel = useCurrent
@@ -161,21 +191,20 @@ export default function AlertsPage() {
         ? `現在地: ${coarseAreaLabel}`
         : '現在地: エリア未確定'
       : '現在地: エリア未確定'
-    : selectedArea
-      ? `選択エリア: ${formatPrefMuniLabel({ prefName: selectedArea.prefName, muniName: selectedArea.muniName ?? null }) ?? selectedArea.prefName}`
-      : manualPrefLabel
-        ? `手動: ${manualPrefLabel}`
+    : manualPrefLabel
+      ? `手動: ${manualPrefLabel}${selectedSubArea ? ` / ${selectedSubArea.name}` : ''}`
+      : selectedArea
+        ? `選択エリア: ${formatPrefMuniLabel({ prefName: selectedArea.prefName, muniName: selectedArea.muniName ?? null }) ?? selectedArea.prefName}`
         : 'エリア未確定';
 
-  const breakdown = (warnings as any)?.breakdown as Record<string, { name: string; items: any[] }> | null;
-  const muniMap = (warnings as any)?.muniMap as Record<string, string> | null;
-
   const targetForecastCode = activeMuniCode && muniMap ? muniMap[activeMuniCode] : null;
+  const highlightedForecastCode = selectedSubArea ? manualSubAreaCode : targetForecastCode;
 
   const activeAreas = useMemo(() => {
     if (!breakdown) return [];
     return Object.entries(breakdown)
       .map(([code, data]) => {
+        if (selectedSubArea && code !== manualSubAreaCode) return null;
         if (!matchesTokyoGroup(code, tokyoGroupFilter)) return null;
         const activeItems = data.items.filter((i: any) => {
           const s = i.status || '';
@@ -186,12 +215,10 @@ export default function AlertsPage() {
       })
       .filter((area): area is NonNullable<typeof area> => area !== null && area.items.length > 0)
       .sort((a, b) => b.items.length - a.items.length || a.code.localeCompare(b.code));
-  }, [breakdown, tokyoGroupFilter]);
+  }, [breakdown, manualSubAreaCode, selectedSubArea, tokyoGroupFilter]);
 
   const activeAreaNames = activeAreas.slice(0, 3).map(a => a.name);
   if (activeAreas.length > 3) activeAreaNames.push('ほか');
-
-  const errorLabel = sanitizeFetchError(warnings?.lastError ?? status?.lastError);
 
   const beginAction = () => {
     const now = Date.now();
@@ -338,6 +365,7 @@ export default function AlertsPage() {
                     setUseCurrent(false);
                     setSelectedAreaId(null); // Clear myarea selection if pref selected manual
                     setManualPrefCode(e.target.value);
+                    setManualSubAreaCode('');
                   }}
                 >
                   <option value="">都道府県を選択</option>
@@ -347,6 +375,21 @@ export default function AlertsPage() {
                     </option>
                   ))}
                 </select>
+
+                {manualPrefCode && subAreaOptions.length > 0 && !useCurrent && (
+                  <select
+                    className="w-full rounded border px-3 py-2 md:w-auto"
+                    value={manualSubAreaCode}
+                    onChange={(e) => setManualSubAreaCode(e.target.value)}
+                    aria-label="気象庁の発表区域"
+                  >
+                    {subAreaOptions.map((area) => (
+                      <option key={area.code} value={area.code}>
+                        {area.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
 
                 <button
                   className="rounded-xl bg-white px-4 py-2 font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-50"
@@ -371,7 +414,11 @@ export default function AlertsPage() {
                 </button>
               </div>
 
-              {/* Message removed per requirement */}
+              {manualPrefCode && subAreaOptions.length > 0 && !useCurrent && (
+                <div className="text-xs text-gray-600">
+                  表示単位: 気象庁の一次細分区域。東京都は初期表示を東京地方（本土側）にしています。
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -425,8 +472,7 @@ export default function AlertsPage() {
                 <div className="mt-6 border-t pt-4">
                   <SubAreaBreakdown
                     breakdown={breakdown}
-                    highlightCode={targetForecastCode}
-                    manualOrSaved={Boolean(activeMuniCode)}
+                    highlightCode={highlightedForecastCode}
                     tokyoGroup={tokyoGroupFilter}
                   />
                 </div>
@@ -447,9 +493,9 @@ export default function AlertsPage() {
       </div>
 
       <DataFetchDetails
-        status={status?.fetchStatus ?? 'DEGRADED'}
+        status={status?.fetchStatus ?? 'PENDING'}
         updatedAt={status?.updatedAt}
-        fetchStatus={warnings?.fetchStatus ?? 'DEGRADED'}
+        fetchStatus={warnings?.fetchStatus ?? 'PENDING'}
         error={warnings?.lastError ?? status?.lastError}
       />
     </div >
@@ -570,8 +616,6 @@ function extractPhenomenon(kind: string): string {
 function GuidanceSection({ urgent, advisory }: { urgent: WarningGroup[]; advisory: WarningGroup[] }) {
   // const [isOpen, setIsOpen] = useState(false); // Removed per request
 
-  const activeKinds = new Set([...urgent, ...advisory].map((g) => g.kind));
-
   // Extract unique phenomena from active alerts, preserving order of appearance
   const activePhenomena = useMemo(() => {
     const seen = new Set<string>();
@@ -630,12 +674,10 @@ function GuidanceSection({ urgent, advisory }: { urgent: WarningGroup[]; advisor
 function SubAreaBreakdown({
   breakdown,
   highlightCode,
-  manualOrSaved,
   tokyoGroup,
 }: {
   breakdown: Record<string, { name: string; items: any[] }>;
   highlightCode?: string | null;
-  manualOrSaved: boolean;
   tokyoGroup?: TokyoGroupKey | null;
 }) {
   // Sort: highlighted first, then by code
@@ -709,111 +751,6 @@ function SubAreaBreakdown({
                     )}
                   </div>
                   {hasActive && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {dedupedItems.map((it: any) => (
-                        <span key={it.id ?? it.kind} className="text-xs border px-1.5 py-0.5 rounded bg-white text-gray-700">
-                          {it.kind}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SubAreaBreakdownDeprecated({
-  breakdown,
-  highlightCode,
-  manualOrSaved
-}: {
-  breakdown: Record<string, { name: string; items: any[] }>;
-  highlightCode?: string | null;
-  manualOrSaved: boolean;
-}) {
-  // Sort: highlighted first, then by code
-  const items = Object.entries(breakdown).sort((a, b) => {
-    if (highlightCode) {
-      if (a[0] === highlightCode) return -1;
-      if (b[0] === highlightCode) return 1;
-    }
-    return a[0].localeCompare(b[0]);
-  });
-
-  const [open, setOpen] = useState(false);
-  const hasContent = items.some(([, d]) => d.items.length > 0);
-
-  // Auto-open if specific area is highlighted
-  useEffect(() => {
-    if (highlightCode) setOpen(true);
-  }, [highlightCode]);
-
-  if (!hasContent) return null;
-
-  return (
-    <div>
-      <div className="flex items-center justify-between">
-        <h3 className="font-bold text-gray-800">発表区域（予報区）ごとの内訳</h3>
-        <button onClick={() => setOpen(!open)} className="text-sm font-semibold text-blue-600 hover:underline">
-          {open ? 'とじる' : 'すべて見る'}
-        </button>
-      </div>
-
-      {open && (
-        <div className="mt-3 space-y-3">
-          {highlightCode && (
-            <div className="text-xs text-blue-800 bg-blue-50 px-2 py-1 rounded inline-block">
-              選択した市区町村に対応する発表区域を強調表示しています（境界は一致しない場合あり）。
-            </div>
-          )}
-
-          <div className="grid gap-2 md:grid-cols-2">
-            {items.map(([code, data]) => {
-              const isHighlighted = code === highlightCode;
-              const activeItems = data.items.filter((i: any) => {
-                const s = i.status || '';
-                return !s.includes('解除') && !s.includes('なし') && !s.includes('ありません');
-              });
-
-              const hasActive = activeItems.length > 0;
-              if (!hasActive && !isHighlighted) return null;
-
-              const dedupedItems = (() => {
-                const map = new Map<string, any>();
-                for (const it of activeItems) {
-                  // Key by kind + status to allow distinct statuses (e.g., Released vs Active)
-                  const key = `${it.kind}|${it.status ?? ''}`;
-                  if (!map.has(key)) {
-                    map.set(key, it);
-                  }
-                }
-                return Array.from(map.values());
-              })();
-
-              return (
-                <div
-                  key={code}
-                  className={classNames(
-                    'rounded-lg border p-3 text-sm',
-                    isHighlighted ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-300' : 'bg-white'
-                  )}
-                >
-                  <div className="font-bold flex items-center justify-between">
-                    <span>{data.name}</span>
-                    {activeItems.length > 0 ? (
-                      <span className="text-xs font-normal bg-red-100 text-red-800 px-1.5 py-0.5 rounded-full">
-                        {activeItems.length}
-                      </span>
-                    ) : (
-                      <span className="text-xs font-normal text-gray-400">発表なし</span>
-                    )}
-                  </div>
-                  {activeItems.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
                       {dedupedItems.map((it: any) => (
                         <span key={it.id ?? it.kind} className="text-xs border px-1.5 py-0.5 rounded bg-white text-gray-700">

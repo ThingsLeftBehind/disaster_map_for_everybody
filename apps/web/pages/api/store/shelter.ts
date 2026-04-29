@@ -7,6 +7,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const shelterId = (Array.isArray(req.query.id) ? req.query.id[0] : req.query.id) as string | undefined;
     if (!shelterId) return res.status(400).json({ error: 'id is required' });
+    const deviceId = (Array.isArray(req.query.deviceId) ? req.query.deviceId[0] : req.query.deviceId) as string | undefined;
 
     const [community, admin] = await Promise.all([getShelterCommunitySnapshot(shelterId), getAdminState()]);
 
@@ -14,6 +15,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       acc[v.value] = (acc[v.value] ?? 0) + 1;
       return acc;
     }, {});
+    const contributorIds = new Set<string>();
+    for (const vote of community.votes) contributorIds.add(vote.deviceId);
+    for (const comment of community.comments) contributorIds.add(comment.deviceId);
     const visibleComments = community.comments.filter((c) => !c.hidden);
     const hiddenCount = community.comments.length - visibleComments.length;
     const mostReported = Math.max(0, ...community.comments.map((c) => c.reportCount ?? 0));
@@ -22,6 +26,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       updatedAt: community.updatedAt,
       moderationPolicy: admin.moderationPolicy,
       votesSummary,
+      contributorCount: contributorIds.size,
+      currentUserVote: deviceId ? community.votes.find((v) => v.deviceId === deviceId)?.value ?? null : null,
       commentCount: visibleComments.length,
       hiddenCount,
       mostReported,
@@ -34,6 +40,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       updatedAt: null,
       moderationPolicy: null,
       votesSummary: {},
+      contributorCount: 0,
+      currentUserVote: null,
       commentCount: 0,
       hiddenCount: 0,
       mostReported: 0,

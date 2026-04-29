@@ -49,7 +49,7 @@ export default function HazardPage() {
     { key: 'liquefaction', name: 'Liquefaction', jaName: '液状化', tileUrl: '/api/tiles/lcm25k_2012/{z}/{x}/{y}.png', scheme: 'xyz', minZoom: 10, maxZoom: 16 },
   ];
   const layers: HazardLayer[] = data?.layers?.length ? data.layers : fallbackLayers;
-  const fetchStatus: string = data?.fetchStatus ?? 'DEGRADED';
+  const fetchStatus: string = data?.fetchStatus ?? 'PENDING';
   const updatedAt: string | null = data?.updatedAt ?? null;
   const lastError: string | null = data?.lastError ?? null;
 

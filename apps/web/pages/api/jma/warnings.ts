@@ -11,6 +11,13 @@ import { toJmaClass20 } from 'lib/muni-helper';
 const CACHE_TTL_MS = 120_000;
 const memoryCache = new Map<string, { expiresAt: number; payload: any }>();
 
+function msSince(iso: string | null | undefined): number {
+  if (!iso) return Number.POSITIVE_INFINITY;
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return Number.POSITIVE_INFINITY;
+  return Date.now() - t;
+}
+
 function buildCacheKey(area: string, class20: string | null): string {
   return `${area}:${class20 ?? ''}`;
 }
@@ -196,7 +203,7 @@ let cachedAreaIndexAt = 0;
 function getCached(cacheKey: string) {
   const hit = memoryCache.get(cacheKey);
   if (!hit) return null;
-  if (Date.now() > hit.expiresAt) {
+  if (Date.now() > hit.expiresAt || msSince(hit.payload?.updatedAt) > CACHE_TTL_MS) {
     memoryCache.delete(cacheKey);
     return null;
   }

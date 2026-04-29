@@ -17,6 +17,9 @@ import { readJmaState } from './state';
 import type {
   FetchStatus,
   JmaFeedKey,
+  JmaFeedState,
+  JmaSourceStatusRecord,
+  JmaWebJsonState,
   NormalizedQuakeItem,
   NormalizedQuakesSnapshot,
   NormalizedStatusSnapshot,
@@ -93,6 +96,36 @@ function pickMagnitude(value: unknown): string | null {
   return null;
 }
 
+function parseCoordinateCode(raw: string | null | undefined): { lat: number | null; lon: number | null; depth: string | null } {
+  const text = typeof raw === 'string' ? raw.trim() : '';
+  if (!text) return { lat: null, lon: null, depth: null };
+  const m = text.match(/^([+-]\d+(?:\.\d+)?)([+-]\d+(?:\.\d+)?)([+-]\d+(?:\.\d+)?)?\//);
+  if (!m) return { lat: null, lon: null, depth: null };
+  const lat = Number(m[1]);
+  const lon = Number(m[2]);
+  const depthRaw = m[3] ? Number(m[3]) : NaN;
+  return {
+    lat: Number.isFinite(lat) ? lat : null,
+    lon: Number.isFinite(lon) ? lon : null,
+    depth: Number.isFinite(depthRaw) ? `${Math.abs(depthRaw).toFixed(0)}km` : null,
+  };
+}
+
+function normalizeIntensityAreas(raw: unknown): Array<{ code: string; maxIntensity: string | null }> {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((row) => {
+      if (!row || typeof row !== 'object') return null;
+      const codeRaw = (row as any).code;
+      const code = codeRaw === undefined || codeRaw === null ? '' : String(codeRaw).padStart(2, '0');
+      const maxRaw = (row as any).maxi ?? (row as any).maxIntensity ?? null;
+      const maxIntensity = maxRaw === undefined || maxRaw === null ? null : String(maxRaw);
+      if (!/^\d{2}$/.test(code)) return null;
+      return { code, maxIntensity };
+    })
+    .filter((v): v is { code: string; maxIntensity: string | null } => Boolean(v));
+}
+
 function extractMagnitude(xml: string): string | null {
   return (
     xmlTextBetween(xml, 'jmx_eb:Magnitude') ??
@@ -117,10 +150,67 @@ function extractEpicenter(xml: string): string | null {
   return null;
 }
 
-function computeFetchStatus(updatedAt: string | null, lastError: string | null): FetchStatus {
-  if (!updatedAt) return 'DEGRADED';
-  if (lastError) return 'DEGRADED';
-  return 'OK';
+function msSince(iso: string | null): number {
+  if (!iso) return Number.POSITIVE_INFINITY;
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return Number.POSITIVE_INFINITY;
+  return Date.now() - t;
+}
+
+function isStale(updatedAt: string | null, intervalMs: number): boolean {
+  return msSince(updatedAt) > intervalMs * 10;
+}
+
+function sourceStatus(updatedAt: string | null, lastError: string | null, intervalMs: number): JmaSourceStatusRecord['status'] {
+  if (!updatedAt) return 'UNAVAILABLE';
+  if (isStale(updatedAt, intervalMs)) return lastError ? 'OUTDATED' : 'DELAYED';
+  if (lastError) return 'DELAYED';
+  return 'ONLINE';
+}
+
+function fetchStatusFromSourceStatus(status: JmaSourceStatusRecord['status']): FetchStatus {
+  if (status === 'ONLINE') return 'OK';
+  if (status === 'UNAVAILABLE') return 'DOWN';
+  return 'DEGRADED';
+}
+
+function atomSourceRecord(feed: JmaFeedKey, state: JmaFeedState): JmaSourceStatusRecord {
+  const status = sourceStatus(state.lastSuccessfulUpdateTime, state.lastError, state.intervalMs);
+  return {
+    source: 'jma',
+    feed_family: `atom:${feed}`,
+    status,
+    last_attempt_at: state.lastAttemptTime,
+    last_success_at: state.lastSuccessfulUpdateTime,
+    last_error: state.lastError,
+    last_http_status: state.lastHttpStatus ?? null,
+    last_item_count: state.lastItemCount ?? null,
+    last_duration_ms: state.lastDurationMs ?? null,
+    stale_after_ms: state.intervalMs * 10,
+  };
+}
+
+function webJsonSourceRecord(feedFamily: string, state: JmaWebJsonState, intervalMs: number): JmaSourceStatusRecord {
+  const status = sourceStatus(state.lastSuccessfulUpdateTime, state.lastError, intervalMs);
+  return {
+    source: 'jma',
+    feed_family: feedFamily,
+    status,
+    last_attempt_at: state.lastAttemptTime,
+    last_success_at: state.lastSuccessfulUpdateTime,
+    last_error: state.lastError,
+    last_http_status: state.lastHttpStatus ?? null,
+    last_item_count: state.lastItemCount ?? null,
+    last_duration_ms: state.lastDurationMs ?? null,
+    stale_after_ms: intervalMs * 10,
+  };
+}
+
+function summarizeFetchStatus(records: JmaSourceStatusRecord[]): FetchStatus {
+  if (records.length === 0) return 'DOWN';
+  if (records.every((r) => r.status === 'UNAVAILABLE')) return 'DOWN';
+  if (records.every((r) => r.status === 'ONLINE')) return 'OK';
+  return 'DEGRADED';
 }
 
 function dedupeQuakeItems(items: NormalizedQuakeItem[]): NormalizedQuakeItem[] {
@@ -156,12 +246,28 @@ function normalizeQuakesFromWebJson(raw: unknown): NormalizedQuakeItem[] {
     const epicenter = pickFirstString(row, ['anm', 'an', 'name', 'place', 'epicenter', 'loc', 'en']);
     const magnitude = pickMagnitude(row);
     const maxi = pickFirstString(row, ['maxi', 'maxIntensity', 'max', 'int', 'intensity', 'shindo']);
+    const coordinate = parseCoordinateCode(pickFirstString(row, ['cod', 'coordinate', 'coord']));
+    const tsunami = pickFirstString(row, ['tsunami', 'tsu', 'ttk', 'tsunamiStatus']);
     const link = pickFirstString(row, ['url', 'link', 'href', 'detailUrl', 'detail', 'page']);
     const title = pickFirstString(row, ['ttl', 'title', 'headline', 'text']) ?? buildQuakeTitle({ maxi, epicenter, magnitude });
 
     const idBasis = JSON.stringify({ time, title, link });
     const id = crypto.createHash('sha256').update(idBasis).digest('hex').slice(0, 16);
-    parsed.push({ id, time, title, link, maxIntensity: maxi, magnitude, epicenter, source: 'webjson' });
+    parsed.push({
+      id,
+      time,
+      title,
+      link,
+      maxIntensity: maxi,
+      magnitude,
+      epicenter,
+      depth: coordinate.depth,
+      lat: coordinate.lat,
+      lon: coordinate.lon,
+      tsunami,
+      intensityAreas: normalizeIntensityAreas((row as any).int),
+      source: 'webjson',
+    });
     if (parsed.length >= NORMALIZATION_LIMITS.quakesItems) break;
   }
 
@@ -179,32 +285,45 @@ function normalizeQuakesFromWebJson(raw: unknown): NormalizedQuakeItem[] {
 
 export async function rebuildNormalizedStatus(): Promise<NormalizedStatusSnapshot> {
   const state = await readJmaState();
+  const sources: JmaSourceStatusRecord[] = [
+    ...(Object.keys(state.feeds) as JmaFeedKey[]).map((feed) => atomSourceRecord(feed, state.feeds[feed])),
+    webJsonSourceRecord('webjson:quakeList', state.webjson.quakeList, 60_000),
+  ];
 
   const feeds = Object.fromEntries(
     (Object.keys(state.feeds) as JmaFeedKey[]).map((feed) => {
       const s = state.feeds[feed];
+      const record = atomSourceRecord(feed, s);
       return [
         feed,
         {
-          fetchStatus: computeFetchStatus(s.lastSuccessfulUpdateTime, s.lastError),
+          fetchStatus: fetchStatusFromSourceStatus(record.status),
           updatedAt: s.lastSuccessfulUpdateTime,
           lastError: s.lastError,
+          stale: record.status === 'DELAYED' || record.status === 'OUTDATED',
+          lastAttemptAt: s.lastAttemptTime,
+          lastHttpStatus: s.lastHttpStatus ?? null,
+          lastItemCount: s.lastItemCount ?? null,
+          lastDurationMs: s.lastDurationMs ?? null,
         },
       ];
     })
   ) as NormalizedStatusSnapshot['feeds'];
 
+  const quakeRecord = webJsonSourceRecord('webjson:quakeList', state.webjson.quakeList, 60_000);
   const quakeList = {
-    fetchStatus: computeFetchStatus(
-      state.webjson.quakeList.lastSuccessfulUpdateTime,
-      state.webjson.quakeList.lastError
-    ),
+    fetchStatus: fetchStatusFromSourceStatus(quakeRecord.status),
     updatedAt: state.webjson.quakeList.lastSuccessfulUpdateTime,
     lastError: state.webjson.quakeList.lastError,
+    stale: quakeRecord.status === 'DELAYED' || quakeRecord.status === 'OUTDATED',
+    lastAttemptAt: state.webjson.quakeList.lastAttemptTime,
+    lastHttpStatus: state.webjson.quakeList.lastHttpStatus ?? null,
+    lastItemCount: state.webjson.quakeList.lastItemCount ?? null,
+    lastDurationMs: state.webjson.quakeList.lastDurationMs ?? null,
   };
 
-  const fetchStatus: FetchStatus =
-    Object.values(feeds).some((f) => f.fetchStatus === 'DEGRADED') ? 'DEGRADED' : 'OK';
+  const criticalSources = sources.filter((source) => source.feed_family !== 'atom:other');
+  const fetchStatus = summarizeFetchStatus(criticalSources);
 
   const updatedAt = maxIso(
     (Object.keys(state.feeds) as JmaFeedKey[]).reduce<string | null>(
@@ -219,6 +338,7 @@ export async function rebuildNormalizedStatus(): Promise<NormalizedStatusSnapsho
     fetchStatus,
     feeds,
     webjson: { quakeList },
+    sources,
   };
 
   await atomicWriteJson(jmaNormalizedStatusPath(), snapshot);
@@ -294,6 +414,11 @@ export async function rebuildNormalizedQuakes(): Promise<NormalizedQuakesSnapsho
       maxIntensity: null,
       magnitude,
       epicenter,
+      depth: null,
+      lat: null,
+      lon: null,
+      tsunami: null,
+      intensityAreas: [],
       source: 'pull',
     });
   }

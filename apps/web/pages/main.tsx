@@ -500,6 +500,11 @@ export default function MainPage() {
           <div className="text-xs text-gray-500">
           </div>
         </div>
+        {showSafetyPins && (
+          <div className="mt-2 rounded-xl border bg-gray-50 px-3 py-2 text-xs text-gray-700">
+            共有ピン: {safetyPins.length}件 / 更新: {formatAt(safetyPinsData?.updatedAt)}。表示は概略位置が基本で、24時間を過ぎたピンは通常非表示です。
+          </div>
+        )}
 
 
         <div className="mt-5 border-t pt-5">
@@ -587,6 +592,7 @@ export default function MainPage() {
                     comment: myCheckinComment.trim() || null,
                     precision: myCheckinPrecise ? 'PRECISE' : 'COARSE',
                   });
+                  if (showSafetyPins) await mutateSafetyPins();
                   const nextCooldown = Date.now() + CHECKIN_COOLDOWN_MS;
                   setCheckinCooldownUntil(nextCooldown);
                   writeCheckinCooldown(nextCooldown);
@@ -608,9 +614,17 @@ export default function MainPage() {
                     }));
                     await updateDevice({ checkins: archived } as any);
                   }
+                  if (deviceId) {
+                    await fetch('/api/store/checkin', {
+                      method: 'DELETE',
+                      headers: { 'content-type': 'application/json' },
+                      body: JSON.stringify({ deviceId }),
+                    }).catch(() => null);
+                  }
                   setMyCheckinStatus(null);
                   setMyCheckinComment('');
                   setMyCheckinPrecise(false);
+                  if (showSafetyPins) await mutateSafetyPins();
                   const nextCooldown = Date.now() + CHECKIN_COOLDOWN_MS;
                   setCheckinCooldownUntil(nextCooldown);
                   writeCheckinCooldown(nextCooldown);

@@ -53,6 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       deviceId: parsed.data.deviceId,
       ipHash: ipHash(ip),
       value: parsed.data.value,
+      comment: parsed.data.comment ?? null,
     });
 
     if (!result.ok) {

@@ -33,6 +33,7 @@ export async function refreshFeedIfStale(feed: JmaFeedKey): Promise<void> {
   if (!stale || recentlyAttempted) return;
 
   await runExclusive(`feed:${feed}`, async () => {
+    const startedAt = Date.now();
     const snapshot = await readJmaState();
     const current = snapshot.feeds[feed];
     const stillStale = msSince(current.lastSuccessfulUpdateTime) > intervalMs;
@@ -41,6 +42,7 @@ export async function refreshFeedIfStale(feed: JmaFeedKey): Promise<void> {
 
     await updateJmaState((draft) => {
       draft.feeds[feed].lastAttemptTime = nowIso();
+      draft.feeds[feed].lastError = null;
     });
 
     const headers: Record<string, string> = {};
@@ -48,30 +50,54 @@ export async function refreshFeedIfStale(feed: JmaFeedKey): Promise<void> {
     if (current.lastModified) headers['If-Modified-Since'] = current.lastModified;
 
     try {
+      console.info('[jma:atom] fetch:start', { feed, url: current.url });
       const resp = await fetch(current.url, { headers, cache: 'no-store' });
+      const durationMs = Date.now() - startedAt;
       if (resp.status === 304) {
+        const feedXml = await readTextFile(jmaFeedXmlPath(feed));
+        const itemCount = feedXml ? parseAtomFeed(feedXml).entries.length : 0;
         await updateJmaState((draft) => {
           draft.feeds[feed].lastSuccessfulUpdateTime = nowIso();
           draft.feeds[feed].lastError = null;
+          draft.feeds[feed].lastHttpStatus = resp.status;
+          draft.feeds[feed].lastItemCount = itemCount;
+          draft.feeds[feed].lastDurationMs = durationMs;
         });
+        console.info('[jma:atom] fetch:not-modified', { feed, httpStatus: resp.status, itemCount, durationMs });
       } else if (resp.ok) {
         const text = await resp.text();
+        const parsed = parseAtomFeed(text);
+        const itemCount = parsed.entries.length;
         await atomicWriteFile(jmaFeedXmlPath(feed), text);
         await updateJmaState((draft) => {
           draft.feeds[feed].etag = resp.headers.get('etag');
           draft.feeds[feed].lastModified = resp.headers.get('last-modified');
           draft.feeds[feed].lastSuccessfulUpdateTime = nowIso();
           draft.feeds[feed].lastError = null;
+          draft.feeds[feed].lastHttpStatus = resp.status;
+          draft.feeds[feed].lastItemCount = itemCount;
+          draft.feeds[feed].lastDurationMs = durationMs;
         });
+        console.info('[jma:atom] fetch:success', { feed, httpStatus: resp.status, itemCount, durationMs });
       } else {
         await updateJmaState((draft) => {
           draft.feeds[feed].lastError = `HTTP ${resp.status} ${resp.statusText}`.trim();
+          draft.feeds[feed].lastHttpStatus = resp.status;
+          draft.feeds[feed].lastDurationMs = durationMs;
         });
+        console.warn('[jma:atom] fetch:failed', { feed, httpStatus: resp.status, durationMs });
         return;
       }
     } catch (error) {
+      const durationMs = Date.now() - startedAt;
       await updateJmaState((draft) => {
         draft.feeds[feed].lastError = error instanceof Error ? error.message : String(error);
+        draft.feeds[feed].lastDurationMs = durationMs;
+      });
+      console.warn('[jma:atom] fetch:error', {
+        feed,
+        durationMs,
+        error: error instanceof Error ? error.message : String(error),
       });
       return;
     }
@@ -101,4 +127,3 @@ export async function refreshFeedIfStale(feed: JmaFeedKey): Promise<void> {
     }
   });
 }
-

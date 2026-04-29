@@ -160,8 +160,11 @@ export default function ShelterDetailPage() {
     }
     return null;
   }, [siteData, id]);
+  const siteLoading = Boolean(id && !siteData && !site);
+  const siteError = Boolean(siteData?.fetchStatus === 'DOWN' || siteData?.lastError);
 
-  const { data: community, mutate: mutateCommunity } = useSWR(id ? `/api/store/shelter?id=${id}` : null, fetcher, { refreshInterval: communityRefresh });
+  const communityUrl = id ? `/api/store/shelter?id=${id}${deviceId ? `&deviceId=${encodeURIComponent(deviceId)}` : ''}` : null;
+  const { data: community, mutate: mutateCommunity } = useSWR(communityUrl, fetcher, { refreshInterval: communityRefresh, keepPreviousData: true });
 
   const isFavorite = Boolean(device?.favorites?.shelterIds?.includes(id ?? ''));
 
@@ -216,6 +219,8 @@ export default function ShelterDetailPage() {
   }, [dest, id, site]);
 
   const votesSummary: Record<string, number> = community?.votesSummary ?? {};
+  const totalVotes = useMemo(() => Object.values(votesSummary).reduce((acc, value) => acc + (typeof value === 'number' ? value : 0), 0), [votesSummary]);
+  const contributorCount = typeof community?.contributorCount === 'number' ? community.contributorCount : 0;
   const topVote = useMemo(() => {
     const entries = Object.entries(votesSummary);
     if (entries.length === 0) return null;
@@ -227,11 +232,11 @@ export default function ShelterDetailPage() {
 
   const voteOptions = useMemo(
     () => [
-      { value: 'EVACUATING', label: '避難中', badge: 'bg-blue-50 text-blue-900 ring-blue-200' },
-      { value: 'SMOOTH', label: 'スムーズ', badge: 'bg-emerald-50 text-emerald-900 ring-emerald-200' },
-      { value: 'NORMAL', label: '普通', badge: 'bg-gray-50 text-gray-900 ring-gray-200' },
+      { value: 'OK', label: '余裕あり', badge: 'bg-emerald-50 text-emerald-900 ring-emerald-200' },
       { value: 'CROWDED', label: '混雑', badge: 'bg-amber-50 text-amber-900 ring-amber-200' },
+      { value: 'VERY_CROWDED', label: 'かなり混雑', badge: 'bg-orange-50 text-orange-900 ring-orange-200' },
       { value: 'CLOSED', label: '閉鎖', badge: 'bg-red-50 text-red-900 ring-red-200' },
+      { value: 'BLOCKED', label: '危険/通行困難', badge: 'bg-red-50 text-red-900 ring-red-200' },
     ],
     []
   );
@@ -249,6 +254,12 @@ export default function ShelterDetailPage() {
     setVoteHistory(loadVoteHistory(id));
   }, [id]);
 
+  useEffect(() => {
+    if (typeof community?.currentUserVote === 'string') {
+      setSelectedVote(community.currentUserVote);
+    }
+  }, [community?.currentUserVote]);
+
   return (
     <div className="space-y-6">
       <Seo title={site?.name ? `${site.name}（避難場所）` : '避難場所'} />
@@ -258,8 +269,22 @@ export default function ShelterDetailPage() {
           <Link href="/list" className="text-sm text-blue-600 hover:underline">
             ← 一覧へ
           </Link>
-          <h1 className="mt-2 text-2xl font-bold">{site?.name ?? '読み込み中...'}</h1>
-          <div className="mt-1 text-sm text-gray-700">{formatPrefCityLabel(site?.pref_city, site?.address)}</div>
+          {siteLoading ? (
+            <div className="mt-2 space-y-2" aria-label="避難場所を読み込み中">
+              <div className="h-8 w-72 max-w-full animate-pulse rounded bg-gray-200" />
+              <div className="h-4 w-96 max-w-full animate-pulse rounded bg-gray-100" />
+            </div>
+          ) : (
+            <>
+              <h1 className="mt-2 text-2xl font-bold">{site?.name ?? '避難場所が見つかりません'}</h1>
+              <div className="mt-1 text-sm text-gray-700">{site ? formatPrefCityLabel(site.pref_city, site.address) : 'データ取得後に所在地を表示します'}</div>
+            </>
+          )}
+          {siteError && (
+            <div className="mt-2 rounded-xl border bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              避難場所データの取得が遅れています。保存済みデータがあれば表示します。
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -377,7 +402,9 @@ export default function ShelterDetailPage() {
         <h2 className="text-lg font-semibold">地図</h2>
         <div className="mt-2 text-xs text-gray-600">避難場所の位置を表示します。</div>
         <div className="mt-3">
-          {dest ? (
+          {siteLoading ? (
+            <div className="h-[360px] animate-pulse rounded-xl bg-gray-100" aria-label="地図を読み込み中" />
+          ) : dest ? (
             <MapView
               sites={mapSites as any}
               center={dest}
@@ -387,7 +414,7 @@ export default function ShelterDetailPage() {
               onSelect={() => undefined}
             />
           ) : (
-            <div className="text-sm text-gray-600">座標不明のため地図を表示できません。</div>
+            <div className="rounded-xl border bg-gray-50 px-3 py-3 text-sm text-gray-600">座標が確認できないため地図を表示できません。</div>
           )}
         </div>
       </section>
@@ -398,21 +425,44 @@ export default function ShelterDetailPage() {
           個人情報は書かないでください。多数報告があるコメントは自動的に折りたたまれます。
         </div>
 
-        {!community && <div className="mt-3 text-sm text-gray-600">読み込み中...</div>}
+        {!community && (
+          <div className="mt-3 grid gap-3 md:grid-cols-3" aria-label="混雑状況を読み込み中">
+            <div className="h-24 animate-pulse rounded-xl bg-gray-100" />
+            <div className="h-24 animate-pulse rounded-xl bg-gray-100" />
+            <div className="h-24 animate-pulse rounded-xl bg-gray-100" />
+          </div>
+        )}
         {community && (
           <>
             <div className="mt-3 rounded border bg-gray-50 px-3 py-2 text-sm">
-              <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
+              <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
                 <div>
                   <span className="font-semibold text-gray-700">現在:</span>
                   <span className="ml-1 text-lg font-bold">
                     {topVote ? (voteOptions.find(o => o.value === topVote)?.label ?? topVote) : '情報なし'}
                   </span>
                 </div>
-                <div className="text-gray-500 text-xs">
-                  最終更新: {formatUpdatedAt(community.updatedAt)}
+                <div className="text-gray-600 text-xs">
+                  投稿者 {contributorCount}人 / 投票 {totalVotes}件 / 最終更新: {formatUpdatedAt(community.updatedAt)}
                 </div>
               </div>
+              {totalVotes > 0 && (
+                <div className="mt-3 space-y-2">
+                  {voteOptions.map((opt) => {
+                    const count = votesSummary[opt.value] ?? 0;
+                    const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+                    return (
+                      <div key={opt.value} className="grid grid-cols-[88px_1fr_44px] items-center gap-2 text-xs">
+                        <div className="font-semibold text-gray-700">{opt.label}</div>
+                        <div className="h-2 overflow-hidden rounded-full bg-white ring-1 ring-gray-200">
+                          <div className="h-full rounded-full bg-blue-600" style={{ width: `${pct}%` }} />
+                        </div>
+                        <div className="text-right text-gray-600">{count}件</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {!community.commentsCollapsed &&
@@ -456,7 +506,7 @@ export default function ShelterDetailPage() {
                   maxLength={500}
                   value={voteComment}
                   onChange={(e) => setVoteComment(e.target.value)}
-                  placeholder="空欄の場合は「コメントなし」として送信されます"
+                  placeholder="例: 入口は開いています / 受付に列があります"
                 />
               </div>
 
@@ -473,13 +523,13 @@ export default function ShelterDetailPage() {
                         setSubmitError('投票状況は必須です');
                         return;
                       }
-                      const commentText = voteComment.trim() || 'コメントなし';
+                      const commentText = voteComment.trim();
                       setSubmitBusy(true);
                       try {
                         const voteRes = await fetch('/api/store/shelter/vote', {
                           method: 'POST',
                           headers: { 'content-type': 'application/json' },
-                          body: JSON.stringify({ shelterId: id, deviceId, value: selectedVote }),
+                          body: JSON.stringify({ shelterId: id, deviceId, value: selectedVote, comment: commentText }),
                         });
                         const voteJson = await voteRes.json().catch(() => null);
                         const voteCode = typeof voteJson?.errorCode === 'string' ? voteJson.errorCode : null;
@@ -488,22 +538,10 @@ export default function ShelterDetailPage() {
                           return;
                         }
 
-                        const commentRes = await fetch('/api/store/shelter/comment', {
-                          method: 'POST',
-                          headers: { 'content-type': 'application/json' },
-                          body: JSON.stringify({ shelterId: id, deviceId, text: commentText }),
-                        });
-                        const commentJson = await commentRes.json().catch(() => null);
-                        const commentCode = typeof commentJson?.errorCode === 'string' ? commentJson.errorCode : null;
-                        if (!commentRes.ok && commentCode !== 'DUPLICATE' && commentCode !== 'RATE_LIMITED') {
-                          setSubmitError(commentJson?.error ?? '送信できませんでした');
-                          return;
-                        }
-
                         const entry: VoteHistoryEntry = {
                           id: `${Date.now()}`,
                           status: selectedVote,
-                          comment: commentText,
+                          comment: commentText || 'コメントなし',
                           createdAt: new Date().toISOString(),
                         };
                         setVoteHistory((prev) => {
@@ -553,7 +591,7 @@ export default function ShelterDetailPage() {
                     解除
                   </button>
                 </div>
-                <div className="text-xs text-gray-600">同じ避難所への連続投票は時間制限があります。</div>
+                <div className="text-xs text-gray-600">同じ端末の投票は最新の1件として集計されます。</div>
               </div>
 
               {submitError && <div className="mt-2 text-sm text-red-700">{submitError}</div>}
