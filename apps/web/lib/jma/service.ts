@@ -1,4 +1,4 @@
-import { LOCK_TTLS_MS } from './config';
+import { LOCK_TTLS_MS, WEBJSON_INTERVALS_MS } from './config';
 import { runExclusive } from './lock';
 import { refreshFeedIfStale } from './fetchers';
 import { refreshWebJsonQuakeListIfStale, refreshWebJsonWarningAreaIfStale } from './webjson';
@@ -25,15 +25,62 @@ function maxIso(a: string | null, b: string | null): string | null {
   return Date.parse(a) >= Date.parse(b) ? a : b;
 }
 
+function msSince(iso: string | null): number {
+  if (!iso) return Number.POSITIVE_INFINITY;
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return Number.POSITIVE_INFINITY;
+  return Date.now() - t;
+}
+
+function isOlderThan(a: string | null | undefined, b: string | null | undefined): boolean {
+  if (!b) return false;
+  if (!a) return true;
+  const ta = Date.parse(a);
+  const tb = Date.parse(b);
+  if (Number.isNaN(tb)) return false;
+  if (Number.isNaN(ta)) return true;
+  return ta < tb;
+}
+
 export async function getJmaStatus(): Promise<{
   fetchStatus: FetchStatus;
   updatedAt: string | null;
   lastError: string | null;
-  feeds: Record<JmaFeedKey, { fetchStatus: FetchStatus; updatedAt: string | null; lastError: string | null }>;
+  feeds: Record<
+    JmaFeedKey,
+    {
+      fetchStatus: FetchStatus;
+      updatedAt: string | null;
+      lastError: string | null;
+      stale?: boolean;
+      lastAttemptAt?: string | null;
+      lastHttpStatus?: number | null;
+      lastItemCount?: number | null;
+      lastDurationMs?: number | null;
+    }
+  >;
+  webjson?: Record<string, unknown>;
+  sources?: Array<Record<string, unknown>>;
 }> {
-  const state = await readJmaState();
-  const cached = await readCachedStatus();
+  await triggerStaleRefresh(['regular', 'extra', 'eqvol']);
+  await refreshWebJsonQuakeListIfStale();
+  void triggerStaleRefresh(['other']);
 
+  const normalized = await runExclusive('normalize:status', () => rebuildNormalizedStatus(), LOCK_TTLS_MS.normalize);
+  const cached = normalized.value ?? (await readCachedStatus());
+  if (cached) {
+    const sourceError = cached.sources?.map((s) => s.last_error).find(Boolean) ?? null;
+    return {
+      fetchStatus: cached.fetchStatus,
+      updatedAt: cached.updatedAt,
+      lastError: cached.fetchStatus === 'OK' ? null : sourceError,
+      feeds: cached.feeds,
+      webjson: cached.webjson,
+      sources: cached.sources,
+    };
+  }
+
+  const state = await readJmaState();
   const feeds = Object.fromEntries(
     (Object.keys(state.feeds) as JmaFeedKey[]).map((feed) => {
       const s = state.feeds[feed];
@@ -43,28 +90,19 @@ export async function getJmaStatus(): Promise<{
           fetchStatus: computeFetchStatus(s.lastSuccessfulUpdateTime, s.lastError),
           updatedAt: s.lastSuccessfulUpdateTime,
           lastError: s.lastError,
+          stale: false,
+          lastAttemptAt: s.lastAttemptTime,
+          lastHttpStatus: s.lastHttpStatus ?? null,
+          lastItemCount: s.lastItemCount ?? null,
+          lastDurationMs: s.lastDurationMs ?? null,
         },
       ];
     })
-  ) as Record<JmaFeedKey, { fetchStatus: FetchStatus; updatedAt: string | null; lastError: string | null }>;
+  ) as any;
 
-  const updatedAt = (Object.keys(feeds) as JmaFeedKey[]).reduce<string | null>(
-    (acc, feed) => maxIso(acc, feeds[feed].updatedAt),
-    cached?.updatedAt ?? null
-  );
-
-  const lastError =
-    (Object.keys(feeds) as JmaFeedKey[]).map((f) => feeds[f].lastError).find(Boolean) ?? null;
-
-  const fetchStatus: FetchStatus =
-    (Object.values(feeds) as Array<{ fetchStatus: FetchStatus }>).some((f) => f.fetchStatus === 'DEGRADED')
-      ? 'DEGRADED'
-      : 'OK';
-
-  void triggerStaleRefresh(['regular', 'extra', 'eqvol', 'other']);
-  void runExclusive('normalize:status', () => rebuildNormalizedStatus(), LOCK_TTLS_MS.normalize);
-
-  return { fetchStatus, updatedAt, lastError, feeds };
+  const updatedAt = (Object.keys(feeds) as JmaFeedKey[]).reduce<string | null>((acc, feed) => maxIso(acc, feeds[feed].updatedAt), null);
+  const lastError = (Object.keys(feeds) as JmaFeedKey[]).map((f) => feeds[f].lastError).find(Boolean) ?? null;
+  return { fetchStatus: lastError ? 'DEGRADED' : updatedAt ? 'OK' : 'DOWN', updatedAt, lastError, feeds };
 }
 
 export async function getJmaQuakes(): Promise<{
@@ -79,17 +117,28 @@ export async function getJmaQuakes(): Promise<{
     maxIntensity: string | null;
     magnitude: string | null;
     epicenter: string | null;
+    depth: string | null;
+    lat: number | null;
+    lon: number | null;
+    tsunami: string | null;
+    intensityAreas: Array<{ code: string; maxIntensity: string | null }>;
   }>;
 }> {
   const cached = await readCachedQuakes();
+  const initialState = await readJmaState();
+  const shouldBlock =
+    !cached.updatedAt ||
+    msSince(cached.updatedAt) > WEBJSON_INTERVALS_MS.quakeList ||
+    isOlderThan(cached.updatedAt, initialState.webjson.quakeList.lastSuccessfulUpdateTime) ||
+    isOlderThan(cached.updatedAt, initialState.feeds.eqvol.lastSuccessfulUpdateTime);
 
-  if (!cached.updatedAt) {
+  if (shouldBlock) {
     await triggerQuakesRefresh(true);
   } else {
     void triggerQuakesRefresh(false);
   }
 
-  const refreshed = cached.updatedAt ? cached : await readCachedQuakes();
+  const refreshed = shouldBlock ? await readCachedQuakes() : cached;
   const state = await readJmaState();
 
   const hasWebItems = refreshed.items.some((i: any) => i?.source === 'webjson');
@@ -122,6 +171,23 @@ export async function getJmaWarnings(area: string): Promise<{
   items: NormalizedWarningItem[];
 }> {
   const cached = await readCachedWarnings();
+  const initialState = await readJmaState();
+  const initialAreaSnap = cached.areas[area] ?? null;
+  const initialWebState = initialState.webjson.warningsByArea[area] ?? null;
+  const shouldBlock =
+    !initialAreaSnap ||
+    msSince(initialAreaSnap.updatedAt) > WEBJSON_INTERVALS_MS.warningArea ||
+    isOlderThan(initialAreaSnap.updatedAt, initialState.feeds.regular.lastSuccessfulUpdateTime) ||
+    isOlderThan(initialAreaSnap.updatedAt, initialState.feeds.extra.lastSuccessfulUpdateTime) ||
+    isOlderThan(initialAreaSnap.updatedAt, initialWebState?.lastSuccessfulUpdateTime);
+
+  if (shouldBlock) {
+    await triggerWarningsRefresh(area, true);
+  } else {
+    void triggerWarningsRefresh(area, false);
+  }
+
+  const refreshed = shouldBlock ? await readCachedWarnings() : cached;
   const state = await readJmaState();
 
   const regularStatus = computeFetchStatus(
@@ -139,36 +205,18 @@ export async function getJmaWarnings(area: string): Promise<{
       ? state.feeds.regular.lastError ?? state.feeds.extra.lastError ?? webState?.lastError ?? null
       : null;
 
-  const areaSnap = cached.areas[area] ?? null;
-  if (!areaSnap) {
-    await triggerWarningsRefresh(area, true);
-    const refreshed = await readCachedWarnings();
-    const refreshedArea = refreshed.areas[area];
-    const items = refreshedArea?.items ?? [];
-    const { confidence, confidenceNotes } = computeWarningsConfidence(area, items);
-    return {
-      fetchStatus,
-      updatedAt: refreshedArea?.updatedAt ?? null,
-      lastError,
-      area,
-      areaName: refreshedArea?.areaName ?? null,
-      confidence,
-      confidenceNotes,
-      items,
-    };
-  }
-
-  void triggerWarningsRefresh(area, false);
-  const { confidence, confidenceNotes } = computeWarningsConfidence(area, areaSnap.items);
+  const areaSnap = refreshed.areas[area] ?? null;
+  const items = areaSnap?.items ?? [];
+  const { confidence, confidenceNotes } = computeWarningsConfidence(area, items);
   return {
     fetchStatus,
-    updatedAt: areaSnap.updatedAt,
+    updatedAt: areaSnap?.updatedAt ?? null,
     lastError,
     area,
-    areaName: areaSnap.areaName,
+    areaName: areaSnap?.areaName ?? null,
     confidence,
     confidenceNotes,
-    items: areaSnap.items,
+    items,
   };
 }
 

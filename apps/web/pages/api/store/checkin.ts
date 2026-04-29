@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { submitCheckinPin } from 'lib/store/adapter';
+import { clearActiveCheckin, submitCheckinPin } from 'lib/store/adapter';
 import { ipHash } from 'lib/store/security';
-import { CheckinBodySchema } from 'lib/store/types';
+import { CheckinBodySchema, DeviceIdSchema } from 'lib/store/types';
 import { assertSameOrigin, getClientIp, jsonError, jsonOk, rateLimit } from 'lib/server/security';
 
 export const config = {
@@ -14,8 +14,6 @@ const WRITE_RATE_LIMIT = { keyPrefix: 'write:checkin', limit: 30, windowMs: 5 * 
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    if (req.method !== 'POST') return jsonError(res, 405, { ok: false, error: 'method_not_allowed', errorCode: 'METHOD_NOT_ALLOWED' });
-
     if (!assertSameOrigin(req)) return jsonError(res, 403, { ok: false, error: 'forbidden', errorCode: 'ORIGIN_BLOCKED' });
 
     const rl = rateLimit(req, WRITE_RATE_LIMIT);
@@ -23,6 +21,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       res.setHeader('Retry-After', String(rl.retryAfterSec));
       return jsonError(res, 429, { ok: false, error: 'rate_limited', errorCode: 'RATE_LIMITED' });
     }
+
+    if (req.method === 'DELETE') {
+      const body = req.body && typeof req.body === 'object' ? (req.body as { deviceId?: unknown }) : {};
+      const parsed = DeviceIdSchema.safeParse(body.deviceId);
+      if (!parsed.success) return jsonError(res, 400, { ok: false, error: 'invalid_payload', errorCode: 'INVALID_BODY' });
+      const device = await clearActiveCheckin(parsed.data);
+      return jsonOk(res, { device });
+    }
+
+    if (req.method !== 'POST') return jsonError(res, 405, { ok: false, error: 'method_not_allowed', errorCode: 'METHOD_NOT_ALLOWED' });
 
     const parsed = CheckinBodySchema.safeParse(req.body);
     if (!parsed.success) return jsonError(res, 400, { ok: false, error: 'invalid_payload', errorCode: 'INVALID_BODY' });

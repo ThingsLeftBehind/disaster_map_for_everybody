@@ -1,4 +1,4 @@
-import { SeoHead } from '../components/SeoHead';
+import { Seo } from '../components/Seo';
 import dynamic from 'next/dynamic';
 import useSWR from 'swr';
 import { useEffect, useMemo, useState } from 'react';
@@ -372,7 +372,7 @@ export default function MainPage() {
 
   return (
     <div className="space-y-6">
-      <SeoHead
+      <Seo
         title="メイン"
         description="避難ナビ（HinaNavi）のメイン画面。現在地周辺の避難所を地図で確認し、距離順の一覧やハザード対応の目安を把握できます。警報・注意報や地震情報への導線も備え、災害時の行動判断を支援します。"
       />
@@ -500,6 +500,11 @@ export default function MainPage() {
           <div className="text-xs text-gray-500">
           </div>
         </div>
+        {showSafetyPins && (
+          <div className="mt-2 rounded-xl border bg-gray-50 px-3 py-2 text-xs text-gray-700">
+            共有ピン: {safetyPins.length}件 / 更新: {formatAt(safetyPinsData?.updatedAt)}。表示は概略位置が基本で、24時間を過ぎたピンは通常非表示です。
+          </div>
+        )}
 
 
         <div className="mt-5 border-t pt-5">
@@ -587,6 +592,7 @@ export default function MainPage() {
                     comment: myCheckinComment.trim() || null,
                     precision: myCheckinPrecise ? 'PRECISE' : 'COARSE',
                   });
+                  if (showSafetyPins) await mutateSafetyPins();
                   const nextCooldown = Date.now() + CHECKIN_COOLDOWN_MS;
                   setCheckinCooldownUntil(nextCooldown);
                   writeCheckinCooldown(nextCooldown);
@@ -608,9 +614,17 @@ export default function MainPage() {
                     }));
                     await updateDevice({ checkins: archived } as any);
                   }
+                  if (deviceId) {
+                    await fetch('/api/store/checkin', {
+                      method: 'DELETE',
+                      headers: { 'content-type': 'application/json' },
+                      body: JSON.stringify({ deviceId }),
+                    }).catch(() => null);
+                  }
                   setMyCheckinStatus(null);
                   setMyCheckinComment('');
                   setMyCheckinPrecise(false);
+                  if (showSafetyPins) await mutateSafetyPins();
                   const nextCooldown = Date.now() + CHECKIN_COOLDOWN_MS;
                   setCheckinCooldownUntil(nextCooldown);
                   writeCheckinCooldown(nextCooldown);

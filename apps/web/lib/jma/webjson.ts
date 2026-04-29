@@ -8,6 +8,21 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
+function countJsonItems(value: unknown): number {
+  if (Array.isArray(value)) return value.length;
+  if (!value || typeof value !== 'object') return 0;
+  const seen = new Set<unknown>();
+  let count = 0;
+  const walk = (node: unknown) => {
+    if (!node || typeof node !== 'object' || seen.has(node)) return;
+    seen.add(node);
+    if (Array.isArray((node as any).warnings)) count += (node as any).warnings.length;
+    for (const v of Object.values(node as Record<string, unknown>)) walk(v);
+  };
+  walk(value);
+  return count;
+}
+
 function msSince(iso: string | null): number {
   if (!iso) return Number.POSITIVE_INFINITY;
   const t = Date.parse(iso);
@@ -33,6 +48,7 @@ async function refreshWebJson(
   if (!stale || recentlyAttempted) return;
 
   await runExclusive(`webjson:${key}`, async () => {
+    const startedAt = Date.now();
     const freshState = await readJmaState();
     const freshNode = stateAccessor(freshState);
     const stillStale = msSince(freshNode.lastSuccessfulUpdateTime) > intervalMs;
@@ -42,6 +58,7 @@ async function refreshWebJson(
     await updateJmaState((draft) => {
       const draftNode = stateAccessor(draft);
       draftNode.lastAttemptTime = nowIso();
+      draftNode.lastError = null;
     });
 
     const headers: Record<string, string> = {};
@@ -49,12 +66,24 @@ async function refreshWebJson(
     if (freshNode.lastModified) headers['If-Modified-Since'] = freshNode.lastModified;
 
     try {
+      console.info('[jma:webjson] fetch:start', { key, url });
       const resp = await fetch(url, { headers, cache: 'no-store' });
+      const durationMs = Date.now() - startedAt;
       if (resp.status === 304) {
+        const cached = await readJsonFile<unknown>(cachePath);
         await updateJmaState((draft) => {
           const draftNode = stateAccessor(draft);
           draftNode.lastSuccessfulUpdateTime = nowIso();
           draftNode.lastError = null;
+          draftNode.lastHttpStatus = resp.status;
+          draftNode.lastItemCount = countJsonItems(cached);
+          draftNode.lastDurationMs = durationMs;
+        });
+        console.info('[jma:webjson] fetch:not-modified', {
+          key,
+          httpStatus: resp.status,
+          itemCount: countJsonItems(cached),
+          durationMs,
         });
         return;
       }
@@ -63,12 +92,16 @@ async function refreshWebJson(
         await updateJmaState((draft) => {
           const draftNode = stateAccessor(draft);
           draftNode.lastError = `HTTP ${resp.status} ${resp.statusText}`.trim();
+          draftNode.lastHttpStatus = resp.status;
+          draftNode.lastDurationMs = durationMs;
         });
+        console.warn('[jma:webjson] fetch:failed', { key, httpStatus: resp.status, durationMs });
         return;
       }
 
       const text = await resp.text();
       const parsed = JSON.parse(text) as unknown;
+      const itemCount = countJsonItems(parsed);
       await atomicWriteJson(cachePath, parsed);
       await updateJmaState((draft) => {
         const draftNode = stateAccessor(draft);
@@ -76,11 +109,22 @@ async function refreshWebJson(
         draftNode.lastModified = resp.headers.get('last-modified');
         draftNode.lastSuccessfulUpdateTime = nowIso();
         draftNode.lastError = null;
+        draftNode.lastHttpStatus = resp.status;
+        draftNode.lastItemCount = itemCount;
+        draftNode.lastDurationMs = durationMs;
       });
+      console.info('[jma:webjson] fetch:success', { key, httpStatus: resp.status, itemCount, durationMs });
     } catch (error) {
+      const durationMs = Date.now() - startedAt;
       await updateJmaState((draft) => {
         const draftNode = stateAccessor(draft);
         draftNode.lastError = error instanceof Error ? error.message : String(error);
+        draftNode.lastDurationMs = durationMs;
+      });
+      console.warn('[jma:webjson] fetch:error', {
+        key,
+        durationMs,
+        error: error instanceof Error ? error.message : String(error),
       });
       return;
     }
@@ -107,6 +151,9 @@ export async function refreshWebJsonWarningAreaIfStale(area: string): Promise<vo
         lastAttemptTime: null,
         lastSuccessfulUpdateTime: null,
         lastError: null,
+        lastHttpStatus: null,
+        lastItemCount: null,
+        lastDurationMs: null,
         etag: null,
         lastModified: null,
       };

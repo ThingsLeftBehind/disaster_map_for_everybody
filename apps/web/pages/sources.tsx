@@ -1,4 +1,4 @@
-import { SeoHead } from '../components/SeoHead';
+import { Seo } from '../components/Seo';
 import useSWR from 'swr';
 import { useDevice } from '../components/device/DeviceProvider';
 import { DataFetchDetails } from '../components/DataFetchDetails';
@@ -20,7 +20,7 @@ export default function SourcesPage() {
 
   return (
     <div className="space-y-6">
-      <SeoHead
+      <Seo
         title="注意・免責事項"
         description="注意・免責事項とデータ出典をまとめたページ。警報・注意報、地震、ハザードマップ、避難場所データの参照元や更新頻度、利用上の注意点を確認できます。"
       />

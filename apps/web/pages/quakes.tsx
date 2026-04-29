@@ -1,15 +1,21 @@
-import { SeoHead } from '../components/SeoHead';
+import { Seo } from '../components/Seo';
 import useSWR from 'swr';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { useDevice } from '../components/device/DeviceProvider';
 import { DataFetchDetails } from '../components/DataFetchDetails';
+import dynamic from 'next/dynamic';
+
+const QuakeMonitorMap = dynamic(() => import('../components/QuakeMonitorMap'), {
+  ssr: false,
+  loading: () => <div className="h-[360px] animate-pulse rounded-xl border bg-gray-100" />,
+});
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 function formatUpdatedAt(updatedAt: string | null | undefined): string {
-  if (!updatedAt) return 'No successful fetch yet';
+  if (!updatedAt) return '確認中';
   const t = Date.parse(updatedAt);
-  if (Number.isNaN(t)) return 'No successful fetch yet';
+  if (Number.isNaN(t)) return '確認中';
   return new Date(t).toLocaleString();
 }
 
@@ -96,6 +102,48 @@ function toneClasses(tone: ReturnType<typeof severityTone>): string {
   }
 }
 
+function sourceHealth(updatedAt: string | null | undefined, fetchStatus: string | null | undefined): 'OK' | 'DEGRADED' | 'DOWN' | 'PENDING' {
+  if (!fetchStatus) return 'PENDING';
+  if (fetchStatus === 'DOWN') return 'DOWN';
+  if (!updatedAt) return 'DOWN';
+  const t = Date.parse(updatedAt);
+  if (Number.isNaN(t)) return 'DOWN';
+  const ageMs = Date.now() - t;
+  if (fetchStatus === 'OK' && ageMs <= 10 * 60_000) return 'OK';
+  if (ageMs <= 60 * 60_000) return 'DEGRADED';
+  return 'DOWN';
+}
+
+function healthLabel(status: 'OK' | 'DEGRADED' | 'DOWN' | 'PENDING'): string {
+  if (status === 'OK') return 'Online';
+  if (status === 'DEGRADED') return 'Delayed';
+  if (status === 'PENDING') return 'Checking';
+  return 'Outdated';
+}
+
+function healthClass(status: 'OK' | 'DEGRADED' | 'DOWN' | 'PENDING'): string {
+  if (status === 'OK') return 'bg-emerald-50 text-emerald-800 ring-emerald-200';
+  if (status === 'DEGRADED') return 'bg-amber-50 text-amber-900 ring-amber-200';
+  if (status === 'PENDING') return 'bg-gray-50 text-gray-800 ring-gray-200';
+  return 'bg-red-50 text-red-800 ring-red-200';
+}
+
+function tsunamiPanel(items: Array<{ title: string; tsunami?: string | null; time: string | null; magnitude: string | null; maxIntensity: string | null }>) {
+  const recent = items.slice(0, 10);
+  const hit = recent.find((item) => /津波警報|大津波警報/.test(item.title) || /警報/.test(String(item.tsunami ?? '')));
+  if (hit) return { state: 'warning', label: '津波警報の見出しあり', updatedAt: hit.time };
+  const advisory = recent.find((item) => /津波注意報/.test(item.title) || /注意報/.test(String(item.tsunami ?? '')));
+  if (advisory) return { state: 'advisory', label: '津波注意報の見出しあり', updatedAt: advisory.time };
+  const latest = items[0];
+  const intensity = parseMaxIntensityRaw(latest?.maxIntensity)?.score ?? parseMaxIntensityFromTitle(latest?.title ?? '')?.score ?? 0;
+  const magnitude = parseMagnitude(latest?.magnitude ?? null) ?? 0;
+  const latestTime = latest?.time ? Date.parse(latest.time) : NaN;
+  if (latest && Number.isFinite(latestTime) && Date.now() - latestTime < 15 * 60_000 && (intensity >= 4 || magnitude >= 6)) {
+    return { state: 'checking', label: '津波有無を確認中', updatedAt: latest.time };
+  }
+  return { state: 'none', label: '津波警報・注意報の見出しなし', updatedAt: latest?.time ?? null };
+}
+
 export default function QuakesPage() {
   const { device } = useDevice();
   const refreshMs = device?.settings?.powerSaving ? 180_000 : 60_000;
@@ -108,6 +156,11 @@ export default function QuakesPage() {
     maxIntensity: string | null;
     magnitude: string | null;
     epicenter: string | null;
+    depth?: string | null;
+    lat?: number | null;
+    lon?: number | null;
+    tsunami?: string | null;
+    intensityAreas?: Array<{ code: string; maxIntensity: string | null }>;
   }> = data?.items ?? [];
 
   const recentItems = useMemo(() => {
@@ -137,83 +190,17 @@ export default function QuakesPage() {
     const picks: (typeof scored)[number][] = [];
     for (const v of scored.filter((s) => (s.intensity?.score ?? 0) >= 6).sort(bySeverity)) {
       picks.push(v);
-      if (picks.length >= 3) break;
+      if (picks.length >= 9) break;
     }
-    if (picks.length < 3) {
+    if (picks.length < 9) {
       for (const v of scored.filter((s) => !picks.some((p) => p.q.id === s.q.id)).sort(bySeverity)) {
         picks.push(v);
-        if (picks.length >= 3) break;
+        if (picks.length >= 9) break;
       }
     }
-    return picks.slice(0, 3);
+    return picks.slice(0, 9);
   }, [recentItems]);
-
-  // Retention logic for Strong Shaking
-  const [persistedStrong, setPersistedStrong] = useState<(typeof strongPicks)>([]);
-
-  useEffect(() => {
-    // Load from local storage
-    try {
-      const raw = localStorage.getItem('jp_evac_quakes_strong');
-      if (raw) {
-        const stored = JSON.parse(raw);
-        setPersistedStrong(stored);
-      }
-    } catch { }
-  }, []);
-
-  useEffect(() => {
-    // Merge new strongPicks with persisted, filter > 7 days, limit to Top 3
-    if (strongPicks.length === 0 && persistedStrong.length === 0) return;
-
-    // We already compute 'strongPicks' from the API data in this render.
-    // However, the requirement is "7 days retention". API might only return recent ones (e.g. 24h).
-    // So we need to keep older ones in local storage.
-
-    // 1. Combine persisted + current API strong picks
-    // Deduplicate by ID
-    const combined = [...persistedStrong, ...strongPicks];
-    const uniqueMap = new Map();
-    for (const item of combined) {
-      if (!item || !item.q || !item.q.id) continue;
-      // If doublet, keep the one with more data or just latest? 
-      // We trust the API 'strongPicks' are fresh.
-      // We just overwrite key.
-      uniqueMap.set(item.q.id, item);
-    }
-
-    const now = Date.now();
-    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
-
-    const candidates = Array.from(uniqueMap.values()).filter(item => {
-      // Filter out > 7 days
-      // item.timeMs is the event time
-      if (!item.timeMs) return false;
-      return (now - item.timeMs) < sevenDaysMs;
-    });
-
-    // Sort by severity (desc), then time (desc)
-    candidates.sort((a, b) => b.severityScore - a.severityScore || b.timeMs - a.timeMs);
-
-    // Top 3
-    const nextTop3 = candidates.slice(0, 3);
-
-    // Just saving to local storage isn't enough, we need to RENDER them.
-    // So we should use `nextTop3` for rendering the section.
-    // And update local storage if changed.
-
-    const nextJson = JSON.stringify(nextTop3);
-    if (localStorage.getItem('jp_evac_quakes_strong') !== nextJson) {
-      localStorage.setItem('jp_evac_quakes_strong', nextJson);
-      setPersistedStrong(nextTop3);
-    }
-  }, [strongPicks]); // Runs when API data updates
-
-  // Merge for display: actually `persistedStrong` is the source of truth for display now, 
-  // because it includes both historical (retained) and fresh API data (merged in effect above).
-  // Wait, if API updates, `strongPicks` changes -> effect runs -> `persistedStrong` updates -> re-render.
-  // So we can use `persistedStrong` for rendering.
-  const displayStrong = persistedStrong;
+  const displayStrong = strongPicks;
 
 
   // Pagination for Recent Quakes
@@ -226,44 +213,121 @@ export default function QuakesPage() {
   const handleLoadMore = () => {
     setVisibleCount(prev => Math.min(prev + 10, 50));
   };
+  const latestEvent = recentItems[0] ?? items[0] ?? null;
+  const latestIntensity = latestEvent ? parseMaxIntensityRaw(latestEvent.maxIntensity) ?? parseMaxIntensityFromTitle(latestEvent.title) : null;
+  const quakeHealth = sourceHealth(data?.updatedAt, data?.fetchStatus);
+  const tsunami = data ? tsunamiPanel(items) : { state: 'checking', label: '津波情報を確認中', updatedAt: null };
 
   return (
     <div className="space-y-6">
-      <SeoHead
+      <Seo
         title="地震"
         description="地震情報の一覧と最近の強い揺れを表示します。震源・震度・発生時刻を確認し、過去の揺れの傾向を把握できます。震度の目安解説も掲載し、防災行動の判断に役立ちます。"
       />
 
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <h1 className="text-2xl font-bold">地震（JMA）</h1>
-        <div className="flex items-center gap-3">
-          <a
-            href="http://www.kmoni.bosai.go.jp/"
-            target="_blank"
-            rel="noreferrer"
-            className="rounded bg-gray-900 px-3 py-2 text-sm text-white hover:bg-black"
-          >
-            リアルタイム地震モニタ（外部）
-          </a>
+        <div>
+          <h1 className="text-2xl font-bold">地震情報</h1>
+          <div className="mt-1 text-sm text-gray-600">気象庁の地震情報をもとに、震源・震度・津波確認状況を表示します。</div>
         </div>
+        <span className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-bold ring-1 ${healthClass(quakeHealth)}`}>
+          JMA {healthLabel(quakeHealth)}
+        </span>
       </div>
+
+      <section className="rounded-lg bg-white p-5 shadow">
+        <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">リアルタイム地震モニタ</h2>
+            <div className="mt-1 text-xs text-gray-600">最終取得: {formatUpdatedAt(data?.updatedAt)} / 情報源: 気象庁 地震情報</div>
+          </div>
+          <div className="text-xs text-gray-600">自動更新: {Math.round(refreshMs / 1000)}秒ごと</div>
+        </div>
+
+        <div className="mt-4 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+          <QuakeMonitorMap
+            epicenter={
+              latestEvent
+                ? {
+                    lat: typeof latestEvent.lat === 'number' ? latestEvent.lat : null,
+                    lon: typeof latestEvent.lon === 'number' ? latestEvent.lon : null,
+                    name: latestEvent.epicenter ?? null,
+                    maxIntensity: latestIntensity?.label ?? latestEvent.maxIntensity ?? null,
+                  }
+                : null
+            }
+            intensityAreas={latestEvent?.intensityAreas ?? []}
+          />
+
+          <div className="space-y-3">
+            <div className="rounded-xl border bg-gray-50 p-4">
+              <div className="text-xs font-semibold text-gray-600">最新イベント</div>
+              {latestEvent ? (
+                <div className="mt-2 space-y-2 text-sm">
+                  <div className="text-lg font-bold text-gray-900">{latestEvent.epicenter ?? latestEvent.title}</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Fact label="発生" value={formatEventTime(latestEvent.time)} />
+                    <Fact label="最大震度" value={latestIntensity?.label ?? latestEvent.maxIntensity ?? '不明'} />
+                    <Fact label="M" value={latestEvent.magnitude ?? '不明'} />
+                    <Fact label="深さ" value={latestEvent.depth ?? '不明'} />
+                  </div>
+                  <div className="rounded-lg bg-white px-3 py-2 text-xs text-gray-700 ring-1 ring-gray-200">
+                    状態: {latestEvent.title}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-2 rounded-lg bg-white px-3 py-3 text-sm text-gray-600 ring-1 ring-gray-200">
+                  表示できる地震情報がまだありません。
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-xl border bg-gray-50 p-4">
+              <div className="text-xs font-semibold text-gray-600">津波情報</div>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <div className="text-base font-bold text-gray-900">{tsunami.label}</div>
+                <span className={`rounded-full px-2 py-1 text-[11px] font-bold ring-1 ${
+                  tsunami.state === 'warning'
+                    ? 'bg-red-50 text-red-800 ring-red-200'
+                    : tsunami.state === 'advisory' || tsunami.state === 'checking'
+                      ? 'bg-amber-50 text-amber-900 ring-amber-200'
+                      : 'bg-emerald-50 text-emerald-800 ring-emerald-200'
+                }`}>
+                  {tsunami.state === 'warning' ? 'Warning' : tsunami.state === 'advisory' ? 'Advisory' : tsunami.state === 'checking' ? 'Checking' : 'None'}
+                </span>
+              </div>
+              <div className="mt-1 text-xs text-gray-600">更新: {formatUpdatedAt(tsunami.updatedAt)}</div>
+              <div className="mt-2 text-xs text-gray-700">津波の最終判断は気象庁・自治体の発表を確認してください。</div>
+            </div>
+
+            <div className="rounded-xl border bg-gray-50 p-4">
+              <div className="text-xs font-semibold text-gray-600">外部参考</div>
+              <a href="http://www.kmoni.bosai.go.jp/" target="_blank" rel="noreferrer" className="mt-2 inline-flex rounded-lg bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-100">
+                防災科研 強震モニタ
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-gray-700">
+          {['1-2', '3', '4', '5弱', '5強', '6弱以上'].map((label) => (
+            <span key={label} className="rounded-full bg-gray-50 px-2 py-1 ring-1 ring-gray-200">震度 {label}</span>
+          ))}
+        </div>
+      </section>
 
       <section className="rounded-lg bg-white p-5 shadow">
         <h2 className="text-lg font-semibold">最近の強い揺れ</h2>
         <div className="mt-2 text-xs text-gray-600">過去7日間の最大震度上位を表示します（最大9件まで）。</div>
 
+        {!data && <div className="mt-3 text-sm text-gray-600">読み込み中...</div>}
+        {data && displayStrong.length === 0 && (
+          <div className="mt-3 rounded-xl border bg-gray-50 px-3 py-3 text-sm text-gray-600">
+            直近データ内に強い揺れとして表示できる地震情報はありません。
+          </div>
+        )}
         <div className="mt-3 grid gap-2 md:grid-cols-3">
-          {(displayStrong.length > 0 ? displayStrong : Array.from({ length: strongVisibleCount }).fill(null))
-            .slice(0, strongVisibleCount)
-            .map((v, idx) => {
-            if (!v) {
-              return (
-                <div key={`empty-${idx}`} className="rounded border bg-gray-50 px-3 py-3 text-sm text-gray-600">
-                  該当なし
-                </div>
-              );
-            }
-
+          {displayStrong.slice(0, strongVisibleCount).map((v) => {
             const tone = severityTone({ intensityScore: v.intensity?.score ?? null, magnitude: null });
             const summary = v.intensity ? `最大震度${v.intensity.label}` : '最大震度不明';
             return (
@@ -343,9 +407,9 @@ export default function QuakesPage() {
       <IntensityGuide />
 
       <DataFetchDetails
-        status={data?.fetchStatus ?? 'DEGRADED'}
+        status={data?.fetchStatus ?? 'PENDING'}
         updatedAt={data?.updatedAt}
-        fetchStatus={data?.fetchStatus ?? 'DEGRADED'}
+        fetchStatus={data?.fetchStatus ?? 'PENDING'}
         error={data?.lastError}
       />
     </div>
@@ -362,6 +426,15 @@ const INTENSITY_DATA = [
   { level: '6強', color: 'bg-red-700', feel: '這わないと動けない、多くの建物が損壊', action: '周囲の安全確認、津波や土砂災害にも警戒。' },
   { level: '7', color: 'bg-purple-900', feel: '極めて激しい揺れ、壁や柱が崩れる', action: '命を守る行動。直ちに海岸・崖から離れる。' },
 ];
+
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg bg-white px-3 py-2 ring-1 ring-gray-200">
+      <div className="text-[11px] font-semibold text-gray-600">{label}</div>
+      <div className="mt-1 font-bold text-gray-900">{value}</div>
+    </div>
+  );
+}
 
 function IntensityGuide() {
   const [open, setOpen] = useState(false);

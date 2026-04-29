@@ -1,12 +1,22 @@
 import { z } from 'zod';
 
-export type FetchStatus = 'OK' | 'DEGRADED';
+export type FetchStatus = 'OK' | 'DEGRADED' | 'DOWN';
+export type SourceStatusLevel = 'ONLINE' | 'DELAYED' | 'OUTDATED' | 'UNAVAILABLE';
 
 export const JmaFeedKeySchema = z.enum(['regular', 'extra', 'eqvol', 'other']);
 export type JmaFeedKey = z.infer<typeof JmaFeedKeySchema>;
 
 export const JmaWarningsQuerySchema = z.object({
   area: z.preprocess((value) => (Array.isArray(value) ? value[0] : value), z.string().regex(/^\d{6}$/)),
+  class20: z.preprocess(
+    (value) => {
+      const raw = Array.isArray(value) ? value[0] : value;
+      if (typeof raw !== 'string') return undefined;
+      const trimmed = raw.trim();
+      return trimmed ? trimmed : undefined;
+    },
+    z.string().regex(/^\d{5,7}$/).optional()
+  ),
 });
 
 export const JmaRawQuerySchema = z.object({
@@ -19,6 +29,9 @@ export type JmaFeedState = {
   lastAttemptTime: string | null;
   lastSuccessfulUpdateTime: string | null;
   lastError: string | null;
+  lastHttpStatus?: number | null;
+  lastItemCount?: number | null;
+  lastDurationMs?: number | null;
   etag: string | null;
   lastModified: string | null;
 };
@@ -27,8 +40,24 @@ export type JmaWebJsonState = {
   lastAttemptTime: string | null;
   lastSuccessfulUpdateTime: string | null;
   lastError: string | null;
+  lastHttpStatus?: number | null;
+  lastItemCount?: number | null;
+  lastDurationMs?: number | null;
   etag: string | null;
   lastModified: string | null;
+};
+
+export type JmaSourceStatusRecord = {
+  source: 'jma';
+  feed_family: string;
+  status: SourceStatusLevel;
+  last_attempt_at: string | null;
+  last_success_at: string | null;
+  last_error: string | null;
+  last_http_status: number | null;
+  last_item_count: number | null;
+  last_duration_ms: number | null;
+  stale_after_ms: number;
 };
 
 export type JmaState = {
@@ -56,6 +85,11 @@ export type NormalizedQuakeItem = {
   maxIntensity: string | null;
   magnitude: string | null;
   epicenter: string | null;
+  depth: string | null;
+  lat: number | null;
+  lon: number | null;
+  tsunami: string | null;
+  intensityAreas: Array<{ code: string; maxIntensity: string | null }>;
   source: 'pull' | 'webjson';
 };
 
@@ -92,6 +126,11 @@ export type NormalizedStatusSnapshot = {
       fetchStatus: FetchStatus;
       updatedAt: string | null;
       lastError: string | null;
+      stale: boolean;
+      lastAttemptAt: string | null;
+      lastHttpStatus: number | null;
+      lastItemCount: number | null;
+      lastDurationMs: number | null;
     }
   >;
   webjson: {
@@ -99,6 +138,12 @@ export type NormalizedStatusSnapshot = {
       fetchStatus: FetchStatus;
       updatedAt: string | null;
       lastError: string | null;
+      stale: boolean;
+      lastAttemptAt: string | null;
+      lastHttpStatus: number | null;
+      lastItemCount: number | null;
+      lastDurationMs: number | null;
     };
   };
+  sources: JmaSourceStatusRecord[];
 };

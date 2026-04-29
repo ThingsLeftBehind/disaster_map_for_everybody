@@ -7,6 +7,7 @@ import { useRouter } from 'next/router';
 import { useAreaName } from '../lib/client/areaName';
 import { toDisplayFetchStatus } from '../lib/ui/fetchStatusLabel';
 import { Footer } from './Footer';
+import { toJmaClass20 } from '../lib/muni-helper';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -138,17 +139,17 @@ function HelpPopover({ online, jmaUpdatedAt }: { online: boolean; jmaUpdatedAt: 
           <div className="font-semibold">状態の見かた</div>
           <ul className="mt-2 space-y-1 text-gray-700">
             <li>
-              <span className="font-semibold text-emerald-700">OK</span>: 直近の取得に成功
+              <span className="font-semibold text-emerald-700">Online</span>: 公式データの直近取得に成功
             </li>
             <li>
-              <span className="font-semibold text-amber-800">OUTDATED</span>: 最新でない可能性（通信/取得遅延など）
+              <span className="font-semibold text-amber-800">Delayed</span>: 取得遅延または一部ソースで失敗
             </li>
             <li>
-              <span className="font-semibold text-red-700">UNAVAILABLE</span>: まだ一度も取得できていない
+              <span className="font-semibold text-red-700">Unavailable</span>: 公式データを取得できていない
             </li>
             <li className="pt-1 text-gray-600">
               {online
-                ? 'オンラインでも遅延・欠落があり得ます。公式情報も確認してください。'
+                ? 'アプリがオンラインでも、公式データに遅延・欠落があり得ます。'
                 : 'オフラインのためキャッシュ表示です。最新でない可能性があります。'}
             </li>
           </ul>
@@ -198,12 +199,15 @@ export default function Layout({ children }: { children: ReactNode }) {
   const { data: bannerData } = useSWR('/api/store/banner', fetcher, { dedupingInterval: 10_000 });
   const bannerText: string | null = bannerData?.banner?.text ?? null;
 
-  const selectedWarningsUrl = selectedJmaAreaCode ? `/api/jma/warnings?area=${selectedJmaAreaCode}` : null;
-  const { data: selectedWarnings } = useSWR(selectedWarningsUrl, fetcher, { refreshInterval: refreshMs, dedupingInterval: 10_000 });
   const selectedArea =
     device?.settings?.selectedAreaId && device?.savedAreas
       ? device.savedAreas.find((a) => a.id === device.settings.selectedAreaId) ?? null
       : null;
+  const selectedClass20 = toJmaClass20(selectedArea?.muniCode ?? null);
+  const selectedWarningsUrl = selectedJmaAreaCode
+    ? `/api/jma/warnings?area=${selectedJmaAreaCode}${selectedClass20 ? `&class20=${selectedClass20}` : ''}`
+    : null;
+  const { data: selectedWarnings } = useSWR(selectedWarningsUrl, fetcher, { refreshInterval: refreshMs, dedupingInterval: 10_000 });
   const selectedShape = useMemo(
     () =>
       shapeAlertWarnings({
@@ -219,8 +223,11 @@ export default function Layout({ children }: { children: ReactNode }) {
   const selectedCount = selectedShape.counts.total;
   const selectedCounts = selectedShape.counts;
 
+  const currentClass20 = toJmaClass20(coarseArea?.muniCode ?? null);
   const currentWarningsUrl =
-    currentJmaAreaCode && currentJmaAreaCode !== selectedJmaAreaCode ? `/api/jma/warnings?area=${currentJmaAreaCode}` : null;
+    currentJmaAreaCode && currentJmaAreaCode !== selectedJmaAreaCode
+      ? `/api/jma/warnings?area=${currentJmaAreaCode}${currentClass20 ? `&class20=${currentClass20}` : ''}`
+      : null;
   const { data: currentWarnings } = useSWR(currentWarningsUrl, fetcher, { refreshInterval: refreshMs, dedupingInterval: 10_000 });
   const currentShape = useMemo(
     () =>
@@ -244,60 +251,18 @@ export default function Layout({ children }: { children: ReactNode }) {
   const bannerAdvisoryCount = bannerCounts?.advisory ?? 0;
 
   const { data: jmaStatus } = useSWR('/api/jma/status', fetcher, { refreshInterval: refreshMs, dedupingInterval: 10_000 });
-  const rawJmaFetchStatus: 'OK' | 'DEGRADED' = jmaStatus?.fetchStatus === 'OK' ? 'OK' : 'DEGRADED';
+  const serverJmaFetchStatus: 'OK' | 'DEGRADED' | 'DOWN' | 'PENDING' =
+    !jmaStatus ? 'PENDING' : jmaStatus.fetchStatus === 'OK' ? 'OK' : jmaStatus.fetchStatus === 'DOWN' ? 'DOWN' : 'DEGRADED';
   const jmaUpdatedAt: string | null = typeof jmaStatus?.updatedAt === 'string' ? jmaStatus.updatedAt : null;
-  const hasJmaStatus = Boolean(jmaStatus && typeof jmaStatus === 'object');
-
-  const [jmaClientHealth, setJmaClientHealth] = useState<{
-    firstSeenAtMs: number;
-    consecutiveFailures: number;
-    lastFailureAtMs: number;
-  }>({ firstSeenAtMs: 0, consecutiveFailures: 0, lastFailureAtMs: 0 });
-
-  useEffect(() => {
-    if (!hasJmaStatus) return;
-    const nowMs = Date.now();
-    setJmaClientHealth((prev) => {
-      const firstSeenAtMs = prev.firstSeenAtMs || nowMs;
-      if (!online) {
-        if (firstSeenAtMs === prev.firstSeenAtMs) return prev;
-        return { ...prev, firstSeenAtMs };
-      }
-
-      if (rawJmaFetchStatus !== 'OK') {
-        return {
-          firstSeenAtMs,
-          consecutiveFailures: Math.min(prev.consecutiveFailures + 1, 99),
-          lastFailureAtMs: nowMs,
-        };
-      }
-
-      if (prev.consecutiveFailures === 0 && firstSeenAtMs === prev.firstSeenAtMs) return prev;
-      return {
-        ...prev,
-        firstSeenAtMs,
-        consecutiveFailures: 0,
-      };
-    });
-  }, [hasJmaStatus, online, rawJmaFetchStatus]);
-
-  const jmaStatusLabel: 'OK' | 'DEGRADED' | 'DOWN' = useMemo(() => {
-    const nowMs = Date.now();
-    const recentWindowMs = refreshMs * 3;
-    const downGraceMs = refreshMs * 3;
-
-    const recentFailure = jmaClientHealth.lastFailureAtMs > 0 && nowMs - jmaClientHealth.lastFailureAtMs <= recentWindowMs;
-    const downByStreak = jmaClientHealth.consecutiveFailures >= 3;
-    const downByNeverSuccess =
-      !jmaUpdatedAt && jmaClientHealth.firstSeenAtMs > 0 && nowMs - jmaClientHealth.firstSeenAtMs > downGraceMs;
-
-    if (downByStreak || downByNeverSuccess) return 'DOWN';
-    if (rawJmaFetchStatus === 'OK' && !recentFailure) return 'OK';
-    return 'DEGRADED';
-  }, [jmaClientHealth.consecutiveFailures, jmaClientHealth.firstSeenAtMs, jmaClientHealth.lastFailureAtMs, jmaUpdatedAt, rawJmaFetchStatus, refreshMs]);
-
-  const jmaTone: 'ok' | 'warn' | 'down' = jmaStatusLabel === 'OK' ? 'ok' : jmaStatusLabel === 'DEGRADED' ? 'warn' : 'down';
-  const jmaStatusDisplay = toDisplayFetchStatus(jmaStatusLabel);
+  const jmaTone: 'ok' | 'warn' | 'down' | 'neutral' =
+    serverJmaFetchStatus === 'OK'
+      ? 'ok'
+      : serverJmaFetchStatus === 'DEGRADED'
+        ? 'warn'
+        : serverJmaFetchStatus === 'DOWN'
+          ? 'down'
+          : 'neutral';
+  const jmaStatusDisplay = toDisplayFetchStatus(serverJmaFetchStatus);
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -324,7 +289,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 メイン
               </Link>
               <Chip label="JMA" value={jmaStatusDisplay} tone={jmaTone} />
-              <Chip label={online ? 'Online' : 'Offline'} tone={online ? 'ok' : 'down'} />
+              <Chip label="App" value={online ? 'Online' : 'Offline'} tone={online ? 'ok' : 'down'} />
 
               <HelpPopover online={online} jmaUpdatedAt={jmaUpdatedAt} />
             </div>

@@ -14,6 +14,10 @@ data/cache/
 data/cache/**
 data/local_store/
 data/local_store/**
+apps/web/data/cache/
+apps/web/data/cache/**
+apps/web/data/local_store/
+apps/web/data/local_store/**
 
 # Optional inspectability outputs
 data/generated/_pretty/

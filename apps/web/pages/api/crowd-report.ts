@@ -19,7 +19,7 @@ function mapLegacyStatus(status: string) {
     case 'CROWDED':
       return 'CROWDED';
     case 'VERY_CROWDED':
-      return 'CROWDED';
+      return 'VERY_CROWDED';
     case 'CLOSED':
       return 'CLOSED';
     case 'BLOCKED':

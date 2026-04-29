@@ -1,4 +1,4 @@
-import { SeoHead } from '../components/SeoHead';
+import { Seo } from '../components/Seo';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import useSWR from 'swr';
@@ -14,7 +14,7 @@ import { formatPrefMuniLabel, useAreaName } from '../lib/client/areaName';
 import ShareMenu from '../components/ShareMenu';
 import { buildUrl, formatShelterShareText } from '../lib/client/share';
 
-import { normalizeMuniCode } from 'lib/muni-helper';
+import { normalizeMuniCode, toJmaClass20 } from 'lib/muni-helper';
 import { addSavedShelters } from 'lib/shelters/savedShelters';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -427,7 +427,10 @@ export default function ListPage() {
   // Removed previous auto-fetch useEffect since it's now handled in initial load logic.
 
   const effectiveJmaAreaCode = selectedJmaAreaCode ?? null;
-  const warningsUrl = effectiveJmaAreaCode ? `/api/jma/warnings?area=${effectiveJmaAreaCode}` : null;
+  const class20 = toJmaClass20(selectedArea?.muniCode ?? null);
+  const warningsUrl = effectiveJmaAreaCode
+    ? `/api/jma/warnings?area=${effectiveJmaAreaCode}${class20 ? `&class20=${class20}` : ''}`
+    : null;
   const { data: warnings } = useSWR(warningsUrl, fetcher, { refreshInterval: refreshMs, dedupingInterval: 10_000 });
   const warningsActive =
     Array.isArray(warnings?.items) && warnings.items.some((it: any) => !isJmaLowPriorityWarning(it?.kind));
@@ -511,7 +514,7 @@ export default function ListPage() {
 
   return (
     <div className="space-y-6">
-      <SeoHead
+      <Seo
         title="避難場所"
         description="地図の中心や現在地から周辺の避難所を検索し、距離順で比較できます。ハザード対応や不適合も含めた絞り込み、保存・共有に対応し、災害時の判断を支援します。"
       />

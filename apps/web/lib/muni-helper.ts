@@ -35,3 +35,16 @@ export function getMuniCodeVariants(code: string | null | undefined): { code5: s
     }
     return { code6: null, code5: null };
 }
+
+/**
+ * Converts a municipality code (5/6-digit) or a class20 code (7-digit) to JMA class20.
+ */
+export function toJmaClass20(code: string | null | undefined): string | null {
+    if (!code) return null;
+    const digits = String(code).replace(/\D/g, '');
+    if (!digits) return null;
+    if (/^\d{7}$/.test(digits)) return digits;
+    const base5 = normalizeMuniCode(digits);
+    if (!base5) return null;
+    return `${base5}00`;
+}
