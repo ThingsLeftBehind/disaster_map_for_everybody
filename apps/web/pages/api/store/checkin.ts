@@ -14,6 +14,7 @@ const WRITE_RATE_LIMIT = { keyPrefix: 'write:checkin', limit: 30, windowMs: 5 * 
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
+    res.setHeader('Cache-Control', 'no-store');
     if (!assertSameOrigin(req)) return jsonError(res, 403, { ok: false, error: 'forbidden', errorCode: 'ORIGIN_BLOCKED' });
 
     const rl = rateLimit(req, WRITE_RATE_LIMIT);
@@ -60,6 +61,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return jsonOk(res, { device: result.value });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return jsonOk(res, { ok: false, error: 'internal_error', errorCode: 'INTERNAL_ERROR', lastError: message, device: null });
+    return jsonError(res, 500, { ok: false, error: 'internal_error', errorCode: 'INTERNAL_ERROR', lastError: message, device: null });
   }
 }

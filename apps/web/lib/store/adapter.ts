@@ -146,6 +146,36 @@ function publicCheckinCoords(args: { lat: number; lon: number; precision: Checki
   return { lat: roundCoord(args.lat), lon: roundCoord(args.lon) };
 }
 
+function normalizedCheckinComment(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const text = value.trim().slice(0, 120);
+  return text ? text : null;
+}
+
+function isSameCheckinPayload(
+  last: unknown,
+  next: {
+    status: string;
+    shelterId: string | null | undefined;
+    lat: number;
+    lon: number;
+    precision: CheckinPrecision;
+    comment: string | null | undefined;
+  }
+): boolean {
+  const previous = last && typeof last === 'object' ? (last as Record<string, unknown>) : {};
+  const lastLat = typeof previous.lat === 'number' ? previous.lat : null;
+  const lastLon = typeof previous.lon === 'number' ? previous.lon : null;
+  return (
+    String(previous.status ?? '') === next.status &&
+    (previous.shelterId ?? null) === (next.shelterId ?? null) &&
+    (previous.precision === 'PRECISE' ? 'PRECISE' : 'COARSE') === next.precision &&
+    normalizedCheckinComment(previous.comment) === normalizedCheckinComment(next.comment) &&
+    lastLat === next.lat &&
+    lastLon === next.lon
+  );
+}
+
 function toDbCrowdStatus(value: string): 'OK' | 'CROWDED' | 'VERY_CROWDED' | 'CLOSED' | 'BLOCKED' {
   return normalizeCrowdVote(value) as 'OK' | 'CROWDED' | 'VERY_CROWDED' | 'CLOSED' | 'BLOCKED';
 }
@@ -505,10 +535,26 @@ export async function submitCheckinPin(args: {
   if (!rlDevice.ok) return { ok: false, code: 'RATE_LIMITED', message: 'Too many check-ins (device)' };
 
   const { value } = await runExclusive(`device:${args.deviceId}`, async () => {
-    const current = await getDeviceState(args.deviceId);
-    const last = current.checkins?.find((c: any) => c && typeof c === 'object' && (c as any).active !== false) as any;
-    if (last?.updatedAt && withinWindow(String(last.updatedAt), 15_000)) return null;
     const publicCoords = publicCheckinCoords({ lat: args.lat, lon: args.lon, precision: args.precision });
+    const current = await getDeviceState(args.deviceId);
+    const hasExplicitActive = (current.checkins ?? []).some((c: any) => c && typeof c === 'object' && typeof (c as any).active === 'boolean');
+    const last = hasExplicitActive
+      ? ((current.checkins ?? []).find((c: any) => c && typeof c === 'object' && (c as any).active === true) as any)
+      : ((current.checkins ?? [])[0] as any);
+    if (
+      last?.updatedAt &&
+      withinWindow(String(last.updatedAt), 15_000) &&
+      isSameCheckinPayload(last, {
+        status: args.status,
+        shelterId: args.shelterId ?? null,
+        lat: publicCoords.lat,
+        lon: publicCoords.lon,
+        precision: args.precision,
+        comment: args.comment ?? null,
+      })
+    ) {
+      return null;
+    }
 
     const next = buildNextDeviceStateWithCheckin(current, {
       status: args.status,

@@ -51,6 +51,15 @@ function sanitizeCommentText(value: string): string {
   return value.replace(/[0-9０-９一二三四五六七八九十]+丁目/g, '');
 }
 
+function LoadingSpinner({ label = '読み込み中' }: { label?: string }) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" aria-hidden="true" />
+      <span>{label}</span>
+    </span>
+  );
+}
+
 function parseShelterFields(raw: unknown): Record<string, unknown> | null {
   if (!raw) return null;
   if (typeof raw === 'string') {
@@ -270,9 +279,11 @@ export default function ShelterDetailPage() {
             ← 一覧へ
           </Link>
           {siteLoading ? (
-            <div className="mt-2 space-y-2" aria-label="避難場所を読み込み中">
-              <div className="h-8 w-72 max-w-full animate-pulse rounded bg-gray-200" />
-              <div className="h-4 w-96 max-w-full animate-pulse rounded bg-gray-100" />
+            <div className="mt-2 rounded-xl border bg-white px-3 py-3 shadow-sm" aria-label="避難場所を読み込み中">
+              <div className="text-base font-bold text-gray-900">
+                <LoadingSpinner label="避難場所データを読み込んでいます" />
+              </div>
+              <div className="mt-1 text-sm text-gray-600">住所・地図・混雑状況を確認しています。</div>
             </div>
           ) : (
             <>
@@ -403,7 +414,9 @@ export default function ShelterDetailPage() {
         <div className="mt-2 text-xs text-gray-600">避難場所の位置を表示します。</div>
         <div className="mt-3">
           {siteLoading ? (
-            <div className="h-[360px] animate-pulse rounded-xl bg-gray-100" aria-label="地図を読み込み中" />
+            <div className="flex h-[360px] items-center justify-center rounded-xl border bg-gray-50 text-sm font-semibold text-gray-700" aria-label="地図を読み込み中">
+              <LoadingSpinner label="地図を準備しています" />
+            </div>
           ) : dest ? (
             <MapView
               sites={mapSites as any}
@@ -426,10 +439,11 @@ export default function ShelterDetailPage() {
         </div>
 
         {!community && (
-          <div className="mt-3 grid gap-3 md:grid-cols-3" aria-label="混雑状況を読み込み中">
-            <div className="h-24 animate-pulse rounded-xl bg-gray-100" />
-            <div className="h-24 animate-pulse rounded-xl bg-gray-100" />
-            <div className="h-24 animate-pulse rounded-xl bg-gray-100" />
+          <div className="mt-3 rounded-xl border bg-gray-50 px-3 py-4 text-sm text-gray-700" aria-label="混雑状況を読み込み中">
+            <div className="font-semibold">
+              <LoadingSpinner label="共有された混雑状況を読み込んでいます" />
+            </div>
+            <div className="mt-1 text-xs text-gray-600">投票・コメントは取得でき次第ここに表示します。</div>
           </div>
         )}
         {community && (

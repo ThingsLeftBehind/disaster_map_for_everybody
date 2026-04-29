@@ -71,6 +71,11 @@ const PREF_CENTROIDS: Record<string, { name: string; lat: number; lon: number }>
   '47': { name: '沖縄県', lat: 26.21250, lon: 127.68111 },
 };
 
+const JAPAN_BOUNDS: [[number, number], [number, number]] = [
+  [20.0, 122.0],
+  [46.8, 154.0],
+];
+
 function intensityScore(raw: string | null): number {
   const text = String(raw ?? '').replace(/[０-９]/g, (ch) => String('０１２３４５６７８９'.indexOf(ch)));
   const m = text.match(/([0-7])\s*([+\-]|弱|強)?/);
@@ -101,12 +106,16 @@ export default function QuakeMonitorMap({ epicenter, intensityAreas }: Props) {
       <MapContainer
         center={hasEpicenter ? [epicenter!.lat!, epicenter!.lon!] : [37.5, 137.5]}
         zoom={hasEpicenter ? 6 : 5}
+        minZoom={4}
+        maxBounds={JAPAN_BOUNDS}
+        maxBoundsViscosity={0.8}
         scrollWheelZoom={false}
         className="h-[360px] w-full"
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル（白地図）</a>'
+          url="https://cyberjapandata.gsi.go.jp/xyz/blank/{z}/{x}/{y}.png"
+          maxNativeZoom={14}
           eventHandlers={{ tileerror: () => setTileError(true) }}
         />
         {intensityAreas.map((area) => {

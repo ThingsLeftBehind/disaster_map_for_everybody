@@ -164,8 +164,9 @@ export default function MapViewInner({
         <FitBounds bounds={bounds} />
         <MapCenterWatcher onCenterChange={onCenterChange ?? null} />
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>'
+          url="https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png"
+          maxNativeZoom={18}
           eventHandlers={{
             tileerror: () => {
               setTileError((prev) => prev ?? '地図タイルの読み込みに失敗しました。通信環境を確認してください。');

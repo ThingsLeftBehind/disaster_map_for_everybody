@@ -184,6 +184,9 @@ export default function AlertsPage() {
       ? getTokyoContextFromGroup(selectedSubTokyoGroup)
       : tokyoContextFromMuni;
   const tokyoScopeLabel = tokyoContext === 'MAINLAND' ? '東京都' : tokyoContext === 'ISLANDS' ? '東京都（島しょ）' : null;
+  const showTokyoSubAreaSelector = effectiveAreaCode === '130000' && subAreaOptions.length > 0;
+  const tokyoMainlandDefault = subAreaOptions.some((area) => area.code === '130010') ? '130010' : subAreaOptions[0]?.code ?? '';
+  const tokyoSubAreaValue = selectedSubArea ? manualSubAreaCode : tokyoMainlandDefault;
 
   const targetLabel = useCurrent
     ? currentJmaAreaCode
@@ -376,7 +379,7 @@ export default function AlertsPage() {
                   ))}
                 </select>
 
-                {manualPrefCode && subAreaOptions.length > 0 && !useCurrent && (
+                {manualPrefCode && manualPrefCode !== '13' && subAreaOptions.length > 0 && !useCurrent && (
                   <select
                     className="w-full rounded border px-3 py-2 md:w-auto"
                     value={manualSubAreaCode}
@@ -414,9 +417,37 @@ export default function AlertsPage() {
                 </button>
               </div>
 
-              {manualPrefCode && subAreaOptions.length > 0 && !useCurrent && (
+              {manualPrefCode && manualPrefCode !== '13' && subAreaOptions.length > 0 && !useCurrent && (
                 <div className="text-xs text-gray-600">
                   表示単位: 気象庁の一次細分区域。東京都は初期表示を東京地方（本土側）にしています。
+                </div>
+              )}
+
+              {showTokyoSubAreaSelector && (
+                <div className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-3">
+                  <label className="block text-xs font-semibold text-blue-950" htmlFor="tokyo-subarea-select">
+                    東京都の発表区域
+                  </label>
+                  <select
+                    id="tokyo-subarea-select"
+                    className="mt-2 w-full rounded border border-blue-200 bg-white px-3 py-2 text-sm md:w-auto"
+                    value={tokyoSubAreaValue}
+                    onChange={(e) => {
+                      setUseCurrent(false);
+                      setSelectedAreaId(null);
+                      setManualPrefCode('13');
+                      setManualSubAreaCode(e.target.value);
+                    }}
+                  >
+                    {subAreaOptions.map((area) => (
+                      <option key={area.code} value={area.code}>
+                        {area.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="mt-2 text-xs text-blue-900">
+                    初期表示は東京地方です。島しょ部は必要な区域を明示的に選んで表示します。
+                  </div>
                 </div>
               )}
             </div>

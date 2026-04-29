@@ -10,7 +10,6 @@ import ShareMenu from '../components/ShareMenu';
 import { loadLastLocation, reverseGeocodeGsi, saveLastLocation, type Coords } from '../lib/client/location';
 import { buildUrl, formatShelterShareText } from '../lib/client/share';
 import { formatPrefMuniLabel, useAreaName } from '../lib/client/areaName';
-import { getJmaWarningPriority } from '../lib/jma/filters';
 import { DEFAULT_MAIN_LIMIT, MAP_DEFAULT_ZOOM } from '../lib/constants';
 import { getAllSavedShelters, removeShelterFromStorage, saveShelterToStorage, type SavedShelter } from '../lib/client/shelterStorage';
 import { toDisplayFetchStatus } from '../lib/ui/fetchStatusLabel';
@@ -84,15 +83,6 @@ function googleMapsRouteUrl(args: { origin?: Coords | null; dest: Coords }) {
   return u.toString();
 }
 
-function hazardPreview(hazards: any): string {
-  const tags = hazardKeys.filter((k) => Boolean(hazards?.[k]));
-  if (tags.length === 0) return '対応ハザード: 不明';
-  return `対応: ${tags
-    .slice(0, 3)
-    .map((k) => hazardLabels[k])
-    .join('、')}${tags.length > 3 ? '…' : ''}`;
-}
-
 function splitTitle(title: string): { short: string; area: string | null } {
   const t = (title ?? '').trim();
   const m = t.match(/^(.*?)[(（]([^()（）]+)[)）]/);
@@ -100,39 +90,53 @@ function splitTitle(title: string): { short: string; area: string | null } {
   return { short: t, area: null };
 }
 
-const CHECKIN_COOLDOWN_MS = 60_000;
-const LS_CHECKIN_COOLDOWN = 'jp_evac_checkin_cooldown_v1';
+type CheckinStatus = 'SAFE' | 'INJURED' | 'ISOLATED' | 'EVACUATING' | 'COMPLETED';
+type CheckinEntry = {
+  id: string;
+  status: string;
+  shelterId?: string | null;
+  updatedAt: string;
+  lat?: number | null;
+  lon?: number | null;
+  precision?: 'COARSE' | 'PRECISE';
+  comment?: string | null;
+  active?: boolean;
+  archivedAt?: string | null;
+};
 
-function readCheckinCooldown(): number {
-  if (typeof window === 'undefined') return 0;
-  try {
-    const raw = localStorage.getItem(LS_CHECKIN_COOLDOWN);
-    const value = raw ? Number(raw) : 0;
-    return Number.isFinite(value) ? value : 0;
-  } catch {
-    return 0;
-  }
+const CHECKIN_STATUS_OPTIONS: Array<{ key: CheckinStatus; label: string; cls: string }> = [
+  { key: 'SAFE', label: '無事', cls: 'border-emerald-300 bg-emerald-50 text-emerald-900' },
+  { key: 'INJURED', label: '負傷', cls: 'border-amber-300 bg-amber-50 text-amber-900' },
+  { key: 'ISOLATED', label: '孤立', cls: 'border-red-300 bg-red-50 text-red-900' },
+  { key: 'EVACUATING', label: '避難中', cls: 'border-blue-300 bg-blue-50 text-blue-900' },
+  { key: 'COMPLETED', label: '避難完了', cls: 'border-emerald-300 bg-emerald-50 text-emerald-900' },
+];
+
+function getActiveCheckin(checkins: CheckinEntry[] | undefined): CheckinEntry | null {
+  const list = Array.isArray(checkins) ? checkins : [];
+  if (list.length === 0) return null;
+  const hasExplicitActive = list.some((c) => typeof c?.active === 'boolean');
+  if (hasExplicitActive) return list.find((c) => c?.active === true) ?? null;
+  return list[0] ?? null;
 }
 
-function writeCheckinCooldown(untilMs: number) {
+function clearPendingSafetyPinQueue(): void {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(LS_CHECKIN_COOLDOWN, String(untilMs));
+    localStorage.removeItem('jp_evac_pending_checkins_v1');
+    localStorage.removeItem('jp_evac_last_checkin_v1');
   } catch {
-    // ignore
+    // ignore local storage failures
   }
 }
-
-type WarningItem = { id: string; kind: string; status: string | null; source: string };
-
 
 
 export default function MainPage() {
   const router = useRouter();
-  const { device, deviceId, updateDevice, coarseArea, setCoarseArea, checkin, addSavedArea, removeSavedArea } = useDevice();
+  const { device, deviceId, updateDevice, coarseArea, setCoarseArea } = useDevice();
   const lowBandwidth = Boolean(device?.settings?.lowBandwidth || device?.settings?.powerSaving);
   const refreshMs = device?.settings?.powerSaving ? 180_000 : 60_000;
-  const { area: coarseAreaInfo, label: coarseAreaLabel } = useAreaName({ prefCode: coarseArea?.prefCode ?? null, muniCode: coarseArea?.muniCode ?? null });
+  const { label: coarseAreaLabel } = useAreaName({ prefCode: coarseArea?.prefCode ?? null, muniCode: coarseArea?.muniCode ?? null });
   const savedAreaLabel = useMemo(() => {
     const selected = device?.settings?.selectedAreaId
       ? device?.savedAreas?.find((a) => a.id === device.settings.selectedAreaId)
@@ -336,39 +340,133 @@ export default function MainPage() {
   const { data: nationalUrgent } = useSWR('/api/jma/urgent', fetcher, { refreshInterval: refreshMs, dedupingInterval: 10_000 });
   const nationalItems: Array<{ id: string; title: string; updated: string | null }> = nationalUrgent?.items ?? [];
 
-  const myActiveCheckin: any =
-    (device?.checkins ?? []).find((c: any) => c && typeof c === 'object' && (c as any).active !== false) ?? (device?.checkins ?? [])[0] ?? null;
-  const [myCheckinStatus, setMyCheckinStatus] = useState<'SAFE' | 'INJURED' | 'ISOLATED' | 'EVACUATING' | 'COMPLETED' | null>(null);
+  const myActiveCheckin = getActiveCheckin(device?.checkins as CheckinEntry[] | undefined);
+  const [myCheckinStatus, setMyCheckinStatus] = useState<CheckinStatus | null>(null);
   const [myCheckinPrecise, setMyCheckinPrecise] = useState(false);
   const [myCheckinComment, setMyCheckinComment] = useState('');
-  const [checkinCooldownUntil, setCheckinCooldownUntil] = useState(0);
-  const [cooldownRemaining, setCooldownRemaining] = useState(0);
+  const [checkinFormTouched, setCheckinFormTouched] = useState(false);
+  const [safetyPinBusy, setSafetyPinBusy] = useState(false);
+  const [safetyPinFeedback, setSafetyPinFeedback] = useState<{ kind: 'success' | 'error' | 'info'; text: string } | null>(null);
 
   useEffect(() => {
-    const initial = readCheckinCooldown();
-    if (initial) setCheckinCooldownUntil(initial);
-  }, []);
-
-  useEffect(() => {
-    if (!checkinCooldownUntil) {
-      setCooldownRemaining(0);
+    if (checkinFormTouched) return;
+    if (!myActiveCheckin) {
+      setMyCheckinStatus(null);
+      setMyCheckinPrecise(false);
+      setMyCheckinComment('');
       return;
     }
-    const update = () => {
-      const remaining = Math.max(0, checkinCooldownUntil - Date.now());
-      setCooldownRemaining(remaining);
-      if (remaining === 0) {
-        setCheckinCooldownUntil(0);
-        writeCheckinCooldown(0);
-      }
-    };
-    update();
-    const timer = window.setInterval(update, 1000);
-    return () => window.clearInterval(timer);
-  }, [checkinCooldownUntil]);
+    const normalizedStatus = CHECKIN_STATUS_OPTIONS.some((opt) => opt.key === myActiveCheckin.status)
+      ? (myActiveCheckin.status as CheckinStatus)
+      : null;
+    setMyCheckinStatus(normalizedStatus);
+    setMyCheckinPrecise(myActiveCheckin.precision === 'PRECISE');
+    setMyCheckinComment(typeof myActiveCheckin.comment === 'string' ? myActiveCheckin.comment : '');
+  }, [
+    checkinFormTouched,
+    myActiveCheckin?.comment,
+    myActiveCheckin?.id,
+    myActiveCheckin?.precision,
+    myActiveCheckin?.status,
+    myActiveCheckin?.updatedAt,
+  ]);
 
-  const checkinCooldownActive = cooldownRemaining > 0;
-  const cooldownLabel = checkinCooldownActive ? `次の更新まで ${Math.ceil(cooldownRemaining / 1000)}秒` : null;
+  const saveSafetyPin = async () => {
+    setSafetyPinFeedback(null);
+    if (!coords) {
+      setSafetyPinFeedback({ kind: 'error', text: '位置情報がありません。「現在地を取得」してから保存してください。' });
+      return;
+    }
+    if (!deviceId) {
+      setSafetyPinFeedback({ kind: 'error', text: '端末IDを確認できません。再読み込みしてから保存してください。' });
+      return;
+    }
+    if (!myCheckinStatus) {
+      setSafetyPinFeedback({ kind: 'error', text: '状態を選んでください。' });
+      return;
+    }
+
+    setSafetyPinBusy(true);
+    try {
+      clearPendingSafetyPinQueue();
+      const res = await fetch('/api/store/checkin', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          deviceId,
+          status: myCheckinStatus,
+          shelterId: null,
+          lat: coords.lat,
+          lon: coords.lon,
+          precision: myCheckinPrecise ? 'PRECISE' : 'COARSE',
+          comment: myCheckinComment.trim() || null,
+        }),
+      });
+      const payload = await res.json().catch(() => null);
+      if (!res.ok || payload?.ok === false || !payload?.device) {
+        const errorText =
+          payload?.errorCode === 'DUPLICATE'
+            ? '同じ内容の安否ピンはすでに保存されています。変更してから保存してください。'
+            : '安否ピンを保存できませんでした。通信状態を確認してもう一度お試しください。';
+        setSafetyPinFeedback({ kind: 'error', text: errorText });
+        return;
+      }
+
+      await updateDevice({ checkins: payload.device.checkins } as any);
+      clearPendingSafetyPinQueue();
+      setShowSafetyPins(true);
+      if (showSafetyPins) await mutateSafetyPins();
+      setCheckinFormTouched(false);
+      const message = myActiveCheckin ? '安否ピンを更新しました。' : '安否ピンを保存しました。';
+      setSafetyPinFeedback({ kind: 'success', text: message });
+      setToast(message);
+    } catch {
+      setSafetyPinFeedback({ kind: 'error', text: '安否ピンを保存できませんでした。通信状態を確認してもう一度お試しください。' });
+    } finally {
+      setSafetyPinBusy(false);
+    }
+  };
+
+  const deleteSafetyPin = async () => {
+    setSafetyPinFeedback(null);
+    if (!deviceId) {
+      setSafetyPinFeedback({ kind: 'error', text: '端末IDを確認できません。再読み込みしてから削除してください。' });
+      return;
+    }
+    if (!myActiveCheckin) {
+      setSafetyPinFeedback({ kind: 'info', text: '削除できる安否ピンはありません。' });
+      return;
+    }
+
+    setSafetyPinBusy(true);
+    try {
+      clearPendingSafetyPinQueue();
+      const res = await fetch('/api/store/checkin', {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ deviceId }),
+      });
+      const payload = await res.json().catch(() => null);
+      if (!res.ok || payload?.ok === false || !payload?.device) {
+        setSafetyPinFeedback({ kind: 'error', text: '安否ピンを削除できませんでした。通信状態を確認してもう一度お試しください。' });
+        return;
+      }
+
+      await updateDevice({ checkins: payload.device.checkins } as any);
+      clearPendingSafetyPinQueue();
+      if (showSafetyPins) await mutateSafetyPins();
+      setMyCheckinStatus(null);
+      setMyCheckinComment('');
+      setMyCheckinPrecise(false);
+      setCheckinFormTouched(false);
+      setSafetyPinFeedback({ kind: 'success', text: '安否ピンを削除しました。' });
+      setToast('安否ピンを削除しました');
+    } catch {
+      setSafetyPinFeedback({ kind: 'error', text: '安否ピンを削除できませんでした。通信状態を確認してもう一度お試しください。' });
+    } finally {
+      setSafetyPinBusy(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -406,7 +504,7 @@ export default function MainPage() {
             <MapView
               sites={sites as any}
               center={center}
-              initialZoom={MAP_DEFAULT_ZOOM}
+              initialZoom={Math.min(MAP_DEFAULT_ZOOM + 2, 17)}
               recenterSignal={recenterSignal}
               origin={coords}
               fromAreaLabel={shareFromArea}
@@ -522,8 +620,22 @@ export default function MainPage() {
         </div>
 
         <div className="mt-4 rounded-2xl border bg-white p-4">
-          <div className="text-sm font-bold text-gray-900">
-            自分の安否ピンを更新（手動）
+          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+            <div>
+              <div className="text-sm font-bold text-gray-900">
+                自分の安否ピン
+              </div>
+              <div className="mt-1 text-xs text-gray-600">
+                {myActiveCheckin
+                  ? `現在のピン: ${CHECKIN_STATUS_OPTIONS.find((opt) => opt.key === myActiveCheckin.status)?.label ?? myActiveCheckin.status} / 更新: ${formatAt(myActiveCheckin.updatedAt)}`
+                  : 'まだ安否ピンは保存されていません。'}
+              </div>
+            </div>
+            {myActiveCheckin && (
+              <span className="w-fit rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">
+                保存済み
+              </span>
+            )}
           </div>
 
           <div className="mt-3 space-y-4">
@@ -534,7 +646,15 @@ export default function MainPage() {
                 {coords ? (myCheckinPrecise ? '（高精度）' : '（概略）') : ''}
               </div>
               <label className="mt-2 flex items-start gap-2 text-sm text-gray-800">
-                <input type="checkbox" checked={myCheckinPrecise} onChange={(e) => setMyCheckinPrecise(e.target.checked)} />
+                <input
+                  type="checkbox"
+                  checked={myCheckinPrecise}
+                  onChange={(e) => {
+                    setMyCheckinPrecise(e.target.checked);
+                    setCheckinFormTouched(true);
+                    setSafetyPinFeedback(null);
+                  }}
+                />
                 <span>
                   精密な位置を保存する（任意）
                   <span className="ml-2 text-xs text-gray-600">位置が特定されやすくなるため注意</span>
@@ -545,13 +665,7 @@ export default function MainPage() {
             <div>
               <div className="text-xs font-semibold text-gray-700">2) 状態を選ぶ</div>
               <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-5">
-                {[
-                  { key: 'SAFE', label: '無事', cls: 'border-emerald-300 bg-emerald-50 text-emerald-900' },
-                  { key: 'INJURED', label: '負傷', cls: 'border-amber-300 bg-amber-50 text-amber-900' },
-                  { key: 'ISOLATED', label: '孤立', cls: 'border-red-300 bg-red-50 text-red-900' },
-                  { key: 'EVACUATING', label: '避難中', cls: 'border-blue-300 bg-blue-50 text-blue-900' },
-                  { key: 'COMPLETED', label: '避難完了', cls: 'border-emerald-300 bg-emerald-50 text-emerald-900' },
-                ].map((s) => (
+                {CHECKIN_STATUS_OPTIONS.map((s) => (
                   <button
                     key={s.key}
                     className={classNames(
@@ -559,7 +673,11 @@ export default function MainPage() {
                       myCheckinStatus === s.key ? s.cls : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50',
                       myCheckinStatus === s.key ? 'ring-2 ring-offset-1 ring-blue-500 shadow-md transform scale-105' : 'ring-transparent opacity-80 hover:opacity-100'
                     )}
-                    onClick={() => setMyCheckinStatus(s.key as any)}
+                    onClick={() => {
+                      setMyCheckinStatus(s.key);
+                      setCheckinFormTouched(true);
+                      setSafetyPinFeedback(null);
+                    }}
                   >
                     {s.label}
                   </button>
@@ -574,67 +692,45 @@ export default function MainPage() {
                 placeholder="無事です / 水と食料が不足しています など"
                 maxLength={100}
                 value={myCheckinComment}
-                onChange={(e) => setMyCheckinComment(e.target.value)}
+                onChange={(e) => {
+                  setMyCheckinComment(e.target.value);
+                  setCheckinFormTouched(true);
+                  setSafetyPinFeedback(null);
+                }}
               />
             </div>
+
+            {safetyPinFeedback && (
+              <div
+                className={classNames(
+                  'rounded-xl border px-3 py-2 text-sm',
+                  safetyPinFeedback.kind === 'success'
+                    ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                    : safetyPinFeedback.kind === 'error'
+                      ? 'bg-red-50 text-red-900 border-red-200'
+                      : 'bg-gray-50 text-gray-800 border-gray-200'
+                )}
+              >
+                {safetyPinFeedback.text}
+              </div>
+            )}
 
             <div className="flex items-center gap-3 border-t pt-3">
               <button
                 className="flex-1 rounded-xl bg-gray-900 px-4 py-3 text-sm font-extrabold text-white shadow hover:bg-black disabled:opacity-60"
-                disabled={checkinCooldownActive}
-                onClick={async () => {
-                  if (!coords) return alert('位置情報がありません。「現在地を取得」してください。');
-                  if (!deviceId) return alert('端末IDが生成されていません。再読み込みしてください。');
-                  if (!myCheckinStatus) return alert('状態を選択してください');
-                  await checkin({
-                    coords: { lat: coords.lat, lon: coords.lon },
-                    status: myCheckinStatus,
-                    comment: myCheckinComment.trim() || null,
-                    precision: myCheckinPrecise ? 'PRECISE' : 'COARSE',
-                  });
-                  if (showSafetyPins) await mutateSafetyPins();
-                  const nextCooldown = Date.now() + CHECKIN_COOLDOWN_MS;
-                  setCheckinCooldownUntil(nextCooldown);
-                  writeCheckinCooldown(nextCooldown);
-                  setToast('安否ピンを更新しました');
-                }}
+                disabled={safetyPinBusy}
+                onClick={saveSafetyPin}
               >
-                ピンを更新
+                {safetyPinBusy ? '保存中...' : myActiveCheckin ? '変更を保存' : 'ピンを保存'}
               </button>
               <button
                 className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-800 ring-1 ring-gray-200 hover:bg-gray-50 disabled:opacity-60"
-                disabled={checkinCooldownActive}
-                onClick={async () => {
-                  const nowIso = new Date().toISOString();
-                  if (device?.checkins?.length) {
-                    const archived = device.checkins.map((c) => ({
-                      ...c,
-                      active: false,
-                      archivedAt: c.archivedAt ?? c.updatedAt ?? nowIso,
-                    }));
-                    await updateDevice({ checkins: archived } as any);
-                  }
-                  if (deviceId) {
-                    await fetch('/api/store/checkin', {
-                      method: 'DELETE',
-                      headers: { 'content-type': 'application/json' },
-                      body: JSON.stringify({ deviceId }),
-                    }).catch(() => null);
-                  }
-                  setMyCheckinStatus(null);
-                  setMyCheckinComment('');
-                  setMyCheckinPrecise(false);
-                  if (showSafetyPins) await mutateSafetyPins();
-                  const nextCooldown = Date.now() + CHECKIN_COOLDOWN_MS;
-                  setCheckinCooldownUntil(nextCooldown);
-                  writeCheckinCooldown(nextCooldown);
-                  setToast('安否ピンを解除しました');
-                }}
+                disabled={safetyPinBusy || !myActiveCheckin}
+                onClick={deleteSafetyPin}
               >
-                解除
+                削除
               </button>
             </div>
-            {cooldownLabel && <div className="text-xs text-gray-600">{cooldownLabel}</div>}
           </div>
         </div>
 

@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getAdminState, getShelterCommunitySnapshot } from 'lib/store/adapter';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  res.setHeader('Cache-Control', 'no-store');
   try {
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 

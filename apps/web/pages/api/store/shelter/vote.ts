@@ -14,8 +14,15 @@ const WRITE_RATE_LIMIT = { keyPrefix: 'write:shelter_vote', limit: 30, windowMs:
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
+    res.setHeader('Cache-Control', 'no-store');
     if (req.method === 'DELETE') {
       if (!assertSameOrigin(req)) return jsonError(res, 403, { ok: false, error: 'forbidden', errorCode: 'ORIGIN_BLOCKED' });
+
+      const rl = rateLimit(req, WRITE_RATE_LIMIT);
+      if (!rl.ok) {
+        res.setHeader('Retry-After', String(rl.retryAfterSec));
+        return jsonError(res, 429, { ok: false, error: 'rate_limited', errorCode: 'RATE_LIMITED' });
+      }
 
       // We reuse ShelterVoteBodySchema for validation of shelterId/deviceId,
       // but we don't need 'value' field. Or we can just read query/body manually.
@@ -67,6 +74,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return jsonOk(res, { ok: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return jsonOk(res, { ok: false, error: 'internal_error', errorCode: 'INTERNAL_ERROR', lastError: message });
+    return jsonError(res, 500, { ok: false, error: 'internal_error', errorCode: 'INTERNAL_ERROR', lastError: message });
   }
 }

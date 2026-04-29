@@ -7,6 +7,7 @@ function first(value: string | string[] | undefined): string | undefined {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const includeHistory = first(req.query.includeHistory) === '1';

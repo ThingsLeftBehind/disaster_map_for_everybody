@@ -104,10 +104,15 @@ function parseCoordinateCode(raw: string | null | undefined): { lat: number | nu
   const lat = Number(m[1]);
   const lon = Number(m[2]);
   const depthRaw = m[3] ? Number(m[3]) : NaN;
+  const depthKm = Number.isFinite(depthRaw)
+    ? Math.abs(depthRaw) >= 1000
+      ? Math.abs(depthRaw) / 1000
+      : Math.abs(depthRaw)
+    : NaN;
   return {
     lat: Number.isFinite(lat) ? lat : null,
     lon: Number.isFinite(lon) ? lon : null,
-    depth: Number.isFinite(depthRaw) ? `${Math.abs(depthRaw).toFixed(0)}km` : null,
+    depth: Number.isFinite(depthKm) ? `${Math.round(depthKm)}km` : null,
   };
 }
 

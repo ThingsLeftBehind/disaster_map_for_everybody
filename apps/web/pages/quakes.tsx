@@ -2,7 +2,6 @@ import { Seo } from '../components/Seo';
 import useSWR from 'swr';
 import { useMemo, useState } from 'react';
 import { useDevice } from '../components/device/DeviceProvider';
-import { DataFetchDetails } from '../components/DataFetchDetails';
 import dynamic from 'next/dynamic';
 
 const QuakeMonitorMap = dynamic(() => import('../components/QuakeMonitorMap'), {
@@ -70,6 +69,17 @@ function parseMagnitude(magnitude: string | null): number | null {
   return n;
 }
 
+function formatDepth(depth: string | null | undefined): string {
+  const text = normalizeFullWidthDigits(String(depth ?? '').trim());
+  if (!text) return '不明';
+  const match = text.match(/(\d+(?:\.\d+)?)/);
+  if (!match) return text;
+  const km = Number(match[1]);
+  if (!Number.isFinite(km)) return text;
+  const normalizedKm = km >= 1000 ? km / 1000 : km;
+  return `${Math.round(normalizedKm)}km`;
+}
+
 function severityTone(args: { intensityScore: number | null; magnitude: number | null }): 'red' | 'yellow' | 'blue' | 'purple' | 'neutral' {
   if (args.intensityScore !== null) {
     if (args.intensityScore >= 6) return 'red';
@@ -87,45 +97,52 @@ function severityTone(args: { intensityScore: number | null; magnitude: number |
   return 'neutral';
 }
 
-function toneClasses(tone: ReturnType<typeof severityTone>): string {
-  switch (tone) {
-    case 'purple':
-      return 'border-purple-200 bg-purple-50 text-purple-900';
-    case 'red':
-      return 'border-red-200 bg-red-50 text-red-900';
-    case 'yellow':
-      return 'border-amber-200 bg-amber-50 text-amber-900';
-    case 'blue':
-      return 'border-blue-200 bg-blue-50 text-blue-900';
-    default:
-      return 'border-gray-200 bg-gray-50 text-gray-900';
+function intensityVisual(score: number | null | undefined): { card: string; badge: string; dot: string; urgent: boolean } {
+  if (score !== null && typeof score === 'number' && score >= 6.5) {
+    return { card: 'border-purple-300 bg-purple-50 text-purple-950', badge: 'bg-purple-900 text-white', dot: 'bg-purple-900', urgent: true };
   }
+  if (score !== null && typeof score === 'number' && score >= 6) {
+    return { card: 'border-red-300 bg-red-50 text-red-950', badge: 'bg-red-700 text-white', dot: 'bg-red-700', urgent: true };
+  }
+  if (score !== null && typeof score === 'number' && score >= 5.5) {
+    return { card: 'border-orange-300 bg-orange-50 text-orange-950', badge: 'bg-orange-600 text-white', dot: 'bg-orange-600', urgent: true };
+  }
+  if (score !== null && typeof score === 'number' && score >= 5) {
+    return { card: 'border-orange-200 bg-orange-50 text-orange-950', badge: 'bg-orange-400 text-gray-950', dot: 'bg-orange-400', urgent: true };
+  }
+  if (score !== null && typeof score === 'number' && score >= 4) {
+    return { card: 'border-yellow-300 bg-yellow-50 text-yellow-950', badge: 'bg-yellow-400 text-gray-950', dot: 'bg-yellow-400', urgent: true };
+  }
+  if (score !== null && typeof score === 'number' && score >= 3) {
+    return { card: 'border-lime-200 bg-lime-50 text-lime-950', badge: 'bg-lime-500 text-gray-950', dot: 'bg-lime-500', urgent: false };
+  }
+  return { card: 'border-gray-200 bg-gray-50 text-gray-900', badge: 'bg-gray-200 text-gray-900', dot: 'bg-green-500', urgent: false };
 }
 
-function sourceHealth(updatedAt: string | null | undefined, fetchStatus: string | null | undefined): 'OK' | 'DEGRADED' | 'DOWN' | 'PENDING' {
-  if (!fetchStatus) return 'PENDING';
-  if (fetchStatus === 'DOWN') return 'DOWN';
-  if (!updatedAt) return 'DOWN';
+function magnitudeVisual(magnitude: number | null): { card: string; badge: string; dot: string; urgent: boolean } {
+  if (magnitude === null) return intensityVisual(null);
+  const tone = severityTone({ intensityScore: null, magnitude });
+  if (tone === 'purple') return { card: 'border-purple-300 bg-purple-50 text-purple-950', badge: 'bg-purple-900 text-white', dot: 'bg-purple-900', urgent: true };
+  if (tone === 'red') return { card: 'border-red-300 bg-red-50 text-red-950', badge: 'bg-red-700 text-white', dot: 'bg-red-700', urgent: true };
+  if (tone === 'yellow') return { card: 'border-orange-200 bg-orange-50 text-orange-950', badge: 'bg-orange-400 text-gray-950', dot: 'bg-orange-400', urgent: true };
+  if (tone === 'blue') return { card: 'border-yellow-300 bg-yellow-50 text-yellow-950', badge: 'bg-yellow-400 text-gray-950', dot: 'bg-yellow-400', urgent: true };
+  return intensityVisual(null);
+}
+
+function sourceFreshness(updatedAt: string | null | undefined, fetchStatus: string | null | undefined): { label: string; className: string; detail: string } {
+  if (!fetchStatus) return { label: '確認中', className: 'bg-gray-50 text-gray-800 ring-gray-200', detail: '取得状態を確認中' };
+  if (fetchStatus === 'DOWN') return { label: '取得遅延', className: 'bg-red-50 text-red-800 ring-red-200', detail: '最新取得に失敗しています' };
+  if (!updatedAt) return { label: '確認中', className: 'bg-gray-50 text-gray-800 ring-gray-200', detail: '更新時刻を確認中' };
   const t = Date.parse(updatedAt);
-  if (Number.isNaN(t)) return 'DOWN';
+  if (Number.isNaN(t)) return { label: '取得遅延', className: 'bg-red-50 text-red-800 ring-red-200', detail: '更新時刻を判定できません' };
   const ageMs = Date.now() - t;
-  if (fetchStatus === 'OK' && ageMs <= 10 * 60_000) return 'OK';
-  if (ageMs <= 60 * 60_000) return 'DEGRADED';
-  return 'DOWN';
-}
-
-function healthLabel(status: 'OK' | 'DEGRADED' | 'DOWN' | 'PENDING'): string {
-  if (status === 'OK') return 'Online';
-  if (status === 'DEGRADED') return 'Delayed';
-  if (status === 'PENDING') return 'Checking';
-  return 'Outdated';
-}
-
-function healthClass(status: 'OK' | 'DEGRADED' | 'DOWN' | 'PENDING'): string {
-  if (status === 'OK') return 'bg-emerald-50 text-emerald-800 ring-emerald-200';
-  if (status === 'DEGRADED') return 'bg-amber-50 text-amber-900 ring-amber-200';
-  if (status === 'PENDING') return 'bg-gray-50 text-gray-800 ring-gray-200';
-  return 'bg-red-50 text-red-800 ring-red-200';
+  if (fetchStatus === 'OK' && ageMs <= 10 * 60_000) {
+    return { label: '最新', className: 'bg-emerald-50 text-emerald-800 ring-emerald-200', detail: '10分以内に更新' };
+  }
+  if (ageMs <= 60 * 60_000) {
+    return { label: 'やや遅延', className: 'bg-amber-50 text-amber-900 ring-amber-200', detail: '60分以内の取得データ' };
+  }
+  return { label: '取得遅延', className: 'bg-red-50 text-red-800 ring-red-200', detail: '1時間以上更新がありません' };
 }
 
 function tsunamiPanel(items: Array<{ title: string; tsunami?: string | null; time: string | null; magnitude: string | null; maxIntensity: string | null }>) {
@@ -167,8 +184,6 @@ export default function QuakesPage() {
     const allowed = ['震源・震度情報', '顕著な地震の震源要素更新のお知らせ'];
     return items.filter((q) => allowed.some((a) => String(q.title ?? '').includes(a)));
   }, [items]);
-
-  const lastErrorLabel = data?.lastError ? '取得エラー' : 'なし';
 
   const strongPicks = useMemo(() => {
     const uniqueRecent = Array.from(new Map(recentItems.map((q) => [q.id, q])).values());
@@ -215,8 +230,12 @@ export default function QuakesPage() {
   };
   const latestEvent = recentItems[0] ?? items[0] ?? null;
   const latestIntensity = latestEvent ? parseMaxIntensityRaw(latestEvent.maxIntensity) ?? parseMaxIntensityFromTitle(latestEvent.title) : null;
-  const quakeHealth = sourceHealth(data?.updatedAt, data?.fetchStatus);
+  const freshness = sourceFreshness(data?.updatedAt, data?.fetchStatus);
   const tsunami = data ? tsunamiPanel(items) : { state: 'checking', label: '津波情報を確認中', updatedAt: null };
+  const topIntensityAreas = (latestEvent?.intensityAreas ?? [])
+    .slice()
+    .sort((a, b) => (parseMaxIntensityRaw(b.maxIntensity)?.score ?? 0) - (parseMaxIntensityRaw(a.maxIntensity)?.score ?? 0))
+    .slice(0, 6);
 
   return (
     <div className="space-y-6">
@@ -230,9 +249,6 @@ export default function QuakesPage() {
           <h1 className="text-2xl font-bold">地震情報</h1>
           <div className="mt-1 text-sm text-gray-600">気象庁の地震情報をもとに、震源・震度・津波確認状況を表示します。</div>
         </div>
-        <span className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-bold ring-1 ${healthClass(quakeHealth)}`}>
-          JMA {healthLabel(quakeHealth)}
-        </span>
       </div>
 
       <section className="rounded-lg bg-white p-5 shadow">
@@ -241,7 +257,10 @@ export default function QuakesPage() {
             <h2 className="text-lg font-semibold">リアルタイム地震モニタ</h2>
             <div className="mt-1 text-xs text-gray-600">最終取得: {formatUpdatedAt(data?.updatedAt)} / 情報源: 気象庁 地震情報</div>
           </div>
-          <div className="text-xs text-gray-600">自動更新: {Math.round(refreshMs / 1000)}秒ごと</div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`rounded-full px-3 py-1 text-xs font-bold ring-1 ${freshness.className}`}>{freshness.label}</span>
+            <span className="text-xs text-gray-600">自動更新: {Math.round(refreshMs / 1000)}秒ごと</span>
+          </div>
         </div>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
@@ -269,11 +288,27 @@ export default function QuakesPage() {
                     <Fact label="発生" value={formatEventTime(latestEvent.time)} />
                     <Fact label="最大震度" value={latestIntensity?.label ?? latestEvent.maxIntensity ?? '不明'} />
                     <Fact label="M" value={latestEvent.magnitude ?? '不明'} />
-                    <Fact label="深さ" value={latestEvent.depth ?? '不明'} />
+                    <Fact label="深さ" value={formatDepth(latestEvent.depth)} />
                   </div>
                   <div className="rounded-lg bg-white px-3 py-2 text-xs text-gray-700 ring-1 ring-gray-200">
                     状態: {latestEvent.title}
                   </div>
+                  {topIntensityAreas.length > 0 && (
+                    <div className="rounded-lg bg-white px-3 py-2 ring-1 ring-gray-200">
+                      <div className="text-[11px] font-semibold text-gray-600">観測された揺れ（上位）</div>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {topIntensityAreas.map((area) => {
+                          const intensity = parseMaxIntensityRaw(area.maxIntensity);
+                          const visual = intensityVisual(intensity?.score ?? null);
+                          return (
+                            <span key={area.code} className={`rounded-full px-2 py-1 text-[11px] font-bold ${visual.badge}`}>
+                              {area.code}: 震度{intensity?.label ?? area.maxIntensity ?? '不明'}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="mt-2 rounded-lg bg-white px-3 py-3 text-sm text-gray-600 ring-1 ring-gray-200">
@@ -301,17 +336,28 @@ export default function QuakesPage() {
             </div>
 
             <div className="rounded-xl border bg-gray-50 p-4">
-              <div className="text-xs font-semibold text-gray-600">外部参考</div>
-              <a href="http://www.kmoni.bosai.go.jp/" target="_blank" rel="noreferrer" className="mt-2 inline-flex rounded-lg bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-100">
-                防災科研 強震モニタ
+              <div className="text-xs font-semibold text-gray-600">監視状態</div>
+              <div className="mt-2 text-sm font-bold text-gray-900">{freshness.detail}</div>
+              <div className="mt-1 text-xs text-gray-700">
+                このページは気象庁発表の震源・最大震度・観測地域を表示します。波形や地震波の実測アニメーションは、許可された配信データがないため表示していません。
+              </div>
+              <a href="http://www.kmoni.bosai.go.jp/" target="_blank" rel="noreferrer" className="mt-3 inline-flex rounded-lg bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-100">
+                防災科研 強震モニタを別画面で開く
               </a>
             </div>
           </div>
         </div>
 
         <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-gray-700">
-          {['1-2', '3', '4', '5弱', '5強', '6弱以上'].map((label) => (
-            <span key={label} className="rounded-full bg-gray-50 px-2 py-1 ring-1 ring-gray-200">震度 {label}</span>
+          {[
+            { label: '1-2', cls: 'bg-green-500 text-white' },
+            { label: '3', cls: 'bg-lime-500 text-gray-950' },
+            { label: '4', cls: 'bg-yellow-400 text-gray-950' },
+            { label: '5弱', cls: 'bg-orange-400 text-gray-950' },
+            { label: '5強', cls: 'bg-orange-600 text-white' },
+            { label: '6弱以上', cls: 'bg-red-700 text-white' },
+          ].map((item) => (
+            <span key={item.label} className={`rounded-full px-2 py-1 font-bold ring-1 ring-gray-200 ${item.cls}`}>震度 {item.label}</span>
           ))}
         </div>
       </section>
@@ -328,15 +374,18 @@ export default function QuakesPage() {
         )}
         <div className="mt-3 grid gap-2 md:grid-cols-3">
           {displayStrong.slice(0, strongVisibleCount).map((v) => {
-            const tone = severityTone({ intensityScore: v.intensity?.score ?? null, magnitude: null });
+            const visual = intensityVisual(v.intensity?.score ?? null);
             const summary = v.intensity ? `最大震度${v.intensity.label}` : '最大震度不明';
             return (
-              <div key={v.q.id} className={`rounded border px-3 py-3 ${toneClasses(tone)}`}>
+              <div key={v.q.id} className={`rounded border px-3 py-3 ${visual.card}`}>
                 <div className="flex items-start justify-between gap-2">
-                  <div className="text-sm font-bold">{summary}</div>
+                  <div className={`rounded-full px-2 py-1 text-xs font-extrabold ${visual.badge}`}>{summary}</div>
                   <span className="rounded bg-white/70 px-2 py-1 text-[11px] font-semibold">{formatEventTime(v.rawTime)}</span>
                 </div>
                 <div className="mt-2 text-sm font-semibold text-gray-900 break-words">{v.q.epicenter ?? v.q.title}</div>
+                <div className="mt-1 text-xs text-gray-700">
+                  深さ: {formatDepth(v.q.depth)} / M: {v.q.magnitude ?? '不明'}
+                </div>
                 {v.q.link && (
                   <div className="mt-2">
                     <a href={v.q.link} target="_blank" rel="noreferrer" className="text-xs text-blue-700 hover:underline">
@@ -371,15 +420,26 @@ export default function QuakesPage() {
           {visibleRecentItems.map((q) => {
             const intensity = parseMaxIntensityRaw(q.maxIntensity) ?? parseMaxIntensityFromTitle(q.title);
             const magnitudeNum = parseMagnitude(q.magnitude);
-            const tone = severityTone({ intensityScore: intensity?.score ?? null, magnitude: magnitudeNum });
+            const visual = intensity ? intensityVisual(intensity.score) : magnitudeVisual(magnitudeNum);
             return (
-              <li key={q.id} className={`rounded border px-3 py-2 text-sm ${toneClasses(tone)}`}>
-                <div className="font-semibold break-words">{q.title}</div>
+              <li key={q.id} className={`rounded border px-3 py-2 text-sm ${visual.card}`}>
+                <div className="flex items-start gap-2">
+                  <span className={`mt-0.5 h-3 w-3 flex-shrink-0 rounded-full ${visual.dot}`} aria-hidden="true" />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold break-words">{q.title}</div>
+                    {visual.urgent && (
+                      <div className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-extrabold ${visual.badge}`}>
+                        震度{intensity?.label ?? '不明'}
+                      </div>
+                    )}
+                  </div>
+                </div>
                 <div className="mt-1 flex flex-wrap gap-2 text-xs">
                   <span>時刻: {formatEventTime(q.time)}</span>
                   <span>震源: {q.epicenter ?? '不明'}</span>
                   <span>最大震度: {intensity?.label ?? '不明'}</span>
                   <span>M: {q.magnitude ?? '不明'}</span>
+                  <span>深さ: {formatDepth(q.depth)}</span>
                 </div>
                 {q.link && (
                   <div className="mt-2">
@@ -405,13 +465,6 @@ export default function QuakesPage() {
       </section>
 
       <IntensityGuide />
-
-      <DataFetchDetails
-        status={data?.fetchStatus ?? 'PENDING'}
-        updatedAt={data?.updatedAt}
-        fetchStatus={data?.fetchStatus ?? 'PENDING'}
-        error={data?.lastError}
-      />
     </div>
   );
 }
