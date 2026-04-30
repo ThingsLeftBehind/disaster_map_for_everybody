@@ -363,6 +363,7 @@ export default function AlertsPage() {
               <div className="flex flex-col gap-2 md:flex-row md:items-center">
                 <select
                   className="w-full rounded border px-3 py-2 md:w-auto"
+                  aria-label="都道府県を選択"
                   value={manualPrefCode}
                   onChange={(e) => {
                     setUseCurrent(false);

@@ -61,6 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return jsonOk(res, { device: result.value });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return jsonError(res, 500, { ok: false, error: 'internal_error', errorCode: 'INTERNAL_ERROR', lastError: message, device: null });
+    console.warn('[store:checkin] unhandled_error', { error: message });
+    return jsonError(res, 500, { ok: false, error: 'internal_error', errorCode: 'INTERNAL_ERROR', device: null });
   }
 }

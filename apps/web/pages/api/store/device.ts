@@ -14,6 +14,7 @@ const READ_RATE_LIMIT = { keyPrefix: 'read:device', limit: 120, windowMs: 60_000
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
+    res.setHeader('Cache-Control', 'no-store');
     if (req.method === 'GET') {
       if (!assertSameOrigin(req)) return jsonError(res, 403, { ok: false, error: 'forbidden', errorCode: 'ORIGIN_BLOCKED' });
       const rl = rateLimit(req, READ_RATE_LIMIT);
@@ -53,6 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return jsonError(res, 405, { ok: false, error: 'method_not_allowed', errorCode: 'METHOD_NOT_ALLOWED' });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return jsonOk(res, { ok: false, error: 'internal_error', errorCode: 'INTERNAL_ERROR', lastError: message, device: null });
+    console.warn('[store:device] unhandled_error', { error: message });
+    return jsonError(res, 500, { ok: false, error: 'internal_error', errorCode: 'INTERNAL_ERROR', device: null });
   }
 }

@@ -264,7 +264,13 @@ export function DeviceProvider({ children }: { children: React.ReactNode }) {
       const serverDevice = data?.device as DeviceState | undefined;
       if (!serverDevice) return;
       setDevice((current) => {
-        const merged = current ? { ...serverDevice, ...current, settings: { ...serverDevice.settings, ...current.settings } } : serverDevice;
+        const merged = current
+          ? {
+              ...current,
+              ...serverDevice,
+              settings: { ...serverDevice.settings, ...current.settings },
+            }
+          : serverDevice;
         persistLocal(merged);
         return merged;
       });

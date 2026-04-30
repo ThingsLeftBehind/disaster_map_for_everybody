@@ -2,6 +2,7 @@ import { Seo } from '../components/Seo';
 import useSWR from 'swr';
 import { useMemo, useState } from 'react';
 import { useDevice } from '../components/device/DeviceProvider';
+import { formatQuakeDepth } from '../lib/jma/depth';
 import dynamic from 'next/dynamic';
 
 const QuakeMonitorMap = dynamic(() => import('../components/QuakeMonitorMap'), {
@@ -69,17 +70,6 @@ function parseMagnitude(magnitude: string | null): number | null {
   return n;
 }
 
-function formatDepth(depth: string | null | undefined): string {
-  const text = normalizeFullWidthDigits(String(depth ?? '').trim());
-  if (!text) return '不明';
-  const match = text.match(/(\d+(?:\.\d+)?)/);
-  if (!match) return text;
-  const km = Number(match[1]);
-  if (!Number.isFinite(km)) return text;
-  const normalizedKm = km >= 1000 ? km / 1000 : km;
-  return `${Math.round(normalizedKm)}km`;
-}
-
 function severityTone(args: { intensityScore: number | null; magnitude: number | null }): 'red' | 'yellow' | 'blue' | 'purple' | 'neutral' {
   if (args.intensityScore !== null) {
     if (args.intensityScore >= 6) return 'red';
@@ -97,26 +87,36 @@ function severityTone(args: { intensityScore: number | null; magnitude: number |
   return 'neutral';
 }
 
+type IntensityVisual = { guideColor: string; card: string; badge: string; dot: string; urgent: boolean };
+
+const INTENSITY_VISUALS = {
+  low: { guideColor: 'bg-green-500', card: 'border-gray-200 bg-gray-50 text-gray-900', badge: 'bg-gray-200 text-gray-900', dot: 'bg-green-500', urgent: false },
+  three: { guideColor: 'bg-lime-500', card: 'border-lime-200 bg-lime-50 text-lime-950', badge: 'bg-lime-500 text-gray-950', dot: 'bg-lime-500', urgent: false },
+  four: { guideColor: 'bg-yellow-400', card: 'border-yellow-300 bg-yellow-50 text-yellow-950', badge: 'bg-yellow-400 text-gray-950', dot: 'bg-yellow-400', urgent: true },
+  fiveLower: { guideColor: 'bg-orange-400', card: 'border-orange-200 bg-orange-50 text-orange-950', badge: 'bg-orange-400 text-gray-950', dot: 'bg-orange-400', urgent: true },
+  fiveUpper: { guideColor: 'bg-orange-600', card: 'border-orange-300 bg-orange-50 text-orange-950', badge: 'bg-orange-600 text-white', dot: 'bg-orange-600', urgent: true },
+  sixLower: { guideColor: 'bg-red-500', card: 'border-red-300 bg-red-50 text-red-950', badge: 'bg-red-700 text-white', dot: 'bg-red-700', urgent: true },
+  sixUpper: { guideColor: 'bg-red-700', card: 'border-red-300 bg-red-50 text-red-950', badge: 'bg-red-700 text-white', dot: 'bg-red-700', urgent: true },
+  seven: { guideColor: 'bg-purple-900', card: 'border-purple-300 bg-purple-50 text-purple-950', badge: 'bg-purple-900 text-white', dot: 'bg-purple-900', urgent: true },
+} satisfies Record<string, IntensityVisual>;
+
 function intensityVisual(score: number | null | undefined): { card: string; badge: string; dot: string; urgent: boolean } {
-  if (score !== null && typeof score === 'number' && score >= 6.5) {
-    return { card: 'border-purple-300 bg-purple-50 text-purple-950', badge: 'bg-purple-900 text-white', dot: 'bg-purple-900', urgent: true };
-  }
-  if (score !== null && typeof score === 'number' && score >= 6) {
-    return { card: 'border-red-300 bg-red-50 text-red-950', badge: 'bg-red-700 text-white', dot: 'bg-red-700', urgent: true };
-  }
-  if (score !== null && typeof score === 'number' && score >= 5.5) {
-    return { card: 'border-orange-300 bg-orange-50 text-orange-950', badge: 'bg-orange-600 text-white', dot: 'bg-orange-600', urgent: true };
-  }
-  if (score !== null && typeof score === 'number' && score >= 5) {
-    return { card: 'border-orange-200 bg-orange-50 text-orange-950', badge: 'bg-orange-400 text-gray-950', dot: 'bg-orange-400', urgent: true };
-  }
-  if (score !== null && typeof score === 'number' && score >= 4) {
-    return { card: 'border-yellow-300 bg-yellow-50 text-yellow-950', badge: 'bg-yellow-400 text-gray-950', dot: 'bg-yellow-400', urgent: true };
-  }
-  if (score !== null && typeof score === 'number' && score >= 3) {
-    return { card: 'border-lime-200 bg-lime-50 text-lime-950', badge: 'bg-lime-500 text-gray-950', dot: 'bg-lime-500', urgent: false };
-  }
-  return { card: 'border-gray-200 bg-gray-50 text-gray-900', badge: 'bg-gray-200 text-gray-900', dot: 'bg-green-500', urgent: false };
+  const visual =
+    score !== null && typeof score === 'number' && score >= 6.5
+      ? INTENSITY_VISUALS.seven
+      : score !== null && typeof score === 'number' && score >= 6
+        ? INTENSITY_VISUALS.sixLower
+        : score !== null && typeof score === 'number' && score >= 5.5
+          ? INTENSITY_VISUALS.fiveUpper
+          : score !== null && typeof score === 'number' && score >= 5
+            ? INTENSITY_VISUALS.fiveLower
+            : score !== null && typeof score === 'number' && score >= 4
+              ? INTENSITY_VISUALS.four
+              : score !== null && typeof score === 'number' && score >= 3
+                ? INTENSITY_VISUALS.three
+                : INTENSITY_VISUALS.low;
+  const { card, badge, dot, urgent } = visual;
+  return { card, badge, dot, urgent };
 }
 
 function magnitudeVisual(magnitude: number | null): { card: string; badge: string; dot: string; urgent: boolean } {
@@ -288,7 +288,7 @@ export default function QuakesPage() {
                     <Fact label="発生" value={formatEventTime(latestEvent.time)} />
                     <Fact label="最大震度" value={latestIntensity?.label ?? latestEvent.maxIntensity ?? '不明'} />
                     <Fact label="M" value={latestEvent.magnitude ?? '不明'} />
-                    <Fact label="深さ" value={formatDepth(latestEvent.depth)} />
+                    <Fact label="深さ" value={formatQuakeDepth(latestEvent.depth)} />
                   </div>
                   <div className="rounded-lg bg-white px-3 py-2 text-xs text-gray-700 ring-1 ring-gray-200">
                     状態: {latestEvent.title}
@@ -384,7 +384,7 @@ export default function QuakesPage() {
                 </div>
                 <div className="mt-2 text-sm font-semibold text-gray-900 break-words">{v.q.epicenter ?? v.q.title}</div>
                 <div className="mt-1 text-xs text-gray-700">
-                  深さ: {formatDepth(v.q.depth)} / M: {v.q.magnitude ?? '不明'}
+                  深さ: {formatQuakeDepth(v.q.depth)} / M: {v.q.magnitude ?? '不明'}
                 </div>
                 {v.q.link && (
                   <div className="mt-2">
@@ -439,7 +439,7 @@ export default function QuakesPage() {
                   <span>震源: {q.epicenter ?? '不明'}</span>
                   <span>最大震度: {intensity?.label ?? '不明'}</span>
                   <span>M: {q.magnitude ?? '不明'}</span>
-                  <span>深さ: {formatDepth(q.depth)}</span>
+                  <span>深さ: {formatQuakeDepth(q.depth)}</span>
                 </div>
                 {q.link && (
                   <div className="mt-2">
@@ -470,14 +470,14 @@ export default function QuakesPage() {
 }
 
 const INTENSITY_DATA = [
-  { level: '0〜2', color: 'bg-green-500', feel: 'ほとんど感じない〜揺れを感じる', action: '特に行動不要。' },
-  { level: '3', color: 'bg-lime-500', feel: '家にいる人のほとんどが揺れを感じる', action: '棚や照明器具に注意。' },
-  { level: '4', color: 'bg-yellow-400', feel: '吊り下げ物が大きく揺れる', action: '火の元を確認、安全な場所へ。' },
-  { level: '5弱', color: 'bg-orange-400', feel: '物が落ちる、家具が動く', action: 'テーブル下など安全な場所へ避難。' },
-  { level: '5強', color: 'bg-orange-600', feel: '家具が倒れる、窓ガラスが割れる', action: '頭を守り、揺れが収まるまで待機。' },
-  { level: '6弱', color: 'bg-red-500', feel: '立っていられない、ブロック塀が崩れる', action: '建物倒壊に注意、屋外へ逃げる際は落下物注意。' },
-  { level: '6強', color: 'bg-red-700', feel: '這わないと動けない、多くの建物が損壊', action: '周囲の安全確認、津波や土砂災害にも警戒。' },
-  { level: '7', color: 'bg-purple-900', feel: '極めて激しい揺れ、壁や柱が崩れる', action: '命を守る行動。直ちに海岸・崖から離れる。' },
+  { level: '0〜2', color: INTENSITY_VISUALS.low.guideColor, feel: 'ほとんど感じない〜揺れを感じる', action: '特に行動不要。' },
+  { level: '3', color: INTENSITY_VISUALS.three.guideColor, feel: '家にいる人のほとんどが揺れを感じる', action: '棚や照明器具に注意。' },
+  { level: '4', color: INTENSITY_VISUALS.four.guideColor, feel: '吊り下げ物が大きく揺れる', action: '火の元を確認、安全な場所へ。' },
+  { level: '5弱', color: INTENSITY_VISUALS.fiveLower.guideColor, feel: '物が落ちる、家具が動く', action: 'テーブル下など安全な場所へ避難。' },
+  { level: '5強', color: INTENSITY_VISUALS.fiveUpper.guideColor, feel: '家具が倒れる、窓ガラスが割れる', action: '頭を守り、揺れが収まるまで待機。' },
+  { level: '6弱', color: INTENSITY_VISUALS.sixLower.guideColor, feel: '立っていられない、ブロック塀が崩れる', action: '建物倒壊に注意、屋外へ逃げる際は落下物注意。' },
+  { level: '6強', color: INTENSITY_VISUALS.sixUpper.guideColor, feel: '這わないと動けない、多くの建物が損壊', action: '周囲の安全確認、津波や土砂災害にも警戒。' },
+  { level: '7', color: INTENSITY_VISUALS.seven.guideColor, feel: '極めて激しい揺れ、壁や柱が崩れる', action: '命を守る行動。直ちに海岸・崖から離れる。' },
 ];
 
 function Fact({ label, value }: { label: string; value: string }) {
