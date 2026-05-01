@@ -5,9 +5,16 @@ import { useMemo, useState } from 'react';
 import { hazardKeys, hazardLabels } from '@jp-evac/shared';
 import { normalizeMuniCode } from 'lib/muni-helper';
 import MapView from '../components/MapView';
-import { DataFetchDetails } from '../components/DataFetchDetails';
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  const json = await res.json().catch(() => null);
+  if (!res.ok) {
+    const message = typeof json?.error === 'string' ? json.error : `HTTP ${res.status}`;
+    throw new Error(message);
+  }
+  return json;
+};
 
 function formatPrefCityLabel(value: string | null | undefined): string {
   const text = (value ?? '').trim();
@@ -80,10 +87,11 @@ export default function DesignatedPage() {
     return `/api/shelters/search?${params.toString()}`;
   }, [prefCode, cityText, q, municipalities]);
 
-  const { data, isLoading } = useSWR(queryUrl, fetcher, { dedupingInterval: 10_000 });
+  const { data, error, isLoading } = useSWR(queryUrl, fetcher, { dedupingInterval: 10_000 });
   const items: ShelterListItem[] = data?.sites ?? [];
   const sitesWithCoords = items.filter((site) => Number.isFinite(site.lat) && Number.isFinite(site.lon));
   const noCoordCount = Math.max(0, items.length - sitesWithCoords.length);
+  const searchFailed = Boolean(error || data?.fetchStatus === 'DOWN' || data?.ok === false || data?.lastError);
   const { data: countsData } = useSWR(debugEnabled ? '/api/shelters/designated-counts' : null, fetcher, { dedupingInterval: 60_000 });
   const countsError = countsData?.ok === false;
   const zeroPrefectures: Array<{ prefCode: string; prefName: string }> = countsData?.zeroPrefectures ?? [];
@@ -171,9 +179,15 @@ export default function DesignatedPage() {
       <section className="rounded-2xl bg-white p-4 shadow">
         <div className="text-xs text-gray-600">
           {isLoading && '読み込み中...'}
-          {!isLoading && queryUrl && items.length === 0 && '該当する指定避難所が見つかりませんでした。'}
+          {!isLoading && searchFailed && '指定避難所データを取得できません。通信状態を確認してもう一度お試しください。'}
+          {!isLoading && !searchFailed && queryUrl && items.length === 0 && '該当する指定避難所が見つかりませんでした。'}
           {!queryUrl && '都道府県やキーワードを入力すると表示します。'}
         </div>
+        {!isLoading && searchFailed && (
+          <div className="mt-2 rounded border bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            {data?.lastError ? 'サーバ側の検索処理に失敗しました。' : error?.message ?? '検索に失敗しました。'}
+          </div>
+        )}
         {!isLoading && items.length > 0 && (
           <div className="mt-2 text-xs text-gray-600">座標なし: {noCoordCount}件</div>
         )}

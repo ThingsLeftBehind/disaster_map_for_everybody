@@ -1,6 +1,7 @@
 import { CircleMarker, MapContainer, Popup, TileLayer } from 'react-leaflet';
 import L from 'leaflet';
 import { useState } from 'react';
+import { QUAKE_MAP_TILE_LAYER } from 'lib/map/providers';
 
 delete (L.Icon.Default.prototype as L.Icon.Default & { _getIconUrl?: unknown })._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -113,9 +114,9 @@ export default function QuakeMonitorMap({ epicenter, intensityAreas }: Props) {
         className="h-[360px] w-full"
       >
         <TileLayer
-          attribution='<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル（白地図）</a>'
-          url="https://cyberjapandata.gsi.go.jp/xyz/blank/{z}/{x}/{y}.png"
-          maxNativeZoom={14}
+          attribution={QUAKE_MAP_TILE_LAYER.attribution}
+          url={QUAKE_MAP_TILE_LAYER.url}
+          maxNativeZoom={QUAKE_MAP_TILE_LAYER.maxNativeZoom}
           eventHandlers={{ tileerror: () => setTileError(true) }}
         />
         {intensityAreas.map((area) => {

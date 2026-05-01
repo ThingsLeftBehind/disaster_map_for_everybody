@@ -3,6 +3,7 @@ import useSWR from 'swr';
 import { useMemo, useState } from 'react';
 import { useDevice } from '../components/device/DeviceProvider';
 import { formatQuakeDepth } from '../lib/jma/depth';
+import { isActualQuakeEventRecord } from '../lib/jma/quake-event';
 import dynamic from 'next/dynamic';
 
 const QuakeMonitorMap = dynamic(() => import('../components/QuakeMonitorMap'), {
@@ -129,20 +130,20 @@ function magnitudeVisual(magnitude: number | null): { card: string; badge: strin
   return intensityVisual(null);
 }
 
-function sourceFreshness(updatedAt: string | null | undefined, fetchStatus: string | null | undefined): { label: string; className: string; detail: string } {
-  if (!fetchStatus) return { label: '確認中', className: 'bg-gray-50 text-gray-800 ring-gray-200', detail: '取得状態を確認中' };
-  if (fetchStatus === 'DOWN') return { label: '取得遅延', className: 'bg-red-50 text-red-800 ring-red-200', detail: '最新取得に失敗しています' };
-  if (!updatedAt) return { label: '確認中', className: 'bg-gray-50 text-gray-800 ring-gray-200', detail: '更新時刻を確認中' };
+function sourceFreshness(updatedAt: string | null | undefined, fetchStatus: string | null | undefined): { label: string; className: string } {
+  if (!fetchStatus) return { label: '確認中', className: 'bg-gray-50 text-gray-800 ring-gray-200' };
+  if (fetchStatus === 'DOWN') return { label: '取得遅延', className: 'bg-red-50 text-red-800 ring-red-200' };
+  if (!updatedAt) return { label: '確認中', className: 'bg-gray-50 text-gray-800 ring-gray-200' };
   const t = Date.parse(updatedAt);
-  if (Number.isNaN(t)) return { label: '取得遅延', className: 'bg-red-50 text-red-800 ring-red-200', detail: '更新時刻を判定できません' };
+  if (Number.isNaN(t)) return { label: '取得遅延', className: 'bg-red-50 text-red-800 ring-red-200' };
   const ageMs = Date.now() - t;
   if (fetchStatus === 'OK' && ageMs <= 10 * 60_000) {
-    return { label: '最新', className: 'bg-emerald-50 text-emerald-800 ring-emerald-200', detail: '10分以内に更新' };
+    return { label: '最新', className: 'bg-emerald-50 text-emerald-800 ring-emerald-200' };
   }
   if (ageMs <= 60 * 60_000) {
-    return { label: 'やや遅延', className: 'bg-amber-50 text-amber-900 ring-amber-200', detail: '60分以内の取得データ' };
+    return { label: 'やや遅延', className: 'bg-amber-50 text-amber-900 ring-amber-200' };
   }
-  return { label: '取得遅延', className: 'bg-red-50 text-red-800 ring-red-200', detail: '1時間以上更新がありません' };
+  return { label: '取得遅延', className: 'bg-red-50 text-red-800 ring-red-200' };
 }
 
 function tsunamiPanel(items: Array<{ title: string; tsunami?: string | null; time: string | null; magnitude: string | null; maxIntensity: string | null }>) {
@@ -181,8 +182,7 @@ export default function QuakesPage() {
   }> = data?.items ?? [];
 
   const recentItems = useMemo(() => {
-    const allowed = ['震源・震度情報', '顕著な地震の震源要素更新のお知らせ'];
-    return items.filter((q) => allowed.some((a) => String(q.title ?? '').includes(a)));
+    return items.filter((q) => isActualQuakeEventRecord(q));
   }, [items]);
 
   const strongPicks = useMemo(() => {
@@ -228,14 +228,10 @@ export default function QuakesPage() {
   const handleLoadMore = () => {
     setVisibleCount(prev => Math.min(prev + 10, 50));
   };
-  const latestEvent = recentItems[0] ?? items[0] ?? null;
+  const latestEvent = recentItems[0] ?? null;
   const latestIntensity = latestEvent ? parseMaxIntensityRaw(latestEvent.maxIntensity) ?? parseMaxIntensityFromTitle(latestEvent.title) : null;
   const freshness = sourceFreshness(data?.updatedAt, data?.fetchStatus);
-  const tsunami = data ? tsunamiPanel(items) : { state: 'checking', label: '津波情報を確認中', updatedAt: null };
-  const topIntensityAreas = (latestEvent?.intensityAreas ?? [])
-    .slice()
-    .sort((a, b) => (parseMaxIntensityRaw(b.maxIntensity)?.score ?? 0) - (parseMaxIntensityRaw(a.maxIntensity)?.score ?? 0))
-    .slice(0, 6);
+  const tsunami = data ? tsunamiPanel(recentItems) : { state: 'checking', label: '津波情報を確認中', updatedAt: null };
 
   return (
     <div className="space-y-6">
@@ -285,30 +281,12 @@ export default function QuakesPage() {
                 <div className="mt-2 space-y-2 text-sm">
                   <div className="text-lg font-bold text-gray-900">{latestEvent.epicenter ?? latestEvent.title}</div>
                   <div className="grid grid-cols-2 gap-2">
-                    <Fact label="発生" value={formatEventTime(latestEvent.time)} />
+                    <Fact label="発生時刻" value={formatEventTime(latestEvent.time)} />
+                    <Fact label="震源地" value={latestEvent.epicenter ?? '不明'} />
                     <Fact label="最大震度" value={latestIntensity?.label ?? latestEvent.maxIntensity ?? '不明'} />
-                    <Fact label="M" value={latestEvent.magnitude ?? '不明'} />
+                    <Fact label="マグニチュード" value={latestEvent.magnitude ?? '不明'} />
                     <Fact label="深さ" value={formatQuakeDepth(latestEvent.depth)} />
                   </div>
-                  <div className="rounded-lg bg-white px-3 py-2 text-xs text-gray-700 ring-1 ring-gray-200">
-                    状態: {latestEvent.title}
-                  </div>
-                  {topIntensityAreas.length > 0 && (
-                    <div className="rounded-lg bg-white px-3 py-2 ring-1 ring-gray-200">
-                      <div className="text-[11px] font-semibold text-gray-600">観測された揺れ（上位）</div>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {topIntensityAreas.map((area) => {
-                          const intensity = parseMaxIntensityRaw(area.maxIntensity);
-                          const visual = intensityVisual(intensity?.score ?? null);
-                          return (
-                            <span key={area.code} className={`rounded-full px-2 py-1 text-[11px] font-bold ${visual.badge}`}>
-                              {area.code}: 震度{intensity?.label ?? area.maxIntensity ?? '不明'}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
                 </div>
               ) : (
                 <div className="mt-2 rounded-lg bg-white px-3 py-3 text-sm text-gray-600 ring-1 ring-gray-200">
@@ -318,7 +296,7 @@ export default function QuakesPage() {
             </div>
 
             <div className="rounded-xl border bg-gray-50 p-4">
-              <div className="text-xs font-semibold text-gray-600">津波情報</div>
+              <div className="text-xs font-semibold text-gray-600">津波の有無</div>
               <div className="mt-2 flex items-center justify-between gap-2">
                 <div className="text-base font-bold text-gray-900">{tsunami.label}</div>
                 <span className={`rounded-full px-2 py-1 text-[11px] font-bold ring-1 ${
@@ -331,20 +309,10 @@ export default function QuakesPage() {
                   {tsunami.state === 'warning' ? 'Warning' : tsunami.state === 'advisory' ? 'Advisory' : tsunami.state === 'checking' ? 'Checking' : 'None'}
                 </span>
               </div>
-              <div className="mt-1 text-xs text-gray-600">更新: {formatUpdatedAt(tsunami.updatedAt)}</div>
+              <div className="mt-1 text-xs text-gray-600">最終更新: {formatUpdatedAt(tsunami.updatedAt)}</div>
               <div className="mt-2 text-xs text-gray-700">津波の最終判断は気象庁・自治体の発表を確認してください。</div>
             </div>
 
-            <div className="rounded-xl border bg-gray-50 p-4">
-              <div className="text-xs font-semibold text-gray-600">監視状態</div>
-              <div className="mt-2 text-sm font-bold text-gray-900">{freshness.detail}</div>
-              <div className="mt-1 text-xs text-gray-700">
-                このページは気象庁発表の震源・最大震度・観測地域を表示します。波形や地震波の実測アニメーションは、許可された配信データがないため表示していません。
-              </div>
-              <a href="http://www.kmoni.bosai.go.jp/" target="_blank" rel="noreferrer" className="mt-3 inline-flex rounded-lg bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-100">
-                防災科研 強震モニタを別画面で開く
-              </a>
-            </div>
           </div>
         </div>
 
@@ -411,7 +379,7 @@ export default function QuakesPage() {
 
       <section className="rounded-lg bg-white p-5 shadow">
         <h2 className="text-lg font-semibold">最近の地震</h2>
-        <div className="mt-2 text-xs text-gray-600">「震源・震度情報」と「顕著な地震の震源要素更新のお知らせ」のみ表示します。</div>
+        <div className="mt-2 text-xs text-gray-600">発生時刻・震源・最大震度を確認できる地震イベントを表示します。</div>
 
         {!data && <div className="mt-3 text-sm text-gray-600">読み込み中...</div>}
         {data && visibleRecentItems.length === 0 && <div className="mt-3 text-sm text-gray-600">表示できる地震情報がありません。</div>}

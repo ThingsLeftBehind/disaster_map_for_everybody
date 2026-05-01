@@ -11,6 +11,7 @@ import {
   getTokyoContextFromGroup,
   getTokyoContextFromMuniCode,
   getTokyoGroupFromAreaCode,
+  getTokyoGroupLabel,
   type TokyoGroupKey,
 } from '../lib/alerts/tokyoScope';
 import { DataFetchDetails } from '../components/DataFetchDetails';
@@ -183,7 +184,10 @@ export default function AlertsPage() {
     : selectedSubTokyoGroup
       ? getTokyoContextFromGroup(selectedSubTokyoGroup)
       : tokyoContextFromMuni;
-  const tokyoScopeLabel = tokyoContext === 'MAINLAND' ? '東京都' : tokyoContext === 'ISLANDS' ? '東京都（島しょ）' : null;
+  const tokyoScopeLabel = selectedSubArea
+    ? selectedSubArea.name
+    : getTokyoGroupLabel(tokyoGroupFilter ?? selectedSubTokyoGroup) ??
+      (tokyoContext === 'MAINLAND' ? '東京地方（島しょ除く）' : tokyoContext === 'ISLANDS' ? '東京都島しょ部' : null);
   const showTokyoSubAreaSelector = effectiveAreaCode === '130000' && subAreaOptions.length > 0;
   const tokyoMainlandDefault = subAreaOptions.some((area) => area.code === '130010') ? '130010' : subAreaOptions[0]?.code ?? '';
   const tokyoSubAreaValue = selectedSubArea ? manualSubAreaCode : tokyoMainlandDefault;
@@ -307,6 +311,7 @@ export default function AlertsPage() {
               <div>
                 <div className="text-xs text-gray-600">対象エリア</div>
                 <div className="mt-1 font-semibold">{targetLabel}</div>
+                {tokyoScopeLabel && <div className="mt-1 text-xs font-semibold text-blue-900">発表区域: {tokyoScopeLabel}</div>}
               </div>
               {useCurrent ? (
                 <button
@@ -506,6 +511,7 @@ export default function AlertsPage() {
                     breakdown={breakdown}
                     highlightCode={highlightedForecastCode}
                     tokyoGroup={tokyoGroupFilter}
+                    exactCode={selectedSubArea ? manualSubAreaCode : null}
                   />
                 </div>
               )}
@@ -707,15 +713,17 @@ function SubAreaBreakdown({
   breakdown,
   highlightCode,
   tokyoGroup,
+  exactCode,
 }: {
   breakdown: Record<string, { name: string; items: any[] }>;
   highlightCode?: string | null;
   tokyoGroup?: TokyoGroupKey | null;
+  exactCode?: string | null;
 }) {
   // Sort: highlighted first, then by code
   // Also filter by Tokyo scope if applicable
   const items = Object.entries(breakdown)
-    .filter(([code]) => matchesTokyoGroup(code, tokyoGroup ?? null))
+    .filter(([code]) => (exactCode ? code === exactCode : matchesTokyoGroup(code, tokyoGroup ?? null)))
     .sort((a, b) => {
       if (highlightCode) {
         if (a[0] === highlightCode) return -1;

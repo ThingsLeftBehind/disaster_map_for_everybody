@@ -1,5 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { deleteShelterVoteAndComment, submitVote } from 'lib/store/adapter';
+import {
+  deleteShelterVoteAndComment,
+  getAdminState,
+  submitVote,
+  summarizeShelterCommunityForDevice,
+} from 'lib/store/adapter';
 import { ipHash } from 'lib/store/security';
 import { ShelterVoteBodySchema } from 'lib/store/types';
 import { assertSameOrigin, getClientIp, jsonError, jsonOk, rateLimit } from 'lib/server/security';
@@ -38,7 +43,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!result.ok) {
         return jsonError(res, 400, { ok: false, error: result.message, errorCode: result.code });
       }
-      return jsonOk(res, { ok: true });
+      const admin = await getAdminState();
+      return jsonOk(res, {
+        ok: true,
+        community: summarizeShelterCommunityForDevice(result.value, admin, parsed.data.deviceId),
+      });
     }
 
     if (req.method !== 'POST') return jsonError(res, 405, { ok: false, error: 'method_not_allowed', errorCode: 'METHOD_NOT_ALLOWED' });
@@ -71,9 +80,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         errorCode: result.code,
       });
     }
-    return jsonOk(res, { ok: true });
+    const admin = await getAdminState();
+    return jsonOk(res, {
+      ok: true,
+      community: summarizeShelterCommunityForDevice(result.value, admin, parsed.data.deviceId),
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return jsonError(res, 500, { ok: false, error: 'internal_error', errorCode: 'INTERNAL_ERROR', lastError: message });
+    console.warn('[store:shelter_vote] unhandled_error', { error: message });
+    return jsonError(res, 500, { ok: false, error: 'internal_error', errorCode: 'INTERNAL_ERROR' });
   }
 }

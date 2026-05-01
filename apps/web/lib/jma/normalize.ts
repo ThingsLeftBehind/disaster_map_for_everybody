@@ -4,6 +4,7 @@ import { parseAtomFeed } from './atom';
 import { fileExists, readJsonFile, readTextFile, atomicWriteJson } from './cache';
 import { atomEntryHash } from './fetchers';
 import { normalizeQuakeDepthKm } from './depth';
+import { isActualQuakeEventRecord, isJmaQuakeNoticeTitle } from './quake-event';
 import {
   jmaAreaConstPath,
   jmaEntryXmlPath,
@@ -252,6 +253,7 @@ function normalizeQuakesFromWebJson(raw: unknown): NormalizedQuakeItem[] {
     const tsunami = pickFirstString(row, ['tsunami', 'tsu', 'ttk', 'tsunamiStatus']);
     const link = pickFirstString(row, ['url', 'link', 'href', 'detailUrl', 'detail', 'page']);
     const title = pickFirstString(row, ['ttl', 'title', 'headline', 'text']) ?? buildQuakeTitle({ maxi, epicenter, magnitude });
+    if (!isActualQuakeEventRecord({ ...row, time, title, epicenter, magnitude, maxIntensity: maxi })) continue;
 
     const idBasis = JSON.stringify({ time, title, link });
     const id = crypto.createHash('sha256').update(idBasis).digest('hex').slice(0, 16);
@@ -387,6 +389,7 @@ export async function rebuildNormalizedQuakes(): Promise<NormalizedQuakesSnapsho
   const items: NormalizedQuakeItem[] = [];
 
   for (const entry of entries.slice(0, NORMALIZATION_LIMITS.quakesItems)) {
+    if (isJmaQuakeNoticeTitle(entry.title)) continue;
     const id = crypto.createHash('sha256').update(entry.id).digest('hex').slice(0, 16);
     const hash = atomEntryHash(entry);
     const detailPath = jmaEntryXmlPath(hash);
@@ -407,6 +410,8 @@ export async function rebuildNormalizedQuakes(): Promise<NormalizedQuakesSnapsho
       magnitude ||= hint.magnitude;
       epicenter ||= hint.epicenter;
     }
+
+    if (!isActualQuakeEventRecord({ title: entry.title, time: entry.updated ?? entry.published, magnitude, epicenter })) continue;
 
     items.push({
       id,

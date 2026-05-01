@@ -175,7 +175,7 @@ export function shapeAlertWarnings(args: {
     muniCode: args.area.muniCode ?? null,
     label: args.area.label ?? null,
   });
-  const primaryGroup: TokyoGroupKey = inferredTokyoGroup ?? 'mainland';
+  const primaryGroup: TokyoGroupKey = inferredTokyoGroup ?? 'tokyo-mainland';
   const { primaryItems } = getTokyoScopedItems({
     items,
     tokyoGroups,

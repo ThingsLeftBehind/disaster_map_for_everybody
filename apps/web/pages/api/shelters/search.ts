@@ -147,7 +147,7 @@ function pickBase<T extends { hazards?: Record<string, boolean>; updated_at?: un
   return String(a.id ?? '') <= String(b.id ?? '') ? a : b;
 }
 
-function mergeSites<T extends { hazards?: Record<string, boolean>; shelter_fields?: unknown; notes?: unknown; is_same_address_as_shelter?: boolean | null }>(a: T, b: T): T {
+function mergeSites<T extends { hazards?: Record<string, boolean>; shelter_fields?: unknown; notes?: unknown; is_same_address_as_shelter?: boolean | null; is_designated?: boolean | null }>(a: T, b: T): T {
   const base = pickBase(a, b);
   const other = base === a ? b : a;
   return {
@@ -156,10 +156,11 @@ function mergeSites<T extends { hazards?: Record<string, boolean>; shelter_field
     shelter_fields: pickRicher(base.shelter_fields, other.shelter_fields),
     notes: pickRicher(base.notes, other.notes),
     is_same_address_as_shelter: Boolean(base.is_same_address_as_shelter || other.is_same_address_as_shelter) || null,
+    is_designated: Boolean(base.is_designated || other.is_designated) || null,
   };
 }
 
-function dedupeSites<T extends { hazards?: Record<string, boolean>; common_id?: string | null; name?: string | null; address?: string | null; lat?: number | null; lon?: number | null; updated_at?: unknown; id?: unknown; shelter_fields?: unknown; notes?: unknown; is_same_address_as_shelter?: boolean | null }>(
+function dedupeSites<T extends { hazards?: Record<string, boolean>; common_id?: string | null; name?: string | null; address?: string | null; lat?: number | null; lon?: number | null; updated_at?: unknown; id?: unknown; shelter_fields?: unknown; notes?: unknown; is_same_address_as_shelter?: boolean | null; is_designated?: boolean | null }>(
   sites: T[]
 ): T[] {
   const map = new Map<string, T>();
@@ -377,13 +378,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     baseWhere.push({
       OR: [
         { name: { contains: q, mode: 'insensitive' } },
+        { pref_city: { contains: q, mode: 'insensitive' } },
         { address: { contains: q, mode: 'insensitive' } },
         { notes: { contains: q, mode: 'insensitive' } },
+        { common_id: { contains: q, mode: 'insensitive' } },
       ],
     });
   }
 
-  if (designatedOnly) {
+  if (designatedOnly && canUsePrismaEvacSites) {
     baseWhere.push({ shelter_fields: { not: Prisma.DbNull } });
   }
 
@@ -398,7 +401,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const deduped = dedupeSites(enriched);
-    const designatedFiltered = designatedOnly ? deduped.filter((site: any) => Boolean(site.shelter_fields)) : deduped;
+    const hasDesignatedMetadata = deduped.some((site: any) => Boolean(site.shelter_fields) || site.is_designated === true);
+    const designatedFiltered =
+      designatedOnly && hasDesignatedMetadata
+        ? deduped.filter((site: any) => Boolean(site.shelter_fields) || site.is_designated === true)
+        : deduped;
     const hazardFiltered = includeHazardless ? designatedFiltered : designatedFiltered.filter((site: any) => hasAnyHazard(site.hazards));
     return hideIneligible ? hazardFiltered.filter((site: any) => site.matchesHazards) : hazardFiltered;
   };
@@ -558,7 +565,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const sites = rawSites
         .map((site: any) => {
           const coords = coordsById.get(String(site.id));
-          return coords ? { ...site, lat: coords.lat, lon: coords.lon } : null;
+          if (coords) return { ...site, lat: coords.lat, lon: coords.lon };
+          return designatedOnly ? { ...site, lat: null, lon: null } : null;
         })
         .filter((v: any): v is NonNullable<typeof v> => Boolean(v));
 
@@ -629,6 +637,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             q: q ?? null,
             limit: limit ?? 50,
             offset: offset ?? 0,
+            designatedOnly,
           });
           filteredSites = applyFilters(rawResults);
           recordTrace('fallback:rawSearch-results', filteredSites.length);
@@ -685,6 +694,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             q: q ?? null,
             limit: limit ?? 50,
             offset: offset ?? 0,
+            designatedOnly,
           });
           filteredSites = applyFilters(rawResults);
           recordTrace('fallback:rawSearch-results', filteredSites.length);
@@ -752,6 +762,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             q: q ?? cityText ?? null,
             limit: limit ?? 50,
             offset: offset ?? 0,
+            designatedOnly,
           })
         );
         recordTrace(step, results.length);

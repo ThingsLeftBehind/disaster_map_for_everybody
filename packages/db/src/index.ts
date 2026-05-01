@@ -1,7 +1,8 @@
-export { sql } from '@prisma/client/runtime/library';
-export type { Sql } from '@prisma/client/runtime/library';
-import { PrismaClient } from '@prisma/client';
-export { Prisma } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
+
+export const sql = Prisma.sql;
+export type Sql = Prisma.Sql;
+export { Prisma };
 
 declare global {
   // eslint-disable-next-line no-var
@@ -15,4 +16,3 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 export * from '@prisma/client';
-

@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { nanoid } from 'nanoid';
-import { prisma } from '../db/prisma';
+import { Prisma, prisma } from '../db/prisma';
 import { MODERATION_DEFAULTS, STORE_LIMITS } from './config';
 import { readJsonFile, atomicWriteJson } from './fs';
 import { runExclusive } from './lock';
@@ -136,6 +136,10 @@ function normalizeCrowdVote(value: string): CrowdVoteValue {
   }
 }
 
+function requiresDbPersistence(): boolean {
+  return Boolean(process.env.VERCEL || process.env.VERCEL_ENV || process.env.NODE_ENV === 'production');
+}
+
 function roundCoord(value: number, digits = 2): number {
   const scale = 10 ** digits;
   return Math.round(value * scale) / scale;
@@ -178,6 +182,99 @@ function isSameCheckinPayload(
 
 function toDbCrowdStatus(value: string): 'OK' | 'CROWDED' | 'VERY_CROWDED' | 'CLOSED' | 'BLOCKED' {
   return normalizeCrowdVote(value) as 'OK' | 'CROWDED' | 'VERY_CROWDED' | 'CLOSED' | 'BLOCKED';
+}
+
+type CrowdStoreKind = 'crowd_reports' | 'site_status_report' | 'none';
+type LegacyCongestionLevel = 'low' | 'normal' | 'high';
+type LegacyAccessibilityLevel = 'accessible' | 'blocked' | 'unknown';
+
+const CROWD_STORE_META_TTL_MS = 5 * 60_000;
+const LEGACY_VOTE_PREFIX_RE = /^\[hinanavi:v1:vote=(OK|CROWDED|VERY_CROWDED|CLOSED|BLOCKED)\]\n?/;
+
+let cachedCrowdStoreKind: { checkedAtMs: number; kind: CrowdStoreKind } | null = null;
+
+function toIsoFromDb(value: unknown): string {
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === 'string') {
+    const t = Date.parse(value);
+    if (!Number.isNaN(t)) return new Date(t).toISOString();
+  }
+  return nowIso();
+}
+
+function toLegacyCrowdFields(value: string): {
+  congestion: LegacyCongestionLevel;
+  accessibility: LegacyAccessibilityLevel;
+} {
+  switch (normalizeCrowdVote(value)) {
+    case 'CROWDED':
+    case 'VERY_CROWDED':
+      return { congestion: 'high', accessibility: 'accessible' };
+    case 'CLOSED':
+    case 'BLOCKED':
+      return { congestion: 'normal', accessibility: 'blocked' };
+    case 'OK':
+    default:
+      return { congestion: 'normal', accessibility: 'accessible' };
+  }
+}
+
+function fromLegacyCrowdFields(args: {
+  congestion: unknown;
+  accessibility: unknown;
+  comment: unknown;
+}): { value: CrowdVoteValue; publicComment: string | null } {
+  const rawComment = typeof args.comment === 'string' ? args.comment : '';
+  const marker = rawComment.match(LEGACY_VOTE_PREFIX_RE);
+  const publicText = rawComment.replace(LEGACY_VOTE_PREFIX_RE, '').trim();
+  if (marker?.[1]) {
+    return { value: normalizeCrowdVote(marker[1]), publicComment: publicText || null };
+  }
+
+  const accessibility = String(args.accessibility ?? '').toLowerCase();
+  if (accessibility === 'blocked') return { value: 'BLOCKED', publicComment: publicText || null };
+
+  const congestion = String(args.congestion ?? '').toLowerCase();
+  if (congestion === 'high') return { value: 'CROWDED', publicComment: publicText || null };
+  return { value: 'OK', publicComment: publicText || null };
+}
+
+function encodeLegacyReportComment(value: string, comment: string | null | undefined): string {
+  const exactValue = normalizeCrowdVote(value);
+  const publicComment = typeof comment === 'string' && comment.trim() ? comment.trim().slice(0, 300) : '';
+  return publicComment ? `[hinanavi:v1:vote=${exactValue}]\n${publicComment}` : `[hinanavi:v1:vote=${exactValue}]`;
+}
+
+async function getCrowdStoreKind(): Promise<CrowdStoreKind> {
+  const now = Date.now();
+  if (cachedCrowdStoreKind && now - cachedCrowdStoreKind.checkedAtMs < CROWD_STORE_META_TTL_MS) {
+    return cachedCrowdStoreKind.kind;
+  }
+
+  try {
+    const rows = (await prisma.$queryRaw(
+      Prisma.sql`
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+          AND table_name IN ('crowd_reports', 'SiteStatusReport')
+      `
+    )) as Array<{ table_name: unknown }>;
+    const names = new Set(rows.map((row) => String(row.table_name ?? '')));
+    const kind: CrowdStoreKind = names.has('crowd_reports')
+      ? 'crowd_reports'
+      : names.has('SiteStatusReport')
+        ? 'site_status_report'
+        : 'none';
+    cachedCrowdStoreKind = { checkedAtMs: now, kind };
+    return kind;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn('[store:shelter] db_store_detect_failed', { error: message });
+    if (requiresDbPersistence()) throw error;
+    cachedCrowdStoreKind = { checkedAtMs: now, kind: 'none' };
+    return 'none';
+  }
 }
 
 async function upsertDbSafetyStatus(args: {
@@ -264,56 +361,147 @@ async function listDbSafetyPins(args: {
   }
 }
 
-async function appendDbCrowdReport(args: {
+async function upsertDbCrowdReport(args: {
   shelterId: string;
   deviceId: string;
   value: string;
   comment?: string | null;
-}): Promise<void> {
+}): Promise<boolean> {
+  const kind = await getCrowdStoreKind();
+  if (kind === 'none') return false;
+
   try {
-    await prisma.crowd_reports.create({
-      data: {
-        site_id: args.shelterId,
-        device_hash: args.deviceId,
-        status: toDbCrowdStatus(args.value),
-        comment: args.comment?.trim() ? args.comment.trim().slice(0, 300) : null,
-      },
+    if (kind === 'crowd_reports') {
+      await prisma.$transaction([
+        prisma.crowd_reports.deleteMany({
+          where: { site_id: args.shelterId, device_hash: args.deviceId },
+        }),
+        prisma.crowd_reports.create({
+          data: {
+            site_id: args.shelterId,
+            device_hash: args.deviceId,
+            status: toDbCrowdStatus(args.value),
+            comment: args.comment?.trim() ? args.comment.trim().slice(0, 300) : null,
+          },
+        }),
+      ]);
+      return true;
+    }
+
+    const legacy = toLegacyCrowdFields(args.value);
+    const rowId = crypto.randomUUID();
+    const comment = encodeLegacyReportComment(args.value, args.comment);
+    await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw(
+        Prisma.sql`
+          DELETE FROM "public"."SiteStatusReport"
+          WHERE "siteId" = ${args.shelterId}::uuid
+            AND "deviceHash" = ${args.deviceId}
+        `
+      );
+      await tx.$executeRaw(
+        Prisma.sql`
+          INSERT INTO "public"."SiteStatusReport" (
+            "id",
+            "siteId",
+            "deviceHash",
+            "deviceId",
+            "congestionLevel",
+            "accessibility",
+            "comment",
+            "reportedAt"
+          )
+          VALUES (
+            ${rowId}::uuid,
+            ${args.shelterId}::uuid,
+            ${args.deviceId},
+            NULL,
+            ${legacy.congestion}::"CongestionLevel",
+            ${legacy.accessibility}::"AccessibilityLevel",
+            ${comment},
+            NOW()
+          )
+        `
+      );
     });
+    return true;
   } catch (error) {
     console.warn('[store:shelter] db_write_failed', { error: error instanceof Error ? error.message : String(error) });
+    return false;
   }
 }
 
 async function readDbShelterCommunity(shelterId: string): Promise<ShelterCommunity | null> {
+  const kind = await getCrowdStoreKind();
+  if (kind === 'none') {
+    if (requiresDbPersistence()) throw new Error('Shelter community persistence store not found.');
+    return null;
+  }
+
   try {
-    const rows = await prisma.crowd_reports.findMany({
-      where: { site_id: shelterId },
-      orderBy: { created_at: 'desc' },
-      take: 500,
-    });
-    if (rows.length === 0) return null;
+    const rows =
+      kind === 'crowd_reports'
+        ? await prisma.crowd_reports.findMany({
+            where: { site_id: shelterId },
+            orderBy: { created_at: 'desc' },
+            take: 500,
+          })
+        : ((await prisma.$queryRaw(
+            Prisma.sql`
+              SELECT
+                "id",
+                "deviceHash",
+                "congestionLevel"::text AS "congestionLevel",
+                "accessibility"::text AS "accessibility",
+                "comment",
+                "reportedAt"
+              FROM "public"."SiteStatusReport"
+              WHERE "siteId" = ${shelterId}::uuid
+              ORDER BY "reportedAt" DESC
+              LIMIT 500
+            `
+          )) as Array<{
+            id: unknown;
+            deviceHash: unknown;
+            congestionLevel: unknown;
+            accessibility: unknown;
+            comment: unknown;
+            reportedAt: unknown;
+          }>);
+    if (rows.length === 0) return requiresDbPersistence() ? defaultShelterCommunity(shelterId) : null;
 
     const latestVotes = new Map<string, ShelterCommunity['votes'][number]>();
     const comments: ShelterCommunity['comments'] = [];
     let updatedAt: string | null = null;
-    for (const row of rows) {
-      const createdAt = row.created_at.toISOString();
+    for (const row of rows as any[]) {
+      const deviceHash = kind === 'crowd_reports' ? row.device_hash : String(row.deviceHash ?? '');
+      if (!deviceHash) continue;
+      const createdAt = kind === 'crowd_reports' ? row.created_at.toISOString() : toIsoFromDb(row.reportedAt);
       updatedAt = updatedAt ? (Date.parse(createdAt) > Date.parse(updatedAt) ? createdAt : updatedAt) : createdAt;
-      if (!latestVotes.has(row.device_hash)) {
-        latestVotes.set(row.device_hash, {
-          id: row.id,
-          deviceId: row.device_hash,
+      const legacy = kind === 'site_status_report'
+        ? fromLegacyCrowdFields({
+            congestion: row.congestionLevel,
+            accessibility: row.accessibility,
+            comment: row.comment,
+          })
+        : null;
+      const status = legacy ? legacy.value : normalizeCrowdVote(String(row.status));
+      const commentText = legacy ? legacy.publicComment : typeof row.comment === 'string' && row.comment.trim() ? row.comment.trim() : null;
+      if (!latestVotes.has(deviceHash)) {
+        latestVotes.set(deviceHash, {
+          id: String(row.id),
+          deviceId: deviceHash,
           ipHash: 'db',
-          value: normalizeCrowdVote(String(row.status)),
+          value: status,
           createdAt,
         });
       }
-      if (row.comment?.trim()) {
+      if (commentText) {
         comments.push({
-          id: row.id,
-          deviceId: row.device_hash,
+          id: String(row.id),
+          deviceId: deviceHash,
           ipHash: 'db',
-          text: row.comment.trim(),
+          text: commentText,
           createdAt,
           hidden: false,
           reportCount: 0,
@@ -331,17 +519,33 @@ async function readDbShelterCommunity(shelterId: string): Promise<ShelterCommuni
     };
   } catch (error) {
     console.warn('[store:shelter] db_read_failed', { error: error instanceof Error ? error.message : String(error) });
+    if (requiresDbPersistence()) throw error;
     return null;
   }
 }
 
-async function deleteDbShelterCommunityForDevice(args: { shelterId: string; deviceId: string }): Promise<void> {
+async function deleteDbShelterCommunityForDevice(args: { shelterId: string; deviceId: string }): Promise<boolean> {
+  const kind = await getCrowdStoreKind();
+  if (kind === 'none') return false;
+
   try {
-    await prisma.crowd_reports.deleteMany({
-      where: { site_id: args.shelterId, device_hash: args.deviceId },
-    });
+    if (kind === 'crowd_reports') {
+      await prisma.crowd_reports.deleteMany({
+        where: { site_id: args.shelterId, device_hash: args.deviceId },
+      });
+    } else {
+      await prisma.$executeRaw(
+        Prisma.sql`
+          DELETE FROM "public"."SiteStatusReport"
+          WHERE "siteId" = ${args.shelterId}::uuid
+            AND "deviceHash" = ${args.deviceId}
+        `
+      );
+    }
+    return true;
   } catch (error) {
     console.warn('[store:shelter] db_delete_failed', { error: error instanceof Error ? error.message : String(error) });
+    return false;
   }
 }
 
@@ -784,6 +988,37 @@ export async function getShelterCommunitySnapshot(shelterId: string): Promise<Sh
   };
 }
 
+export function summarizeShelterCommunityForDevice(
+  community: ShelterCommunity,
+  admin: AdminState,
+  deviceId?: string | null
+) {
+  const votesSummary = community.votes.reduce<Record<string, number>>((acc, v) => {
+    acc[v.value] = (acc[v.value] ?? 0) + 1;
+    return acc;
+  }, {});
+  const contributorIds = new Set<string>();
+  for (const vote of community.votes) contributorIds.add(vote.deviceId);
+  for (const comment of community.comments) contributorIds.add(comment.deviceId);
+  const visibleComments = community.comments.filter((c) => !c.hidden);
+  const hiddenCount = community.comments.length - visibleComments.length;
+  const mostReported = Math.max(0, ...community.comments.map((c) => c.reportCount ?? 0));
+
+  return {
+    ok: true,
+    updatedAt: community.updatedAt,
+    moderationPolicy: admin.moderationPolicy,
+    votesSummary,
+    contributorCount: contributorIds.size,
+    currentUserVote: deviceId ? community.votes.find((v) => v.deviceId === deviceId)?.value ?? null : null,
+    commentCount: visibleComments.length,
+    hiddenCount,
+    mostReported,
+    commentsCollapsed: mostReported >= admin.moderationPolicy.reportHideThreshold,
+    comments: mostReported >= admin.moderationPolicy.reportHideThreshold ? [] : visibleComments.slice(0, 50),
+  };
+}
+
 export async function submitVote(args: {
   shelterId: string;
   deviceId: string;
@@ -819,17 +1054,21 @@ export async function submitVote(args: {
               hidden: false,
               reportCount: 0,
             },
-            ...current.comments,
+            ...current.comments.filter((c) => c.deviceId !== args.deviceId),
           ].slice(0, STORE_LIMITS.maxCommentsPerShelter)
-        : current.comments,
+        : current.comments.filter((c) => c.deviceId !== args.deviceId),
     };
     await writeShelterCommunity(next);
     return next;
   });
 
   if (!value) return { ok: false, code: 'DUPLICATE', message: 'Please wait before voting again for this shelter.' };
-  await appendDbCrowdReport({ shelterId: args.shelterId, deviceId: args.deviceId, value: args.value, comment: args.comment ?? null });
-  return { ok: true, value };
+  const dbOk = await upsertDbCrowdReport({ shelterId: args.shelterId, deviceId: args.deviceId, value: args.value, comment: args.comment ?? null });
+  if (!dbOk && requiresDbPersistence()) {
+    return { ok: false, code: 'BAD_REQUEST', message: 'Vote could not be persisted.' };
+  }
+  const persisted = dbOk ? await readDbShelterCommunity(args.shelterId) : null;
+  return { ok: true, value: persisted ?? value };
 }
 
 export async function submitComment(args: {
@@ -871,8 +1110,12 @@ export async function submitComment(args: {
   });
 
   if (!value) return { ok: false, code: 'DUPLICATE', message: 'Please wait before posting another comment.' };
-  await appendDbCrowdReport({ shelterId: args.shelterId, deviceId: args.deviceId, value: 'OK', comment: args.text });
-  return { ok: true, value };
+  const dbOk = await upsertDbCrowdReport({ shelterId: args.shelterId, deviceId: args.deviceId, value: 'OK', comment: args.text });
+  if (!dbOk && requiresDbPersistence()) {
+    return { ok: false, code: 'BAD_REQUEST', message: 'Comment could not be persisted.' };
+  }
+  const persisted = dbOk ? await readDbShelterCommunity(args.shelterId) : null;
+  return { ok: true, value: persisted ?? value };
 }
 
 export async function deleteShelterVoteAndComment(args: {
@@ -901,8 +1144,12 @@ export async function deleteShelterVoteAndComment(args: {
   });
 
   if (!value) return { ok: false, code: 'NOT_FOUND', message: 'Failed to update.' };
-  await deleteDbShelterCommunityForDevice(args);
-  return { ok: true, value };
+  const dbOk = await deleteDbShelterCommunityForDevice(args);
+  if (!dbOk && requiresDbPersistence()) {
+    return { ok: false, code: 'BAD_REQUEST', message: 'Vote could not be deleted.' };
+  }
+  const persisted = dbOk ? await readDbShelterCommunity(args.shelterId) : null;
+  return { ok: true, value: persisted ?? value };
 }
 
 export async function reportComment(args: {

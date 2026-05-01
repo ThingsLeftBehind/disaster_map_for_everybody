@@ -14,6 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       throw new Error('Failed to load prefectures');
     }
 
+    let countFailed = false;
     const counts = await Promise.all(
       prefs.map(async (pref) => {
         try {
@@ -29,10 +30,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return { prefCode: pref.prefCode, prefName: pref.prefName, count };
         } catch (e) {
           console.error(`Count failed for ${pref.prefName}`, e);
-          return { prefCode: pref.prefCode, prefName: pref.prefName, count: 0 };
+          countFailed = true;
+          return { prefCode: pref.prefCode, prefName: pref.prefName, count: null };
         }
       })
     );
+
+    if (countFailed) {
+      return res.status(200).json({
+        ok: false,
+        updatedAt: new Date().toISOString(),
+        total: 0,
+        counts: [],
+        zeroPrefectures: [],
+        error: 'Designated count diagnostics unavailable for this schema',
+      });
+    }
 
     const total = counts.reduce((acc: any, cur: any) => acc + cur.count, 0);
     const zeroPrefectures = counts.filter((c: any) => c.count === 0).map((c: any) => ({ prefCode: c.prefCode, prefName: c.prefName }));

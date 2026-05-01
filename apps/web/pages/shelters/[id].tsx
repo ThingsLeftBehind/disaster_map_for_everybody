@@ -546,8 +546,7 @@ export default function ShelterDetailPage() {
                           body: JSON.stringify({ shelterId: id, deviceId, value: selectedVote, comment: commentText }),
                         });
                         const voteJson = await voteRes.json().catch(() => null);
-                        const voteCode = typeof voteJson?.errorCode === 'string' ? voteJson.errorCode : null;
-                        if (!voteRes.ok && voteCode !== 'DUPLICATE' && voteCode !== 'RATE_LIMITED') {
+                        if (!voteRes.ok || voteJson?.ok === false) {
                           setSubmitError(voteJson?.error ?? '送信できませんでした');
                           return;
                         }
@@ -564,8 +563,10 @@ export default function ShelterDetailPage() {
                           return nextHistory;
                         });
                         setVoteComment('');
-                        setSelectedVote(null);
                         setSubmitNotice('送信しました');
+                        if (voteJson?.community) {
+                          await mutateCommunity(voteJson.community, { revalidate: false });
+                        }
                         await mutateCommunity();
                       } finally {
                         setSubmitBusy(false);
@@ -593,9 +594,13 @@ export default function ShelterDetailPage() {
                           setSubmitError(j?.error ?? '削除できませんでした');
                           return;
                         }
+                        const j = await res.json().catch(() => null);
                         setSubmitNotice('削除しました');
                         setSelectedVote(null);
                         setVoteComment('');
+                        if (j?.community) {
+                          await mutateCommunity(j.community, { revalidate: false });
+                        }
                         await mutateCommunity();
                       } finally {
                         setSubmitBusy(false);

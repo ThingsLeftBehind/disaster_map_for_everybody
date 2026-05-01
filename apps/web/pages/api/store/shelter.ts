@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getAdminState, getShelterCommunitySnapshot } from 'lib/store/adapter';
+import { getAdminState, getShelterCommunitySnapshot, summarizeShelterCommunityForDevice } from 'lib/store/adapter';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader('Cache-Control', 'no-store');
@@ -12,32 +12,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const [community, admin] = await Promise.all([getShelterCommunitySnapshot(shelterId), getAdminState()]);
 
-    const votesSummary = community.votes.reduce<Record<string, number>>((acc, v) => {
-      acc[v.value] = (acc[v.value] ?? 0) + 1;
-      return acc;
-    }, {});
-    const contributorIds = new Set<string>();
-    for (const vote of community.votes) contributorIds.add(vote.deviceId);
-    for (const comment of community.comments) contributorIds.add(comment.deviceId);
-    const visibleComments = community.comments.filter((c) => !c.hidden);
-    const hiddenCount = community.comments.length - visibleComments.length;
-    const mostReported = Math.max(0, ...community.comments.map((c) => c.reportCount ?? 0));
-
-    return res.status(200).json({
-      updatedAt: community.updatedAt,
-      moderationPolicy: admin.moderationPolicy,
-      votesSummary,
-      contributorCount: contributorIds.size,
-      currentUserVote: deviceId ? community.votes.find((v) => v.deviceId === deviceId)?.value ?? null : null,
-      commentCount: visibleComments.length,
-      hiddenCount,
-      mostReported,
-      commentsCollapsed: mostReported >= admin.moderationPolicy.reportHideThreshold,
-      comments: mostReported >= admin.moderationPolicy.reportHideThreshold ? [] : visibleComments.slice(0, 50),
-    });
+    return res.status(200).json(summarizeShelterCommunityForDevice(community, admin, deviceId ?? null));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return res.status(200).json({
+    console.warn('[store:shelter] read_failed', { error: message });
+    return res.status(500).json({
+      ok: false,
       updatedAt: null,
       moderationPolicy: null,
       votesSummary: {},
@@ -48,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       mostReported: 0,
       commentsCollapsed: false,
       comments: [],
-      lastError: message,
+      lastError: 'community_unavailable',
     });
   }
 }

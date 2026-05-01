@@ -5,18 +5,12 @@ import { useDevice } from './device/DeviceProvider';
 import { reverseGeocodeGsi, type Coords } from '../lib/client/location';
 import { formatPrefMuniLabel, useAreaName } from '../lib/client/areaName';
 import { getJmaWarningPriority } from '../lib/jma/filters';
-import { inferTokyoGroup, type TokyoGroupKey } from '../lib/alerts/tokyoScope';
+import { getTokyoGroupLabel, inferTokyoGroup, type TokyoGroupKey } from '../lib/alerts/tokyoScope';
 import { toJmaClass20 } from '../lib/muni-helper';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 type WarningItem = { id: string; kind: string; status: string | null; source: string };
-
-const TOKYO_LABELS: Record<TokyoGroupKey, string> = {
-    mainland: '東京都（島しょ除く）',
-    izu: '東京都（伊豆諸島）',
-    ogasawara: '東京都（小笠原諸島）',
-};
 
 function summarizeWarningItems(items: WarningItem[]) {
     const urgentCounts = new Map<string, number>();
@@ -242,9 +236,9 @@ export function MyAreaWarningsSection() {
                             prefCode: area.prefCode ?? null,
                             muniCode: area.muniCode ?? null,
                             label: area.muniName ?? area.label ?? null,
-                        }) ?? 'mainland';
+                        }) ?? 'tokyo-mainland';
                     targetItems = tokyoGroups[group]?.items ?? [];
-                    tokyoLabel = TOKYO_LABELS[group];
+                    tokyoLabel = getTokyoGroupLabel(group);
                 }
                 const summary = summarizeWarningItems(targetItems);
                 return {

@@ -5,7 +5,7 @@ import { JmaWarningsQuerySchema, type NormalizedWarningItem } from 'lib/jma/type
 import { readCachedWarnings } from 'lib/jma/normalize';
 import { readJsonFile } from 'lib/jma/cache';
 import { jmaAreaConstPath, jmaWebJsonWarningPath } from 'lib/jma/paths';
-import { TOKYO_GROUP_AREA_CODES, type TokyoGroupKey } from 'lib/alerts/tokyoScope';
+import { TOKYO_GROUP_AREA_CODES, TOKYO_GROUP_LABELS, type TokyoGroupKey } from 'lib/alerts/tokyoScope';
 import { toJmaClass20 } from 'lib/muni-helper';
 
 const CACHE_TTL_MS = 120_000;
@@ -31,12 +31,6 @@ type AreaConst = {
 };
 
 type AreaNode = { name?: string; parent?: string };
-
-const TOKYO_GROUP_LABELS = {
-  mainland: '（島しょ除く）',
-  izu: '伊豆諸島',
-  ogasawara: '小笠原諸島',
-} as const;
 
 const WARNING_CODE_BASE: Record<string, string> = {
   '05': '暴風',

@@ -1,6 +1,4 @@
 import { Prisma } from 'lib/db/prisma';
-import { raw } from '@prisma/client/runtime/library';
-import type { Sql } from '@prisma/client/runtime/library';
 import { hazardKeys, hazardLabels, type HazardKey } from '@jp-evac/shared';
 import { normalizeLatLon } from './coords';
 import { factorModeToScale, getEvacSitesSchema } from './evacSitesSchema';
@@ -34,12 +32,15 @@ type EvacSiteMeta = {
   latCol: string;
   lonCol: string;
   isActiveCol: string | null;
+  isDesignatedCol: string | null;
   hazardsCol: string | null;
   hazardBoolCols: Partial<Record<(typeof hazardKeys)[number], string>>;
   isSameAddressCol: string | null;
   shelterFieldsCol: string | null;
   notesCol: string | null;
   sourceUpdatedAtCol: string | null;
+  sourceNameCol: string | null;
+  sourceIdCol: string | null;
   createdAtCol: string | null;
   updatedAtCol: string | null;
   commonIdCol: string | null;
@@ -65,12 +66,13 @@ export type EvacSiteNormalized = {
   lat: number;
   lon: number;
   hazards: Record<string, boolean>;
+  is_designated: boolean | null;
   is_same_address_as_shelter: boolean | null;
-  shelter_fields: unknown | null;
+  shelter_fields: Prisma.JsonValue | null;
   notes: string | null;
-  source_updated_at: Date | string | null;
-  created_at: Date | string | null;
-  updated_at: Date | string;
+  source_updated_at: Date | null;
+  created_at: Date;
+  updated_at: Date;
 };
 
 let cachedMeta: { checkedAtMs: number; meta: EvacSiteMeta } | null = null;
@@ -148,11 +150,24 @@ function safeString(value: unknown): string | null {
   return null;
 }
 
+function safeDate(value: unknown): Date | null {
+  if (value instanceof Date) return value;
+  if (typeof value === 'string' || typeof value === 'number') {
+    const t = Date.parse(String(value));
+    if (!Number.isNaN(t)) return new Date(t);
+  }
+  return null;
+}
+
 function isUuidType(type: string | null): boolean {
   if (!type) return false;
   const normalized = type.toLowerCase();
   return normalized.includes('uuid');
 }
+
+type Sql = Prisma.Sql;
+
+const raw = Prisma.raw;
 
 function buildParamForColumn(value: string, columnType: string | null): Sql {
   return isUuidType(columnType) ? Prisma.sql`${value}::uuid` : Prisma.sql`${value}`;
@@ -318,11 +333,14 @@ export async function getEvacSiteMeta(prisma: import('@prisma/client').PrismaCli
   const latCol = schemaResult.latCol;
   const lonCol = schemaResult.lonCol;
   const isActiveCol = pickColumn(cols, ['isactive', 'is_active', 'active', 'enabled', 'is_enabled']);
+  const isDesignatedCol = pickColumn(cols, ['isdesignated', 'is_designated', 'designated', 'is_designated_shelter']);
   const hazardsCol = pickColumn(cols, ['hazards']);
   const isSameAddressCol = pickColumn(cols, ['is_same_address_as_shelter', 'isSameAddressAsShelter']);
   const shelterFieldsCol = pickColumn(cols, ['shelter_fields', 'shelterFields']);
   const notesCol = pickColumn(cols, ['notes']);
   const sourceUpdatedAtCol = pickColumn(cols, ['source_updated_at', 'sourceUpdatedAt']);
+  const sourceNameCol = pickColumn(cols, ['source_name', 'sourceName']);
+  const sourceIdCol = pickColumn(cols, ['source_id', 'sourceId']);
   const createdAtCol = pickColumn(cols, ['created_at', 'createdAt']);
   const updatedAtCol = pickColumn(cols, ['updated_at', 'updatedAt']);
   const commonIdCol = pickColumn(cols, ['common_id', 'commonId']);
@@ -347,12 +365,15 @@ export async function getEvacSiteMeta(prisma: import('@prisma/client').PrismaCli
     latCol,
     lonCol,
     isActiveCol,
+    isDesignatedCol,
     hazardsCol,
     hazardBoolCols,
     isSameAddressCol,
     shelterFieldsCol,
     notesCol,
     sourceUpdatedAtCol,
+    sourceNameCol,
+    sourceIdCol,
     createdAtCol,
     updatedAtCol,
     commonIdCol,
@@ -738,6 +759,7 @@ export async function rawSearchEvacSites(
     q?: string | null;
     limit: number;
     offset: number;
+    designatedOnly?: boolean | null;
   }
 ): Promise<Array<Record<string, unknown>>> {
   const table = raw(meta.tableRef);
@@ -791,33 +813,47 @@ export async function rawSearchEvacSites(
   } else {
     const muniCode = (args.muniCode ?? '').trim();
     if (muniCode) {
+      const patternContains = `%${muniCode}%`;
+      const ors: Sql[] = [];
       if (meta.municipalityCodeCol) {
         const c = raw(qIdent(meta.municipalityCodeCol));
-        conditions.push(Prisma.sql`${c} = ${muniCode}`);
-        // If an explicit municipality code column exists, prefer exact filtering (fast, reliable).
-      } else {
-        const patternContains = `%${muniCode}%`;
-        const ors: Sql[] = [];
-        if (meta.prefCityCol) {
-          const c = raw(qIdent(meta.prefCityCol));
-          ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
-        }
-        if (meta.addressCol) {
-          const c = raw(qIdent(meta.addressCol));
-          ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
-        }
-        if (meta.commonIdCol) {
-          const c = raw(qIdent(meta.commonIdCol));
-          ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
-        }
-        if (ors.length > 0) conditions.push(Prisma.sql`(${Prisma.join(ors, ' OR ')})`);
+        ors.push(Prisma.sql`${c} = ${muniCode}`);
       }
+      if (meta.prefCityCol) {
+        const c = raw(qIdent(meta.prefCityCol));
+        ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
+      }
+      if (meta.addressCol) {
+        const c = raw(qIdent(meta.addressCol));
+        ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
+      }
+      if (meta.commonIdCol) {
+        const c = raw(qIdent(meta.commonIdCol));
+        ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
+      }
+      if (meta.sourceIdCol) {
+        const c = raw(qIdent(meta.sourceIdCol));
+        ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
+      }
+      if (ors.length > 0) conditions.push(Prisma.sql`(${Prisma.join(ors, ' OR ')})`);
     }
   }
 
-  if (prefCode && meta.municipalityCodeCol) {
-    const c = raw(qIdent(meta.municipalityCodeCol));
-    conditions.push(Prisma.sql`${c} LIKE ${`${prefCode}%`}`);
+  if (prefCode) {
+    const ors: Sql[] = [];
+    if (meta.municipalityCodeCol) {
+      const c = raw(qIdent(meta.municipalityCodeCol));
+      ors.push(Prisma.sql`${c} LIKE ${`${prefCode}%`}`);
+    }
+    if (meta.sourceNameCol) {
+      const c = raw(qIdent(meta.sourceNameCol));
+      ors.push(Prisma.sql`${c} LIKE ${`${prefCode}%`}`);
+    }
+    if (meta.sourceIdCol) {
+      const c = raw(qIdent(meta.sourceIdCol));
+      ors.push(Prisma.sql`${c} LIKE ${`${prefCode}%`}`);
+    }
+    if (ors.length > 0) conditions.push(Prisma.sql`(${Prisma.join(ors, ' OR ')})`);
   }
 
   const q = (args.q ?? '').trim();
@@ -832,8 +868,20 @@ export async function rawSearchEvacSites(
       const c = raw(qIdent(meta.addressCol));
       ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
     }
+    if (meta.prefCityCol) {
+      const c = raw(qIdent(meta.prefCityCol));
+      ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
+    }
     if (meta.notesCol) {
       const c = raw(qIdent(meta.notesCol));
+      ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
+    }
+    if (meta.commonIdCol) {
+      const c = raw(qIdent(meta.commonIdCol));
+      ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
+    }
+    if (meta.sourceIdCol) {
+      const c = raw(qIdent(meta.sourceIdCol));
       ors.push(Prisma.sql`${c} ILIKE ${patternContains}`);
     }
     if (ors.length > 0) conditions.push(Prisma.sql`(${Prisma.join(ors, ' OR ')})`);
@@ -918,9 +966,10 @@ export function normalizeEvacSiteRow(
     const city = meta.cityCol ? safeString(row[meta.cityCol]) : null;
     if (pref && city) prefCity = `${pref}${city}`;
     else if (pref) prefCity = pref;
+    else prefCity = address;
   }
 
-  const commonId = meta.commonIdCol ? safeString(row[meta.commonIdCol]) : null;
+  const commonId = meta.commonIdCol ? safeString(row[meta.commonIdCol]) : meta.sourceIdCol ? safeString(row[meta.sourceIdCol]) : null;
 
   const coords =
     factorCandidates
@@ -948,11 +997,12 @@ export function normalizeEvacSiteRow(
   }
 
   const isSame = meta.isSameAddressCol ? safeBoolean(row[meta.isSameAddressCol]) : null;
-  const shelterFields = meta.shelterFieldsCol ? (row[meta.shelterFieldsCol] ?? null) : null;
+  const isDesignated = meta.isDesignatedCol ? safeBoolean(row[meta.isDesignatedCol]) : null;
+  const shelterFields = meta.shelterFieldsCol ? ((row[meta.shelterFieldsCol] ?? null) as Prisma.JsonValue | null) : null;
   const notes = meta.notesCol ? safeString(row[meta.notesCol]) : null;
-  const sourceUpdatedAt = meta.sourceUpdatedAtCol ? (row[meta.sourceUpdatedAtCol] as any) : null;
-  const createdAt = meta.createdAtCol ? (row[meta.createdAtCol] as any) : null;
-  const updatedAt = meta.updatedAtCol ? (row[meta.updatedAtCol] as any) : createdAt ?? new Date().toISOString();
+  const sourceUpdatedAt = meta.sourceUpdatedAtCol ? safeDate(row[meta.sourceUpdatedAtCol]) : null;
+  const createdAt = (meta.createdAtCol ? safeDate(row[meta.createdAtCol]) : null) ?? new Date();
+  const updatedAt = (meta.updatedAtCol ? safeDate(row[meta.updatedAtCol]) : null) ?? createdAt ?? new Date();
 
   return {
     id,
@@ -963,6 +1013,7 @@ export function normalizeEvacSiteRow(
     lat: coords.lat,
     lon: coords.lon,
     hazards,
+    is_designated: isDesignated,
     is_same_address_as_shelter: isSame,
     shelter_fields: shelterFields,
     notes,

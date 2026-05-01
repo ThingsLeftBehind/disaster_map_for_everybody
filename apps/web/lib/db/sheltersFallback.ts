@@ -1,7 +1,4 @@
 import { Prisma } from 'lib/db/prisma';
-
-import { raw } from '@prisma/client/runtime/library';
-import type { Sql } from '@prisma/client/runtime/library';
 import { haversineDistance } from '@jp-evac/shared';
 import {
   getEvacSiteCoordFactors,
@@ -20,6 +17,8 @@ import {
 } from 'lib/shelters/evacsiteCompat';
 type EvacSiteMeta = Awaited<ReturnType<typeof getEvacSiteMeta>>;
 type EvacSiteHazardMeta = Awaited<ReturnType<typeof getEvacSiteHazardMeta>>;
+type Sql = Prisma.Sql;
+const raw = Prisma.raw;
 
 export type ShelterFallbackContext = {
   meta: EvacSiteMeta;
@@ -197,6 +196,7 @@ export async function fallbackSearchShelters(
     q?: string | null;
     limit: number;
     offset: number;
+    designatedOnly?: boolean | null;
   }
 ): Promise<EvacSiteNormalized[]> {
   const context = await getFallbackContext(prisma);
