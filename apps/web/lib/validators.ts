@@ -25,7 +25,7 @@ export const NearbyQuerySchema = z.object({
 export const CrowdReportSchema = z.object({
   siteId: z.string().min(1),
   status: z.enum(['OK', 'CROWDED', 'VERY_CROWDED', 'CLOSED', 'BLOCKED']),
-  comment: z.string().max(500).optional(),
+  comment: z.string().max(140).optional(),
   device_hash: z.string().min(4),
 });
 

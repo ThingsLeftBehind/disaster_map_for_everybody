@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!parsed.success) return jsonError(res, 400, { ok: false, error: 'invalid_payload', errorCode: 'INVALID_BODY' });
 
     const text = parsed.data.text.trim();
-    if (!text || text.length > 300) return jsonError(res, 400, { ok: false, error: 'invalid_payload', errorCode: 'INVALID_BODY' });
+    if (!text || text.length > 140) return jsonError(res, 400, { ok: false, error: 'invalid_payload', errorCode: 'INVALID_BODY' });
 
     const ip = getClientIp(req);
     const result = await submitComment({
@@ -38,6 +38,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       text,
     });
     if (!result.ok) {
+      if (result.code === 'FORBIDDEN' && result.message === 'ACTIVE_POST_LIMIT_REACHED') {
+        const details = (result.details ?? {}) as Record<string, unknown>;
+        return jsonError(res, 409, {
+          ok: false,
+          error: 'active_post_limit_reached',
+          errorCode: 'ACTIVE_POST_LIMIT_REACHED',
+          activePostLimit: typeof details.activePostLimit === 'number' ? details.activePostLimit : 5,
+          activePostCount: typeof details.activePostCount === 'number' ? details.activePostCount : 5,
+          activePosts: Array.isArray(details.activePosts) ? details.activePosts : [],
+        });
+      }
       return jsonError(res, result.code === 'RATE_LIMITED' ? 429 : 400, {
         ok: false,
         error: result.message,
@@ -48,6 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return jsonOk(res, { ok: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return jsonOk(res, { ok: false, error: 'internal_error', errorCode: 'INTERNAL_ERROR', lastError: message });
+    console.warn('[store:shelter_comment] unhandled_error', { error: message });
+    return jsonError(res, 500, { ok: false, error: 'internal_error', errorCode: 'INTERNAL_ERROR' });
   }
 }

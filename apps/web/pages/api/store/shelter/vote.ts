@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import {
   deleteShelterVoteAndComment,
+  getActiveShelterPostsForDevice,
   getAdminState,
   submitVote,
   summarizeShelterCommunityForDevice,
@@ -43,10 +44,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!result.ok) {
         return jsonError(res, 400, { ok: false, error: result.message, errorCode: result.code });
       }
-      const admin = await getAdminState();
+      const [admin, activePosts] = await Promise.all([getAdminState(), getActiveShelterPostsForDevice(parsed.data.deviceId)]);
       return jsonOk(res, {
         ok: true,
-        community: summarizeShelterCommunityForDevice(result.value, admin, parsed.data.deviceId),
+        community: summarizeShelterCommunityForDevice(result.value, admin, parsed.data.deviceId, {
+          window: '24h',
+          activePosts,
+        }),
       });
     }
 
@@ -73,6 +77,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     if (!result.ok) {
+      if (result.code === 'FORBIDDEN' && result.message === 'ACTIVE_POST_LIMIT_REACHED') {
+        const details = (result.details ?? {}) as Record<string, unknown>;
+        return jsonError(res, 409, {
+          ok: false,
+          error: 'active_post_limit_reached',
+          errorCode: 'ACTIVE_POST_LIMIT_REACHED',
+          activePostLimit: typeof details.activePostLimit === 'number' ? details.activePostLimit : 5,
+          activePostCount: typeof details.activePostCount === 'number' ? details.activePostCount : 5,
+          activePosts: Array.isArray(details.activePosts) ? details.activePosts : [],
+        });
+      }
       return jsonError(res, result.code === 'RATE_LIMITED' ? 429 : 400, {
         ok: false,
         error: result.message,
@@ -80,10 +95,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         errorCode: result.code,
       });
     }
-    const admin = await getAdminState();
+    const [admin, activePosts] = await Promise.all([getAdminState(), getActiveShelterPostsForDevice(parsed.data.deviceId)]);
     return jsonOk(res, {
       ok: true,
-      community: summarizeShelterCommunityForDevice(result.value, admin, parsed.data.deviceId),
+      community: summarizeShelterCommunityForDevice(result.value, admin, parsed.data.deviceId, {
+        window: '24h',
+        activePosts,
+      }),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

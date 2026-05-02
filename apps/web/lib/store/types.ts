@@ -65,6 +65,11 @@ export const DeviceStateSchema = z.object({
 export type DeviceState = z.infer<typeof DeviceStateSchema>;
 
 export const CrowdVoteValueSchema = z.enum([
+  'ok',
+  'crowded',
+  'very_crowded',
+  'closed',
+  'blocked',
   'OK',
   'CROWDED',
   'VERY_CROWDED',
@@ -89,7 +94,7 @@ export const ShelterCommentSchema = z.object({
   id: z.string().min(6),
   deviceId: DeviceIdSchema,
   ipHash: z.string().min(8).max(80),
-  text: z.string().min(1).max(500),
+  text: z.string().min(1).max(140),
   createdAt: z.string(),
   hidden: z.boolean().default(false),
   reportCount: z.number().int().min(0).default(0),
@@ -151,7 +156,9 @@ export type ModerationState = z.infer<typeof ModerationStateSchema>;
 export const StoreErrorCodeSchema = z.enum(['RATE_LIMITED', 'DUPLICATE', 'NOT_FOUND', 'BAD_REQUEST', 'FORBIDDEN']);
 export type StoreErrorCode = z.infer<typeof StoreErrorCodeSchema>;
 
-export type StoreResult<T> = { ok: true; value: T } | { ok: false; code: StoreErrorCode; message: string };
+export type StoreResult<T> =
+  | { ok: true; value: T }
+  | { ok: false; code: StoreErrorCode; message: string; details?: Record<string, unknown> };
 
 export const UpdateDeviceBodySchema = z.object({
   deviceId: DeviceIdSchema,
@@ -175,13 +182,13 @@ export const ShelterVoteBodySchema = z.object({
   shelterId: z.string().min(1),
   deviceId: DeviceIdSchema,
   value: CrowdVoteValueSchema,
-  comment: z.string().max(300).nullable().optional(),
+  comment: z.string().max(140).nullable().optional(),
 });
 
 export const ShelterCommentBodySchema = z.object({
   shelterId: z.string().min(1),
   deviceId: DeviceIdSchema,
-  text: z.string().min(1).max(500),
+  text: z.string().min(1).max(140),
 });
 
 export const ShelterReportBodySchema = z.object({

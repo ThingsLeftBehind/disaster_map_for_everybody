@@ -978,44 +978,377 @@ async function writeShelterCommunity(next: ShelterCommunity): Promise<void> {
   await atomicWriteJson(localStoreShelterPath(next.shelterId), next);
 }
 
-export async function getShelterCommunitySnapshot(shelterId: string): Promise<ShelterCommunity> {
-  const dbCommunity = await readDbShelterCommunity(shelterId);
-  if (dbCommunity) return dbCommunity;
-  const fsCommunity = await getShelterCommunity(shelterId);
+const SHELTER_ACTIVE_POST_LIMIT = 5;
+const SHELTER_POST_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const SHELTER_SUMMARY_WINDOW_MS = {
+  '24h': 24 * 60 * 60 * 1000,
+  '3d': 3 * 24 * 60 * 60 * 1000,
+  '7d': 7 * 24 * 60 * 60 * 1000,
+} as const;
+type ShelterSummaryWindowKey = keyof typeof SHELTER_SUMMARY_WINDOW_MS;
+type SiteConditionKindLower = 'ok' | 'crowded' | 'very_crowded' | 'closed' | 'blocked';
+
+function toDeviceHash(deviceId: string): string {
+  return deviceId.trim();
+}
+
+function normalizeSummaryWindowKey(value: string | null | undefined): ShelterSummaryWindowKey {
+  if (value === '3d' || value === '7d') return value;
+  return '24h';
+}
+
+function normalizeSiteConditionKind(value: string): SiteConditionKindLower {
+  const normalized = String(value ?? '').trim();
+  switch (normalized) {
+    case 'ok':
+    case 'OK':
+    case 'SMOOTH':
+    case 'NORMAL':
+    case 'EVACUATING':
+      return 'ok';
+    case 'crowded':
+    case 'CROWDED':
+      return 'crowded';
+    case 'very_crowded':
+    case 'VERY_CROWDED':
+      return 'very_crowded';
+    case 'closed':
+    case 'CLOSED':
+      return 'closed';
+    case 'blocked':
+    case 'BLOCKED':
+      return 'blocked';
+    default:
+      return 'ok';
+  }
+}
+
+function toCompatibilityLevels(conditionKind: SiteConditionKindLower): {
+  congestionLevel: 'low' | 'normal' | 'high';
+  accessibility: 'accessible' | 'blocked';
+} {
+  switch (conditionKind) {
+    case 'ok':
+      return { congestionLevel: 'low', accessibility: 'accessible' };
+    case 'crowded':
+      return { congestionLevel: 'normal', accessibility: 'accessible' };
+    case 'very_crowded':
+      return { congestionLevel: 'high', accessibility: 'accessible' };
+    case 'closed':
+    case 'blocked':
+      return { congestionLevel: 'high', accessibility: 'blocked' };
+    default:
+      return { congestionLevel: 'normal', accessibility: 'accessible' };
+  }
+}
+
+function sanitizeShelterComment(raw: string | null | undefined): string | null {
+  if (typeof raw !== 'string') return null;
+  const withoutTags = raw.replace(/<[^>]+>/g, ' ');
+  const withoutUrls = withoutTags.replace(/(?:https?:\/\/|www\.)\S+/gi, ' ');
+  const compact = withoutUrls.replace(/\s+/g, ' ').trim();
+  if (!compact) return null;
+  return compact.slice(0, 140);
+}
+
+async function resolveSiteId(rawId: string, activeOnly: boolean): Promise<string | null> {
+  const site = await prisma.evacSite.findFirst({
+    where: {
+      OR: [{ id: rawId }, { sourceId: rawId }],
+      ...(activeOnly ? { isActive: true } : {}),
+    },
+    select: { id: true },
+  });
+  return site?.id ?? null;
+}
+
+async function readActiveSiteReports(siteId: string) {
+  const now = new Date();
+  return prisma.siteStatusReport.findMany({
+    where: {
+      siteId,
+      deletedAt: null,
+      expiresAt: { gt: now },
+    },
+    orderBy: { reportedAt: 'desc' },
+    take: 500,
+    select: {
+      id: true,
+      deviceHash: true,
+      comment: true,
+      conditionKind: true,
+      reportedAt: true,
+      updatedAt: true,
+      expiresAt: true,
+    },
+  });
+}
+
+function buildShelterCommunityFromReports(
+  shelterId: string,
+  rows: Array<{
+    id: string;
+    deviceHash: string;
+    comment: string | null;
+    conditionKind: string;
+    reportedAt: Date;
+    updatedAt: Date;
+    expiresAt: Date;
+  }>
+): ShelterCommunity {
+  let latestAt = nowIso();
+  const votes: ShelterCommunity['votes'] = [];
+  const comments: ShelterCommunity['comments'] = [];
+
+  for (const row of rows) {
+    const voteAt = row.reportedAt.toISOString();
+    const updatedAt = row.updatedAt.toISOString();
+    latestAt = Date.parse(updatedAt) > Date.parse(latestAt) ? updatedAt : latestAt;
+    votes.push({
+      id: row.id,
+      deviceId: row.deviceHash,
+      ipHash: 'db',
+      value: normalizeSiteConditionKind(String(row.conditionKind)),
+      createdAt: voteAt,
+    });
+    const text = sanitizeShelterComment(row.comment);
+    if (text) {
+      comments.push({
+        id: row.id,
+        deviceId: row.deviceHash,
+        ipHash: 'db',
+        text,
+        createdAt: voteAt,
+        hidden: false,
+        reportCount: 0,
+      });
+    }
+  }
+
   return {
-    ...fsCommunity,
-    votes: fsCommunity.votes.map((vote) => ({ ...vote, value: normalizeCrowdVote(vote.value) })),
+    version: 1,
+    shelterId,
+    updatedAt: latestAt,
+    votes,
+    comments: comments.slice(0, STORE_LIMITS.maxCommentsPerShelter),
+    reports: [],
   };
+}
+
+async function listActiveShelterPostsByDeviceHash(deviceHash: string): Promise<
+  Array<{
+    siteId: string;
+    siteName: string;
+    conditionKind: SiteConditionKindLower;
+    comment: string | null;
+    reportedAt: string;
+    expiresAt: string;
+  }>
+> {
+  const now = new Date();
+  const rows = await prisma.siteStatusReport.findMany({
+    where: {
+      deviceHash,
+      deletedAt: null,
+      expiresAt: { gt: now },
+      EvacSite: { isActive: true },
+    },
+    orderBy: { reportedAt: 'desc' },
+    take: SHELTER_ACTIVE_POST_LIMIT,
+    select: {
+      siteId: true,
+      conditionKind: true,
+      comment: true,
+      reportedAt: true,
+      expiresAt: true,
+      EvacSite: { select: { name: true } },
+    },
+  });
+
+  return rows.map((row) => ({
+    siteId: row.siteId,
+    siteName: row.EvacSite?.name ?? '避難場所',
+    conditionKind: normalizeSiteConditionKind(String(row.conditionKind)),
+    comment: sanitizeShelterComment(row.comment),
+    reportedAt: row.reportedAt.toISOString(),
+    expiresAt: row.expiresAt.toISOString(),
+  }));
+}
+
+async function persistShelterStatusReport(args: {
+  shelterId: string;
+  deviceHash: string;
+  conditionKind: SiteConditionKindLower;
+  comment: string | null;
+}): Promise<StoreResult<{ siteId: string }>> {
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + SHELTER_POST_TTL_MS);
+  const siteId = await resolveSiteId(args.shelterId, true);
+  if (!siteId) {
+    return { ok: false, code: 'BAD_REQUEST', message: 'Shelter not found or inactive.' };
+  }
+
+  const existing = await prisma.siteStatusReport.findUnique({
+    where: { siteId_deviceHash: { siteId, deviceHash: args.deviceHash } },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    const activeCount = await prisma.siteStatusReport.count({
+      where: {
+        deviceHash: args.deviceHash,
+        deletedAt: null,
+        expiresAt: { gt: now },
+        EvacSite: { isActive: true },
+      },
+    });
+    if (activeCount >= SHELTER_ACTIVE_POST_LIMIT) {
+      const activePosts = await listActiveShelterPostsByDeviceHash(args.deviceHash);
+      return {
+        ok: false,
+        code: 'FORBIDDEN',
+        message: 'ACTIVE_POST_LIMIT_REACHED',
+        details: {
+          activePosts,
+          activePostCount: activePosts.length,
+          activePostLimit: SHELTER_ACTIVE_POST_LIMIT,
+        },
+      };
+    }
+  }
+
+  const compatible = toCompatibilityLevels(args.conditionKind);
+  await prisma.siteStatusReport.upsert({
+    where: { siteId_deviceHash: { siteId, deviceHash: args.deviceHash } },
+    create: {
+      id: crypto.randomUUID(),
+      siteId,
+      deviceHash: args.deviceHash,
+      deviceId: null,
+      congestionLevel: compatible.congestionLevel,
+      accessibility: compatible.accessibility,
+      comment: args.comment,
+      conditionKind: args.conditionKind,
+      reportedAt: now,
+      updatedAt: now,
+      deletedAt: null,
+      expiresAt,
+    },
+    update: {
+      congestionLevel: compatible.congestionLevel,
+      accessibility: compatible.accessibility,
+      comment: args.comment,
+      conditionKind: args.conditionKind,
+      reportedAt: now,
+      updatedAt: now,
+      deletedAt: null,
+      expiresAt,
+    },
+  });
+
+  return { ok: true, value: { siteId } };
+}
+
+export async function getActiveShelterPostsForDevice(deviceId: string): Promise<
+  Array<{
+    siteId: string;
+    siteName: string;
+    conditionKind: SiteConditionKindLower;
+    comment: string | null;
+    reportedAt: string;
+    expiresAt: string;
+  }>
+> {
+  const deviceHash = toDeviceHash(deviceId);
+  if (!deviceHash) return [];
+  return listActiveShelterPostsByDeviceHash(deviceHash);
+}
+
+export async function getShelterCommunitySnapshot(shelterId: string): Promise<ShelterCommunity> {
+  const siteId = await resolveSiteId(shelterId, false);
+  if (!siteId) return defaultShelterCommunity(shelterId);
+  const rows = await readActiveSiteReports(siteId);
+  return buildShelterCommunityFromReports(siteId, rows);
 }
 
 export function summarizeShelterCommunityForDevice(
   community: ShelterCommunity,
   admin: AdminState,
-  deviceId?: string | null
+  deviceId?: string | null,
+  options?: {
+    window?: string;
+    activePosts?: Array<{
+      siteId: string;
+      siteName: string;
+      conditionKind: SiteConditionKindLower;
+      comment: string | null;
+      reportedAt: string;
+      expiresAt: string;
+    }>;
+  }
 ) {
-  const votesSummary = community.votes.reduce<Record<string, number>>((acc, v) => {
-    acc[v.value] = (acc[v.value] ?? 0) + 1;
-    return acc;
-  }, {});
+  const window = normalizeSummaryWindowKey(options?.window ?? '24h');
+  const sinceMs = Date.now() - SHELTER_SUMMARY_WINDOW_MS[window];
+
+  const filteredVotes = community.votes.filter((vote) => {
+    const t = Date.parse(vote.createdAt);
+    return Number.isFinite(t) && t >= sinceMs;
+  });
+  const filteredComments = community.comments.filter((comment) => {
+    const t = Date.parse(comment.createdAt);
+    return Number.isFinite(t) && t >= sinceMs;
+  });
+
+  const votesSummary: Record<SiteConditionKindLower, number> = {
+    ok: 0,
+    crowded: 0,
+    very_crowded: 0,
+    closed: 0,
+    blocked: 0,
+  };
+  for (const vote of filteredVotes) {
+    const key = normalizeSiteConditionKind(String(vote.value));
+    votesSummary[key] += 1;
+  }
+
   const contributorIds = new Set<string>();
-  for (const vote of community.votes) contributorIds.add(vote.deviceId);
-  for (const comment of community.comments) contributorIds.add(comment.deviceId);
-  const visibleComments = community.comments.filter((c) => !c.hidden);
-  const hiddenCount = community.comments.length - visibleComments.length;
-  const mostReported = Math.max(0, ...community.comments.map((c) => c.reportCount ?? 0));
+  for (const vote of filteredVotes) contributorIds.add(vote.deviceId);
+  for (const comment of filteredComments) contributorIds.add(comment.deviceId);
+
+  const currentUserVoteRaw = deviceId ? community.votes.find((v) => v.deviceId === deviceId)?.value ?? null : null;
+  const currentUserVote = currentUserVoteRaw ? normalizeSiteConditionKind(String(currentUserVoteRaw)) : null;
+
+  const visibleComments = filteredComments.filter((c) => !c.hidden);
+  const lastReportedAt =
+    filteredVotes.length > 0
+      ? filteredVotes
+          .map((vote) => Date.parse(vote.createdAt))
+          .filter((t) => Number.isFinite(t))
+          .sort((a, b) => b - a)
+          .map((t) => new Date(t).toISOString())[0] ?? null
+      : null;
+
+  const activePosts = options?.activePosts ?? [];
 
   return {
     ok: true,
     updatedAt: community.updatedAt,
     moderationPolicy: admin.moderationPolicy,
     votesSummary,
+    totalVotes: filteredVotes.length,
+    lastReportedAt,
+    window,
     contributorCount: contributorIds.size,
-    currentUserVote: deviceId ? community.votes.find((v) => v.deviceId === deviceId)?.value ?? null : null,
+    currentUserVote,
     commentCount: visibleComments.length,
-    hiddenCount,
-    mostReported,
-    commentsCollapsed: mostReported >= admin.moderationPolicy.reportHideThreshold,
-    comments: mostReported >= admin.moderationPolicy.reportHideThreshold ? [] : visibleComments.slice(0, 50),
+    hiddenCount: 0,
+    mostReported: 0,
+    commentsCollapsed: false,
+    comments: visibleComments.slice(0, 50),
+    recentComments: visibleComments.slice(0, 5),
+    activePostLimit: SHELTER_ACTIVE_POST_LIMIT,
+    activePostCount: activePosts.length,
+    activePosts,
   };
 }
 
@@ -1031,44 +1364,21 @@ export async function submitVote(args: {
   const rlDevice = checkRateLimit(`vote:dev:${args.deviceId}`, 15, 60_000);
   if (!rlDevice.ok) return { ok: false, code: 'RATE_LIMITED', message: 'Too many votes (device)' };
 
-  const { value } = await runExclusive(`shelter:${args.shelterId}`, async () => {
-    const current = await getShelterCommunity(args.shelterId);
-    const normalizedValue = normalizeCrowdVote(args.value);
-    const comment = typeof args.comment === 'string' && args.comment.trim() ? args.comment.trim().slice(0, 300) : null;
-
-    const next: ShelterCommunity = {
-      ...current,
-      updatedAt: nowIso(),
-      votes: [
-        { id: nanoid(10), deviceId: args.deviceId, ipHash: args.ipHash, value: normalizedValue, createdAt: nowIso() },
-        ...current.votes.filter((v) => v.deviceId !== args.deviceId),
-      ].slice(0, STORE_LIMITS.maxVotesHistoryPerShelter),
-      comments: comment
-        ? [
-            {
-              id: nanoid(10),
-              deviceId: args.deviceId,
-              ipHash: args.ipHash,
-              text: comment,
-              createdAt: nowIso(),
-              hidden: false,
-              reportCount: 0,
-            },
-            ...current.comments.filter((c) => c.deviceId !== args.deviceId),
-          ].slice(0, STORE_LIMITS.maxCommentsPerShelter)
-        : current.comments.filter((c) => c.deviceId !== args.deviceId),
-    };
-    await writeShelterCommunity(next);
-    return next;
-  });
-
-  if (!value) return { ok: false, code: 'DUPLICATE', message: 'Please wait before voting again for this shelter.' };
-  const dbOk = await upsertDbCrowdReport({ shelterId: args.shelterId, deviceId: args.deviceId, value: args.value, comment: args.comment ?? null });
-  if (!dbOk && requiresDbPersistence()) {
+  try {
+    const persisted = await persistShelterStatusReport({
+      shelterId: args.shelterId,
+      deviceHash: toDeviceHash(args.deviceId),
+      conditionKind: normalizeSiteConditionKind(String(args.value)),
+      comment: sanitizeShelterComment(args.comment ?? null),
+    });
+    if (!persisted.ok) return persisted;
+    const community = await getShelterCommunitySnapshot(persisted.value.siteId);
+    return { ok: true, value: community };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn('[store:shelter] submit_vote_failed', { error: message });
     return { ok: false, code: 'BAD_REQUEST', message: 'Vote could not be persisted.' };
   }
-  const persisted = dbOk ? await readDbShelterCommunity(args.shelterId) : null;
-  return { ok: true, value: persisted ?? value };
 }
 
 export async function submitComment(args: {
@@ -1082,74 +1392,65 @@ export async function submitComment(args: {
   const rlDevice = checkRateLimit(`comment:dev:${args.deviceId}`, 10, 60_000);
   if (!rlDevice.ok) return { ok: false, code: 'RATE_LIMITED', message: 'Too many comments (device)' };
 
-  const { value } = await runExclusive(`shelter:${args.shelterId}`, async () => {
-    const current = await getShelterCommunity(args.shelterId);
-    const recent = current.comments.find(
-      (c) => c.deviceId === args.deviceId && withinWindow(c.createdAt, STORE_LIMITS.commentWindowMs)
-    );
-    if (recent) return null;
+  const safeText = sanitizeShelterComment(args.text);
+  if (!safeText) return { ok: false, code: 'BAD_REQUEST', message: 'Comment is empty.' };
 
-    const next: ShelterCommunity = {
-      ...current,
-      updatedAt: nowIso(),
-      comments: [
-        {
-          id: nanoid(10),
-          deviceId: args.deviceId,
-          ipHash: args.ipHash,
-          text: args.text,
-          createdAt: nowIso(),
-          hidden: false,
-          reportCount: 0,
-        },
-        ...current.comments,
-      ].slice(0, STORE_LIMITS.maxCommentsPerShelter),
-    };
-    await writeShelterCommunity(next);
-    return next;
-  });
+  try {
+    const siteId = await resolveSiteId(args.shelterId, true);
+    if (!siteId) return { ok: false, code: 'BAD_REQUEST', message: 'Shelter not found or inactive.' };
 
-  if (!value) return { ok: false, code: 'DUPLICATE', message: 'Please wait before posting another comment.' };
-  const dbOk = await upsertDbCrowdReport({ shelterId: args.shelterId, deviceId: args.deviceId, value: 'OK', comment: args.text });
-  if (!dbOk && requiresDbPersistence()) {
+    const existing = await prisma.siteStatusReport.findUnique({
+      where: { siteId_deviceHash: { siteId, deviceHash: toDeviceHash(args.deviceId) } },
+      select: { conditionKind: true },
+    });
+    const conditionKind = normalizeSiteConditionKind(existing?.conditionKind ?? 'ok');
+    const persisted = await persistShelterStatusReport({
+      shelterId: siteId,
+      deviceHash: toDeviceHash(args.deviceId),
+      conditionKind,
+      comment: safeText,
+    });
+    if (!persisted.ok) return persisted;
+
+    const community = await getShelterCommunitySnapshot(persisted.value.siteId);
+    return { ok: true, value: community };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn('[store:shelter] submit_comment_failed', { error: message });
     return { ok: false, code: 'BAD_REQUEST', message: 'Comment could not be persisted.' };
   }
-  const persisted = dbOk ? await readDbShelterCommunity(args.shelterId) : null;
-  return { ok: true, value: persisted ?? value };
 }
 
 export async function deleteShelterVoteAndComment(args: {
   shelterId: string;
   deviceId: string;
 }): Promise<StoreResult<ShelterCommunity>> {
-  const { value } = await runExclusive(`shelter:${args.shelterId}`, async () => {
-    const current = await getShelterCommunity(args.shelterId);
+  try {
+    const siteId = await resolveSiteId(args.shelterId, false);
+    if (!siteId) return { ok: true, value: defaultShelterCommunity(args.shelterId) };
 
-    // Remove votes by this device
-    const nextVotes = current.votes.filter((v) => v.deviceId !== args.deviceId);
+    const now = new Date();
+    await prisma.siteStatusReport.updateMany({
+      where: {
+        siteId,
+        deviceHash: toDeviceHash(args.deviceId),
+        deletedAt: null,
+        expiresAt: { gt: now },
+      },
+      data: {
+        deletedAt: now,
+        expiresAt: now,
+        updatedAt: now,
+      },
+    });
 
-    // Remove comments by this device (and any associated reports? user requesting "clear own vote/comment")
-    // If we remove the comment, reports targeting it might become orphans or we should just drop them?
-    // Let's just filter out the comment. The reports can stay or be filtered if we matched IDs, but simple is best for now.
-    const nextComments = current.comments.filter((c) => c.deviceId !== args.deviceId);
-
-    const next: ShelterCommunity = {
-      ...current,
-      updatedAt: nowIso(),
-      votes: nextVotes,
-      comments: nextComments,
-    };
-    await writeShelterCommunity(next);
-    return next;
-  });
-
-  if (!value) return { ok: false, code: 'NOT_FOUND', message: 'Failed to update.' };
-  const dbOk = await deleteDbShelterCommunityForDevice(args);
-  if (!dbOk && requiresDbPersistence()) {
+    const community = await getShelterCommunitySnapshot(siteId);
+    return { ok: true, value: community };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn('[store:shelter] delete_vote_failed', { error: message });
     return { ok: false, code: 'BAD_REQUEST', message: 'Vote could not be deleted.' };
   }
-  const persisted = dbOk ? await readDbShelterCommunity(args.shelterId) : null;
-  return { ok: true, value: persisted ?? value };
 }
 
 export async function reportComment(args: {

@@ -1,5 +1,5 @@
-import { Seo } from '../../components/Seo';
 import Link from 'next/link';
+import { Seo } from '../../components/Seo';
 import { useRouter } from 'next/router';
 import useSWR from 'swr';
 import { useEffect, useMemo, useState } from 'react';
@@ -14,7 +14,18 @@ import { loadLastLocation, type Coords } from '../../lib/client/location';
 import { formatPrefMuniLabel, useAreaName } from '../../lib/client/areaName';
 import { getShelterFromStorage, removeShelterFromStorage, saveShelterToStorage, type SavedShelter } from '../../lib/client/shelterStorage';
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+type CommunityWindow = '24h' | '3d' | '7d';
+
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  const payload = await res.json().catch(() => null);
+  if (!res.ok) {
+    const error = new Error((payload && typeof payload.error === 'string' && payload.error) || `HTTP ${res.status}`);
+    (error as any).payload = payload;
+    throw error;
+  }
+  return payload;
+};
 
 function formatUpdatedAt(updatedAt: string | null | undefined): string {
   if (!updatedAt) return '未取得';
@@ -48,7 +59,12 @@ function sanitizeNoteText(value: string): string {
 }
 
 function sanitizeCommentText(value: string): string {
-  return value.replace(/[0-9０-９一二三四五六七八九十]+丁目/g, '');
+  return value
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/(?:https?:\/\/|www\.)\S+/gi, ' ')
+    .replace(/[0-9０-９一二三四五六七八九十]+丁目/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function LoadingSpinner({ label = '読み込み中' }: { label?: string }) {
@@ -159,6 +175,7 @@ export default function ShelterDetailPage() {
 
   const { device, deviceId, updateDevice, coarseArea } = useDevice();
   const communityRefresh = device?.settings?.powerSaving || device?.settings?.lowBandwidth ? 0 : 30_000;
+  const [summaryWindow, setSummaryWindow] = useState<CommunityWindow>('24h');
 
   const { data: siteData } = useSWR(id ? `/api/shelters/${id}` : null, fetcher, { dedupingInterval: 10_000 });
   const site: any = useMemo(() => {
@@ -172,8 +189,13 @@ export default function ShelterDetailPage() {
   const siteLoading = Boolean(id && !siteData && !site);
   const siteError = Boolean(siteData?.fetchStatus === 'DOWN' || siteData?.lastError);
 
-  const communityUrl = id ? `/api/store/shelter?id=${id}${deviceId ? `&deviceId=${encodeURIComponent(deviceId)}` : ''}` : null;
-  const { data: community, mutate: mutateCommunity } = useSWR(communityUrl, fetcher, { refreshInterval: communityRefresh, keepPreviousData: true });
+  const communityUrl = id
+    ? `/api/store/shelter?id=${id}${deviceId ? `&deviceId=${encodeURIComponent(deviceId)}` : ''}&window=${summaryWindow}`
+    : null;
+  const { data: community, error: communityError, mutate: mutateCommunity } = useSWR(communityUrl, fetcher, {
+    refreshInterval: communityRefresh,
+    keepPreviousData: true,
+  });
 
   const isFavorite = Boolean(device?.favorites?.shelterIds?.includes(id ?? ''));
 
@@ -228,24 +250,31 @@ export default function ShelterDetailPage() {
   }, [dest, id, site]);
 
   const votesSummary: Record<string, number> = community?.votesSummary ?? {};
-  const totalVotes = useMemo(() => Object.values(votesSummary).reduce((acc, value) => acc + (typeof value === 'number' ? value : 0), 0), [votesSummary]);
+  const totalVotes = typeof community?.totalVotes === 'number'
+    ? community.totalVotes
+    : Object.values(votesSummary).reduce((acc, value) => acc + (typeof value === 'number' ? value : 0), 0);
   const contributorCount = typeof community?.contributorCount === 'number' ? community.contributorCount : 0;
+  const activePostCount = typeof community?.activePostCount === 'number' ? community.activePostCount : 0;
+  const activePostLimit = typeof community?.activePostLimit === 'number' ? community.activePostLimit : 5;
+  const communityLoadPending = Boolean(communityUrl && !community && !communityError);
+  const communityUnavailable = Boolean(communityError || community?.ok === false);
   const topVote = useMemo(() => {
+    if (totalVotes <= 0) return null;
     const entries = Object.entries(votesSummary);
     if (entries.length === 0) return null;
     entries.sort((a, b) => b[1] - a[1]);
-    return entries[0][0];
-  }, [votesSummary]);
+    return entries[0]?.[0] ?? null;
+  }, [totalVotes, votesSummary]);
   const detailFields = useMemo(() => normalizeShelterFields(site?.shelter_fields ?? null), [site?.shelter_fields]);
   const eligibilityFields = useMemo(() => normalizeEligibilityFields(site?.shelter_fields ?? null), [site?.shelter_fields]);
 
   const voteOptions = useMemo(
     () => [
-      { value: 'OK', label: '余裕あり', badge: 'bg-emerald-50 text-emerald-900 ring-emerald-200' },
-      { value: 'CROWDED', label: '混雑', badge: 'bg-amber-50 text-amber-900 ring-amber-200' },
-      { value: 'VERY_CROWDED', label: 'かなり混雑', badge: 'bg-orange-50 text-orange-900 ring-orange-200' },
-      { value: 'CLOSED', label: '閉鎖', badge: 'bg-red-50 text-red-900 ring-red-200' },
-      { value: 'BLOCKED', label: '危険/通行困難', badge: 'bg-red-50 text-red-900 ring-red-200' },
+      { value: 'ok', label: '余裕あり', badge: 'bg-emerald-50 text-emerald-900 ring-emerald-200' },
+      { value: 'crowded', label: '混雑', badge: 'bg-amber-50 text-amber-900 ring-amber-200' },
+      { value: 'very_crowded', label: 'かなり混雑', badge: 'bg-orange-50 text-orange-900 ring-orange-200' },
+      { value: 'closed', label: '閉鎖', badge: 'bg-red-50 text-red-900 ring-red-200' },
+      { value: 'blocked', label: '危険/通行困難', badge: 'bg-red-50 text-red-900 ring-red-200' },
     ],
     []
   );
@@ -266,8 +295,10 @@ export default function ShelterDetailPage() {
   useEffect(() => {
     if (typeof community?.currentUserVote === 'string') {
       setSelectedVote(community.currentUserVote);
+      return;
     }
-  }, [community?.currentUserVote]);
+    if (community) setSelectedVote(null);
+  }, [community?.currentUserVote, community]);
 
   return (
     <div className="space-y-6">
@@ -437,8 +468,27 @@ export default function ShelterDetailPage() {
         <div className="mt-2 text-xs text-gray-600">
           個人情報は書かないでください。多数報告があるコメントは自動的に折りたたまれます。
         </div>
+        <div className="mt-3 inline-flex rounded border bg-white p-1 text-sm">
+          {([
+            { key: '24h', label: '24時間' },
+            { key: '3d', label: '3日' },
+            { key: '7d', label: '7日' },
+          ] as Array<{ key: CommunityWindow; label: string }>).map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              className={classNames(
+                'rounded px-3 py-1.5 font-semibold',
+                summaryWindow === tab.key ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'
+              )}
+              onClick={() => setSummaryWindow(tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-        {!community && (
+        {communityLoadPending && (
           <div className="mt-3 rounded-xl border bg-gray-50 px-3 py-4 text-sm text-gray-700" aria-label="混雑状況を読み込み中">
             <div className="font-semibold">
               <LoadingSpinner label="共有された混雑状況を読み込んでいます" />
@@ -446,7 +496,12 @@ export default function ShelterDetailPage() {
             <div className="mt-1 text-xs text-gray-600">投票・コメントは取得でき次第ここに表示します。</div>
           </div>
         )}
-        {community && (
+        {communityUnavailable && (
+          <div className="mt-3 rounded-xl border bg-amber-50 px-3 py-3 text-sm text-amber-900">
+            混雑状況の取得に失敗しました。時間をおいて再読み込みしてください。
+          </div>
+        )}
+        {community && community.ok !== false && (
           <>
             <div className="mt-3 rounded border bg-gray-50 px-3 py-2 text-sm">
               <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
@@ -460,6 +515,7 @@ export default function ShelterDetailPage() {
                   投稿者 {contributorCount}人 / 投票 {totalVotes}件 / 最終更新: {formatUpdatedAt(community.updatedAt)}
                 </div>
               </div>
+              <div className="mt-2 text-xs text-gray-600">自分の避難所投稿 {activePostCount} / {activePostLimit}</div>
               {totalVotes > 0 && (
                 <div className="mt-3 space-y-2">
                   {voteOptions.map((opt) => {
@@ -517,11 +573,12 @@ export default function ShelterDetailPage() {
                 <textarea
                   className="mt-2 w-full rounded border px-3 py-2 text-sm"
                   rows={2}
-                  maxLength={500}
+                  maxLength={140}
                   value={voteComment}
                   onChange={(e) => setVoteComment(e.target.value)}
                   placeholder="例: 入口は開いています / 受付に列があります"
                 />
+                <div className="mt-1 text-xs text-gray-500">{voteComment.length} / 140</div>
               </div>
 
               <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -547,7 +604,18 @@ export default function ShelterDetailPage() {
                         });
                         const voteJson = await voteRes.json().catch(() => null);
                         if (!voteRes.ok || voteJson?.ok === false) {
-                          setSubmitError(voteJson?.error ?? '送信できませんでした');
+                          if (voteRes.status === 409 && voteJson?.errorCode === 'ACTIVE_POST_LIMIT_REACHED') {
+                            const names = Array.isArray(voteJson?.activePosts)
+                              ? voteJson.activePosts
+                                  .map((p: any) => (typeof p?.siteName === 'string' ? p.siteName : null))
+                                  .filter(Boolean)
+                                  .slice(0, 5)
+                                  .join(' / ')
+                              : '';
+                            setSubmitError(names ? `投稿は最大5件です（現在: ${names}）` : '投稿は最大5件です');
+                          } else {
+                            setSubmitError(voteJson?.error ?? '送信できませんでした');
+                          }
                           return;
                         }
 
@@ -563,7 +631,7 @@ export default function ShelterDetailPage() {
                           return nextHistory;
                         });
                         setVoteComment('');
-                        setSubmitNotice('送信しました');
+                        setSubmitNotice(community?.currentUserVote ? '更新しました' : '送信しました');
                         if (voteJson?.community) {
                           await mutateCommunity(voteJson.community, { revalidate: false });
                         }
@@ -573,7 +641,7 @@ export default function ShelterDetailPage() {
                       }
                     }}
                   >
-                    送信
+                    {community?.currentUserVote ? '投稿を更新する' : '投稿する'}
                   </button>
                   <button
                     className="rounded bg-white border border-gray-300 px-3 py-2 text-sm text-red-700 hover:bg-gray-50 disabled:opacity-50"
@@ -607,11 +675,24 @@ export default function ShelterDetailPage() {
                       }
                     }}
                   >
-                    解除
+                    自分の投稿を削除する
                   </button>
                 </div>
                 <div className="text-xs text-gray-600">同じ端末の投票は最新の1件として集計されます。</div>
               </div>
+
+              {Array.isArray(community.activePosts) && community.activePosts.length > 0 && (
+                <div className="mt-3 rounded border bg-white px-3 py-2 text-xs text-gray-700">
+                  <div className="font-semibold">自分の有効投稿</div>
+                  <div className="mt-1 space-y-1">
+                    {community.activePosts.map((post: any) => (
+                      <div key={`${post.siteId}:${post.reportedAt}`} className="truncate">
+                        {post.siteName ?? '避難場所'} / {voteOptions.find((v) => v.value === post.conditionKind)?.label ?? post.conditionKind}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {submitError && <div className="mt-2 text-sm text-red-700">{submitError}</div>}
               {submitNotice && <div className="mt-2 text-sm text-emerald-700">{submitNotice}</div>}

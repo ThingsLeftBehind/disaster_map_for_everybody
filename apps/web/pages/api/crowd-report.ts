@@ -15,17 +15,17 @@ const WRITE_RATE_LIMIT = { keyPrefix: 'write:crowd_report', limit: 30, windowMs:
 function mapLegacyStatus(status: string) {
   switch (status) {
     case 'OK':
-      return 'NORMAL';
+      return 'ok';
     case 'CROWDED':
-      return 'CROWDED';
+      return 'crowded';
     case 'VERY_CROWDED':
-      return 'VERY_CROWDED';
+      return 'very_crowded';
     case 'CLOSED':
-      return 'CLOSED';
+      return 'closed';
     case 'BLOCKED':
-      return 'CLOSED';
+      return 'blocked';
     default:
-      return 'NORMAL';
+      return 'ok';
   }
 }
 
@@ -50,7 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { siteId, status, comment, device_hash } = parsed.data;
   const trimmedComment = typeof comment === 'string' ? comment.trim() : '';
-  if (trimmedComment && trimmedComment.length > 300) {
+  if (trimmedComment && trimmedComment.length > 140) {
     return jsonError(res, 400, { ok: false, error: 'invalid_payload', errorCode: 'INVALID_BODY' });
   }
 
