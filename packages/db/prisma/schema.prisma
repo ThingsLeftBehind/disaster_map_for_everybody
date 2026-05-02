@@ -1,83 +1,189 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
-model evac_sites {
-  id                      String         @id @default(uuid()) @db.Uuid
-  common_id               String?        @unique
-  pref_city               String?
-  name                    String
-  address                 String?
-  lat                     Float
-  lon                     Float
-  hazards                 Json
-  is_same_address_as_shelter Boolean?
-  shelter_fields          Json?
-  notes                   String?
-  source_updated_at       DateTime?
-  created_at              DateTime       @default(now())
-  updated_at              DateTime       @updatedAt
-  
-  pref_code               String?        // JIS 2-digit
-  muni_code               String?        // JIS 5-digit normalized
-  
-  crowd_reports           crowd_reports[]
-
-  @@index([pref_code])
-  @@index([pref_code, muni_code])
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Device {
+  id               String             @id @db.Uuid
+  deviceHash       String             @unique
+  transferCode     String             @unique
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime
+  SafetyStatus     SafetyStatus?
+  SiteStatusReport SiteStatusReport[]
+  WatchRegion      WatchRegion[]
 }
 
-model crowd_reports {
-  id          String   @id @default(cuid())
-  site        evac_sites @relation(fields: [site_id], references: [id])
-  site_id     String
-  status      CrowdStatus
-  comment     String?
-  device_hash String
-  created_at  DateTime @default(now())
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model EvacSite {
+  id                       String                     @id @db.Uuid
+  kind                     SiteKind
+  sourceId                 String?                    @unique
+  name                     String
+  address                  String?
+  latitude                 Float
+  longitude                Float
+  municipalityCode         String?
+  capacity                 Int?
+  isDesignated             Boolean                    @default(true)
+  sourceName               String
+  sourceUrl                String?
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime
+  isActive                 Boolean                    @default(true)
+  EvacSiteHazardCapability EvacSiteHazardCapability[]
+  SafetyStatus             SafetyStatus[]
+  SiteStatusReport         SiteStatusReport[]
 
-  @@index([site_id, created_at])
-  @@index([device_hash, created_at])
+  @@index([latitude, longitude])
+  @@index([municipalityCode])
 }
 
-enum CrowdStatus {
-  OK
-  CROWDED
-  VERY_CROWDED
-  CLOSED
-  BLOCKED
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model EvacSiteHazardCapability {
+  id          String     @id @db.Uuid
+  siteId      String     @db.Uuid
+  hazardType  HazardType
+  isSupported Boolean    @default(false)
+  remark      String?
+  EvacSite    EvacSite   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, hazardType])
+  @@index([hazardType])
 }
 
-model device_settings {
-  device_hash        String   @id
-  transfer_code      String?
-  saved_places       Json?
-  hazard_alert_prefs Json?
-  updated_at         DateTime @updatedAt
-  created_at         DateTime @default(now())
-  safety_status      safety_status?
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model HazardAlertSnapshot {
+  id          String      @id @db.Uuid
+  regionId    String      @db.Uuid
+  hazardType  HazardType
+  riskLevel   String
+  checkedAt   DateTime    @default(now())
+  WatchRegion WatchRegion @relation(fields: [regionId], references: [id], onDelete: Cascade)
+
+  @@index([regionId, hazardType, checkedAt])
 }
 
-model safety_status {
-  id              String   @id @default(cuid())
-  device_hash     String   @unique
-  status          SafetyStatus
-  updated_at      DateTime @default(now())
-  last_known_lat  Float?
-  last_known_lon  Float?
-  device          device_settings @relation(fields: [device_hash], references: [device_hash])
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model SafetyStatus {
+  id                String      @id @db.Uuid
+  deviceId          String      @unique @db.Uuid
+  status            SafetyState
+  currentSiteId     String?     @db.Uuid
+  updatedAt         DateTime    @default(now())
+  lastKnownLat      Float?
+  lastKnownLon      Float?
+  locationAccuracyM Float?
+  message           String?
+  messagePublic     Boolean     @default(false)
+  deletedAt         DateTime?
+  expiresAt         DateTime    @default(dbgenerated("(now() + '72:00:00'::interval)"))
+  EvacSite          EvacSite?   @relation(fields: [currentSiteId], references: [id])
+  Device            Device      @relation(fields: [deviceId], references: [id], onDelete: Cascade)
 }
 
-enum SafetyStatus {
-  SAFE
-  EVACUATING
-  EVACUATED
-  INJURED
-  ISOLATED
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model SiteStatusReport {
+  id              String             @id @db.Uuid
+  siteId          String             @db.Uuid
+  deviceHash      String
+  deviceId        String?            @db.Uuid
+  congestionLevel CongestionLevel
+  accessibility   AccessibilityLevel
+  comment         String?
+  reportedAt      DateTime           @default(now())
+  conditionKind   SiteConditionKind  @default(ok)
+  updatedAt       DateTime           @default(now())
+  deletedAt       DateTime?
+  expiresAt       DateTime           @default(dbgenerated("(now() + '7 days'::interval)"))
+  Device          Device?            @relation(fields: [deviceId], references: [id])
+  EvacSite        EvacSite           @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([deviceHash, reportedAt])
+  @@index([deviceId])
+  @@index([siteId, reportedAt])
+  @@unique([siteId, deviceHash])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model WatchRegion {
+  id                  String                @id @db.Uuid
+  deviceId            String                @db.Uuid
+  label               String
+  latitude            Float
+  longitude           Float
+  radiusKm            Float
+  active              Boolean               @default(true)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime
+  HazardAlertSnapshot HazardAlertSnapshot[]
+  Device              Device                @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  WatchRegionHazard   WatchRegionHazard[]
+
+  @@index([deviceId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model WatchRegionHazard {
+  id          String      @id @db.Uuid
+  regionId    String      @db.Uuid
+  hazardType  HazardType
+  active      Boolean     @default(true)
+  WatchRegion WatchRegion @relation(fields: [regionId], references: [id], onDelete: Cascade)
+
+  @@unique([regionId, hazardType])
+}
+
+enum AccessibilityLevel {
+  accessible
+  blocked
+  unknown
+}
+
+enum CongestionLevel {
+  low
+  normal
+  high
+}
+
+enum HazardType {
+  earthquake
+  tsunami
+  flood
+  inland_flood
+  typhoon
+  landslide
+  fire
+  volcano
+  storm_surge
+}
+
+enum SafetyState {
+  safe
+  minor_injury
+  serious_injury
+  isolated
+  evacuating
+  evacuated
+}
+
+enum SiteKind {
+  shelter
+  space
+  other
+}
+
+enum SiteConditionKind {
+  ok
+  crowded
+  very_crowded
+  closed
+  blocked
 }
