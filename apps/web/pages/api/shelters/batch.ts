@@ -1,16 +1,32 @@
 import { prisma } from 'lib/db/prisma';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { fallbackFindSheltersByIds } from 'lib/db/sheltersFallback';
-import { getEvacSitesCoordScale, normalizeLatLon } from 'lib/shelters/coords';
+import { hazardKeys } from '@jp-evac/shared';
 import {
-  getEvacSiteMeta,
   isEvacSitesTableMismatchError,
-  rawFindByIds,
   safeErrorMessage,
 } from 'lib/shelters/evacsiteCompat';
 export const config = { runtime: 'nodejs' };
 function nowIso() {
   return new Date().toISOString();
+}
+
+const hazardTypeToLegacyKey: Record<string, (typeof hazardKeys)[number] | null> = {
+  earthquake: 'earthquake',
+  tsunami: 'tsunami',
+  flood: 'flood',
+  inland_flood: 'inland_flood',
+  landslide: 'landslide',
+  volcano: 'volcano',
+  storm_surge: 'storm_surge',
+  fire: 'large_fire',
+  typhoon: null,
+};
+
+function emptyHazards(): Record<(typeof hazardKeys)[number], boolean> {
+  const out = {} as Record<(typeof hazardKeys)[number], boolean>;
+  for (const key of hazardKeys) out[key] = false;
+  return out;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -27,43 +43,80 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (uniqueIds.length === 0) return res.status(400).json({ error: 'ids is required' });
 
   try {
-    const factor = await getEvacSitesCoordScale(prisma);
-    const evacMeta = await getEvacSiteMeta(prisma);
-    const rows = await prisma.evac_sites.findMany({
-      where: { id: { in: uniqueIds } },
+    const rows = await prisma.evacSite.findMany({
+      where: {
+        isActive: true,
+        OR: [{ id: { in: uniqueIds } }, { sourceId: { in: uniqueIds } }],
+      },
       select: {
         id: true,
-        pref_city: true,
+        sourceId: true,
         name: true,
         address: true,
-        hazards: true,
-        is_same_address_as_shelter: true,
-        notes: true,
-        source_updated_at: true,
-        updated_at: true,
+        latitude: true,
+        longitude: true,
+        municipalityCode: true,
+        isDesignated: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
-    const ids = rows.map((row: any) => row.id).filter(Boolean);
-    const rawRows = ids.length > 0 ? await rawFindByIds(prisma, evacMeta, ids) : [];
-    const coordsById = new Map<string, { lat: number; lon: number }>();
-    for (const row of rawRows) {
-      const idRaw = row[evacMeta.idCol];
-      if (idRaw === null || idRaw === undefined) continue;
-      const coords = normalizeLatLon({ lat: row[evacMeta.latCol], lon: row[evacMeta.lonCol], factor });
-      if (!coords) continue;
-      coordsById.set(String(idRaw), coords);
+    const siteIds = rows.map((row: any) => row.id).filter(Boolean);
+    const hazardCaps =
+      siteIds.length > 0
+        ? await prisma.evacSiteHazardCapability.findMany({
+          where: { siteId: { in: siteIds }, isSupported: true },
+          select: { siteId: true, hazardType: true },
+        })
+        : [];
+    const hazardsBySiteId = new Map<string, Record<(typeof hazardKeys)[number], boolean>>();
+    for (const id of siteIds) hazardsBySiteId.set(String(id), emptyHazards());
+    for (const cap of hazardCaps) {
+      const sid = String(cap.siteId);
+      const bag = hazardsBySiteId.get(sid) ?? emptyHazards();
+      const mapped = hazardTypeToLegacyKey[String(cap.hazardType)];
+      if (mapped) bag[mapped] = true;
+      hazardsBySiteId.set(sid, bag);
     }
 
     const normalized = rows
       .map((r: any) => {
-        const coords = coordsById.get(String(r.id));
-        return coords ? { ...r, lat: coords.lat, lon: coords.lon } : null;
+        const hazards = hazardsBySiteId.get(String(r.id)) ?? emptyHazards();
+        return {
+          id: String(r.id),
+          common_id: r.sourceId ?? null,
+          pref_city: r.address ?? (r.municipalityCode ? `自治体コード ${r.municipalityCode}` : null),
+          name: r.name ?? '名称不明',
+          address: r.address ?? null,
+          lat: Number.isFinite(r.latitude) ? Number(r.latitude) : null,
+          lon: Number.isFinite(r.longitude) ? Number(r.longitude) : null,
+          hazards,
+          is_designated: r.isDesignated ?? null,
+          is_same_address_as_shelter: null,
+          shelter_fields: r.isDesignated === true ? { isDesignated: true } : null,
+          notes: null,
+          source_updated_at: null,
+          created_at: r.createdAt ?? null,
+          updated_at: r.updatedAt ?? null,
+        };
       })
       .filter((v: any): v is NonNullable<typeof v> => Boolean(v));
 
-    const byId = new Map(normalized.map((r: any) => [r.id, r]));
-    const ordered = ids.map((id: any) => byId.get(id)).filter(Boolean);
+    const byLookup = new Map<string, any>();
+    for (const row of normalized) {
+      byLookup.set(String(row.id), row);
+      if (row.common_id) byLookup.set(String(row.common_id), row);
+    }
+    const ordered: any[] = [];
+    const seen = new Set<string>();
+    for (const key of ids) {
+      const row = byLookup.get(key);
+      if (!row) continue;
+      if (seen.has(String(row.id))) continue;
+      seen.add(String(row.id));
+      ordered.push(row);
+    }
 
     return res.status(200).json({ fetchStatus: 'OK', updatedAt: nowIso(), lastError: null, sites: ordered, items: ordered });
   } catch (error) {

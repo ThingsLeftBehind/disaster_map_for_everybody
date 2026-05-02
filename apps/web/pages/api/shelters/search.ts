@@ -77,7 +77,7 @@ function getPrefectureCentroid(prefCode: string): { lat: number; lon: number } |
   return PREF_CENTROIDS[prefCode] ?? null;
 }
 
-type SearchMode = 'LOCATION' | 'AREA';
+type SearchMode = 'LOCATION' | 'AREA' | 'DESIGNATED';
 
 function normalizeText(value: unknown): string {
   return String(value ?? '').toLowerCase();
@@ -100,6 +100,24 @@ function hazardCount(hazards: Record<string, boolean> | null | undefined): numbe
 
 function hasAnyHazard(hazards: Record<string, boolean> | null | undefined): boolean {
   return hazardCount(hazards) > 0;
+}
+
+const hazardTypeToLegacyKey: Record<string, (typeof hazardKeys)[number] | null> = {
+  earthquake: 'earthquake',
+  tsunami: 'tsunami',
+  flood: 'flood',
+  inland_flood: 'inland_flood',
+  landslide: 'landslide',
+  volcano: 'volcano',
+  storm_surge: 'storm_surge',
+  fire: 'large_fire',
+  typhoon: null,
+};
+
+function emptyHazards(): Record<(typeof hazardKeys)[number], boolean> {
+  const out = {} as Record<(typeof hazardKeys)[number], boolean>;
+  for (const key of hazardKeys) out[key] = false;
+  return out;
 }
 
 // Dedupe key: prefer shared id, else name + address + rounded coords for stability.
@@ -177,7 +195,7 @@ function dedupeSites<T extends { hazards?: Record<string, boolean>; common_id?: 
 }
 
 const SearchQuerySchema = z.object({
-  mode: z.preprocess((v) => (Array.isArray(v) ? v[0] : v), z.enum(['LOCATION', 'AREA'])).optional(),
+  mode: z.preprocess((v) => (Array.isArray(v) ? v[0] : v), z.enum(['LOCATION', 'AREA', 'DESIGNATED'])).optional(),
   lat: z
     .preprocess((v) => {
       const raw = Array.isArray(v) ? v[0] : v;
@@ -304,6 +322,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 
   const modeUsed: SearchMode = (mode ?? 'AREA') as SearchMode;
+  const isDesignatedMode = modeUsed === 'DESIGNATED';
+  const designatedOnlyRequested = Boolean(designatedOnly || isDesignatedMode);
+  const designatedModeMinRows = Math.max(10, Math.min(limit ?? 50, 50));
 
   if (mode === 'AREA' && !prefCode) {
     return res.status(400).json({ error: 'prefCode_required' });
@@ -386,7 +407,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
-  if (designatedOnly && canUsePrismaEvacSites) {
+  if (designatedOnlyRequested && canUsePrismaEvacSites) {
     baseWhere.push({ shelter_fields: { not: Prisma.DbNull } });
   }
 
@@ -401,11 +422,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const deduped = dedupeSites(enriched);
-    const hasDesignatedMetadata = deduped.some((site: any) => Boolean(site.shelter_fields) || site.is_designated === true);
+    const strictDesignatedCandidates = deduped.filter(
+      (site: any) => Boolean(site.shelter_fields) || site.is_designated === true || site.isDesignated === true
+    );
+    const hasDesignatedMetadata = strictDesignatedCandidates.length > 0;
+    const hasEnoughDesignatedRows = strictDesignatedCandidates.length >= designatedModeMinRows;
+    const shouldRelaxDesignatedForCoverage = isDesignatedMode && !hasEnoughDesignatedRows;
     const designatedFiltered =
-      designatedOnly && hasDesignatedMetadata
-        ? deduped.filter((site: any) => Boolean(site.shelter_fields) || site.is_designated === true)
+      designatedOnlyRequested && hasDesignatedMetadata && !shouldRelaxDesignatedForCoverage
+        ? strictDesignatedCandidates
         : deduped;
+
+    if (debugEnabled && designatedOnlyRequested && shouldRelaxDesignatedForCoverage) {
+      console.warn(
+        `[Search] DESIGNATED coverage too small for strict filter (${strictDesignatedCandidates.length}/${designatedModeMinRows}); returning active-compatible rows instead.`
+      );
+    }
+
     const hazardFiltered = includeHazardless ? designatedFiltered : designatedFiltered.filter((site: any) => hasAnyHazard(site.hazards));
     return hideIneligible ? hazardFiltered.filter((site: any) => site.matchesHazards) : hazardFiltered;
   };
@@ -509,6 +542,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (debugEnabled) payload.debugTrace = debugTrace;
       return res.status(200).json(payload);
     } catch (error) {
+      console.error('[Search] LOCATION query failed:', error);
       const message = safeErrorMessage(error);
       const payload = {
         fetchStatus: 'DOWN',
@@ -525,6 +559,154 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       } as any;
       if (debugEnabled) payload.debugTrace = debugTrace;
       return res.status(200).json(payload);
+    }
+  }
+
+  if (modeUsed === 'DESIGNATED') {
+    const requestedLimit = limit ?? 50;
+    const requestedOffset = offset ?? 0;
+    const overfetch = Math.min(500, Math.max(requestedLimit * 6, requestedLimit + requestedOffset + 80));
+
+    try {
+      const designatedWhereClauses: any[] = [{ isActive: true }];
+
+      if (prefCode || resolvedPrefName) {
+        const orClauses: any[] = [];
+        if (prefCode) orClauses.push({ municipalityCode: { startsWith: prefCode } });
+        if (prefCode) orClauses.push({ sourceId: { startsWith: prefCode } });
+        if (resolvedPrefName) {
+          orClauses.push({ address: { startsWith: resolvedPrefName, mode: 'insensitive' } });
+          orClauses.push({ address: { contains: resolvedPrefName, mode: 'insensitive' } });
+        }
+        if (orClauses.length > 0) designatedWhereClauses.push({ OR: orClauses });
+      }
+
+      if (muniCode5) {
+        designatedWhereClauses.push({
+          OR: [
+            { municipalityCode: muniCode5 },
+            { municipalityCode: { startsWith: muniCode5 } },
+            { sourceId: { contains: muniCode5, mode: 'insensitive' } },
+          ],
+        });
+      }
+
+      if (resolvedMuniName) {
+        designatedWhereClauses.push({ address: { contains: resolvedMuniName, mode: 'insensitive' } });
+      }
+
+      if (cityText) {
+        designatedWhereClauses.push({ address: { contains: cityText, mode: 'insensitive' } });
+      }
+
+      if (q) {
+        designatedWhereClauses.push({
+          OR: [
+            { name: { contains: q, mode: 'insensitive' } },
+            { address: { contains: q, mode: 'insensitive' } },
+            { sourceId: { contains: q, mode: 'insensitive' } },
+            { sourceName: { contains: q, mode: 'insensitive' } },
+          ],
+        });
+      }
+
+      const where = designatedWhereClauses.length > 0 ? ({ AND: designatedWhereClauses } as any) : ({ isActive: true } as any);
+
+      const activeRows = await prisma.evacSite.findMany({
+        where,
+        orderBy: { updatedAt: 'desc' },
+        take: overfetch,
+        skip: requestedOffset,
+        select: {
+          id: true,
+          sourceId: true,
+          name: true,
+          address: true,
+          latitude: true,
+          longitude: true,
+          municipalityCode: true,
+          isDesignated: true,
+          isActive: true,
+          sourceName: true,
+          sourceUrl: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+      recordTrace('designated:activeRows', activeRows.length);
+
+      const siteIds = activeRows.map((row: any) => row.id).filter(Boolean);
+      const hazardCaps =
+        siteIds.length > 0
+          ? await prisma.evacSiteHazardCapability.findMany({
+            where: { siteId: { in: siteIds }, isSupported: true },
+            select: { siteId: true, hazardType: true },
+          })
+          : [];
+      recordTrace('designated:hazardCaps', hazardCaps.length);
+
+      const hazardsBySiteId = new Map<string, Record<(typeof hazardKeys)[number], boolean>>();
+      for (const id of siteIds) hazardsBySiteId.set(String(id), emptyHazards());
+      for (const cap of hazardCaps) {
+        const sid = String(cap.siteId);
+        const bag = hazardsBySiteId.get(sid) ?? emptyHazards();
+        const mapped = hazardTypeToLegacyKey[String(cap.hazardType)];
+        if (mapped) bag[mapped] = true;
+        hazardsBySiteId.set(sid, bag);
+      }
+
+      const mappedSites = activeRows.map((row: any) => {
+        const hazards = hazardsBySiteId.get(String(row.id)) ?? emptyHazards();
+        return {
+          id: String(row.id),
+          common_id: row.sourceId ?? null,
+          pref_city: row.address ?? (row.municipalityCode ? `自治体コード ${row.municipalityCode}` : null),
+          name: row.name ?? '名称不明',
+          address: row.address ?? null,
+          lat: Number.isFinite(row.latitude) ? Number(row.latitude) : null,
+          lon: Number.isFinite(row.longitude) ? Number(row.longitude) : null,
+          hazards,
+          is_designated: row.isDesignated ?? null,
+          is_same_address_as_shelter: null,
+          shelter_fields: row.isDesignated === true ? { isDesignated: true } : null,
+          notes: null,
+          source_updated_at: null,
+          created_at: row.createdAt ?? null,
+          updated_at: row.updatedAt ?? null,
+        };
+      });
+
+      const filteredSites = applyFilters(mappedSites);
+      sortAreaSites(filteredSites);
+      const sliced = filteredSites.slice(0, requestedLimit);
+      recordTrace('designated:final', sliced.length);
+
+      const payload = {
+        fetchStatus: 'OK',
+        updatedAt: nowIso(),
+        lastError: null,
+        modeUsed,
+        prefName: resolvedPrefName,
+        muniCode: muniCode5,
+        muniCodeRaw,
+        muniName: resolvedMuniName,
+        usedMuniFallback: false,
+        usedPrefFallback: false,
+        sites: sliced,
+        items: sliced,
+      } as any;
+      if (debugEnabled) payload.debugTrace = debugTrace;
+      return res.status(200).json(payload);
+    } catch (error) {
+      // DESIGNATED mode should not silently degrade to DOWN on 200.
+      console.error('[Search] DESIGNATED query failed:', error);
+      const message = safeErrorMessage(error);
+      const payload = {
+        error: 'designated_query_failed',
+        message,
+        modeUsed,
+      };
+      return res.status(500).json(payload);
     }
   }
 
@@ -566,7 +748,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .map((site: any) => {
           const coords = coordsById.get(String(site.id));
           if (coords) return { ...site, lat: coords.lat, lon: coords.lon };
-          return designatedOnly ? { ...site, lat: null, lon: null } : null;
+          return designatedOnlyRequested ? { ...site, lat: null, lon: null } : null;
         })
         .filter((v: any): v is NonNullable<typeof v> => Boolean(v));
 
@@ -637,7 +819,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             q: q ?? null,
             limit: limit ?? 50,
             offset: offset ?? 0,
-            designatedOnly,
+            designatedOnly: designatedOnlyRequested,
           });
           filteredSites = applyFilters(rawResults);
           recordTrace('fallback:rawSearch-results', filteredSites.length);
@@ -694,7 +876,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             q: q ?? null,
             limit: limit ?? 50,
             offset: offset ?? 0,
-            designatedOnly,
+            designatedOnly: designatedOnlyRequested,
           });
           filteredSites = applyFilters(rawResults);
           recordTrace('fallback:rawSearch-results', filteredSites.length);
@@ -728,6 +910,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (debugEnabled) payload.debugTrace = debugTrace;
     return res.status(200).json(payload);
   } catch (error) {
+    console.error('[Search] AREA/DESIGNATED query failed:', error);
     if (!isEvacSitesTableMismatchError(error)) {
       const message = safeErrorMessage(error);
       const payload = {
@@ -762,7 +945,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             q: q ?? cityText ?? null,
             limit: limit ?? 50,
             offset: offset ?? 0,
-            designatedOnly,
+            designatedOnly: designatedOnlyRequested,
           })
         );
         recordTrace(step, results.length);
@@ -803,6 +986,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (debugEnabled) payload.debugTrace = debugTrace;
       return res.status(200).json(payload);
     } catch (fallbackError) {
+      console.error('[Search] AREA/DESIGNATED fallback failed:', fallbackError);
       const message = safeErrorMessage(fallbackError);
       const payload = {
         fetchStatus: 'DOWN',

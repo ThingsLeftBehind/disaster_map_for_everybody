@@ -65,6 +65,7 @@ export default function DesignatedPage() {
 
   const queryUrl = useMemo(() => {
     const params = new URLSearchParams();
+    params.set('mode', 'DESIGNATED');
     if (prefCode) params.set('prefCode', prefCode);
 
     const trimmedCity = cityText.trim();
