@@ -127,6 +127,7 @@ npm run dev
 - Shelters can be added/removed in source CSV updates.
 - Deletions must be handled safely so removed shelters do not appear in primary UX.
 - If an import is interrupted, resume should not create duplicates or partial-state hazards.
+- Cleanup maintenance API usage: `docs/operations.md`
 
 ---
 
