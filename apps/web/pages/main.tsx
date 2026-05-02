@@ -91,6 +91,7 @@ function splitTitle(title: string): { short: string; area: string | null } {
 }
 
 type CheckinStatus = 'SAFE' | 'INJURED' | 'ISOLATED' | 'EVACUATING' | 'COMPLETED';
+type SafetyPinsWindow = '24h' | '3d';
 type CheckinEntry = {
   id: string;
   status: string;
@@ -100,6 +101,8 @@ type CheckinEntry = {
   lon?: number | null;
   precision?: 'COARSE' | 'PRECISE';
   comment?: string | null;
+  messagePublic?: boolean;
+  expiresAt?: string | null;
   active?: boolean;
   archivedAt?: string | null;
 };
@@ -153,6 +156,7 @@ export default function MainPage() {
   }, []);
 
   const [coords, setCoords] = useState<Coords | null>(null);
+  const [coordsAccuracyM, setCoordsAccuracyM] = useState<number | null>(null);
   const [center, setCenter] = useState<Coords>({ lat: 35.681236, lon: 139.767125 });
   const [recenterSignal, setRecenterSignal] = useState(0);
   const [locating, setLocating] = useState(false);
@@ -164,6 +168,7 @@ export default function MainPage() {
       if (last) {
         setCoords(last);
         setCenter(last);
+        setCoordsAccuracyM(null);
       }
     } catch {
       // ignore
@@ -176,7 +181,9 @@ export default function MainPage() {
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const next = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+        const accuracy = Number.isFinite(pos.coords.accuracy) ? pos.coords.accuracy : null;
         setCoords(next);
+        setCoordsAccuracyM(accuracy);
         setCenter(next);
         setRecenterSignal((v) => v + 1);
         saveLastLocation(next);
@@ -315,20 +322,18 @@ export default function MainPage() {
   };
 
   const [showSafetyPins, setShowSafetyPins] = useState(false);
-  const [showSafetyPinsHistory, setShowSafetyPinsHistory] = useState(false);
-  const [showSafetyPinsOld, setShowSafetyPinsOld] = useState(false);
+  const [safetyPinsWindow, setSafetyPinsWindow] = useState<SafetyPinsWindow>('24h');
   const [safetyPinsStatus, setSafetyPinsStatus] = useState<string>('');
   useEffect(() => {
     if (!showSafetyPins) {
-      setShowSafetyPinsHistory(false);
-      setShowSafetyPinsOld(false);
       setSafetyPinsStatus('');
+      setSafetyPinsWindow('24h');
     }
   }, [showSafetyPins]);
 
   const safetyPinsUrl =
     showSafetyPins && !lowBandwidth
-      ? `/api/store/checkins?includeHistory=${showSafetyPinsHistory ? '1' : '0'}&includeOld=${showSafetyPinsOld ? '1' : '0'}&status=${encodeURIComponent(safetyPinsStatus)}`
+      ? `/api/store/checkins?window=${safetyPinsWindow}&status=${encodeURIComponent(safetyPinsStatus)}`
       : null;
   const { data: safetyPinsData, mutate: mutateSafetyPins } = useSWR(safetyPinsUrl, fetcher, {
     refreshInterval: showSafetyPins ? refreshMs : 0,
@@ -342,8 +347,8 @@ export default function MainPage() {
 
   const myActiveCheckin = getActiveCheckin(device?.checkins as CheckinEntry[] | undefined);
   const [myCheckinStatus, setMyCheckinStatus] = useState<CheckinStatus | null>(null);
-  const [myCheckinPrecise, setMyCheckinPrecise] = useState(false);
   const [myCheckinComment, setMyCheckinComment] = useState('');
+  const [myCheckinMessagePublic, setMyCheckinMessagePublic] = useState(false);
   const [checkinFormTouched, setCheckinFormTouched] = useState(false);
   const [safetyPinBusy, setSafetyPinBusy] = useState(false);
   const [safetyPinFeedback, setSafetyPinFeedback] = useState<{ kind: 'success' | 'error' | 'info'; text: string } | null>(null);
@@ -352,21 +357,21 @@ export default function MainPage() {
     if (checkinFormTouched) return;
     if (!myActiveCheckin) {
       setMyCheckinStatus(null);
-      setMyCheckinPrecise(false);
       setMyCheckinComment('');
+      setMyCheckinMessagePublic(false);
       return;
     }
     const normalizedStatus = CHECKIN_STATUS_OPTIONS.some((opt) => opt.key === myActiveCheckin.status)
       ? (myActiveCheckin.status as CheckinStatus)
       : null;
     setMyCheckinStatus(normalizedStatus);
-    setMyCheckinPrecise(myActiveCheckin.precision === 'PRECISE');
     setMyCheckinComment(typeof myActiveCheckin.comment === 'string' ? myActiveCheckin.comment : '');
+    setMyCheckinMessagePublic(Boolean(myActiveCheckin.messagePublic));
   }, [
     checkinFormTouched,
     myActiveCheckin?.comment,
     myActiveCheckin?.id,
-    myActiveCheckin?.precision,
+    myActiveCheckin?.messagePublic,
     myActiveCheckin?.status,
     myActiveCheckin?.updatedAt,
   ]);
@@ -374,15 +379,19 @@ export default function MainPage() {
   const saveSafetyPin = async () => {
     setSafetyPinFeedback(null);
     if (!coords) {
-      setSafetyPinFeedback({ kind: 'error', text: '位置情報がありません。「現在地を取得」してから保存してください。' });
+      setSafetyPinFeedback({ kind: 'error', text: '安否情報を保存できませんでした' });
       return;
     }
     if (!deviceId) {
-      setSafetyPinFeedback({ kind: 'error', text: '端末IDを確認できません。再読み込みしてから保存してください。' });
+      setSafetyPinFeedback({ kind: 'error', text: '安否情報を保存できませんでした' });
       return;
     }
     if (!myCheckinStatus) {
-      setSafetyPinFeedback({ kind: 'error', text: '状態を選んでください。' });
+      setSafetyPinFeedback({ kind: 'error', text: '安否情報を保存できませんでした' });
+      return;
+    }
+    if ((myCheckinComment ?? '').trim().length > 140) {
+      setSafetyPinFeedback({ kind: 'error', text: 'コメントは140文字以内で入力してください。' });
       return;
     }
 
@@ -398,17 +407,15 @@ export default function MainPage() {
           shelterId: null,
           lat: coords.lat,
           lon: coords.lon,
-          precision: myCheckinPrecise ? 'PRECISE' : 'COARSE',
+          locationAccuracyM: coordsAccuracyM,
+          messagePublic: myCheckinMessagePublic,
+          precision: 'COARSE',
           comment: myCheckinComment.trim() || null,
         }),
       });
       const payload = await res.json().catch(() => null);
       if (!res.ok || payload?.ok === false || !payload?.device) {
-        const errorText =
-          payload?.errorCode === 'DUPLICATE'
-            ? '同じ内容の安否ピンはすでに保存されています。変更してから保存してください。'
-            : '安否ピンを保存できませんでした。通信状態を確認してもう一度お試しください。';
-        setSafetyPinFeedback({ kind: 'error', text: errorText });
+        setSafetyPinFeedback({ kind: 'error', text: '安否情報を保存できませんでした' });
         return;
       }
 
@@ -417,11 +424,11 @@ export default function MainPage() {
       setShowSafetyPins(true);
       if (showSafetyPins) await mutateSafetyPins();
       setCheckinFormTouched(false);
-      const message = myActiveCheckin ? '安否ピンを更新しました。' : '安否ピンを保存しました。';
+      const message = myActiveCheckin ? '安否を更新しました' : '安否を保存しました';
       setSafetyPinFeedback({ kind: 'success', text: message });
       setToast(message);
     } catch {
-      setSafetyPinFeedback({ kind: 'error', text: '安否ピンを保存できませんでした。通信状態を確認してもう一度お試しください。' });
+      setSafetyPinFeedback({ kind: 'error', text: '安否情報を保存できませんでした' });
     } finally {
       setSafetyPinBusy(false);
     }
@@ -430,11 +437,11 @@ export default function MainPage() {
   const deleteSafetyPin = async () => {
     setSafetyPinFeedback(null);
     if (!deviceId) {
-      setSafetyPinFeedback({ kind: 'error', text: '端末IDを確認できません。再読み込みしてから削除してください。' });
+      setSafetyPinFeedback({ kind: 'error', text: '安否情報を削除できませんでした' });
       return;
     }
     if (!myActiveCheckin) {
-      setSafetyPinFeedback({ kind: 'info', text: '削除できる安否ピンはありません。' });
+      setSafetyPinFeedback({ kind: 'info', text: '安否ピンを削除しました' });
       return;
     }
 
@@ -448,7 +455,7 @@ export default function MainPage() {
       });
       const payload = await res.json().catch(() => null);
       if (!res.ok || payload?.ok === false || !payload?.device) {
-        setSafetyPinFeedback({ kind: 'error', text: '安否ピンを削除できませんでした。通信状態を確認してもう一度お試しください。' });
+        setSafetyPinFeedback({ kind: 'error', text: '安否情報を削除できませんでした' });
         return;
       }
 
@@ -457,12 +464,12 @@ export default function MainPage() {
       if (showSafetyPins) await mutateSafetyPins();
       setMyCheckinStatus(null);
       setMyCheckinComment('');
-      setMyCheckinPrecise(false);
+      setMyCheckinMessagePublic(false);
       setCheckinFormTouched(false);
-      setSafetyPinFeedback({ kind: 'success', text: '安否ピンを削除しました。' });
+      setSafetyPinFeedback({ kind: 'success', text: '安否ピンを削除しました' });
       setToast('安否ピンを削除しました');
     } catch {
-      setSafetyPinFeedback({ kind: 'error', text: '安否ピンを削除できませんでした。通信状態を確認してもう一度お試しください。' });
+      setSafetyPinFeedback({ kind: 'error', text: '安否情報を削除できませんでした' });
     } finally {
       setSafetyPinBusy(false);
     }
@@ -559,26 +566,26 @@ export default function MainPage() {
               <span className="font-semibold">みんなの安否ピン</span>
             </label>
             {showSafetyPins && (
-              <label className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-800 ring-1 ring-gray-200">
-                <input
-                  type="checkbox"
-                  checked={showSafetyPinsHistory}
-                  onChange={(e) => setShowSafetyPinsHistory(e.target.checked)}
-                  disabled={lowBandwidth}
-                />
-                <span>履歴も表示</span>
-              </label>
-            )}
-            {showSafetyPins && (
-              <label className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-800 ring-1 ring-gray-200">
-                <input
-                  type="checkbox"
-                  checked={showSafetyPinsOld}
-                  onChange={(e) => setShowSafetyPinsOld(e.target.checked)}
-                  disabled={lowBandwidth}
-                />
-                <span>古い情報も表示</span>
-              </label>
+              <div className="inline-flex rounded-xl border bg-white p-1 text-sm">
+                <button
+                  className={classNames(
+                    'rounded-lg px-3 py-1.5 font-semibold',
+                    safetyPinsWindow === '24h' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'
+                  )}
+                  onClick={() => setSafetyPinsWindow('24h')}
+                >
+                  24時間
+                </button>
+                <button
+                  className={classNames(
+                    'rounded-lg px-3 py-1.5 font-semibold',
+                    safetyPinsWindow === '3d' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'
+                  )}
+                  onClick={() => setSafetyPinsWindow('3d')}
+                >
+                  3日以内
+                </button>
+              </div>
             )}
             {showSafetyPins && (
               <select
@@ -598,9 +605,12 @@ export default function MainPage() {
           <div className="text-xs text-gray-500">
           </div>
         </div>
+        {showSafetyPins && safetyPinsData?.fetchStatus === 'DOWN' && (
+          <div className="mt-2 rounded-xl border bg-amber-50 px-3 py-2 text-sm text-amber-900">安否情報を取得できませんでした</div>
+        )}
         {showSafetyPins && (
           <div className="mt-2 rounded-xl border bg-gray-50 px-3 py-2 text-xs text-gray-700">
-            共有ピン: {safetyPins.length}件 / 更新: {formatAt(safetyPinsData?.updatedAt)}。表示は概略位置が基本で、24時間を過ぎたピンは通常非表示です。
+            共有ピン: {safetyPins.length}件 / 表示: {safetyPinsWindow === '24h' ? '24時間' : '3日以内'} / 更新: {formatAt(safetyPinsData?.updatedAt)}
           </div>
         )}
 
@@ -622,48 +632,32 @@ export default function MainPage() {
         <div className="mt-4 rounded-2xl border bg-white p-4">
           <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div>
-              <div className="text-sm font-bold text-gray-900">
-                自分の安否ピン
-              </div>
+              <div className="text-sm font-bold text-gray-900">自分の安否ピン</div>
               <div className="mt-1 text-xs text-gray-600">
                 {myActiveCheckin
-                  ? `現在のピン: ${CHECKIN_STATUS_OPTIONS.find((opt) => opt.key === myActiveCheckin.status)?.label ?? myActiveCheckin.status} / 更新: ${formatAt(myActiveCheckin.updatedAt)}`
+                  ? `現在の状態: ${CHECKIN_STATUS_OPTIONS.find((opt) => opt.key === myActiveCheckin.status)?.label ?? myActiveCheckin.status}`
                   : 'まだ安否ピンは保存されていません。'}
               </div>
+              {myActiveCheckin && (
+                <>
+                  <div className="mt-1 text-xs text-gray-600">位置: {shareFromArea ?? 'おおよその位置情報あり'}</div>
+                  <div className="mt-1 text-xs text-gray-600">更新: {formatAt(myActiveCheckin.updatedAt)}</div>
+                  <div className="mt-1 text-xs text-gray-600">
+                    有効期限: {typeof myActiveCheckin.expiresAt === 'string' ? formatAt(myActiveCheckin.expiresAt) : '72時間以内'}
+                  </div>
+                </>
+              )}
             </div>
-            {myActiveCheckin && (
-              <span className="w-fit rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">
-                保存済み
-              </span>
-            )}
           </div>
 
           <div className="mt-3 space-y-4">
-            <div className="rounded-xl bg-gray-50 p-3">
-              <div className="text-xs font-semibold text-gray-700">1) 位置の確認（保存は粗い位置がデフォルト）</div>
-              <div className="mt-1 text-xs text-gray-600">
-                保存する位置: {coords ? (shareFromArea ?? 'エリア未確定') : '未取得'}
-                {coords ? (myCheckinPrecise ? '（高精度）' : '（概略）') : ''}
-              </div>
-              <label className="mt-2 flex items-start gap-2 text-sm text-gray-800">
-                <input
-                  type="checkbox"
-                  checked={myCheckinPrecise}
-                  onChange={(e) => {
-                    setMyCheckinPrecise(e.target.checked);
-                    setCheckinFormTouched(true);
-                    setSafetyPinFeedback(null);
-                  }}
-                />
-                <span>
-                  精密な位置を保存する（任意）
-                  <span className="ml-2 text-xs text-gray-600">位置が特定されやすくなるため注意</span>
-                </span>
-              </label>
+            <div className="rounded-xl bg-gray-50 p-3 text-xs text-gray-700">
+              <div>位置はおおよその範囲で表示されます。正確な位置は公開されません。</div>
+              <div className="mt-1">個人情報・電話番号・詳しい住所は書かないでください。</div>
             </div>
 
             <div>
-              <div className="text-xs font-semibold text-gray-700">2) 状態を選ぶ</div>
+              <div className="text-xs font-semibold text-gray-700">状態を選ぶ</div>
               <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-5">
                 {CHECKIN_STATUS_OPTIONS.map((s) => (
                   <button
@@ -686,11 +680,11 @@ export default function MainPage() {
             </div>
 
             <div className="rounded-xl bg-gray-50 p-3">
-              <div className="text-xs font-semibold text-gray-700">3) ひとこと（任意）</div>
+              <div className="text-xs font-semibold text-gray-700">コメント（任意）</div>
               <input
                 className="mt-1 w-full rounded border px-3 py-2 text-sm"
-                placeholder="無事です / 水と食料が不足しています など"
-                maxLength={100}
+                placeholder="必要な支援や周辺状況を簡潔に入力"
+                maxLength={140}
                 value={myCheckinComment}
                 onChange={(e) => {
                   setMyCheckinComment(e.target.value);
@@ -698,6 +692,19 @@ export default function MainPage() {
                   setSafetyPinFeedback(null);
                 }}
               />
+              <div className="mt-1 text-xs text-gray-500">{myCheckinComment.length} / 140</div>
+              <label className="mt-2 flex items-center gap-2 text-xs text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={myCheckinMessagePublic}
+                  onChange={(e) => {
+                    setMyCheckinMessagePublic(e.target.checked);
+                    setCheckinFormTouched(true);
+                    setSafetyPinFeedback(null);
+                  }}
+                />
+                コメントを公開する
+              </label>
             </div>
 
             {safetyPinFeedback && (
@@ -715,20 +722,20 @@ export default function MainPage() {
               </div>
             )}
 
-            <div className="flex items-center gap-3 border-t pt-3">
+            <div className="flex flex-col gap-2 border-t pt-3 md:flex-row">
               <button
                 className="flex-1 rounded-xl bg-gray-900 px-4 py-3 text-sm font-extrabold text-white shadow hover:bg-black disabled:opacity-60"
                 disabled={safetyPinBusy}
                 onClick={saveSafetyPin}
               >
-                {safetyPinBusy ? '保存中...' : myActiveCheckin ? '変更を保存' : 'ピンを保存'}
+                {safetyPinBusy ? '保存中...' : myActiveCheckin ? '安否を更新する' : '安否を保存する'}
               </button>
               <button
                 className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-800 ring-1 ring-gray-200 hover:bg-gray-50 disabled:opacity-60"
                 disabled={safetyPinBusy || !myActiveCheckin}
                 onClick={deleteSafetyPin}
               >
-                削除
+                安否ピンを削除する
               </button>
             </div>
           </div>

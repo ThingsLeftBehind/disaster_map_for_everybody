@@ -429,7 +429,7 @@ export function DeviceProvider({ children }: { children: React.ReactNode }) {
       if (!deviceId) return;
       const at = nowIso();
       const coords = args.precision === 'PRECISE' ? args.coords : roundLatLon(args.coords, 2);
-      const comment = typeof args.comment === 'string' && args.comment.trim() ? args.comment.trim().slice(0, 120) : null;
+      const comment = typeof args.comment === 'string' && args.comment.trim() ? args.comment.trim().slice(0, 140) : null;
 
       setDevice((current) => {
         if (!current) return current;

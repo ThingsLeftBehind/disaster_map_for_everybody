@@ -1,17 +1,26 @@
 import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
 import { hazardLabels } from '@jp-evac/shared';
-import type { evac_sites } from '@jp-evac/db';
 import type { ComponentProps } from 'react';
 import type { Coords } from 'lib/client/location';
 
 const DynamicMap = dynamic(() => import('./MapViewInner'), { ssr: false });
 
-export type SiteWithDistance = evac_sites & { distance?: number };
+export type SiteWithDistance = {
+  id: string;
+  name: string;
+  lat: number;
+  lon: number;
+  hazards: Record<string, boolean>;
+  distance?: number;
+  [key: string]: unknown;
+};
 
 export type CheckinPin = {
   id: string;
   status: 'INJURED' | 'SAFE' | 'ISOLATED' | 'EVACUATING' | 'COMPLETED';
+  displayLat?: number;
+  displayLon?: number;
   lat: number;
   lon: number;
   precision: 'COARSE' | 'PRECISE';

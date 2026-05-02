@@ -103,17 +103,26 @@ function withinWindow(iso: string, windowMs: number): boolean {
   return Date.now() - t <= windowMs;
 }
 
-function toDbSafetyStatus(status: string): 'SAFE' | 'EVACUATING' | 'EVACUATED' | 'INJURED' | 'ISOLATED' {
-  if (status === 'COMPLETED' || status === 'EVACUATED') return 'EVACUATED';
-  if (status === 'EVACUATING') return 'EVACUATING';
-  if (status === 'INJURED') return 'INJURED';
-  if (status === 'ISOLATED') return 'ISOLATED';
-  return 'SAFE';
+type SafetyStateDb = 'safe' | 'serious_injury' | 'isolated' | 'evacuating' | 'evacuated';
+type SafetyStatusPublic = 'SAFE' | 'INJURED' | 'ISOLATED' | 'EVACUATING' | 'COMPLETED';
+
+function normalizeSafetyState(value: string): SafetyStateDb {
+  const status = String(value ?? '').trim().toLowerCase();
+  if (status === 'safe') return 'safe';
+  if (status === 'serious_injury' || status === 'injured') return 'serious_injury';
+  if (status === 'isolated') return 'isolated';
+  if (status === 'evacuating') return 'evacuating';
+  if (status === 'evacuated' || status === 'completed') return 'evacuated';
+  return 'safe';
 }
 
-function fromDbSafetyStatus(status: string): string {
-  if (status === 'EVACUATED') return 'COMPLETED';
-  return status;
+function toPublicSafetyStatus(state: SafetyStateDb | string): SafetyStatusPublic {
+  const normalized = normalizeSafetyState(String(state ?? ''));
+  if (normalized === 'serious_injury') return 'INJURED';
+  if (normalized === 'isolated') return 'ISOLATED';
+  if (normalized === 'evacuating') return 'EVACUATING';
+  if (normalized === 'evacuated') return 'COMPLETED';
+  return 'SAFE';
 }
 
 function normalizeCrowdVote(value: string): CrowdVoteValue {
@@ -150,9 +159,11 @@ function publicCheckinCoords(args: { lat: number; lon: number; precision: Checki
   return { lat: roundCoord(args.lat), lon: roundCoord(args.lon) };
 }
 
-function normalizedCheckinComment(value: unknown): string | null {
+function sanitizeSafetyMessage(value: unknown): string | null {
   if (typeof value !== 'string') return null;
-  const text = value.trim().slice(0, 120);
+  const noTags = value.replace(/<[^>]*>/g, ' ');
+  const noUrls = noTags.replace(/(?:https?:\/\/|www\.)\S+/gi, ' ');
+  const text = noUrls.replace(/\s+/g, ' ').trim().slice(0, 140);
   return text ? text : null;
 }
 
@@ -174,7 +185,7 @@ function isSameCheckinPayload(
     String(previous.status ?? '') === next.status &&
     (previous.shelterId ?? null) === (next.shelterId ?? null) &&
     (previous.precision === 'PRECISE' ? 'PRECISE' : 'COARSE') === next.precision &&
-    normalizedCheckinComment(previous.comment) === normalizedCheckinComment(next.comment) &&
+    sanitizeSafetyMessage(previous.comment) === sanitizeSafetyMessage(next.comment) &&
     lastLat === next.lat &&
     lastLon === next.lon
   );
@@ -277,88 +288,247 @@ async function getCrowdStoreKind(): Promise<CrowdStoreKind> {
   }
 }
 
-async function upsertDbSafetyStatus(args: {
-  deviceId: string;
-  status: string;
-  lat: number;
-  lon: number;
-}): Promise<void> {
+const SAFETY_STATUS_TTL_MS = 72 * 60 * 60 * 1000;
+const SAFETY_PUBLIC_WINDOW_MS = {
+  '24h': 24 * 60 * 60 * 1000,
+  '3d': 72 * 60 * 60 * 1000,
+} as const;
+type SafetyWindowKey = keyof typeof SAFETY_PUBLIC_WINDOW_MS;
+
+function toSafetyWindowKey(value: string | null | undefined): SafetyWindowKey {
+  return value === '3d' ? '3d' : '24h';
+}
+
+function toSafetyDeviceHash(deviceId: string): string {
+  return deviceId.trim();
+}
+
+function resolveSafetyStateFromFilter(value: string): SafetyStateDb | null {
+  const status = String(value ?? '').trim();
+  if (!status) return null;
+  const upper = status.toUpperCase();
+  if (upper === 'SAFE') return 'safe';
+  if (upper === 'INJURED') return 'serious_injury';
+  if (upper === 'ISOLATED') return 'isolated';
+  if (upper === 'EVACUATING') return 'evacuating';
+  if (upper === 'COMPLETED' || upper === 'EVACUATED') return 'evacuated';
+  if (upper === 'SERIOUS_INJURY') return 'serious_injury';
+  return null;
+}
+
+function coarsenPublicCoords(lat: number, lon: number): { displayLat: number; displayLon: number } {
+  const latStep = 0.0036;
+  const cosLat = Math.max(0.35, Math.cos((lat * Math.PI) / 180));
+  const lonStep = latStep / cosLat;
+  const latBucket = Math.floor(lat / latStep);
+  const lonBucket = Math.floor(lon / lonStep);
+  const displayLat = Number(((latBucket + 0.5) * latStep).toFixed(6));
+  const displayLon = Number(((lonBucket + 0.5) * lonStep).toFixed(6));
+  return { displayLat, displayLon };
+}
+
+async function resolveOrCreateDeviceByHash(deviceHash: string): Promise<{ id: string; deviceHash: string }> {
+  const existing = await prisma.device.findUnique({
+    where: { deviceHash },
+    select: { id: true, deviceHash: true },
+  });
+  if (existing) return existing;
+
+  const now = new Date();
   try {
-    await prisma.device_settings.upsert({
-      where: { device_hash: args.deviceId },
-      create: { device_hash: args.deviceId },
-      update: {},
-    });
-    await prisma.safety_status.upsert({
-      where: { device_hash: args.deviceId },
-      create: {
-        device_hash: args.deviceId,
-        status: toDbSafetyStatus(args.status),
-        last_known_lat: args.lat,
-        last_known_lon: args.lon,
+    return await prisma.device.create({
+      data: {
+        id: crypto.randomUUID(),
+        deviceHash,
+        transferCode: crypto.randomUUID(),
+        updatedAt: now,
       },
-      update: {
-        status: toDbSafetyStatus(args.status),
-        last_known_lat: args.lat,
-        last_known_lon: args.lon,
-        updated_at: new Date(),
-      },
+      select: { id: true, deviceHash: true },
     });
   } catch (error) {
-    console.warn('[store:safety] db_write_failed', { error: error instanceof Error ? error.message : String(error) });
+    const message = error instanceof Error ? error.message : String(error);
+    if (!/Unique constraint failed/i.test(message)) throw error;
+    const raced = await prisma.device.findUnique({
+      where: { deviceHash },
+      select: { id: true, deviceHash: true },
+    });
+    if (!raced) throw error;
+    return raced;
   }
 }
 
-async function listDbSafetyPins(args: {
-  includeOld: boolean;
-  statuses?: string[] | null | undefined;
-}): Promise<Array<{
-  deviceKey: string;
+async function readActiveSafetyStatusRow(deviceHash: string): Promise<{
   id: string;
-  status: string;
+  status: SafetyStateDb;
+  lastKnownLat: number | null;
+  lastKnownLon: number | null;
+  locationAccuracyM: number | null;
+  message: string | null;
+  messagePublic: boolean;
+  updatedAt: Date;
+  expiresAt: Date;
+} | null> {
+  const device = await prisma.device.findUnique({
+    where: { deviceHash },
+    select: { id: true },
+  });
+  if (!device) return null;
+
+  const now = new Date();
+  const row = await prisma.safetyStatus.findFirst({
+    where: {
+      deviceId: device.id,
+      deletedAt: null,
+      expiresAt: { gt: now },
+    },
+    orderBy: { updatedAt: 'desc' },
+    select: {
+      id: true,
+      status: true,
+      lastKnownLat: true,
+      lastKnownLon: true,
+      locationAccuracyM: true,
+      message: true,
+      messagePublic: true,
+      updatedAt: true,
+      expiresAt: true,
+    },
+  });
+  if (!row) return null;
+  return {
+    id: row.id,
+    status: normalizeSafetyState(String(row.status)),
+    lastKnownLat: typeof row.lastKnownLat === 'number' ? row.lastKnownLat : null,
+    lastKnownLon: typeof row.lastKnownLon === 'number' ? row.lastKnownLon : null,
+    locationAccuracyM: typeof row.locationAccuracyM === 'number' ? row.locationAccuracyM : null,
+    message: sanitizeSafetyMessage(row.message),
+    messagePublic: Boolean(row.messagePublic),
+    updatedAt: row.updatedAt,
+    expiresAt: row.expiresAt,
+  };
+}
+
+async function upsertDbSafetyStatus(args: {
+  deviceHash: string;
+  status: SafetyStateDb;
   lat: number;
   lon: number;
-  precision: CheckinPrecision;
-  comment: string | null;
-  updatedAt: string;
-  archived: boolean;
-  archivedAt: string | null;
-  reportCount: number;
-  commentHidden: boolean;
-}>> {
-  try {
-    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const rows = await prisma.safety_status.findMany({
-      where: args.includeOld ? undefined : { updated_at: { gte: cutoff } },
-      orderBy: { updated_at: 'desc' },
-      take: 500,
-    });
-    const statusSet = new Set((args.statuses ?? []).filter(Boolean));
-    return rows
-      .map((row) => {
-        const status = fromDbSafetyStatus(String(row.status));
-        if (statusSet.size > 0 && !statusSet.has(status)) return null;
-        if (typeof row.last_known_lat !== 'number' || typeof row.last_known_lon !== 'number') return null;
-        return {
-          deviceKey: row.device_hash,
-          id: pinPublicId(row.device_hash, row.id),
-          status,
-          lat: row.last_known_lat,
-          lon: row.last_known_lon,
-          precision: 'COARSE' as CheckinPrecision,
-          comment: null,
-          updatedAt: row.updated_at.toISOString(),
-          archived: false,
-          archivedAt: null,
-          reportCount: 0,
-          commentHidden: false,
-        };
-      })
-      .filter((v): v is NonNullable<typeof v> => Boolean(v));
-  } catch (error) {
-    console.warn('[store:safety] db_read_failed', { error: error instanceof Error ? error.message : String(error) });
-    return [];
-  }
+  locationAccuracyM: number | null;
+  message: string | null;
+  messagePublic: boolean;
+}): Promise<void> {
+  const device = await resolveOrCreateDeviceByHash(args.deviceHash);
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + SAFETY_STATUS_TTL_MS);
+
+  await prisma.$transaction([
+    prisma.device.update({
+      where: { id: device.id },
+      data: { updatedAt: now },
+    }),
+    prisma.safetyStatus.upsert({
+      where: { deviceId: device.id },
+      create: {
+        id: crypto.randomUUID(),
+        deviceId: device.id,
+        status: args.status,
+        lastKnownLat: args.lat,
+        lastKnownLon: args.lon,
+        locationAccuracyM: args.locationAccuracyM,
+        message: args.message,
+        messagePublic: args.messagePublic,
+        deletedAt: null,
+        expiresAt,
+        updatedAt: now,
+      },
+      update: {
+        status: args.status,
+        lastKnownLat: args.lat,
+        lastKnownLon: args.lon,
+        locationAccuracyM: args.locationAccuracyM,
+        message: args.message,
+        messagePublic: args.messagePublic,
+        deletedAt: null,
+        expiresAt,
+        updatedAt: now,
+      },
+    }),
+  ]);
+}
+
+async function listDbSafetyPins(args: {
+  window: SafetyWindowKey;
+  statuses?: string[] | null | undefined;
+}): Promise<{
+  updatedAt: string | null;
+  pins: Array<{
+    id: string;
+    status: string;
+    displayLat: number;
+    displayLon: number;
+    lat: number;
+    lon: number;
+    precision: CheckinPrecision;
+    comment: string | null;
+    updatedAt: string;
+    archived: boolean;
+    archivedAt: string | null;
+    reportCount: number;
+    commentHidden: boolean;
+  }>;
+}> {
+  const now = new Date();
+  const windowStart = new Date(now.getTime() - SAFETY_PUBLIC_WINDOW_MS[args.window]);
+  const dbStatuses = Array.from(new Set((args.statuses ?? []).map(resolveSafetyStateFromFilter).filter(Boolean))) as SafetyStateDb[];
+
+  const rows = await prisma.safetyStatus.findMany({
+    where: {
+      deletedAt: null,
+      expiresAt: { gt: now },
+      updatedAt: { gte: windowStart },
+      ...(dbStatuses.length > 0 ? { status: { in: dbStatuses as any[] } } : {}),
+    },
+    orderBy: { updatedAt: 'desc' },
+    take: 500,
+    select: {
+      id: true,
+      status: true,
+      lastKnownLat: true,
+      lastKnownLon: true,
+      message: true,
+      messagePublic: true,
+      updatedAt: true,
+      Device: { select: { deviceHash: true } },
+    },
+  });
+
+  const pins = rows
+    .map((row) => {
+      if (typeof row.lastKnownLat !== 'number' || typeof row.lastKnownLon !== 'number') return null;
+      const display = coarsenPublicCoords(row.lastKnownLat, row.lastKnownLon);
+      const publicMessage = row.messagePublic ? sanitizeSafetyMessage(row.message) : null;
+      return {
+        id: pinPublicId(row.Device?.deviceHash ?? row.id, row.id),
+        status: toPublicSafetyStatus(normalizeSafetyState(String(row.status))),
+        displayLat: display.displayLat,
+        displayLon: display.displayLon,
+        lat: display.displayLat,
+        lon: display.displayLon,
+        precision: 'COARSE' as CheckinPrecision,
+        comment: publicMessage,
+        updatedAt: row.updatedAt.toISOString(),
+        archived: false,
+        archivedAt: null,
+        reportCount: 0,
+        commentHidden: false,
+      };
+    })
+    .filter((row): row is NonNullable<typeof row> => Boolean(row));
+
+  return {
+    updatedAt: pins[0]?.updatedAt ?? null,
+    pins,
+  };
 }
 
 async function upsertDbCrowdReport(args: {
@@ -594,11 +764,42 @@ async function writeModerationState(next: ModerationState): Promise<void> {
 export async function getDeviceState(deviceId: string): Promise<DeviceState> {
   const raw = await readJsonFile<unknown>(localStoreDevicePath(deviceId));
   const parsed = DeviceStateSchema.safeParse(raw);
-  if (parsed.success) return parsed.data;
+  const base = parsed.success ? parsed.data : defaultDeviceState(deviceId);
+  if (!parsed.success && !requiresDbPersistence()) {
+    await atomicWriteJson(localStoreDevicePath(deviceId), base);
+  }
 
-  const created = defaultDeviceState(deviceId);
-  await atomicWriteJson(localStoreDevicePath(deviceId), created);
-  return created;
+  try {
+    const active = await readActiveSafetyStatusRow(toSafetyDeviceHash(deviceId));
+    const checkins = active
+      ? [
+          {
+            id: active.id,
+            status: toPublicSafetyStatus(active.status),
+            shelterId: null,
+            updatedAt: active.updatedAt.toISOString(),
+            lat: active.lastKnownLat,
+            lon: active.lastKnownLon,
+            locationAccuracyM: active.locationAccuracyM,
+            messagePublic: active.messagePublic,
+            expiresAt: active.expiresAt.toISOString(),
+            deletedAt: null,
+            precision: active.locationAccuracyM !== null && active.locationAccuracyM <= 50 ? 'PRECISE' : 'COARSE',
+            comment: active.message,
+            active: true,
+            archivedAt: null,
+          },
+        ]
+      : [];
+    return {
+      ...base,
+      checkins,
+      updatedAt: active ? active.updatedAt.toISOString() : base.updatedAt,
+    };
+  } catch (error) {
+    if (requiresDbPersistence()) throw error;
+    return base;
+  }
 }
 
 export async function updateDeviceState(
@@ -653,32 +854,53 @@ export async function appendCheckin(
 }
 
 export async function clearActiveCheckin(deviceId: string): Promise<DeviceState> {
-  const at = nowIso();
-  const { value } = await runExclusive(`device:${deviceId}`, async () => {
-    const current = await getDeviceState(deviceId);
-    const next: DeviceState = {
-      ...current,
-      updatedAt: at,
-      checkins: (current.checkins ?? []).map((c: any) =>
-        c && typeof c === 'object' && (c as any).active !== false
-          ? { ...(c as any), active: false, archivedAt: (c as any).archivedAt ?? at }
-          : c
-      ),
-    };
-    await atomicWriteJson(localStoreDevicePath(deviceId), next);
-    return next;
-  });
+  const now = new Date();
+  const deviceHash = toSafetyDeviceHash(deviceId);
 
   try {
-    await prisma.safety_status.delete({ where: { device_hash: deviceId } });
+    const device = await prisma.device.findUnique({
+      where: { deviceHash },
+      select: { id: true },
+    });
+    if (device) {
+      await prisma.safetyStatus.updateMany({
+        where: {
+          deviceId: device.id,
+          deletedAt: null,
+          expiresAt: { gt: now },
+        },
+        data: {
+          deletedAt: now,
+          expiresAt: now,
+          updatedAt: now,
+        },
+      });
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    if (!/Record to delete does not exist|No record was found/i.test(message)) {
-      console.warn('[store:safety] db_clear_failed', { error: message });
-    }
+    console.warn('[store:safety] db_clear_failed', { error: message });
+    if (requiresDbPersistence()) throw error;
   }
 
-  return value ?? getDeviceState(deviceId);
+  if (!requiresDbPersistence()) {
+    const at = now.toISOString();
+    await runExclusive(`device:${deviceId}`, async () => {
+      const current = await getDeviceState(deviceId);
+      const next: DeviceState = {
+        ...current,
+        updatedAt: at,
+        checkins: (current.checkins ?? []).map((c: any) =>
+          c && typeof c === 'object' && (c as any).active !== false
+            ? { ...(c as any), active: false, archivedAt: (c as any).archivedAt ?? at }
+            : c
+        ),
+      };
+      await atomicWriteJson(localStoreDevicePath(deviceId), next);
+      return next;
+    });
+  }
+
+  return getDeviceState(deviceId);
 }
 
 function buildNextDeviceStateWithCheckin(
@@ -700,7 +922,7 @@ function buildNextDeviceStateWithCheckin(
   });
   const archivedExisting = normalizedExisting.map((c) => (c.active ? { ...c, active: false, archivedAt: at } : c));
 
-  const comment = typeof entry.comment === 'string' && entry.comment.trim() ? entry.comment.trim().slice(0, 120) : null;
+  const comment = sanitizeSafetyMessage(entry.comment);
   const precision: CheckinPrecision = entry.precision === 'PRECISE' ? 'PRECISE' : 'COARSE';
   return {
     ...current,
@@ -730,6 +952,8 @@ export async function submitCheckinPin(args: {
   shelterId: string | null | undefined;
   lat: number;
   lon: number;
+  locationAccuracyM?: number | null | undefined;
+  messagePublic?: boolean | null | undefined;
   precision: CheckinPrecision;
   comment: string | null | undefined;
 }): Promise<StoreResult<DeviceState>> {
@@ -737,50 +961,50 @@ export async function submitCheckinPin(args: {
   if (!rlIp.ok) return { ok: false, code: 'RATE_LIMITED', message: 'Too many check-ins (ip)' };
   const rlDevice = checkRateLimit(`checkin:dev:${args.deviceId}`, 20, 60_000);
   if (!rlDevice.ok) return { ok: false, code: 'RATE_LIMITED', message: 'Too many check-ins (device)' };
+  const status = normalizeSafetyState(args.status);
+  const message = sanitizeSafetyMessage(args.comment);
+  const locationAccuracyM = typeof args.locationAccuracyM === 'number' && Number.isFinite(args.locationAccuracyM) ? args.locationAccuracyM : null;
+  const messagePublic = Boolean(args.messagePublic);
 
-  const { value } = await runExclusive(`device:${args.deviceId}`, async () => {
-    const publicCoords = publicCheckinCoords({ lat: args.lat, lon: args.lon, precision: args.precision });
-    const current = await getDeviceState(args.deviceId);
-    const hasExplicitActive = (current.checkins ?? []).some((c: any) => c && typeof c === 'object' && typeof (c as any).active === 'boolean');
-    const last = hasExplicitActive
-      ? ((current.checkins ?? []).find((c: any) => c && typeof c === 'object' && (c as any).active === true) as any)
-      : ((current.checkins ?? [])[0] as any);
-    if (
-      last?.updatedAt &&
-      withinWindow(String(last.updatedAt), 15_000) &&
-      isSameCheckinPayload(last, {
-        status: args.status,
-        shelterId: args.shelterId ?? null,
-        lat: publicCoords.lat,
-        lon: publicCoords.lon,
-        precision: args.precision,
-        comment: args.comment ?? null,
-      })
-    ) {
-      return null;
+  try {
+    await upsertDbSafetyStatus({
+      deviceHash: toSafetyDeviceHash(args.deviceId),
+      status,
+      lat: args.lat,
+      lon: args.lon,
+      locationAccuracyM,
+      message,
+      messagePublic,
+    });
+    const device = await getDeviceState(args.deviceId);
+    return { ok: true, value: device };
+  } catch (error) {
+    const messageText = error instanceof Error ? error.message : String(error);
+    console.warn('[store:safety] submit_failed', { error: messageText });
+    if (requiresDbPersistence()) {
+      return { ok: false, code: 'BAD_REQUEST', message: 'Safety status could not be persisted.' };
     }
 
-    const next = buildNextDeviceStateWithCheckin(current, {
-      status: args.status,
-      shelterId: args.shelterId ?? null,
-      lat: publicCoords.lat,
-      lon: publicCoords.lon,
-      precision: args.precision,
-      comment: args.comment ?? null,
+    const { value } = await runExclusive(`device:${args.deviceId}`, async () => {
+      const current = await getDeviceState(args.deviceId);
+      const next = buildNextDeviceStateWithCheckin(current, {
+        status: toPublicSafetyStatus(status),
+        shelterId: args.shelterId ?? null,
+        lat: args.lat,
+        lon: args.lon,
+        precision: args.precision,
+        comment: message,
+      });
+      await atomicWriteJson(localStoreDevicePath(args.deviceId), next);
+      return next;
     });
-    await atomicWriteJson(localStoreDevicePath(args.deviceId), next);
-    return next;
-  });
-
-  if (!value) return { ok: false, code: 'DUPLICATE', message: 'Please wait a moment before updating again.' };
-  const dbCoords = { lat: roundCoord(args.lat), lon: roundCoord(args.lon) };
-  await upsertDbSafetyStatus({ deviceId: args.deviceId, status: args.status, lat: dbCoords.lat, lon: dbCoords.lon });
-  return { ok: true, value };
+    if (!value) return { ok: false, code: 'BAD_REQUEST', message: 'Safety status could not be persisted.' };
+    return { ok: true, value };
+  }
 }
 
 export async function listCheckinPins(args: {
-  includeHistory: boolean;
-  includeOld: boolean;
+  window?: string | null | undefined;
   statuses?: string[] | null | undefined;
 }): Promise<{
   updatedAt: string | null;
@@ -798,118 +1022,38 @@ export async function listCheckinPins(args: {
     commentHidden: boolean;
   }>;
 }> {
-  const includeHistory = Boolean(args.includeHistory);
-  const includeOld = Boolean(args.includeOld);
-  const statusSet = new Set((args.statuses ?? []).filter((s) => typeof s === 'string' && s.trim()));
+  const window = toSafetyWindowKey(args.window ?? undefined);
 
-  const [reportsState, dbPins] = await Promise.all([
-    getCheckinReportsState(),
-    listDbSafetyPins({ includeOld, statuses: args.statuses }),
-  ]);
-
-  let files: string[] = [];
   try {
-    files = (await fs.readdir(localStoreDevicesDir())).filter((f) => f.endsWith('.json'));
-  } catch {
-    files = [];
-  }
+    const [reportsState, dbData] = await Promise.all([
+      getCheckinReportsState(),
+      listDbSafetyPins({ window, statuses: args.statuses }),
+    ]);
 
-  const pins: Array<{
-    deviceKey: string;
-    id: string;
-    status: string;
-    lat: number;
-    lon: number;
-    precision: CheckinPrecision;
-    comment: string | null;
-    updatedAt: string;
-    archived: boolean;
-    archivedAt: string | null;
-    reportCount: number;
-    commentHidden: boolean;
-  }> = [];
-
-  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-
-  for (const f of files.slice(0, 5000)) {
-    const devicePath = path.join(localStoreDevicesDir(), f);
-    const raw = await readJsonFile<unknown>(devicePath);
-    const parsed = DeviceStateSchema.safeParse(raw);
-    if (!parsed.success) continue;
-    const device = parsed.data;
-    const checkins = device.checkins ?? [];
-    if (checkins.length === 0) continue;
-
-    const hasExplicitActive = checkins.some((c: any) => c && typeof c === 'object' && typeof (c as any).active === 'boolean');
-    const normalized = checkins.map((c: any, idx: number) => {
-      const active = hasExplicitActive ? (c as any).active === true : idx === 0;
-      return { ...c, active, archivedAt: active ? null : (c as any).archivedAt ?? (c as any).updatedAt ?? null };
+    const pins = dbData.pins.map((pin) => {
+      const reportMeta = reportsState.pins?.[pin.id] ?? null;
+      const reportCount = typeof reportMeta?.reportCount === 'number' ? reportMeta.reportCount : 0;
+      const commentHidden = Boolean(reportMeta?.commentHidden);
+      return {
+        ...pin,
+        reportCount,
+        commentHidden,
+      };
     });
 
-    for (const c of normalized) {
-      if (!includeHistory && !c.active) continue;
-      const t = Date.parse(String(c.updatedAt ?? ''));
-      if (!includeOld && Number.isFinite(t) && t < cutoff) continue;
-      const lat = typeof c.lat === 'number' ? c.lat : null;
-      const lon = typeof c.lon === 'number' ? c.lon : null;
-      if (lat === null || lon === null) continue;
-      const status = String(c.status ?? '').trim();
-      if (statusSet.size > 0 && !statusSet.has(status)) continue;
-
-      const pinId = pinPublicId(device.deviceId, String(c.id ?? ''));
-      const pinMeta = reportsState.pins?.[pinId] ?? null;
-
-      pins.push({
-        deviceKey: device.deviceId,
-        id: pinId,
-        status,
-        lat,
-        lon,
-        precision: c.precision === 'PRECISE' ? 'PRECISE' : 'COARSE',
-        comment: typeof c.comment === 'string' && c.comment.trim() ? c.comment.trim() : null,
-        updatedAt: String(c.updatedAt ?? ''),
-        archived: !c.active,
-        archivedAt: typeof c.archivedAt === 'string' ? c.archivedAt : null,
-        reportCount: typeof pinMeta?.reportCount === 'number' ? pinMeta.reportCount : 0,
-        commentHidden: Boolean(pinMeta?.commentHidden),
-      });
-    }
+    return {
+      updatedAt: dbData.updatedAt,
+      pins,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn('[store:safety] list_failed', { error: message });
+    if (requiresDbPersistence()) throw error;
+    return {
+      updatedAt: null,
+      pins: [],
+    };
   }
-
-  const mergedByDevice = new Map<string, (typeof pins)[number]>();
-  for (const pin of [...dbPins, ...pins]) {
-    const existing = mergedByDevice.get(pin.deviceKey);
-    if (!existing) {
-      mergedByDevice.set(pin.deviceKey, pin);
-      continue;
-    }
-    const existingTime = Date.parse(existing.updatedAt);
-    const nextTime = Date.parse(pin.updatedAt);
-    const nextHasMoreDetail = Boolean(pin.comment) && !existing.comment;
-    if (nextHasMoreDetail || (Number.isFinite(nextTime) && (!Number.isFinite(existingTime) || nextTime > existingTime))) {
-      mergedByDevice.set(pin.deviceKey, pin);
-    }
-  }
-
-  const mergedPins = Array.from(mergedByDevice.values());
-  mergedPins.sort((a, b) => {
-    const ta = Date.parse(a.updatedAt);
-    const tb = Date.parse(b.updatedAt);
-    if (Number.isNaN(ta) && Number.isNaN(tb)) return 0;
-    if (Number.isNaN(ta)) return 1;
-    if (Number.isNaN(tb)) return -1;
-    return tb - ta;
-  });
-
-  const updatedAt = mergedPins.length > 0 ? mergedPins[0].updatedAt : null;
-  return {
-    updatedAt,
-    pins: mergedPins.slice(0, 500).map((pin) => {
-      const { deviceKey, ...publicPin } = pin;
-      void deviceKey;
-      return publicPin;
-    }),
-  };
 }
 
 export async function reportCheckinPin(args: {

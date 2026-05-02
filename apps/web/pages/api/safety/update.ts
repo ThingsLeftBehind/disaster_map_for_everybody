@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { SafetyUpdateSchema } from 'lib/validators';
-import { appendCheckin, updateDeviceState } from 'lib/store/adapter';
-import { assertSameOrigin, jsonError, jsonOk, rateLimit } from 'lib/server/security';
+import { submitCheckinPin } from 'lib/store/adapter';
+import { ipHash } from 'lib/store/security';
+import { assertSameOrigin, getClientIp, jsonError, jsonOk, rateLimit } from 'lib/server/security';
 
 export const config = {
   api: {
@@ -41,27 +42,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return jsonError(res, 400, { ok: false, error: 'invalid_payload', errorCode: 'PAYLOAD_TOO_LARGE' });
   }
 
-  const deviceId = device_hash;
-  await updateDeviceState(deviceId, {
-    settings: {
-      // Keep legacy fields out of server store to avoid storing precise GPS by default.
-      // The UI stores location locally; we accept this endpoint for backward compatibility only.
-    },
-  });
+  if (typeof last_known_lat !== 'number' || typeof last_known_lon !== 'number') {
+    return jsonError(res, 400, { ok: false, error: 'invalid_payload', errorCode: 'INVALID_BODY' });
+  }
 
   const mapped =
     status === 'EVACUATED'
-      ? 'COMPLETED'
+      ? 'evacuated'
       : status === 'SAFE'
-        ? 'SAFE'
+        ? 'safe'
         : status === 'EVACUATING'
-          ? 'EVACUATING'
+          ? 'evacuating'
           : status === 'INJURED'
-            ? 'INJURED'
+            ? 'serious_injury'
             : status === 'ISOLATED'
-              ? 'ISOLATED'
-              : 'SAFE';
+              ? 'isolated'
+              : 'safe';
 
-  const device = await appendCheckin(deviceId, { status: mapped, shelterId: null });
-  return jsonOk(res, { device, legacy: { last_known_lat, last_known_lon, saved_places, hazard_alert_prefs } });
+  const result = await submitCheckinPin({
+    deviceId: device_hash,
+    ipHash: ipHash(getClientIp(req)),
+    status: mapped,
+    shelterId: null,
+    lat: last_known_lat,
+    lon: last_known_lon,
+    locationAccuracyM: null,
+    messagePublic: false,
+    precision: 'COARSE',
+    comment: null,
+  });
+
+  if (!result.ok) {
+    return jsonError(res, result.code === 'RATE_LIMITED' ? 429 : 400, {
+      ok: false,
+      error: result.message,
+      errorCode: result.code,
+    });
+  }
+
+  return jsonOk(res, { ok: true, device: result.value, legacy: { saved_places, hazard_alert_prefs } });
 }

@@ -27,7 +27,18 @@ export const SettingsSchema = z.object({
 });
 export type Settings = z.infer<typeof SettingsSchema>;
 
-export const CheckinStatusSchema = z.enum(['INJURED', 'SAFE', 'ISOLATED', 'EVACUATING', 'COMPLETED']);
+export const CheckinStatusSchema = z.enum([
+  'INJURED',
+  'SAFE',
+  'ISOLATED',
+  'EVACUATING',
+  'COMPLETED',
+  'safe',
+  'serious_injury',
+  'isolated',
+  'evacuating',
+  'evacuated',
+]);
 export type CheckinStatus = z.infer<typeof CheckinStatusSchema>;
 
 export const CheckinPrecisionSchema = z.enum(['COARSE', 'PRECISE']);
@@ -40,8 +51,12 @@ export const CheckinEntrySchema = z.object({
   updatedAt: z.string(),
   lat: z.number().min(-90).max(90).finite().nullable().optional(),
   lon: z.number().min(-180).max(180).finite().nullable().optional(),
+  locationAccuracyM: z.number().min(0).max(100_000).finite().nullable().optional(),
+  messagePublic: z.boolean().optional(),
+  expiresAt: z.string().nullable().optional(),
+  deletedAt: z.string().nullable().optional(),
   precision: CheckinPrecisionSchema.optional(),
-  comment: z.string().max(120).nullable().optional(),
+  comment: z.string().max(140).nullable().optional(),
   active: z.boolean().optional(),
   archivedAt: z.string().nullable().optional(),
 });
@@ -174,8 +189,10 @@ export const CheckinBodySchema = z.object({
   shelterId: z.string().nullable().optional(),
   lat: z.preprocess((v) => Number(v), z.number().min(-90).max(90).finite()),
   lon: z.preprocess((v) => Number(v), z.number().min(-180).max(180).finite()),
+  locationAccuracyM: z.preprocess((v) => (v === null || v === undefined || v === '' ? undefined : Number(v)), z.number().min(0).max(100_000).finite()).optional(),
+  messagePublic: z.boolean().optional(),
   precision: CheckinPrecisionSchema.optional(),
-  comment: z.string().max(120).nullable().optional(),
+  comment: z.string().max(140).nullable().optional(),
 });
 
 export const ShelterVoteBodySchema = z.object({

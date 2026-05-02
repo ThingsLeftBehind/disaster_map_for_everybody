@@ -10,8 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  const includeHistory = first(req.query.includeHistory) === '1';
-  const includeOld = first(req.query.includeOld) === '1';
+  const window = first(req.query.window) === '3d' ? '3d' : '24h';
   const statuses = (first(req.query.status) ?? '')
     .split(',')
     .map((v) => v.trim())
@@ -20,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const [pins, admin] = await Promise.all([
-      listCheckinPins({ includeHistory, includeOld, statuses }),
+      listCheckinPins({ window, statuses }),
       getAdminState(),
     ]);
 
@@ -28,16 +27,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       fetchStatus: 'OK',
       updatedAt: pins.updatedAt,
       lastError: null,
+      window,
       moderationPolicy: admin.moderationPolicy,
       pins: pins.pins,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    console.warn('[store:checkins] read_failed', { error: message });
     const admin = await getAdminState().catch(() => null);
-    return res.status(200).json({
+    return res.status(503).json({
       fetchStatus: 'DOWN',
       updatedAt: null,
-      lastError: message,
+      lastError: 'checkins_unavailable',
+      window,
       moderationPolicy: admin?.moderationPolicy ?? null,
       pins: [],
     });

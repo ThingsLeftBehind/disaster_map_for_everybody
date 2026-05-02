@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const parsed = DeviceIdSchema.safeParse(body.deviceId);
       if (!parsed.success) return jsonError(res, 400, { ok: false, error: 'invalid_payload', errorCode: 'INVALID_BODY' });
       const device = await clearActiveCheckin(parsed.data);
-      return jsonOk(res, { device });
+      return jsonOk(res, { ok: true, device });
     }
 
     if (req.method !== 'POST') return jsonError(res, 405, { ok: false, error: 'method_not_allowed', errorCode: 'METHOD_NOT_ALLOWED' });
@@ -37,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!parsed.success) return jsonError(res, 400, { ok: false, error: 'invalid_payload', errorCode: 'INVALID_BODY' });
 
     const comment = typeof parsed.data.comment === 'string' ? parsed.data.comment.trim() : null;
-    if (comment && comment.length > 120) return jsonError(res, 400, { ok: false, error: 'invalid_payload', errorCode: 'PAYLOAD_TOO_LARGE' });
+    if (comment && comment.length > 140) return jsonError(res, 400, { ok: false, error: 'invalid_payload', errorCode: 'PAYLOAD_TOO_LARGE' });
 
     const ip = getClientIp(req);
     const result = await submitCheckinPin({
@@ -47,6 +47,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       shelterId: parsed.data.shelterId,
       lat: parsed.data.lat,
       lon: parsed.data.lon,
+      locationAccuracyM: parsed.data.locationAccuracyM ?? null,
+      messagePublic: parsed.data.messagePublic ?? false,
       precision: parsed.data.precision === 'PRECISE' ? 'PRECISE' : 'COARSE',
       comment: comment || null,
     });
@@ -58,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         errorCode: result.code,
       });
     }
-    return jsonOk(res, { device: result.value });
+    return jsonOk(res, { ok: true, device: result.value });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.warn('[store:checkin] unhandled_error', { error: message });

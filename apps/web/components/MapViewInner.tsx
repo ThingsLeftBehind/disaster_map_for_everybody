@@ -37,6 +37,8 @@ interface Props {
   checkinPins?: Array<{
     id: string;
     status: CheckinStatus;
+    displayLat?: number;
+    displayLon?: number;
     lat: number;
     lon: number;
     comment: string | null;
@@ -87,7 +89,12 @@ function formatAt(iso: string): string {
 }
 
 function sanitizeLocationText(value: string): string {
-  return value.replace(/[0-9０-９一二三四五六七八九十]+丁目/g, '');
+  return value
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/(?:https?:\/\/|www\.)\S+/gi, ' ')
+    .replace(/[0-9０-９一二三四五六七八九十]+丁目/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function statusMeta(status: CheckinStatus): {
@@ -192,10 +199,12 @@ export default function MapViewInner({
           const meta = statusMeta(pin.status);
           const cautionThreshold = checkinModerationPolicy?.reportCautionThreshold ?? 3;
           const showCaution = pin.reportCount >= cautionThreshold;
+          const markerLat = typeof pin.displayLat === 'number' ? pin.displayLat : pin.lat;
+          const markerLon = typeof pin.displayLon === 'number' ? pin.displayLon : pin.lon;
           return (
             <Marker
               key={`pin:${pin.id}`}
-              position={[pin.lat, pin.lon]}
+              position={[markerLat, markerLon]}
               icon={getPinIcon(pin.status, pin.archived)}
               zIndexOffset={pin.archived ? 500 : 900}
             >
