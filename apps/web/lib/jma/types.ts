@@ -103,6 +103,9 @@ export type NormalizedWarningItem = {
   kind: string;
   status: string | null;
   source: 'webjson' | 'pull';
+  areaCode?: string | null;
+  areaName?: string | null;
+  tokyoGroup?: string | null;
 };
 
 export type NormalizedWarningsAreaSnapshot = {

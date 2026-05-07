@@ -1,5 +1,13 @@
 import { isJmaLowPriorityWarning } from '../jma/filters';
-export type WarningItem = { id: string; kind: string; status: string | null; source?: string };
+export type WarningItem = {
+  id: string;
+  kind: string;
+  status: string | null;
+  source?: string;
+  areaCode?: string | null;
+  areaName?: string | null;
+  tokyoGroup?: TokyoGroupKey | null;
+};
 export type TokyoGroupKey = 'tokyo-mainland' | 'tokyo-izu-north' | 'tokyo-izu-south' | 'tokyo-ogasawara';
 export type TokyoGroups = Partial<Record<TokyoGroupKey, { label: string; items: WarningItem[] }>>;
 export type TokyoContext = 'MAINLAND' | 'ISLANDS' | 'OTHER';
@@ -49,8 +57,26 @@ export const TOKYO_GROUP_LABELS: Record<TokyoGroupKey, string> = {
   'tokyo-ogasawara': '小笠原諸島',
 };
 
+export const TOKYO_AVAILABLE_AREAS: Array<{ group: TokyoGroupKey; code: string; name: string }> = [
+  { group: 'tokyo-mainland', code: '130010', name: TOKYO_GROUP_LABELS['tokyo-mainland'] },
+  { group: 'tokyo-izu-north', code: '130020', name: TOKYO_GROUP_LABELS['tokyo-izu-north'] },
+  { group: 'tokyo-izu-south', code: '130030', name: TOKYO_GROUP_LABELS['tokyo-izu-south'] },
+  { group: 'tokyo-ogasawara', code: '130040', name: TOKYO_GROUP_LABELS['tokyo-ogasawara'] },
+];
+
 export function getTokyoGroupLabel(group: TokyoGroupKey | null | undefined): string | null {
   return group ? TOKYO_GROUP_LABELS[group] ?? null : null;
+}
+
+export function normalizeTokyoGroupKey(value?: string | null): TokyoGroupKey | null {
+  const raw = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  if (!raw) return null;
+  const normalized = raw.replace(/_/g, '-');
+  if (normalized === 'tokyo-mainland' || normalized === 'mainland' || normalized === '130010') return 'tokyo-mainland';
+  if (normalized === 'tokyo-izu-north' || normalized === 'izu-north' || normalized === '130020') return 'tokyo-izu-north';
+  if (normalized === 'tokyo-izu-south' || normalized === 'izu-south' || normalized === '130030') return 'tokyo-izu-south';
+  if (normalized === 'tokyo-ogasawara' || normalized === 'ogasawara' || normalized === '130040') return 'tokyo-ogasawara';
+  return null;
 }
 
 export function getTokyoGroupFromAreaCode(code?: string | null): TokyoGroupKey | null {

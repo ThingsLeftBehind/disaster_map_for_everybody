@@ -5,7 +5,14 @@ import { JmaWarningsQuerySchema, type NormalizedWarningItem } from 'lib/jma/type
 import { readCachedWarnings } from 'lib/jma/normalize';
 import { readJsonFile } from 'lib/jma/cache';
 import { jmaAreaConstPath, jmaWebJsonWarningPath } from 'lib/jma/paths';
-import { TOKYO_GROUP_AREA_CODES, TOKYO_GROUP_LABELS, type TokyoGroupKey } from 'lib/alerts/tokyoScope';
+import {
+  getTokyoGroupLabel,
+  normalizeTokyoGroupKey,
+  TOKYO_AVAILABLE_AREAS,
+  TOKYO_GROUP_AREA_CODES,
+  TOKYO_GROUP_LABELS,
+  type TokyoGroupKey,
+} from 'lib/alerts/tokyoScope';
 import { toJmaClass20 } from 'lib/muni-helper';
 
 const CACHE_TTL_MS = 120_000;
@@ -51,6 +58,11 @@ const WARNING_CODE_SEVERITY: Record<string, '警報' | '注意報'> = {
   '16': '注意報',
   '21': '注意報',
 };
+
+function firstQuery(value: string | string[] | undefined): string | null {
+  if (!value) return null;
+  return Array.isArray(value) ? value[0] ?? null : value;
+}
 
 // Improve AreaIndex to track types or just use logic
 // We'll modify readAreaIndex to return more info or just use raw JSON loading in helper
@@ -106,8 +118,8 @@ async function buildForecastAreaBreakdown(
     if (typeof node !== 'object') return;
     const code = String((node as any).code);
 
-    // Check if this node is a Class10
-    if (class10s.has(code)) {
+    const forecastCode = resolveClass10Code(code, index, class10s);
+    if (forecastCode && forecastCode.startsWith(area.slice(0, 2))) {
       // Collect warnings
       const rawItems: NormalizedWarningItem[] = [];
       const warnings = (node as any).warnings;
@@ -121,18 +133,25 @@ async function buildForecastAreaBreakdown(
           const hints = collectWarningHints(entry);
           const base = inferWarningBase(warningCode, hints, severity);
           const kind = buildWarningKind(base, severity);
-          const id = hashId(`${kind}|${status ?? ''}`);
+          const id = hashId(`${forecastCode}|${code}|${kind}|${status ?? ''}`);
 
-          rawItems.push({ id, kind, status, source: 'webjson' });
+          rawItems.push({
+            id,
+            kind,
+            status,
+            source: 'webjson',
+            areaCode: code,
+            areaName: index.get(code)?.name ?? null,
+          } as NormalizedWarningItem);
         }
       }
 
       // Accumulate raw items; deduplication is done in final pass
-      if (!breakdown[code]) {
-        const name = index.get(code)?.name ?? code;
-        breakdown[code] = { name, items: [] };
+      if (!breakdown[forecastCode]) {
+        const name = index.get(forecastCode)?.name ?? forecastCode;
+        breakdown[forecastCode] = { name, items: [] };
       }
-      breakdown[code].items.push(...rawItems);
+      breakdown[forecastCode].items.push(...rawItems);
     }
 
     for (const v of Object.values(node)) walk(v);
@@ -241,6 +260,30 @@ function resolveTokyoGroup(code: string, index: Map<string, AreaNode>): TokyoGro
     cursor = node?.parent ? String(node.parent) : undefined;
   }
   return null;
+}
+
+function resolveClass10Code(code: string, index: Map<string, AreaNode>, class10s: Set<string>): string | null {
+  let cursor: string | undefined = code;
+  for (let i = 0; i < 10 && cursor; i += 1) {
+    if (class10s.has(cursor)) return cursor;
+    const node = index.get(cursor);
+    cursor = node?.parent ? String(node.parent) : undefined;
+  }
+  return null;
+}
+
+function inferTokyoGroupForRequest(args: {
+  area: string;
+  requestedGroup: TokyoGroupKey | null;
+  class20: string | null;
+  index: Map<string, AreaNode> | null;
+}): TokyoGroupKey | null {
+  if (args.area !== '130000') return null;
+  if (args.requestedGroup) return args.requestedGroup;
+  if (args.class20 && args.index) {
+    return resolveTokyoGroup(args.class20, args.index) ?? (args.class20.startsWith('13') ? 'tokyo-mainland' : null);
+  }
+  return 'tokyo-mainland';
 }
 
 function shouldSkipWarningStatus(status: string | null): boolean {
@@ -372,8 +415,14 @@ async function buildTokyoGroups(area: string): Promise<{
     const code = typeof codeRaw === 'string' ? codeRaw : typeof codeRaw === 'number' ? String(codeRaw) : null;
     if (code && Array.isArray(warnings) && code.length >= 6) {
       const group = resolveTokyoGroup(code, index);
-      if (group) {
-        const bucket = groupBuckets.get(group)!;
+      const targetGroups =
+        group
+          ? [group]
+          : code === area
+            ? (Object.keys(TOKYO_GROUP_LABELS) as TokyoGroupKey[])
+            : [];
+      for (const targetGroup of targetGroups) {
+        const bucket = groupBuckets.get(targetGroup)!;
         for (const entry of warnings) {
           if (!entry || typeof entry !== 'object') continue;
           const status = typeof (entry as any).status === 'string' ? String((entry as any).status).trim() : null;
@@ -384,8 +433,16 @@ async function buildTokyoGroups(area: string): Promise<{
           const hints = collectWarningHints(entry);
           const base = inferWarningBase(warningCode, hints, severity);
           const kind = buildWarningKind(base, severity);
-          const id = hashId(`${kind}|${status ?? ''}`);
-          bucket.set(`${kind}|${status ?? ''}`, { id, kind, status, source: 'webjson' });
+          const id = hashId(`${targetGroup}|${code}|${kind}|${status ?? ''}`);
+          bucket.set(`${kind}|${status ?? ''}`, {
+            id,
+            kind,
+            status,
+            source: 'webjson',
+            areaCode: code,
+            areaName: index.get(code)?.name ?? null,
+            tokyoGroup: targetGroup,
+          } as NormalizedWarningItem);
         }
       }
     }
@@ -419,21 +476,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const normalizedClass20 = toJmaClass20(rawClass20);
   const class20 =
     normalizedClass20 && normalizedClass20.startsWith(area.slice(0, 2)) ? normalizedClass20 : null;
-  const cacheKey = buildCacheKey(area, normalizedClass20 ?? null);
+  const requestedTokyoGroup = normalizeTokyoGroupKey(firstQuery(req.query.tokyoGroup));
+  const cacheKey = `${buildCacheKey(area, normalizedClass20 ?? null)}:${requestedTokyoGroup ?? ''}`;
   const cached = getCached(cacheKey);
   if (cached) {
     return res.status(200).json(cached);
   }
 
   try {
-    const [data, tokyoGroups, subAreaInfo] = await Promise.all([
+    const [data, tokyoGroups, subAreaInfo, areaIndex] = await Promise.all([
       getJmaWarnings(area),
       buildTokyoGroups(area),
       buildForecastAreaBreakdown(area, process.env.NODE_ENV !== 'production' && req.query.debug === '1'),
+      readAreaIndex(),
     ]);
 
+    const selectedAreaGroup = inferTokyoGroupForRequest({
+      area,
+      requestedGroup: requestedTokyoGroup,
+      class20,
+      index: areaIndex,
+    });
+    const selectedAreaCode = selectedAreaGroup ? TOKYO_AVAILABLE_AREAS.find((item) => item.group === selectedAreaGroup)?.code ?? null : null;
+    const selectedAreaName = selectedAreaGroup ? getTokyoGroupLabel(selectedAreaGroup) : null;
+
     let items = data.items;
-    if (class20 && subAreaInfo?.muniMap && subAreaInfo?.breakdown) {
+    if (selectedAreaGroup && area === '130000') {
+      const groupedItems = tokyoGroups?.groups?.[selectedAreaGroup]?.items;
+      if (Array.isArray(groupedItems)) {
+        items = groupedItems;
+      } else if (selectedAreaCode && subAreaInfo?.breakdown?.[selectedAreaCode]) {
+        items = subAreaInfo.breakdown[selectedAreaCode].items;
+      } else {
+        items = [];
+      }
+    } else if (class20 && subAreaInfo?.muniMap && subAreaInfo?.breakdown) {
       const forecastCode = subAreaInfo.muniMap[class20] ?? null;
       if (forecastCode && subAreaInfo.breakdown[forecastCode]) {
         items = subAreaInfo.breakdown[forecastCode].items;
@@ -444,6 +521,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ...data,
       items,
       tokyoGroups: tokyoGroups?.groups ?? null,
+      selectedAreaGroup,
+      selectedAreaName,
+      selectedAreaCode,
+      availableTokyoAreas: area === '130000' ? TOKYO_AVAILABLE_AREAS : [],
       breakdown: subAreaInfo?.breakdown ?? null,
       muniMap: subAreaInfo?.muniMap ?? null
     };
@@ -470,6 +551,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         confidenceNotes: ['internal error; serving last cached snapshot if available'],
         items: snap?.items ?? [],
         tokyoGroups: null,
+        selectedAreaGroup: null,
+        selectedAreaName: null,
+        selectedAreaCode: null,
+        availableTokyoAreas: area === '130000' ? TOKYO_AVAILABLE_AREAS : [],
         breakdown: null,
         muniMap: null,
       };
@@ -486,6 +571,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         confidenceNotes: ['internal error'],
         items: [],
         tokyoGroups: null,
+        selectedAreaGroup: null,
+        selectedAreaName: null,
+        selectedAreaCode: null,
+        availableTokyoAreas: area === '130000' ? TOKYO_AVAILABLE_AREAS : [],
         breakdown: null,
         muniMap: null,
       };

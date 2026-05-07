@@ -12,6 +12,7 @@ import {
   getTokyoContextFromMuniCode,
   getTokyoGroupFromAreaCode,
   getTokyoGroupLabel,
+  inferTokyoGroup,
   type TokyoGroupKey,
 } from '../lib/alerts/tokyoScope';
 import { DataFetchDetails } from '../components/DataFetchDetails';
@@ -93,8 +94,41 @@ export default function AlertsPage() {
   const effectiveAreaCode = useCurrent ? currentJmaAreaCode : manualAreaCode ?? selectedJmaAreaCode;
   const activeMuniCode = useCurrent ? coarseArea?.muniCode : manualPrefCode ? null : selectedArea?.muniCode;
   const class20 = toJmaClass20(activeMuniCode ?? null);
+  const requestedTokyoGroup = useMemo((): TokyoGroupKey | null => {
+    if (effectiveAreaCode !== '130000') return null;
+    if (!useCurrent && manualSubAreaCode) return getTokyoGroupFromAreaCode(manualSubAreaCode) ?? 'tokyo-mainland';
+    if (useCurrent) {
+      return (
+        inferTokyoGroup({
+          prefCode: coarseArea?.prefCode ?? null,
+          muniCode: coarseArea?.muniCode ?? null,
+          label: coarseAreaLabel ?? null,
+        }) ?? 'tokyo-mainland'
+      );
+    }
+    if (manualPrefCode === '13') return 'tokyo-mainland';
+    if (selectedArea) {
+      return (
+        inferTokyoGroup({
+          prefCode: selectedArea.prefCode ?? null,
+          muniCode: selectedArea.muniCode ?? null,
+          label: selectedArea.muniName ?? selectedArea.label ?? null,
+        }) ?? 'tokyo-mainland'
+      );
+    }
+    return null;
+  }, [
+    coarseArea?.muniCode,
+    coarseArea?.prefCode,
+    coarseAreaLabel,
+    effectiveAreaCode,
+    manualPrefCode,
+    manualSubAreaCode,
+    selectedArea,
+    useCurrent,
+  ]);
   const warningsUrl = effectiveAreaCode
-    ? `/api/jma/warnings?area=${effectiveAreaCode}${class20 ? `&class20=${class20}` : ''}`
+    ? `/api/jma/warnings?area=${effectiveAreaCode}${class20 ? `&class20=${class20}` : ''}${requestedTokyoGroup ? `&tokyoGroup=${requestedTokyoGroup}` : ''}`
     : null;
   const { data: warnings, mutate: mutateWarnings } = useSWR(warningsUrl, fetcher, { refreshInterval: refreshMs, dedupingInterval: 10_000 });
   const areaContext = useMemo(() => {
@@ -138,6 +172,23 @@ export default function AlertsPage() {
       .map(([code, data]) => ({ code, name: data.name || code }))
       .sort((a, b) => a.code.localeCompare(b.code));
   }, [breakdown]);
+  const apiTokyoAreaOptions = useMemo(() => {
+    const rows = Array.isArray((warnings as any)?.availableTokyoAreas) ? (warnings as any).availableTokyoAreas : [];
+    return rows
+      .map((row: any) => ({
+        code: typeof row?.code === 'string' ? row.code : '',
+        name: typeof row?.name === 'string' ? row.name : '',
+      }))
+      .filter((row: { code: string; name: string }) => row.code && row.name);
+  }, [warnings]);
+  const tokyoAreaOptions = useMemo(
+    () =>
+      (subAreaOptions.length > 0 ? subAreaOptions : apiTokyoAreaOptions).map((area) => ({
+        ...area,
+        name: getTokyoGroupLabel(getTokyoGroupFromAreaCode(area.code)) ?? area.name,
+      })),
+    [apiTokyoAreaOptions, subAreaOptions]
+  );
 
   useEffect(() => {
     if (useCurrent || !manualPrefCode) {
@@ -154,6 +205,7 @@ export default function AlertsPage() {
   }, [manualPrefCode, manualSubAreaCode, subAreaOptions, useCurrent]);
 
   const selectedSubArea = manualSubAreaCode && breakdown?.[manualSubAreaCode] ? breakdown[manualSubAreaCode] : null;
+  const selectedSubTokyoGroup = selectedSubArea || manualSubAreaCode ? getTokyoGroupFromAreaCode(manualSubAreaCode) : null;
   const scopedWarnings = useMemo(() => {
     if (!selectedSubArea) return warnings;
     return {
@@ -162,22 +214,33 @@ export default function AlertsPage() {
       tokyoGroups: null,
     };
   }, [selectedSubArea, warnings]);
+  const warningAreaContext = useMemo(() => {
+    if (selectedSubArea) {
+      return {
+        prefCode: manualPrefCode || areaContext.prefCode,
+        muniCode: null,
+        label: getTokyoGroupLabel(selectedSubTokyoGroup) ?? selectedSubArea.name,
+      };
+    }
+    if (requestedTokyoGroup) {
+      return { prefCode: areaContext.prefCode, muniCode: null, label: getTokyoGroupLabel(requestedTokyoGroup) };
+    }
+    return areaContext;
+  }, [areaContext, manualPrefCode, requestedTokyoGroup, selectedSubArea, selectedSubTokyoGroup]);
 
   const warningShape = useMemo(
     () =>
       shapeAlertWarnings({
         warnings: scopedWarnings,
-        area: selectedSubArea
-          ? { prefCode: manualPrefCode || areaContext.prefCode, muniCode: null, label: selectedSubArea.name }
-          : areaContext,
+        area: warningAreaContext,
       }),
-    [areaContext, manualPrefCode, scopedWarnings, selectedSubArea]
+    [scopedWarnings, warningAreaContext]
   );
 
   const warningBuckets = warningShape.buckets;
   const warningCounts = warningShape.counts;
-  const tokyoGroupFilter = warningShape.isTokyoArea ? warningShape.tokyoGroup : null;
-  const selectedSubTokyoGroup = selectedSubArea ? getTokyoGroupFromAreaCode(manualSubAreaCode) : null;
+  const apiSelectedTokyoGroup = ((warnings as any)?.selectedAreaGroup ?? null) as TokyoGroupKey | null;
+  const tokyoGroupFilter = selectedSubTokyoGroup ?? (warningShape.isTokyoArea ? warningShape.tokyoGroup : null) ?? apiSelectedTokyoGroup ?? requestedTokyoGroup;
   const tokyoContextFromMuni = getTokyoContextFromMuniCode(areaContext.muniCode ?? null);
   const tokyoContext = tokyoGroupFilter
     ? getTokyoContextFromGroup(tokyoGroupFilter)
@@ -185,12 +248,16 @@ export default function AlertsPage() {
       ? getTokyoContextFromGroup(selectedSubTokyoGroup)
       : tokyoContextFromMuni;
   const tokyoScopeLabel = selectedSubArea
-    ? selectedSubArea.name
-    : getTokyoGroupLabel(tokyoGroupFilter ?? selectedSubTokyoGroup) ??
+    ? getTokyoGroupLabel(selectedSubTokyoGroup) ?? selectedSubArea.name
+    : ((warnings as any)?.selectedAreaName as string | null) ??
+      getTokyoGroupLabel(tokyoGroupFilter ?? selectedSubTokyoGroup) ??
       (tokyoContext === 'MAINLAND' ? '東京地方（島しょ除く）' : tokyoContext === 'ISLANDS' ? '東京都島しょ部' : null);
-  const showTokyoSubAreaSelector = effectiveAreaCode === '130000' && subAreaOptions.length > 0;
-  const tokyoMainlandDefault = subAreaOptions.some((area) => area.code === '130010') ? '130010' : subAreaOptions[0]?.code ?? '';
-  const tokyoSubAreaValue = selectedSubArea ? manualSubAreaCode : tokyoMainlandDefault;
+  const showTokyoSubAreaSelector = effectiveAreaCode === '130000' && tokyoAreaOptions.length > 0;
+  const tokyoMainlandDefault = tokyoAreaOptions.some((area) => area.code === '130010') ? '130010' : tokyoAreaOptions[0]?.code ?? '';
+  const tokyoSubAreaValue = manualSubAreaCode || ((warnings as any)?.selectedAreaCode as string | null) || tokyoMainlandDefault;
+  const manualTokyoSubAreaName = manualPrefCode === '13'
+    ? tokyoAreaOptions.find((area) => area.code === (manualSubAreaCode || tokyoMainlandDefault))?.name ?? null
+    : null;
 
   const targetLabel = useCurrent
     ? currentJmaAreaCode
@@ -199,7 +266,7 @@ export default function AlertsPage() {
         : '現在地: エリア未確定'
       : '現在地: エリア未確定'
     : manualPrefLabel
-      ? `手動: ${manualPrefLabel}${selectedSubArea ? ` / ${selectedSubArea.name}` : ''}`
+      ? `手動: ${manualPrefLabel}${selectedSubArea ? ` / ${getTokyoGroupLabel(selectedSubTokyoGroup) ?? selectedSubArea.name}` : manualTokyoSubAreaName ? ` / ${manualTokyoSubAreaName}` : ''}`
       : selectedArea
         ? `選択エリア: ${formatPrefMuniLabel({ prefName: selectedArea.prefName, muniName: selectedArea.muniName ?? null }) ?? selectedArea.prefName}`
         : 'エリア未確定';
@@ -445,7 +512,7 @@ export default function AlertsPage() {
                       setManualSubAreaCode(e.target.value);
                     }}
                   >
-                    {subAreaOptions.map((area) => (
+                    {tokyoAreaOptions.map((area) => (
                       <option key={area.code} value={area.code}>
                         {area.name}
                       </option>

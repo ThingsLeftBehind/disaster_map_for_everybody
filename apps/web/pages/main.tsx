@@ -760,43 +760,6 @@ export default function MainPage() {
           </div>
         </div>
 
-        <div className="mt-4 rounded-2xl border bg-blue-50/60 p-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <div className="text-sm font-bold text-gray-900">登録済みの場所</div>
-              <div className="mt-1 text-xs text-gray-600">自宅・学校・職場など、よく確認する場所を登録できます。</div>
-            </div>
-            <div className="flex gap-2">
-              <Link href="/watch" className="inline-flex min-h-[44px] items-center rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-blue-100 hover:bg-blue-50">
-                すべて見る
-              </Link>
-              <Link href="/watch" className="inline-flex min-h-[44px] items-center rounded-xl bg-blue-700 px-3 py-2 text-sm font-bold text-white hover:bg-blue-800">
-                場所を追加
-              </Link>
-            </div>
-          </div>
-          {savedPlacesLoading && <div className="mt-3 text-xs text-gray-600">読み込み中...</div>}
-          {savedPlacesUnavailable && <div className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">登録済みの場所を取得できませんでした。</div>}
-          {!savedPlacesLoading && !savedPlacesUnavailable && savedPlaces.length === 0 && (
-            <div className="mt-3 rounded-xl bg-white px-3 py-2 text-sm text-gray-600">まだ登録されていません。</div>
-          )}
-          {savedPlaces.length > 0 && (
-            <div className="mt-3 grid gap-2 sm:grid-cols-3">
-              {savedPlaces.slice(0, 3).map((place) => (
-                <div key={place.id} className="rounded-xl bg-white px-3 py-2 ring-1 ring-blue-100">
-                  <div className="flex items-center gap-2">
-                    <span className="shrink-0 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-bold text-blue-800">{place.placeTypeLabel}</span>
-                    <span className="min-w-0 truncate text-sm font-bold text-gray-900">{place.label}</span>
-                  </div>
-                  <div className="mt-1 truncate text-xs text-gray-600">{place.addressMemo ?? place.address ?? `半径 ${place.radiusKm}km`}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-
-
         {showDevDataCard && (
           <div className="mt-3 rounded-xl border bg-gray-50 px-3 py-2 text-xs text-gray-800">
             <div className="font-semibold">データ接続（dev）</div>
@@ -818,42 +781,104 @@ export default function MainPage() {
       </section>
 
       <section className="rounded-2xl bg-white p-5 shadow">
-        <h2 className="text-lg font-bold">保存した避難場所（最大5件）</h2>
-        {favoriteIds.length === 0 ? (
-          <div className="mt-2 text-sm text-gray-600">よく使う避難場所を保存できます。</div>
-        ) : (
-          <>
-            {(favoritesError || favoritesData?.fetchStatus === 'DOWN') && (
-              <div className="mt-2 rounded-xl border bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                保存した避難場所の読み込みに失敗しました。
+        <div>
+          <h2 className="text-lg font-bold">保存・登録</h2>
+          <div className="mt-1 text-sm text-gray-600">よく使う場所と避難先をまとめて確認できます。</div>
+        </div>
+
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <div className="rounded-2xl border bg-blue-50/60 p-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="text-sm font-bold text-gray-900">登録済みの場所</div>
+                <div className="mt-1 text-xs text-gray-600">自宅・学校・職場・実家など、確認したい場所を登録できます。</div>
+              </div>
+              <div className="flex gap-2">
+                <Link href="/watch" className="inline-flex min-h-[44px] items-center rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-blue-100 hover:bg-blue-50">
+                  すべて見る
+                </Link>
+                <Link href="/watch" className="inline-flex min-h-[44px] items-center rounded-xl bg-blue-700 px-3 py-2 text-sm font-bold text-white hover:bg-blue-800">
+                  場所を追加
+                </Link>
+              </div>
+            </div>
+            {savedPlacesLoading && <div className="mt-3 text-xs text-gray-600">読み込み中...</div>}
+            {savedPlacesUnavailable && <div className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">登録済みの場所を取得できませんでした。</div>}
+            {!savedPlacesLoading && !savedPlacesUnavailable && savedPlaces.length === 0 && (
+              <div className="mt-3 rounded-xl bg-white px-3 py-3 text-sm text-gray-600">
+                <div>まだ場所が登録されていません。</div>
+                <div className="mt-1 text-xs">自宅・学校・職場・実家などを登録できます。</div>
               </div>
             )}
-
-            {!favoritesError && favoritesUrl && favoritesLoading && favoriteSitesById.size === 0 && (
-              <div className="mt-2 text-sm text-gray-600">読み込み中...</div>
+            {savedPlaces.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {savedPlaces.slice(0, 3).map((place) => (
+                  <Link key={place.id} href="/watch" className="block rounded-xl bg-white px-3 py-2 ring-1 ring-blue-100 hover:bg-blue-50">
+                    <div className="flex items-center gap-2">
+                      <span className="shrink-0 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-bold text-blue-800">{place.placeTypeLabel}</span>
+                      <span className="min-w-0 truncate text-sm font-bold text-gray-900">{place.label}</span>
+                    </div>
+                    <div className="mt-1 truncate text-xs text-gray-600">{place.addressMemo ?? place.address ?? `半径 ${place.radiusKm}km`}</div>
+                  </Link>
+                ))}
+              </div>
             )}
+          </div>
 
-            <div className="mt-3 space-y-2">
-              {favoriteIds.map((id) => {
-                const site = favoriteSitesById.get(id);
-                return (
-                  <div key={id} className="flex items-center justify-between gap-2 rounded-xl border bg-gray-50 px-3 py-2">
-                    <button className="min-h-[44px] min-w-0 text-left" onClick={() => void router.push(`/shelters/${id}`)}>
-                      <div className="truncate font-semibold">{site?.name ?? '避難場所'}</div>
-                      <div className="truncate text-xs text-gray-600">{site?.address ?? formatPrefCityLabel(site?.pref_city)}</div>
-                    </button>
-                    <button
-                      onClick={() => setFavorite(id, false)}
-                      className="min-h-[44px] rounded-xl bg-white px-3 py-2 text-xs font-semibold text-gray-800 ring-1 ring-gray-200 hover:bg-gray-50"
-                    >
-                      削除
-                    </button>
-                  </div>
-                );
-              })}
+          <div className="rounded-2xl border bg-gray-50 p-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="text-sm font-bold text-gray-900">保存した避難場所</div>
+                <div className="mt-1 text-xs text-gray-600">いざという時に向かう候補の避難場所です。保存できる避難場所は最大5件です。</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => void router.push('/list')}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-gray-200 hover:bg-gray-100"
+              >
+                近くの避難場所を探す
+              </button>
             </div>
-          </>
-        )}
+            {favoriteIds.length === 0 ? (
+              <div className="mt-3 rounded-xl bg-white px-3 py-3 text-sm text-gray-600">
+                <div>まだ避難場所が保存されていません。</div>
+                <div className="mt-1 text-xs">地図や一覧で星を付けると保存できます。</div>
+              </div>
+            ) : (
+              <>
+                {(favoritesError || favoritesData?.fetchStatus === 'DOWN') && (
+                  <div className="mt-3 rounded-xl border bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                    保存した避難場所の読み込みに失敗しました。
+                  </div>
+                )}
+
+                {!favoritesError && favoritesUrl && favoritesLoading && favoriteSitesById.size === 0 && (
+                  <div className="mt-3 text-sm text-gray-600">読み込み中...</div>
+                )}
+
+                <div className="mt-3 space-y-2">
+                  {favoriteIds.map((id) => {
+                    const site = favoriteSitesById.get(id);
+                    return (
+                      <div key={id} className="flex items-center justify-between gap-2 rounded-xl border bg-white px-3 py-2">
+                        <button className="min-h-[44px] min-w-0 text-left" onClick={() => void router.push(`/shelters/${id}`)}>
+                          <div className="truncate font-semibold">{site?.name ?? '避難場所'}</div>
+                          <div className="truncate text-xs text-gray-600">{site?.address ?? formatPrefCityLabel(site?.pref_city)}</div>
+                        </button>
+                        <button
+                          onClick={() => setFavorite(id, false)}
+                          className="min-h-[44px] rounded-xl bg-white px-3 py-2 text-xs font-semibold text-gray-800 ring-1 ring-gray-200 hover:bg-gray-50"
+                        >
+                          削除
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </section>
 
       {nationalItems.length > 0 && (
