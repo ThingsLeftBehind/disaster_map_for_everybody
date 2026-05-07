@@ -232,12 +232,14 @@ export function MyAreaWarningsSection() {
                 let tokyoLabel: string | null = null;
                 if (areaCode === '130000' && tokyoGroups) {
                     const group =
+                        (warnings?.selectedAreaGroup as TokyoGroupKey | null) ??
                         inferTokyoGroup({
                             prefCode: area.prefCode ?? null,
                             muniCode: area.muniCode ?? null,
                             label: area.muniName ?? area.label ?? null,
                         }) ?? 'tokyo-mainland';
-                    targetItems = tokyoGroups[group]?.items ?? [];
+                    const groupedItems = tokyoGroups[group]?.items ?? [];
+                    targetItems = warnings?.selectedAreaGroup === group ? items : groupedItems.length > 0 ? groupedItems : items;
                     tokyoLabel = getTokyoGroupLabel(group);
                 }
                 const summary = summarizeWarningItems(targetItems);

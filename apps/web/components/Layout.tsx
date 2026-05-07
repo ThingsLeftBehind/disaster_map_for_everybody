@@ -261,8 +261,9 @@ export default function Layout({ children }: { children: ReactNode }) {
         ? 'warn'
         : serverJmaFetchStatus === 'DOWN'
           ? 'down'
-          : 'neutral';
+      : 'neutral';
   const jmaStatusDisplay = toDisplayFetchStatus(serverJmaFetchStatus);
+  const isMainPage = router.pathname === '/main' || router.pathname === '/';
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -281,12 +282,17 @@ export default function Layout({ children }: { children: ReactNode }) {
             <div className="flex flex-wrap items-center gap-2">
               <Link
                 href="/main"
-                className={`inline-flex h-9 items-center justify-center rounded-xl px-4 text-sm font-semibold ring-1 ring-inset transition ${router.pathname === '/main' || router.pathname === '/'
+                className={`inline-flex h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 text-xs font-semibold ring-1 ring-inset transition sm:px-4 sm:text-sm ${isMainPage
                   ? 'bg-blue-600 text-white ring-blue-600'
                   : 'bg-white text-gray-900 ring-gray-200 hover:bg-gray-50'
                   }`}
               >
-                メイン
+                <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path d="M3 10.5 12 3l9 7.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M5 10v10h14V10" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M9 20v-6h6v6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {isMainPage ? '避難所マップ' : '避難所マップへ'}
               </Link>
               <Chip label="JMA" value={jmaStatusDisplay} tone={jmaTone} />
               <Chip label="App" value={online ? 'Online' : 'Offline'} tone={online ? 'ok' : 'down'} />

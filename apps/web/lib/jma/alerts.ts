@@ -158,7 +158,12 @@ export function buildWarningBuckets(items: WarningItem[]): WarningBuckets {
 }
 
 export function shapeAlertWarnings(args: {
-  warnings: { area?: string | null; items?: WarningItem[]; tokyoGroups?: TokyoGroups | null } | null | undefined;
+  warnings: {
+    area?: string | null;
+    items?: WarningItem[];
+    tokyoGroups?: TokyoGroups | null;
+    selectedAreaGroup?: TokyoGroupKey | null;
+  } | null | undefined;
   area: { prefCode?: string | null; muniCode?: string | null; label?: string | null };
 }): {
   primaryItems: WarningItem[];
@@ -170,18 +175,25 @@ export function shapeAlertWarnings(args: {
   const items = Array.isArray(args.warnings?.items) ? (args.warnings?.items as WarningItem[]) : [];
   const tokyoGroups = (args.warnings?.tokyoGroups as TokyoGroups | null) ?? null;
   const isTokyoArea = Boolean(tokyoGroups && args.warnings?.area === '130000');
+  const selectedAreaGroup = args.warnings?.selectedAreaGroup ?? null;
   const inferredTokyoGroup = inferTokyoGroup({
     prefCode: args.area.prefCode ?? null,
     muniCode: args.area.muniCode ?? null,
     label: args.area.label ?? null,
   });
-  const primaryGroup: TokyoGroupKey = inferredTokyoGroup ?? 'tokyo-mainland';
-  const { primaryItems } = getTokyoScopedItems({
-    items,
-    tokyoGroups,
-    isTokyoArea,
-    primaryGroup,
-  });
+  const primaryGroup: TokyoGroupKey = selectedAreaGroup ?? inferredTokyoGroup ?? 'tokyo-mainland';
+  let primaryItems = items;
+  if (isTokyoArea && selectedAreaGroup) {
+    primaryItems = items;
+  } else if (isTokyoArea && tokyoGroups) {
+    const scoped = getTokyoScopedItems({
+      items,
+      tokyoGroups,
+      isTokyoArea,
+      primaryGroup,
+    }).primaryItems;
+    primaryItems = scoped.length > 0 || items.length === 0 ? scoped : items;
+  }
   const buckets = buildWarningBuckets(primaryItems);
   const counts = {
     urgent: buckets.urgent.length,
@@ -195,6 +207,6 @@ export function shapeAlertWarnings(args: {
     buckets,
     counts,
     isTokyoArea,
-    tokyoGroup: isTokyoArea ? primaryGroup : null,
+    tokyoGroup: isTokyoArea || selectedAreaGroup ? primaryGroup : null,
   };
 }

@@ -240,6 +240,11 @@ export default function AlertsPage() {
   const warningBuckets = warningShape.buckets;
   const warningCounts = warningShape.counts;
   const apiSelectedTokyoGroup = ((warnings as any)?.selectedAreaGroup ?? null) as TokyoGroupKey | null;
+  const selectedAreaChildren = (Array.isArray((warnings as any)?.selectedAreaChildren) ? (warnings as any).selectedAreaChildren : []) as Array<{
+    code: string;
+    name: string;
+    level: 'subarea' | 'municipality';
+  }>;
   const tokyoGroupFilter = selectedSubTokyoGroup ?? (warningShape.isTokyoArea ? warningShape.tokyoGroup : null) ?? apiSelectedTokyoGroup ?? requestedTokyoGroup;
   const tokyoContextFromMuni = getTokyoContextFromMuniCode(areaContext.muniCode ?? null);
   const tokyoContext = tokyoGroupFilter
@@ -432,9 +437,9 @@ export default function AlertsPage() {
           <div className="rounded-2xl border bg-gray-50 p-4 md:col-span-2">
             <div className="text-xs text-gray-600">エリア選択</div>
             <div className="mt-2 space-y-3">
-              <div className="flex flex-col gap-2 md:flex-row md:items-center">
+              <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center">
                 <select
-                  className="w-full rounded border px-3 py-2 md:w-auto"
+                  className="min-h-[44px] w-full rounded border px-3 py-2"
                   aria-label="都道府県を選択"
                   value={manualPrefCode}
                   onChange={(e) => {
@@ -454,7 +459,7 @@ export default function AlertsPage() {
 
                 {manualPrefCode && manualPrefCode !== '13' && subAreaOptions.length > 0 && !useCurrent && (
                   <select
-                    className="w-full rounded border px-3 py-2 md:w-auto"
+                    className="min-h-[44px] w-full rounded border px-3 py-2"
                     value={manualSubAreaCode}
                     onChange={(e) => setManualSubAreaCode(e.target.value)}
                     aria-label="気象庁の発表区域"
@@ -467,8 +472,32 @@ export default function AlertsPage() {
                   </select>
                 )}
 
+                {showTokyoSubAreaSelector && (
+                  <label className="block">
+                    <span className="sr-only">東京都の発表区域</span>
+                    <select
+                      id="tokyo-subarea-select"
+                      className="min-h-[44px] w-full rounded border px-3 py-2"
+                      value={tokyoSubAreaValue}
+                      onChange={(e) => {
+                        setUseCurrent(false);
+                        setSelectedAreaId(null);
+                        setManualPrefCode('13');
+                        setManualSubAreaCode(e.target.value);
+                      }}
+                      aria-label="東京都の発表区域"
+                    >
+                      {tokyoAreaOptions.map((area) => (
+                        <option key={area.code} value={area.code}>
+                          {area.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+
                 <button
-                  className="rounded-xl bg-white px-4 py-2 font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-50"
+                  className="min-h-[44px] rounded-xl bg-white px-4 py-2 font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-50"
                   onClick={async () => {
                     if (!beginAction()) return;
                     if (!selectedArea && !manualPrefCode) {
@@ -492,40 +521,31 @@ export default function AlertsPage() {
 
               {manualPrefCode && manualPrefCode !== '13' && subAreaOptions.length > 0 && !useCurrent && (
                 <div className="text-xs text-gray-600">
-                  表示単位: 気象庁の一次細分区域。東京都は初期表示を東京地方（本土側）にしています。
+                  表示単位: 気象庁の一次細分区域。
                 </div>
               )}
 
               {showTokyoSubAreaSelector && (
-                <div className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-3">
-                  <label className="block text-xs font-semibold text-blue-950" htmlFor="tokyo-subarea-select">
-                    東京都の発表区域
-                  </label>
-                  <select
-                    id="tokyo-subarea-select"
-                    className="mt-2 w-full rounded border border-blue-200 bg-white px-3 py-2 text-sm md:w-auto"
-                    value={tokyoSubAreaValue}
-                    onChange={(e) => {
-                      setUseCurrent(false);
-                      setSelectedAreaId(null);
-                      setManualPrefCode('13');
-                      setManualSubAreaCode(e.target.value);
-                    }}
-                  >
-                    {tokyoAreaOptions.map((area) => (
-                      <option key={area.code} value={area.code}>
-                        {area.name}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="mt-2 text-xs text-blue-900">
-                    初期表示は東京地方です。島しょ部は必要な区域を明示的に選んで表示します。
-                  </div>
-                </div>
+                <div className="text-xs text-gray-600">島しょ部は発表区域を切り替えて確認できます。</div>
               )}
             </div>
           </div>
         </div>
+
+        {tokyoScopeLabel && selectedAreaChildren.length > 0 && (
+          <details className="mt-3 rounded-xl border bg-gray-50 px-3 py-2 text-sm">
+            <summary className="cursor-pointer py-2 font-semibold text-gray-900">この発表区域に含まれる地域</summary>
+            <div className="mt-2 flex flex-wrap gap-2 pb-2 text-xs text-gray-700">
+              {selectedAreaChildren.slice(0, 60).map((area) => (
+                <span key={area.code} className="rounded-full bg-white px-2 py-1 ring-1 ring-gray-200">
+                  {area.name}
+                </span>
+              ))}
+              {selectedAreaChildren.length > 60 && <span className="px-2 py-1 text-gray-500">ほか {selectedAreaChildren.length - 60} 件</span>}
+            </div>
+            <div className="border-t pt-2 text-xs text-gray-600">気象庁の区域定義に基づいて表示しています。</div>
+          </details>
+        )}
 
         {/* Note moved to bottom */}
       </section >

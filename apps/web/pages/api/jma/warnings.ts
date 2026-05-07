@@ -30,14 +30,14 @@ function buildCacheKey(area: string, class20: string | null): string {
 }
 
 type AreaConst = {
-  offices?: Record<string, { name?: string; parent?: string }>;
-  class10s?: Record<string, { name?: string; parent?: string }>;
-  class15s?: Record<string, { name?: string; parent?: string }>;
-  class20s?: Record<string, { name?: string; parent?: string }>;
-  centers?: Record<string, { name?: string; parent?: string }>;
+  offices?: Record<string, { name?: string; parent?: string; children?: string[] }>;
+  class10s?: Record<string, { name?: string; parent?: string; children?: string[] }>;
+  class15s?: Record<string, { name?: string; parent?: string; children?: string[] }>;
+  class20s?: Record<string, { name?: string; parent?: string; children?: string[] }>;
+  centers?: Record<string, { name?: string; parent?: string; children?: string[] }>;
 };
 
-type AreaNode = { name?: string; parent?: string };
+type AreaNode = { name?: string; parent?: string; children?: string[] };
 
 const WARNING_CODE_BASE: Record<string, string> = {
   '05': '暴風',
@@ -286,6 +286,31 @@ function inferTokyoGroupForRequest(args: {
   return 'tokyo-mainland';
 }
 
+function buildSelectedAreaChildren(selectedAreaCode: string | null, index: Map<string, AreaNode> | null) {
+  if (!selectedAreaCode || !index) return [];
+  const results: Array<{ code: string; name: string; level: 'subarea' | 'municipality' }> = [];
+  const seen = new Set<string>();
+  const walk = (code: string, depth: number) => {
+    if (depth > 2 || results.length >= 80) return;
+    const node = index.get(code);
+    const children = Array.isArray(node?.children) ? node.children.map(String) : [];
+    for (const childCode of children) {
+      if (seen.has(childCode)) continue;
+      seen.add(childCode);
+      const child = index.get(childCode);
+      const hasChildren = Array.isArray(child?.children) && child.children.length > 0;
+      results.push({
+        code: childCode,
+        name: child?.name ?? childCode,
+        level: hasChildren ? 'subarea' : 'municipality',
+      });
+      if (hasChildren) walk(childCode, depth + 1);
+    }
+  };
+  walk(selectedAreaCode, 0);
+  return results;
+}
+
 function shouldSkipWarningStatus(status: string | null): boolean {
   if (!status) return false;
   const s = status.trim();
@@ -503,10 +528,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let items = data.items;
     if (selectedAreaGroup && area === '130000') {
       const groupedItems = tokyoGroups?.groups?.[selectedAreaGroup]?.items;
-      if (Array.isArray(groupedItems)) {
+      if (Array.isArray(groupedItems) && groupedItems.length > 0) {
         items = groupedItems;
       } else if (selectedAreaCode && subAreaInfo?.breakdown?.[selectedAreaCode]) {
         items = subAreaInfo.breakdown[selectedAreaCode].items;
+      } else if (Array.isArray(groupedItems)) {
+        items = groupedItems;
       } else {
         items = [];
       }
@@ -524,6 +551,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       selectedAreaGroup,
       selectedAreaName,
       selectedAreaCode,
+      selectedAreaChildren: buildSelectedAreaChildren(selectedAreaCode, areaIndex),
       availableTokyoAreas: area === '130000' ? TOKYO_AVAILABLE_AREAS : [],
       breakdown: subAreaInfo?.breakdown ?? null,
       muniMap: subAreaInfo?.muniMap ?? null
@@ -554,6 +582,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         selectedAreaGroup: null,
         selectedAreaName: null,
         selectedAreaCode: null,
+        selectedAreaChildren: [],
         availableTokyoAreas: area === '130000' ? TOKYO_AVAILABLE_AREAS : [],
         breakdown: null,
         muniMap: null,
@@ -574,6 +603,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         selectedAreaGroup: null,
         selectedAreaName: null,
         selectedAreaCode: null,
+        selectedAreaChildren: [],
         availableTokyoAreas: area === '130000' ? TOKYO_AVAILABLE_AREAS : [],
         breakdown: null,
         muniMap: null,
