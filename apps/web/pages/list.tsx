@@ -522,7 +522,7 @@ export default function ListPage() {
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold">避難場所検索</h1>
-          <Link href="/designated" className="mt-1 inline-block text-xs font-semibold text-blue-700 hover:underline">
+          <Link href="/designated" className="mt-1 inline-flex min-h-[36px] items-center text-xs font-semibold text-blue-700 hover:underline">
             指定避難所一覧（参考）はこちら
           </Link>
         </div>
@@ -545,10 +545,10 @@ export default function ListPage() {
 
 
 
-      <section className="rounded-lg bg-white p-5 shadow">
+      <section className="rounded-2xl bg-white p-4 shadow sm:p-5">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-lg font-semibold">地図</h2>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             <button
               onClick={() => {
                 const center = mapCenterCoords ?? mapCenter;
@@ -556,7 +556,7 @@ export default function ListPage() {
                 setUseCurrentLocation(false);
                 applySearchWithCoords(center);
               }}
-              className="rounded bg-blue-600 px-3 py-2 text-sm font-bold text-white shadow hover:bg-blue-700"
+              className="min-h-[44px] rounded-xl bg-blue-600 px-3 py-2 text-sm font-bold text-white shadow hover:bg-blue-700"
             >
               地図の中心で検索
             </button>
@@ -572,7 +572,7 @@ export default function ListPage() {
                 void handleLocate();
               }}
               title={locationTooltip}
-              className="rounded bg-emerald-600 px-3 py-2 text-sm text-white hover:bg-emerald-700"
+              className="min-h-[44px] rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
             >
               {useCurrentLocation ? '現在地を解除' : '現在地で表示'}
             </button>
@@ -613,7 +613,7 @@ export default function ListPage() {
         )}
       </section>
 
-      <section className="rounded-lg bg-white p-5 shadow">
+      <section className="rounded-2xl bg-white p-4 shadow sm:p-5">
         <h2 className="text-lg font-semibold">フィルタ</h2>
 
 
@@ -628,7 +628,7 @@ export default function ListPage() {
                     key={key}
                     onClick={() => toggleHazard(key)}
                     className={classNames(
-                      'rounded border px-3 py-1 text-sm',
+                      'min-h-[40px] rounded-xl border px-3 py-2 text-sm',
                       hazards.includes(key)
                         ? 'border-emerald-600 bg-emerald-50 text-emerald-800'
                         : 'border-gray-300 bg-white text-gray-700'
@@ -642,7 +642,7 @@ export default function ListPage() {
             <div className="flex flex-row gap-2 shrink-0 flex-wrap items-end">
               <div className="space-y-1">
                 <div className="text-xs font-semibold text-gray-600">候補数</div>
-                <select className="w-20 max-w-24 rounded border px-2 py-1.5 text-sm" value={limit} onChange={(e) => setLimit(Number(e.target.value))}>
+                <select className="min-h-[44px] w-20 max-w-24 rounded-xl border px-2 py-2 text-sm" value={limit} onChange={(e) => setLimit(Number(e.target.value))}>
                   {[3, 5, 10, 20].map((n) => (
                     <option key={n} value={n}>
                       {n}
@@ -652,7 +652,7 @@ export default function ListPage() {
               </div>
               <div className="space-y-1">
                 <div className="text-xs font-semibold text-gray-600">半径(km)</div>
-                <select className="w-20 max-w-24 rounded border px-2 py-1.5 text-sm" value={radiusKm} onChange={(e) => setRadiusKm(Number(e.target.value))}>
+                <select className="min-h-[44px] w-20 max-w-24 rounded-xl border px-2 py-2 text-sm" value={radiusKm} onChange={(e) => setRadiusKm(Number(e.target.value))}>
                   {[5, 10, 20, 30, 50].map((n) => (
                     <option key={n} value={n}>
                       {n}
@@ -662,14 +662,14 @@ export default function ListPage() {
               </div>
               <button
                 onClick={applySearchFromMode}
-                className="ml-auto rounded bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 md:hidden"
+                className="ml-auto min-h-[44px] rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 md:hidden"
               >
                 フィルタ適用
               </button>
             </div>
           </div>
-          <div className="mt-3 flex items-center justify-between">
-            <label className="flex items-center space-x-2 text-sm text-gray-800">
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <label className="flex items-start gap-2 text-sm text-gray-800 sm:items-center">
               <input
                 type="checkbox"
                 checked={!hideIneligible}
@@ -680,7 +680,7 @@ export default function ListPage() {
             </label>
             <button
               onClick={applySearchFromMode}
-              className="hidden rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 md:block"
+              className="hidden min-h-[44px] rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 md:block"
             >
               フィルタ適用
             </button>
@@ -688,10 +688,10 @@ export default function ListPage() {
         </div>
       </section>
 
-      <section className="rounded-lg bg-white p-5 shadow">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <h2 className="text-lg font-semibold">{appliedMode === 'LOCATION' ? '近くの避難所（距離順）' : 'エリア内の避難場所'}</h2>
-          <div className="flex gap-2">
+      <section className="rounded-2xl bg-white p-4 shadow sm:p-5">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <h2 className="text-lg font-semibold">{appliedMode === 'LOCATION' ? '近くの避難所（距離順）' : 'エリア内の避難場所'}</h2>
+          <div className="flex flex-wrap gap-2">
             <button
               disabled={!cached}
               onClick={() => {
@@ -699,7 +699,7 @@ export default function ListPage() {
                 alert('オフラインデータを削除しました');
                 router.reload(); // Simple reload to reflect state
               }}
-              className="rounded bg-white border border-gray-300 px-3 py-2 text-sm text-red-700 hover:bg-gray-50 disabled:opacity-50"
+              className="min-h-[44px] rounded-xl bg-white border border-gray-300 px-3 py-2 text-sm text-red-700 hover:bg-gray-50 disabled:opacity-50"
             >
               キャッシュ削除
             </button>
@@ -712,7 +712,7 @@ export default function ListPage() {
                 setOfflineSaved(true);
                 setTimeout(() => setOfflineSaved(false), 2000);
               }}
-              className="rounded bg-gray-900 px-3 py-2 text-sm text-white hover:bg-black disabled:opacity-50"
+              className="min-h-[44px] rounded-xl bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-50"
             >
               選択した避難所を保存 {selectedIds.size > 0 ? `(${selectedIds.size}件)` : ''}
             </button>
@@ -761,7 +761,7 @@ export default function ListPage() {
               return (
                 <div
                   key={site.id}
-                  className={classNames('rounded-xl border bg-white p-2 shadow-sm hover:border-blue-400', caution && 'opacity-75')}
+                  className={classNames('rounded-xl border bg-white p-3 shadow-sm hover:border-blue-400', caution && 'opacity-75')}
                   onClick={() => void router.push(`/shelters/${site.id}`)}
                   role="button"
                   tabIndex={0}
@@ -786,7 +786,7 @@ export default function ListPage() {
 
                   <div className="mt-3 flex flex-wrap items-center gap-1 border-t border-gray-100 pt-2" onClick={(e) => e.stopPropagation()}>
                     <button
-                      className="rounded bg-white px-2 py-1 text-[11px] font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-50"
+                      className="inline-flex min-h-[36px] items-center rounded-lg bg-white px-2 py-1 text-[11px] font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-50"
                       onClick={() => void router.push(`/shelters/${site.id}`)}
                     >
                       詳細
@@ -795,7 +795,7 @@ export default function ListPage() {
                       href={googleMapsRouteUrl({ origin: coords, dest })}
                       target="_blank"
                       rel="noreferrer"
-                      className="rounded bg-white px-2 py-1 text-[11px] font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-50"
+                      className="inline-flex min-h-[36px] items-center rounded-lg bg-white px-2 py-1 text-[11px] font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-50"
                     >
                       Google Mapsで経路確認
                     </a>
@@ -812,7 +812,7 @@ export default function ListPage() {
                     />
                     <button
                       className={classNames(
-                        'rounded px-2 py-1 text-[11px] font-semibold ring-1',
+                        'inline-flex min-h-[36px] items-center rounded-lg px-2 py-1 text-[11px] font-semibold ring-1',
                         isSave
                           ? 'bg-amber-500 text-white ring-amber-600 hover:bg-amber-600'
                           : 'bg-white text-gray-600 ring-gray-300 hover:bg-gray-50'

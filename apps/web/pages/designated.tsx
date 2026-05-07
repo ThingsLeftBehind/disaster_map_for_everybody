@@ -115,7 +115,7 @@ export default function DesignatedPage() {
             緊急時の最適化は行っていない参考リストです。詳細は自治体の公式情報をご確認ください。
           </div>
         </div>
-        <Link href="/list" className="text-sm font-semibold text-blue-700 hover:underline">
+        <Link href="/list" className="inline-flex min-h-[44px] items-center text-sm font-semibold text-blue-700 hover:underline">
           緊急時は避難場所検索へ
         </Link>
       </div>
@@ -138,7 +138,7 @@ export default function DesignatedPage() {
           <label className="text-sm">
             <div className="mb-1 text-xs text-gray-600">都道府県</div>
             <select
-              className="w-full rounded border px-2 py-2 text-sm"
+              className="min-h-[44px] w-full rounded-xl border px-3 py-2 text-base"
               value={prefCode}
               onChange={(e) => setPrefCode(e.target.value)}
             >
@@ -153,7 +153,7 @@ export default function DesignatedPage() {
           <label className="text-sm">
             <div className="mb-1 text-xs text-gray-600">市区町村（任意）</div>
             <input
-              className="w-full rounded border px-2 py-2 text-sm"
+              className="min-h-[44px] w-full rounded-xl border px-3 py-2 text-base"
               value={cityText}
               onChange={(e) => setCityText(e.target.value)}
               placeholder="例: 渋谷区"
@@ -168,7 +168,7 @@ export default function DesignatedPage() {
           <label className="text-sm">
             <div className="mb-1 text-xs text-gray-600">キーワード（任意）</div>
             <input
-              className="w-full rounded border px-2 py-2 text-sm"
+              className="min-h-[44px] w-full rounded-xl border px-3 py-2 text-base"
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="施設名など"
@@ -204,9 +204,19 @@ export default function DesignatedPage() {
               const tags = hazardTags(site.hazards);
               const hasCoords = Number.isFinite(site.lat) && Number.isFinite(site.lon);
               return (
-                <li key={site.id} className="rounded-xl border bg-gray-50 px-3 py-2 text-sm">
-                  <div className="font-semibold">{site.name}</div>
-                  <div className="mt-1 text-xs text-gray-600">{formatPrefCityLabel(site.pref_city)}</div>
+                <li key={site.id} className="rounded-xl border bg-gray-50 px-3 py-3 text-sm">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-gray-900">{site.name}</div>
+                      <div className="mt-1 text-xs text-gray-600">{formatPrefCityLabel(site.pref_city)}</div>
+                    </div>
+                    <Link
+                      href={`/shelters/${site.id}`}
+                      className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-white px-3 py-2 text-xs font-bold text-gray-900 ring-1 ring-gray-200 hover:bg-gray-100"
+                    >
+                      詳細
+                    </Link>
+                  </div>
                   {!hasCoords && <div className="mt-1 text-[11px] text-gray-500">座標なし</div>}
                   <div className="mt-1 flex flex-wrap gap-1">
                     {tags.length > 0 ? (

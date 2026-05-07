@@ -1,5 +1,6 @@
 import { Seo } from '../components/Seo';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import useSWR from 'swr';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
@@ -35,6 +36,16 @@ type NearbySite = {
   updated_at: string;
   distanceKm?: number;
   distance?: number;
+};
+
+type SavedPlaceSummary = {
+  id: string;
+  placeType: string;
+  placeTypeLabel: string;
+  label: string;
+  addressMemo?: string | null;
+  address?: string | null;
+  radiusKm: number;
 };
 
 
@@ -252,6 +263,14 @@ export default function MainPage() {
     mutate: mutateFavorites,
     isLoading: favoritesLoading,
   } = useSWR(favoritesUrl, fetcher, { dedupingInterval: 60_000, keepPreviousData: true });
+  const savedPlacesUrl = deviceId ? `/api/watch-regions?deviceId=${encodeURIComponent(deviceId)}` : null;
+  const {
+    data: savedPlacesData,
+    error: savedPlacesError,
+    isLoading: savedPlacesLoading,
+  } = useSWR(savedPlacesUrl, fetcher, { dedupingInterval: 30_000, keepPreviousData: true });
+  const savedPlaces: SavedPlaceSummary[] = Array.isArray(savedPlacesData?.regions) ? savedPlacesData.regions : [];
+  const savedPlacesUnavailable = Boolean(savedPlacesError || savedPlacesData?.ok === false);
   const [localSavedShelters, setLocalSavedShelters] = useState<SavedShelter[]>([]);
   useEffect(() => {
     setLocalSavedShelters(getAllSavedShelters());
@@ -485,12 +504,12 @@ export default function MainPage() {
       <section className="rounded-2xl bg-white p-5 shadow">
         <div className="flex flex-row flex-wrap items-center justify-between gap-2">
           <h1 className="text-xl font-bold">いま避難先を探す</h1>
-          <button
-            disabled={locating}
-            onClick={requestLocation}
-            className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-60"
-            title={locationTooltip}
-          >
+            <button
+              disabled={locating}
+              onClick={requestLocation}
+              className="min-h-[44px] rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-60"
+              title={locationTooltip}
+            >
             現在地を取得
           </button>
         </div>
@@ -569,7 +588,7 @@ export default function MainPage() {
               <div className="inline-flex rounded-xl border bg-white p-1 text-sm">
                 <button
                   className={classNames(
-                    'rounded-lg px-3 py-1.5 font-semibold',
+                    'min-h-[36px] rounded-lg px-3 py-1.5 font-semibold',
                     safetyPinsWindow === '24h' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'
                   )}
                   onClick={() => setSafetyPinsWindow('24h')}
@@ -578,7 +597,7 @@ export default function MainPage() {
                 </button>
                 <button
                   className={classNames(
-                    'rounded-lg px-3 py-1.5 font-semibold',
+                    'min-h-[36px] rounded-lg px-3 py-1.5 font-semibold',
                     safetyPinsWindow === '3d' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'
                   )}
                   onClick={() => setSafetyPinsWindow('3d')}
@@ -589,7 +608,7 @@ export default function MainPage() {
             )}
             {showSafetyPins && (
               <select
-                className="rounded-xl border bg-white px-3 py-2 text-sm"
+                className="min-h-[44px] rounded-xl border bg-white px-3 py-2 text-sm"
                 value={safetyPinsStatus}
                 onChange={(e) => setSafetyPinsStatus(e.target.value)}
               >
@@ -682,7 +701,7 @@ export default function MainPage() {
             <div className="rounded-xl bg-gray-50 p-3">
               <div className="text-xs font-semibold text-gray-700">コメント（任意）</div>
               <input
-                className="mt-1 w-full rounded border px-3 py-2 text-sm"
+                className="mt-1 min-h-[44px] w-full rounded-xl border px-3 py-2 text-sm"
                 placeholder="必要な支援や周辺状況を簡潔に入力"
                 maxLength={140}
                 value={myCheckinComment}
@@ -724,14 +743,14 @@ export default function MainPage() {
 
             <div className="flex flex-col gap-2 border-t pt-3 md:flex-row">
               <button
-                className="flex-1 rounded-xl bg-gray-900 px-4 py-3 text-sm font-extrabold text-white shadow hover:bg-black disabled:opacity-60"
+                className="min-h-[48px] flex-1 rounded-xl bg-gray-900 px-4 py-3 text-sm font-extrabold text-white shadow hover:bg-black disabled:opacity-60"
                 disabled={safetyPinBusy}
                 onClick={saveSafetyPin}
               >
                 {safetyPinBusy ? '保存中...' : myActiveCheckin ? '安否を更新する' : '安否を保存する'}
               </button>
               <button
-                className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-800 ring-1 ring-gray-200 hover:bg-gray-50 disabled:opacity-60"
+                className="min-h-[48px] rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-800 ring-1 ring-gray-200 hover:bg-gray-50 disabled:opacity-60"
                 disabled={safetyPinBusy || !myActiveCheckin}
                 onClick={deleteSafetyPin}
               >
@@ -739,6 +758,41 @@ export default function MainPage() {
               </button>
             </div>
           </div>
+        </div>
+
+        <div className="mt-4 rounded-2xl border bg-blue-50/60 p-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="text-sm font-bold text-gray-900">登録済みの場所</div>
+              <div className="mt-1 text-xs text-gray-600">自宅・学校・職場など、よく確認する場所を登録できます。</div>
+            </div>
+            <div className="flex gap-2">
+              <Link href="/watch" className="inline-flex min-h-[44px] items-center rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-blue-100 hover:bg-blue-50">
+                すべて見る
+              </Link>
+              <Link href="/watch" className="inline-flex min-h-[44px] items-center rounded-xl bg-blue-700 px-3 py-2 text-sm font-bold text-white hover:bg-blue-800">
+                場所を追加
+              </Link>
+            </div>
+          </div>
+          {savedPlacesLoading && <div className="mt-3 text-xs text-gray-600">読み込み中...</div>}
+          {savedPlacesUnavailable && <div className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">登録済みの場所を取得できませんでした。</div>}
+          {!savedPlacesLoading && !savedPlacesUnavailable && savedPlaces.length === 0 && (
+            <div className="mt-3 rounded-xl bg-white px-3 py-2 text-sm text-gray-600">まだ登録されていません。</div>
+          )}
+          {savedPlaces.length > 0 && (
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              {savedPlaces.slice(0, 3).map((place) => (
+                <div key={place.id} className="rounded-xl bg-white px-3 py-2 ring-1 ring-blue-100">
+                  <div className="flex items-center gap-2">
+                    <span className="shrink-0 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-bold text-blue-800">{place.placeTypeLabel}</span>
+                    <span className="min-w-0 truncate text-sm font-bold text-gray-900">{place.label}</span>
+                  </div>
+                  <div className="mt-1 truncate text-xs text-gray-600">{place.addressMemo ?? place.address ?? `半径 ${place.radiusKm}km`}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
 
@@ -784,13 +838,13 @@ export default function MainPage() {
                 const site = favoriteSitesById.get(id);
                 return (
                   <div key={id} className="flex items-center justify-between gap-2 rounded-xl border bg-gray-50 px-3 py-2">
-                    <button className="min-w-0 text-left" onClick={() => void router.push(`/shelters/${id}`)}>
+                    <button className="min-h-[44px] min-w-0 text-left" onClick={() => void router.push(`/shelters/${id}`)}>
                       <div className="truncate font-semibold">{site?.name ?? '避難場所'}</div>
                       <div className="truncate text-xs text-gray-600">{site?.address ?? formatPrefCityLabel(site?.pref_city)}</div>
                     </button>
                     <button
                       onClick={() => setFavorite(id, false)}
-                      className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-gray-800 ring-1 ring-gray-200 hover:bg-gray-50"
+                      className="min-h-[44px] rounded-xl bg-white px-3 py-2 text-xs font-semibold text-gray-800 ring-1 ring-gray-200 hover:bg-gray-50"
                     >
                       削除
                     </button>
@@ -956,7 +1010,7 @@ function NearbySheltersSection({
 
                     <div className="flex flex-wrap gap-1" onClick={(e) => e.stopPropagation()}>
                       <button
-                        className="rounded bg-white px-2 py-1 text-[11px] font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-50"
+                        className="inline-flex min-h-[36px] items-center rounded-lg bg-white px-2 py-1 text-[11px] font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-50"
                         onClick={() => void router.push(`/shelters/${site.id}`)}
                       >
                         詳細
@@ -965,7 +1019,7 @@ function NearbySheltersSection({
                         href={googleMapsRouteUrl({ origin: coords, dest })}
                         target="_blank"
                         rel="noreferrer"
-                        className="rounded bg-white px-2 py-1 text-[11px] font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-50"
+                        className="inline-flex min-h-[36px] items-center rounded-lg bg-white px-2 py-1 text-[11px] font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-50"
                       >
                         経路
                       </a>

@@ -306,7 +306,7 @@ export default function ShelterDetailPage() {
 
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <Link href="/list" className="text-sm text-blue-600 hover:underline">
+          <Link href="/list" className="inline-flex min-h-[36px] items-center text-sm text-blue-600 hover:underline">
             ← 一覧へ
           </Link>
           {siteLoading ? (
@@ -361,7 +361,7 @@ export default function ShelterDetailPage() {
               }
             }}
             className={classNames(
-              'rounded px-3 py-2 text-sm font-semibold',
+              'min-h-[44px] rounded-xl px-3 py-2 text-sm font-semibold',
               isFavorite ? 'bg-amber-500 text-white ring-amber-600 hover:bg-amber-600' : 'bg-white text-gray-800 ring-1 ring-gray-300 hover:bg-gray-50'
             )}
           >
@@ -372,7 +372,7 @@ export default function ShelterDetailPage() {
             target="_blank"
             rel="noreferrer"
             className={classNames(
-              "rounded px-3 py-2 text-sm font-semibold",
+              "inline-flex min-h-[44px] items-center rounded-xl px-3 py-2 text-sm font-semibold",
               dest ? "bg-gray-900 text-white hover:bg-black" : "hidden" // Hide if no dest
             )}
           >
@@ -468,7 +468,7 @@ export default function ShelterDetailPage() {
         <div className="mt-2 text-xs text-gray-600">
           個人情報は書かないでください。多数報告があるコメントは自動的に折りたたまれます。
         </div>
-        <div className="mt-3 inline-flex rounded border bg-white p-1 text-sm">
+        <div className="mt-3 inline-flex rounded-xl border bg-white p-1 text-sm">
           {([
             { key: '24h', label: '24時間' },
             { key: '3d', label: '3日' },
@@ -478,7 +478,7 @@ export default function ShelterDetailPage() {
               key={tab.key}
               type="button"
               className={classNames(
-                'rounded px-3 py-1.5 font-semibold',
+                'min-h-[36px] rounded-lg px-3 py-1.5 font-semibold',
                 summaryWindow === tab.key ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'
               )}
               onClick={() => setSummaryWindow(tab.key)}
@@ -551,7 +551,7 @@ export default function ShelterDetailPage() {
                   <button
                     key={opt.value}
                     className={classNames(
-                      'rounded border px-3 py-2 text-sm font-semibold hover:bg-gray-50 disabled:bg-gray-100',
+	                      'min-h-[44px] rounded-xl border px-3 py-2 text-sm font-semibold hover:bg-gray-50 disabled:bg-gray-100',
                       selectedVote === opt.value ? 'border-blue-600 bg-blue-50 text-blue-900' : 'border-gray-300 bg-white text-gray-900'
                     )}
                     disabled={!deviceId}
@@ -582,9 +582,9 @@ export default function ShelterDetailPage() {
               </div>
 
               <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div className="flex gap-2">
-                  <button
-                    className="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-gray-300"
+	                <div className="flex flex-col gap-2 sm:flex-row">
+	                  <button
+	                    className="min-h-[44px] rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-gray-300"
                     disabled={!deviceId || submitBusy}
                     onClick={async () => {
                       setSubmitError(null);
@@ -643,8 +643,8 @@ export default function ShelterDetailPage() {
                   >
                     {community?.currentUserVote ? '投稿を更新する' : '投稿する'}
                   </button>
-                  <button
-                    className="rounded bg-white border border-gray-300 px-3 py-2 text-sm text-red-700 hover:bg-gray-50 disabled:opacity-50"
+	                  <button
+	                    className="min-h-[44px] rounded-xl bg-white border border-gray-300 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-gray-50 disabled:opacity-50"
                     disabled={!deviceId || submitBusy}
                     onClick={async () => {
                       if (!confirm('この避難所への自分の投稿（投票・コメント）を削除しますか？')) return;
