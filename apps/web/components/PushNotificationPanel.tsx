@@ -8,6 +8,18 @@ type PushStatus = {
   count?: number;
 };
 
+const PUSH_STEP_TIMEOUT_MS = 15_000;
+
+function withTimeout<T>(promise: Promise<T>, code: string, timeoutMs = PUSH_STEP_TIMEOUT_MS): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(code)), timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
 function urlBase64ToUint8Array(value: string): Uint8Array {
   const padding = '='.repeat((4 - (value.length % 4)) % 4);
   const base64 = `${value}${padding}`.replace(/-/g, '+').replace(/_/g, '/');
@@ -20,6 +32,7 @@ function urlBase64ToUint8Array(value: string): Uint8Array {
 function isPushSupported(): boolean {
   return (
     typeof window !== 'undefined' &&
+    window.isSecureContext &&
     'Notification' in window &&
     'serviceWorker' in navigator &&
     'PushManager' in window
@@ -39,7 +52,7 @@ export function PushNotificationPanel() {
 
   const loadStatus = async () => {
     if (!deviceId) return;
-    const res = await fetch(`/api/push/status?deviceId=${encodeURIComponent(deviceId)}`);
+    const res = await withTimeout(fetch(`/api/push/status?deviceId=${encodeURIComponent(deviceId)}`), 'status_timeout', 8_000);
     const json: PushStatus | null = await res.json().catch(() => null);
     if (!res.ok || json?.ok === false) throw new Error('status_failed');
     setEnabled(Boolean(json?.enabled));
@@ -68,42 +81,70 @@ export function PushNotificationPanel() {
   }, [enabled, permission, supported]);
 
   const enablePush = async () => {
-    if (!deviceId || !supported) return;
+    if (!deviceId) {
+      setMessage({ kind: 'error', text: '端末の準備が完了していません' });
+      return;
+    }
+    if (!supported) {
+      setMessage({ kind: 'error', text: 'このブラウザでは通知に対応していません' });
+      return;
+    }
     setBusy(true);
     setMessage(null);
     try {
-      const permissionResult = await Notification.requestPermission();
+      const permissionResult = await withTimeout(Notification.requestPermission(), 'permission_timeout', 30_000);
       setPermission(permissionResult);
       if (permissionResult !== 'granted') {
-        setMessage({ kind: 'error', text: '通知が許可されませんでした' });
+        setMessage({ kind: 'error', text: permissionResult === 'denied' ? 'ブラウザで通知が拒否されています' : '通知が許可されませんでした' });
         return;
       }
 
-      const keyRes = await fetch('/api/push/vapid-public-key');
+      const keyRes = await withTimeout(fetch('/api/push/vapid-public-key'), 'vapid_timeout');
       const keyJson = await keyRes.json().catch(() => null);
       if (!keyRes.ok || keyJson?.ok === false || typeof keyJson?.publicKey !== 'string') throw new Error('vapid_missing');
 
-      const registration = await navigator.serviceWorker.register('/sw.js');
-      const existing = await registration.pushManager.getSubscription();
+      const registration = await withTimeout(navigator.serviceWorker.register('/sw.js'), 'service_worker_failed');
+      await withTimeout(navigator.serviceWorker.ready, 'service_worker_failed');
+      const existing = await withTimeout(registration.pushManager.getSubscription(), 'subscribe_failed');
       const subscription =
         existing ??
-        (await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(keyJson.publicKey),
-        }));
+        (await withTimeout(
+          registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(keyJson.publicKey).buffer as ArrayBuffer,
+          }),
+          'subscribe_failed'
+        ));
 
-      const res = await fetch('/api/push/subscribe', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ deviceId, subscription: subscription.toJSON() }),
-      });
+      const res = await withTimeout(
+        fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ deviceId, subscription: subscription.toJSON() }),
+        }),
+        'server_save_failed'
+      );
       const json = await res.json().catch(() => null);
-      if (!res.ok || json?.ok === false) throw new Error('subscribe_failed');
-      await loadStatus();
+      if (!res.ok || json?.ok === false) throw new Error('server_save_failed');
+      setEnabled(true);
+      setCount((current) => Math.max(current, 1));
+      await loadStatus().catch(() => undefined);
       setMessage({ kind: 'success', text: '通知を有効にしました' });
     } catch (error) {
       const code = error instanceof Error ? error.message : String(error);
-      setMessage({ kind: 'error', text: code === 'vapid_missing' ? '通知の設定がまだ完了していません' : '通知を有効にできませんでした' });
+      const text =
+        code === 'vapid_missing' || code === 'vapid_timeout'
+          ? '通知の設定が未完了です'
+          : code === 'service_worker_failed'
+            ? '通知の準備に失敗しました'
+            : code === 'server_save_failed'
+              ? '通知設定を保存できませんでした'
+              : code === 'subscribe_failed'
+                ? '通知を有効にできませんでした'
+                : code === 'permission_timeout'
+                  ? '通知の許可操作が完了しませんでした'
+                  : '通知を有効にできませんでした';
+      setMessage({ kind: 'error', text });
     } finally {
       setBusy(false);
     }
@@ -114,15 +155,18 @@ export function PushNotificationPanel() {
     setBusy(true);
     setMessage(null);
     try {
-      const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
+      const registration = await withTimeout(navigator.serviceWorker.ready, 'service_worker_failed');
+      const subscription = await withTimeout(registration.pushManager.getSubscription(), 'unsubscribe_failed');
       const endpoint = subscription?.endpoint ?? null;
       if (subscription) await subscription.unsubscribe().catch(() => false);
-      const res = await fetch('/api/push/unsubscribe', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ deviceId, endpoint }),
-      });
+      const res = await withTimeout(
+        fetch('/api/push/unsubscribe', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ deviceId, endpoint }),
+        }),
+        'unsubscribe_failed'
+      );
       const json = await res.json().catch(() => null);
       if (!res.ok || json?.ok === false) throw new Error('unsubscribe_failed');
       await loadStatus();

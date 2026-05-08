@@ -313,7 +313,6 @@ export async function listWatchRegions(deviceHash: string): Promise<SavedPlaceRe
       latitude: true,
       longitude: true,
       radiusKm: true,
-      notifyEnabled: true,
       active: true,
       createdAt: true,
       updatedAt: true,
@@ -327,7 +326,6 @@ export async function listNotifyEnabledWatchRegions(): Promise<SavedPlaceRegionF
   const rows = await prisma.watchRegion.findMany({
     where: {
       active: true,
-      notifyEnabled: true,
     },
     orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
     select: {
@@ -337,17 +335,18 @@ export async function listNotifyEnabledWatchRegions(): Promise<SavedPlaceRegionF
       latitude: true,
       longitude: true,
       radiusKm: true,
-      notifyEnabled: true,
       active: true,
       createdAt: true,
       updatedAt: true,
     },
   });
 
-  return rows.map((row) => ({
-    ...toSavedPlaceRegion(row),
-    deviceDbId: row.deviceId,
-  }));
+  return rows
+    .map((row) => ({
+      ...toSavedPlaceRegion(row),
+      deviceDbId: row.deviceId,
+    }))
+    .filter((region) => region.notifyEnabled);
 }
 
 export async function createWatchRegion(deviceHash: string, rawBody: unknown): Promise<SavedPlaceRegion> {
@@ -376,7 +375,6 @@ export async function createWatchRegion(deviceHash: string, rawBody: unknown): P
       latitude: body.latitude,
       longitude: body.longitude,
       radiusKm: body.radiusKm,
-      notifyEnabled: body.notifyEnabled,
       active: true,
       createdAt: now,
       updatedAt: now,
@@ -387,7 +385,6 @@ export async function createWatchRegion(deviceHash: string, rawBody: unknown): P
       latitude: true,
       longitude: true,
       radiusKm: true,
-      notifyEnabled: true,
       active: true,
       createdAt: true,
       updatedAt: true,
@@ -412,7 +409,6 @@ export async function updateWatchRegion(deviceHash: string, regionId: string, ra
       latitude: true,
       longitude: true,
       radiusKm: true,
-      notifyEnabled: true,
       active: true,
       createdAt: true,
       updatedAt: true,
@@ -431,7 +427,6 @@ export async function updateWatchRegion(deviceHash: string, regionId: string, ra
       latitude: body.latitude ?? existing.latitude,
       longitude: body.longitude ?? existing.longitude,
       radiusKm: body.radiusKm,
-      notifyEnabled: body.notifyEnabled,
       active: body.hasActive ? body.active : existing.active,
       updatedAt: new Date(),
     },
@@ -441,7 +436,6 @@ export async function updateWatchRegion(deviceHash: string, regionId: string, ra
       latitude: true,
       longitude: true,
       radiusKm: true,
-      notifyEnabled: true,
       active: true,
       createdAt: true,
       updatedAt: true,

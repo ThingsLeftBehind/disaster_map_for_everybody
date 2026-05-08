@@ -164,6 +164,10 @@ function isValidCoords(coords: WatchPlaceCoords | null): coords is WatchPlaceCoo
 function safeMessage(error: unknown, fallback: string): string {
   const payload = (error as any)?.payload;
   if (payload?.errorCode === 'limit_exceeded') return '登録できる場所は最大10件までです。';
+  if (payload?.errorCode === 'invalid_payload') return '入力内容を確認してください';
+  if (payload?.errorCode === 'save_failed' || payload?.error === 'save_failed') {
+    return '場所を保存できませんでした。通信状況を確認して、もう一度お試しください';
+  }
   if (typeof payload?.error === 'string' && payload.error !== 'internal_error') return payload.error;
   return fallback;
 }
@@ -361,7 +365,7 @@ export default function WatchPage() {
     event.preventDefault();
     setFeedback(null);
     if (!deviceId) {
-      setFeedback({ kind: 'error', text: '保存できませんでした' });
+      setFeedback({ kind: 'error', text: '場所を保存できませんでした。通信状況を確認して、もう一度お試しください' });
       return;
     }
 
@@ -403,7 +407,7 @@ export default function WatchPage() {
       setFeedback({ kind: 'success', text: editing ? '更新しました' : '保存しました' });
       resetForm(placeType);
     } catch (err) {
-      setFeedback({ kind: 'error', text: safeMessage(err, '保存できませんでした') });
+      setFeedback({ kind: 'error', text: safeMessage(err, '場所を保存できませんでした。通信状況を確認して、もう一度お試しください') });
     } finally {
       setSaving(false);
     }
@@ -439,7 +443,7 @@ export default function WatchPage() {
 
   const toggleRegionNotification = async (region: SavedPlaceRegion) => {
     if (!deviceId) {
-      setFeedback({ kind: 'error', text: '保存できませんでした' });
+      setFeedback({ kind: 'error', text: '通知対象を保存できませんでした' });
       return;
     }
     setFeedback(null);
@@ -455,7 +459,7 @@ export default function WatchPage() {
       await mutateStatus();
       setFeedback({ kind: 'success', text: !region.notifyEnabled ? '通知対象にしました' : '通知対象から外しました' });
     } catch {
-      setFeedback({ kind: 'error', text: '保存できませんでした' });
+      setFeedback({ kind: 'error', text: '通知対象を保存できませんでした' });
     }
   };
 

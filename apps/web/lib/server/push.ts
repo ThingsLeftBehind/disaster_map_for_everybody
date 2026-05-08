@@ -196,6 +196,7 @@ export async function sendWebPush(subscription: PushSubscriptionInput, payload: 
   if (!config) throw new Error('vapid_not_configured');
   const jwt = createVapidJwt(subscription.endpoint);
   const body = encryptPushPayload(subscription, payload);
+  const arrayBuffer = body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength) as ArrayBuffer;
   const res = await fetch(subscription.endpoint, {
     method: 'POST',
     headers: {
@@ -205,8 +206,7 @@ export async function sendWebPush(subscription: PushSubscriptionInput, payload: 
       ttl: '3600',
       urgency: 'normal',
     },
-    body,
+    body: arrayBuffer,
   });
   return res.ok ? { ok: true } : { ok: false, status: res.status };
 }
-

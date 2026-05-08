@@ -23,15 +23,19 @@ function parseDeviceId(req: NextApiRequest): string | null {
   return parsed.success ? parsed.data : null;
 }
 
-function safeApiError(res: NextApiResponse, error: unknown): void {
+function safeApiError(res: NextApiResponse, error: unknown, action: 'save' | 'delete'): void {
   if (error instanceof WatchRegionApiError) {
     jsonError(res, error.status, { ok: false, error: error.message, errorCode: error.errorCode });
     return;
   }
 
   const message = error instanceof Error ? error.message : String(error);
-  console.warn('[watch-region] unhandled_error', { error: message });
-  jsonError(res, 500, { ok: false, error: 'internal_error', errorCode: 'internal_error' });
+  console.warn('[watch-region] unhandled_error', { action, error: message });
+  jsonError(res, 500, {
+    ok: false,
+    error: action === 'save' ? 'save_failed' : 'delete_failed',
+    errorCode: action === 'save' ? 'save_failed' : 'delete_failed',
+  });
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -65,6 +69,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!deleted) return jsonError(res, 404, { ok: false, error: 'not_found', errorCode: 'not_found' });
     return jsonOk(res, { ok: true });
   } catch (error) {
-    return safeApiError(res, error);
+    return safeApiError(res, error, req.method === 'PATCH' ? 'save' : 'delete');
   }
 }

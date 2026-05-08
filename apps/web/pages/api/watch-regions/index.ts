@@ -24,15 +24,19 @@ function parseDeviceId(req: NextApiRequest): string | null {
   return parsed.success ? parsed.data : null;
 }
 
-function safeApiError(res: NextApiResponse, error: unknown): void {
+function safeApiError(res: NextApiResponse, error: unknown, action: 'read' | 'save'): void {
   if (error instanceof WatchRegionApiError) {
     jsonError(res, error.status, { ok: false, error: error.message, errorCode: error.errorCode });
     return;
   }
 
   const message = error instanceof Error ? error.message : String(error);
-  console.warn('[watch-regions] unhandled_error', { error: message });
-  jsonError(res, 500, { ok: false, error: 'internal_error', errorCode: 'internal_error' });
+  console.warn('[watch-regions] unhandled_error', { action, error: message });
+  jsonError(res, 500, {
+    ok: false,
+    error: action === 'save' ? 'save_failed' : 'internal_error',
+    errorCode: action === 'save' ? 'save_failed' : 'internal_error',
+  });
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -70,6 +74,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return jsonError(res, 405, { ok: false, error: 'method_not_allowed', errorCode: 'method_not_allowed' });
   } catch (error) {
-    return safeApiError(res, error);
+    return safeApiError(res, error, req.method === 'POST' ? 'save' : 'read');
   }
 }

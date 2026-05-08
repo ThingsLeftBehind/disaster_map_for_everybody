@@ -115,6 +115,12 @@ async function buildForecastAreaBreakdown(
     class10Code: string | null;
     class10Name: string | null;
   }>;
+  availableClass15Areas: Array<{
+    code: string;
+    name: string;
+    class10Code: string | null;
+    class10Name: string | null;
+  }>;
 } | null> {
   if (area.length !== 6) return null;
 
@@ -161,6 +167,7 @@ async function buildForecastAreaBreakdown(
   }
 
   const class20Options = await getClass20DescendantsForArea(area);
+  const class15Options = new Map<string, { code: string; name: string; class10Code: string | null; class10Name: string | null }>();
   const availableClass20Areas = class20Options.map((option) => {
     const parentCode = resolveClass15Code(option.code, index, class15s);
     const class10Code = resolveClass10Code(option.code, index, class10s);
@@ -168,6 +175,14 @@ async function buildForecastAreaBreakdown(
     const class10Name = class10Code ? index.get(class10Code)?.name ?? class10Code : null;
     if (parentCode && !breakdown[parentCode]) {
       breakdown[parentCode] = { name: parentName ?? parentCode, items: [] };
+    }
+    if (parentCode) {
+      class15Options.set(parentCode, {
+        code: parentCode,
+        name: parentName ?? parentCode,
+        class10Code,
+        class10Name,
+      });
     }
     class20Groups[option.code] = {
       name: option.name,
@@ -319,7 +334,13 @@ async function buildForecastAreaBreakdown(
     }
   }
 
-  return { breakdown, muniMap, class20Groups, availableClass20Areas };
+  return {
+    breakdown,
+    muniMap,
+    class20Groups,
+    availableClass20Areas,
+    availableClass15Areas: Array.from(class15Options.values()).sort((a, b) => a.code.localeCompare(b.code)),
+  };
 }
 
 let cachedAreaIndex: Map<string, AreaNode> | null = null;
@@ -694,6 +715,32 @@ function mergeClass20Options(
   }
 }
 
+function mergeClass15Options(
+  target: Map<
+    string,
+    {
+      code: string;
+      name: string;
+      class10Code: string | null;
+      class10Name: string | null;
+    }
+  >,
+  source:
+    | Array<{
+        code: string;
+        name: string;
+        class10Code: string | null;
+        class10Name: string | null;
+      }>
+    | null
+    | undefined
+) {
+  if (!source) return;
+  for (const option of source) {
+    if (!target.has(option.code)) target.set(option.code, option);
+  }
+}
+
 function dedupeWarningItems(items: NormalizedWarningItem[]): NormalizedWarningItem[] {
   const seen = new Set<string>();
   return items.filter((item) => {
@@ -746,6 +793,15 @@ async function buildHokkaidoAggregatePayload(args: {
       class10Name: string | null;
     }
   >();
+  const class15Options = new Map<
+    string,
+    {
+      code: string;
+      name: string;
+      class10Code: string | null;
+      class10Name: string | null;
+    }
+  >();
   const sources: Array<{
     area: string;
     areaName: string | null;
@@ -780,6 +836,7 @@ async function buildHokkaidoAggregatePayload(args: {
     mergeMuniMap(muniMap, subAreaInfo?.muniMap);
     mergeClass20Groups(class20Groups, subAreaInfo?.class20Groups);
     mergeClass20Options(class20Options, subAreaInfo?.availableClass20Areas);
+    mergeClass15Options(class15Options, subAreaInfo?.availableClass15Areas);
     if (data.updatedAt && (!updatedAt || Date.parse(data.updatedAt) > Date.parse(updatedAt))) {
       updatedAt = data.updatedAt;
     }
@@ -830,6 +887,7 @@ async function buildHokkaidoAggregatePayload(args: {
     breakdown,
     muniMap,
     class20Groups,
+    availableClass15Areas: Array.from(class15Options.values()).sort((a, b) => a.code.localeCompare(b.code)),
     availableClass20Areas: Array.from(class20Options.values()).sort((a, b) => a.code.localeCompare(b.code)),
     selectedClass20Code: args.class20,
     selectedClass20Name: args.class20 ? class20Groups[args.class20]?.name ?? null : null,
@@ -927,6 +985,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       breakdown: subAreaInfo?.breakdown ?? null,
       muniMap: subAreaInfo?.muniMap ?? null,
       class20Groups: subAreaInfo?.class20Groups ?? null,
+      availableClass15Areas: subAreaInfo?.availableClass15Areas ?? [],
       availableClass20Areas: subAreaInfo?.availableClass20Areas ?? [],
       selectedClass20Code: class20,
       selectedClass20Name: class20 ? subAreaInfo?.class20Groups?.[class20]?.name ?? null : null,
@@ -964,6 +1023,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         breakdown: null,
         muniMap: null,
         class20Groups: null,
+        availableClass15Areas: [],
         availableClass20Areas: [],
         selectedClass20Code: class20,
         selectedClass20Name: null,
@@ -991,6 +1051,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         breakdown: null,
         muniMap: null,
         class20Groups: null,
+        availableClass15Areas: [],
         availableClass20Areas: [],
         selectedClass20Code: class20,
         selectedClass20Name: null,

@@ -30,6 +30,7 @@ type FetchStatusPayload = {
 };
 
 type AreaOption = { code: string; name: string };
+type TokyoAreaSelectOption = AreaOption & { group: TokyoGroupKey | null };
 type Class20AreaOption = AreaOption & {
   parentCode: string | null;
   parentName: string | null;
@@ -62,7 +63,14 @@ function shouldShowUnstable({ status, warnings }: { status?: FetchStatusPayload 
 
 function matchesTokyoGroup(areaCode: string, group: TokyoGroupKey | null): boolean {
   if (!group) return true;
-  return (getTokyoGroupFromAreaCode(areaCode) ?? inferTokyoGroup({ muniCode: areaCode })) === group;
+  const raw = typeof areaCode === 'string' ? areaCode.trim() : '';
+  const direct = getTokyoGroupFromAreaCode(raw);
+  if (direct) return direct === group;
+  if (group === 'tokyo-mainland' && /^13001\d$/.test(raw)) return true;
+  if (group === 'tokyo-izu-north' && /^13002\d$/.test(raw)) return true;
+  if (group === 'tokyo-izu-south' && /^13003\d$/.test(raw)) return true;
+  if (group === 'tokyo-ogasawara' && raw === '130040') return true;
+  return inferTokyoGroup({ muniCode: raw }) === group;
 }
 
 
@@ -99,6 +107,7 @@ export default function AlertsPage() {
   const [manualPrefCode, setManualPrefCode] = useState('');
   const [manualSubAreaCode, setManualSubAreaCode] = useState('');
   const [manualClass20Code, setManualClass20Code] = useState('');
+  const [manualTokyoGroupOverride, setManualTokyoGroupOverride] = useState<TokyoGroupKey | null>(null);
   const [selectedWatchRegionId, setSelectedWatchRegionId] = useState('');
 
   const [actionBusy, setActionBusy] = useState(false);
@@ -148,6 +157,7 @@ export default function AlertsPage() {
     setManualPrefCode('');
     setManualSubAreaCode('');
     setManualClass20Code('');
+    setManualTokyoGroupOverride(null);
     void setSelectedAreaId(null);
   }, [router.isReady, router.query.watchRegionId, setSelectedAreaId, watchRegionOptions]);
 
@@ -170,7 +180,7 @@ export default function AlertsPage() {
         'tokyo-mainland'
       );
     }
-    if (!useCurrent && manualSubAreaCode) return getTokyoGroupFromAreaCode(manualSubAreaCode) ?? 'tokyo-mainland';
+    if (!useCurrent && manualSubAreaCode) return getTokyoGroupFromAreaCode(manualSubAreaCode) ?? manualTokyoGroupOverride ?? 'tokyo-mainland';
     if (useCurrent) {
       return (
         inferTokyoGroup({
@@ -198,6 +208,7 @@ export default function AlertsPage() {
     effectiveAreaCode,
     manualPrefCode,
     manualSubAreaCode,
+    manualTokyoGroupOverride,
     selectedArea,
     selectedWatchClass20Code,
     selectedWatchRegion,
@@ -298,25 +309,44 @@ export default function AlertsPage() {
       }))
       .filter((row: AreaOption) => row.code && row.name);
   }, [warnings]);
-  const tokyoAreaOptions = useMemo<AreaOption[]>(
-    () =>
-      (apiTokyoAreaOptions.length > 0 ? apiTokyoAreaOptions : subAreaOptions).map((area) => ({
+  const tokyoAreaOptions = useMemo<TokyoAreaSelectOption[]>(() => {
+    const options = new Map<string, TokyoAreaSelectOption>();
+    const inferGroup = (code: string): TokyoGroupKey | null => {
+      const direct = getTokyoGroupFromAreaCode(code);
+      if (direct) return direct;
+      const child = class20Options.find((area) => area.code === code || area.parentCode === code || area.class10Code === code);
+      return getTokyoGroupFromAreaCode(child?.class10Code ?? null);
+    };
+    const add = (area: AreaOption) => {
+      const directGroup = getTokyoGroupFromAreaCode(area.code);
+      options.set(area.code, {
         ...area,
-        name: getTokyoGroupLabel(getTokyoGroupFromAreaCode(area.code)) ?? area.name,
-      })),
-    [apiTokyoAreaOptions, subAreaOptions]
-  );
+        group: inferGroup(area.code),
+        name: getTokyoGroupLabel(directGroup) ?? area.name,
+      });
+    };
+    apiTokyoAreaOptions.forEach(add);
+    subAreaOptions.forEach(add);
+    return Array.from(options.values()).sort((a, b) => {
+      const groupCompare = String(a.group ?? '').localeCompare(String(b.group ?? ''));
+      if (groupCompare !== 0) return groupCompare;
+      return a.code.localeCompare(b.code);
+    });
+  }, [apiTokyoAreaOptions, class20Options, subAreaOptions]);
 
   useEffect(() => {
     if (useCurrent || !manualPrefCode) {
       setManualSubAreaCode('');
       setManualClass20Code('');
+      setManualTokyoGroupOverride(null);
       return;
     }
     if (manualPrefCode === '13') {
       setManualSubAreaCode((current) => current || '130010');
+      setManualTokyoGroupOverride((current) => current ?? 'tokyo-mainland');
       return;
     }
+    setManualTokyoGroupOverride(null);
     if (subAreaOptions.length > 0 && !subAreaOptions.some((area) => area.code === manualSubAreaCode)) {
       setManualSubAreaCode(subAreaOptions[0].code);
     }
@@ -332,7 +362,7 @@ export default function AlertsPage() {
   }, [class20Options.length, manualClass20Code, useCurrent, visibleClass20Options]);
 
   const selectedSubArea = manualSubAreaCode && breakdown?.[manualSubAreaCode] ? breakdown[manualSubAreaCode] : null;
-  const selectedSubTokyoGroup = selectedSubArea || manualSubAreaCode ? getTokyoGroupFromAreaCode(manualSubAreaCode) : null;
+  const selectedSubTokyoGroup = selectedSubArea || manualSubAreaCode ? getTokyoGroupFromAreaCode(manualSubAreaCode) ?? manualTokyoGroupOverride : null;
   const selectedClass20Area = manualClass20Code && class20Groups?.[manualClass20Code] ? class20Groups[manualClass20Code] : null;
   const scopedWarnings = useMemo(() => {
     if (selectedClass20Area) {
@@ -468,6 +498,7 @@ export default function AlertsPage() {
           const r = await reverseGeocodeGsi(next);
           setCoarseArea({ prefCode: r.prefCode, muniCode: r.muniCode, address: r.address });
           setSelectedWatchRegionId('');
+          setManualTokyoGroupOverride(null);
           setUseCurrent(true);
           endAction();
         } catch {
@@ -612,6 +643,7 @@ export default function AlertsPage() {
                         setManualPrefCode('');
                         setManualSubAreaCode('');
                         setManualClass20Code('');
+                        setManualTokyoGroupOverride(null);
                       }
                     }}
                   >
@@ -645,6 +677,7 @@ export default function AlertsPage() {
                     setManualPrefCode(e.target.value);
                     setManualSubAreaCode('');
                     setManualClass20Code('');
+                    setManualTokyoGroupOverride(null);
                   }}
                 >
                   <option value="">都道府県を選択</option>
@@ -662,6 +695,7 @@ export default function AlertsPage() {
                     onChange={(e) => {
                       setManualSubAreaCode(e.target.value);
                       setManualClass20Code('');
+                      setManualTokyoGroupOverride(null);
                     }}
                     aria-label="気象庁の発表区域"
                   >
@@ -687,6 +721,7 @@ export default function AlertsPage() {
                         setManualPrefCode('13');
                         setManualSubAreaCode(e.target.value);
                         setManualClass20Code('');
+                        setManualTokyoGroupOverride(tokyoAreaOptions.find((area) => area.code === e.target.value)?.group ?? null);
                       }}
                       aria-label="東京都の発表区域"
                     >
