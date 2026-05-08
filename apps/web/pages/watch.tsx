@@ -6,6 +6,7 @@ import { Seo } from '../components/Seo';
 import WatchPlaceMap, { type WatchPlaceCoords } from '../components/WatchPlaceMap';
 import { useDevice } from '../components/device/DeviceProvider';
 import { reverseGeocodeGsi } from '../lib/client/location';
+import { PushNotificationPanel } from '../components/PushNotificationPanel';
 
 type PlaceType = 'home' | 'school' | 'work' | 'family' | 'other';
 
@@ -31,6 +32,43 @@ type ApiResponse = {
   ok: boolean;
   regions?: SavedPlaceRegion[];
   region?: SavedPlaceRegion;
+  error?: string;
+  errorCode?: string;
+};
+
+type RiskLevel = 'normal' | 'advisory' | 'warning' | 'emergency' | 'unknown';
+
+type SavedPlaceStatus = {
+  riskLevel: RiskLevel;
+  label: string;
+  summary: string;
+  warnings: Array<{
+    name: string;
+    kind: 'advisory' | 'warning' | 'emergency';
+    areaName: string | null;
+    areaCode: string | null;
+    status: string | null;
+  }>;
+  fetchStatus: 'OK' | 'EMPTY' | 'PARTIAL' | 'DOWN';
+  updatedAt: string | null;
+};
+
+type SavedPlaceRegionWithStatus = SavedPlaceRegion & {
+  status: SavedPlaceStatus;
+  alertLink: string;
+  jma?: {
+    prefCode: string | null;
+    muniCode: string | null;
+    areaCode: string | null;
+    class20Code: string | null;
+    address: string | null;
+  };
+};
+
+type StatusApiResponse = {
+  ok: boolean;
+  updatedAt?: string;
+  regions?: SavedPlaceRegionWithStatus[];
   error?: string;
   errorCode?: string;
 };
@@ -81,6 +119,18 @@ const fetcher = async (url: string): Promise<ApiResponse> => {
   return json;
 };
 
+const statusFetcher = async (url: string): Promise<StatusApiResponse> => {
+  const res = await fetch(url);
+  const json = await res.json().catch(() => null);
+  if (!res.ok || json?.ok === false) {
+    const message = typeof json?.error === 'string' ? json.error : '読み込みに失敗しました';
+    const error = new Error(message);
+    (error as any).payload = json;
+    throw error;
+  }
+  return json;
+};
+
 function formatDate(value: string | null | undefined): string {
   if (!value) return '未更新';
   const t = Date.parse(value);
@@ -118,11 +168,44 @@ function safeMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+function riskBadgeClassName(riskLevel: RiskLevel | null | undefined): string {
+  switch (riskLevel) {
+    case 'normal':
+      return 'bg-emerald-50 text-emerald-800 ring-emerald-200';
+    case 'advisory':
+      return 'bg-amber-50 text-amber-900 ring-amber-200';
+    case 'warning':
+      return 'bg-red-50 text-red-800 ring-red-200';
+    case 'emergency':
+      return 'bg-rose-100 text-rose-900 ring-rose-300';
+    default:
+      return 'bg-gray-100 text-gray-700 ring-gray-200';
+  }
+}
+
+function warningPillClassName(kind: SavedPlaceStatus['warnings'][number]['kind']): string {
+  if (kind === 'emergency') return 'bg-rose-50 text-rose-900 ring-rose-200';
+  if (kind === 'warning') return 'bg-red-50 text-red-800 ring-red-200';
+  return 'bg-amber-50 text-amber-900 ring-amber-200';
+}
+
 export default function WatchPage() {
   const { deviceId } = useDevice();
   const apiUrl = deviceId ? `/api/watch-regions?deviceId=${encodeURIComponent(deviceId)}` : null;
+  const statusUrl = deviceId ? `/api/watch-regions/status?deviceId=${encodeURIComponent(deviceId)}` : null;
   const { data, error, isLoading, mutate } = useSWR(apiUrl, fetcher, { dedupingInterval: 10_000 });
+  const {
+    data: statusData,
+    error: statusError,
+    isLoading: statusLoading,
+    mutate: mutateStatus,
+  } = useSWR(statusUrl, statusFetcher, { dedupingInterval: 30_000 });
   const regions = useMemo(() => data?.regions ?? [], [data?.regions]);
+  const statusById = useMemo(() => {
+    const map = new Map<string, SavedPlaceRegionWithStatus>();
+    for (const region of statusData?.regions ?? []) map.set(region.id, region);
+    return map;
+  }, [statusData?.regions]);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [placeType, setPlaceType] = useState<PlaceType>('home');
@@ -316,6 +399,7 @@ export default function WatchPage() {
       }
 
       await mutate();
+      await mutateStatus();
       setFeedback({ kind: 'success', text: editing ? '更新しました' : '保存しました' });
       resetForm(placeType);
     } catch (err) {
@@ -344,11 +428,34 @@ export default function WatchPage() {
       if (!res.ok || json?.ok === false) throw new Error(json?.error ?? 'delete_failed');
       if (editingId === region.id) resetForm(placeType);
       await mutate();
+      await mutateStatus();
       setFeedback({ kind: 'success', text: '削除しました' });
     } catch {
       setFeedback({ kind: 'error', text: '削除できませんでした' });
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const toggleRegionNotification = async (region: SavedPlaceRegion) => {
+    if (!deviceId) {
+      setFeedback({ kind: 'error', text: '保存できませんでした' });
+      return;
+    }
+    setFeedback(null);
+    try {
+      const res = await fetch(`/api/watch-regions/${encodeURIComponent(region.id)}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ deviceId, notifyEnabled: !region.notifyEnabled }),
+      });
+      const json: ApiResponse | null = await res.json().catch(() => null);
+      if (!res.ok || json?.ok === false) throw new Error(json?.error ?? 'save_failed');
+      await mutate();
+      await mutateStatus();
+      setFeedback({ kind: 'success', text: !region.notifyEnabled ? '通知対象にしました' : '通知対象から外しました' });
+    } catch {
+      setFeedback({ kind: 'error', text: '保存できませんでした' });
     }
   };
 
@@ -560,28 +667,44 @@ export default function WatchPage() {
         </form>
       </section>
 
+      <PushNotificationPanel />
+
       <section className="rounded-2xl bg-white p-4 shadow sm:p-5">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-lg font-bold">登録済みの場所</h2>
           <button
             type="button"
             className="min-h-[40px] rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-800 ring-1 ring-gray-200 hover:bg-gray-50"
-            onClick={() => void mutate()}
+            onClick={() => void Promise.all([mutate(), mutateStatus()])}
           >
-            再読み込み
+            最新情報を確認
           </button>
         </div>
 
         {!deviceId && <div className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">端末IDを準備中です。</div>}
         {isLoading && <div className="mt-3 text-sm text-gray-600">読み込み中...</div>}
         {error && <div className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">登録済みの場所を取得できませんでした。</div>}
+        {statusError && regions.length > 0 && (
+          <div className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">警報・注意報の情報を取得できませんでした。</div>
+        )}
         {!isLoading && !error && regions.length === 0 && (
           <div className="mt-3 rounded-xl border bg-gray-50 px-3 py-4 text-center text-sm text-gray-600">まだ登録されていません。</div>
         )}
 
         {regions.length > 0 && (
           <div className="mt-3 space-y-3">
-            {regions.map((region) => (
+            {regions.map((region) => {
+              const statusRegion = statusById.get(region.id);
+              const status = statusRegion?.status ?? null;
+              const statusPending = statusLoading && !status;
+              const alertLink = statusRegion?.alertLink ?? '/alerts';
+              const nearbyShelterLink = `/list?mode=LOCATION&lat=${encodeURIComponent(region.latitude)}&lon=${encodeURIComponent(
+                region.longitude
+              )}&label=${encodeURIComponent(region.label)}&source=watch&radiusKm=${encodeURIComponent(region.radiusKm)}&limit=10`;
+              const statusSummary = statusPending ? '確認中' : status?.summary ?? '情報を取得できませんでした';
+              const riskLabel = statusPending ? '確認中' : status?.label ?? '不明';
+
+              return (
               <article key={region.id} className="rounded-2xl border bg-gray-50 p-3">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
@@ -594,14 +717,61 @@ export default function WatchPage() {
                       <span>半径 {region.radiusKm}km</span>
                       <span>更新 {formatDate(region.updatedAt)}</span>
                     </div>
+                    <div className="mt-3 rounded-xl bg-white p-3 ring-1 ring-gray-200">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="text-xs font-bold text-gray-700">現在の警報・注意報</div>
+                        <span className={classNames('rounded-full px-2.5 py-1 text-xs font-bold ring-1', riskBadgeClassName(status?.riskLevel))}>
+                          {riskLabel}
+                        </span>
+                      </div>
+                      <div className="mt-2 text-sm font-semibold text-gray-900">{statusSummary}</div>
+                      {status?.warnings && status.warnings.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {status.warnings.map((warning) => (
+                            <span
+                              key={`${warning.areaCode ?? ''}:${warning.name}:${warning.status ?? ''}`}
+                              className={classNames('rounded-full px-2 py-1 text-xs font-semibold ring-1', warningPillClassName(warning.kind))}
+                              title={warning.areaName ?? undefined}
+                            >
+                              {warning.name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <div className="mt-2 text-xs text-gray-500">更新: {formatDate(status?.updatedAt)}</div>
+                    </div>
                   </div>
                   <div className="grid gap-2 sm:flex sm:shrink-0">
+                    <Link
+                      href={alertLink}
+                      className="flex min-h-[44px] items-center justify-center rounded-xl bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black"
+                    >
+                      警報・注意報を確認
+                    </Link>
+                    <Link
+                      href={nearbyShelterLink}
+                      className="flex min-h-[44px] items-center justify-center rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-gray-200 hover:bg-gray-100"
+                    >
+                      近くの避難所を見る
+                    </Link>
+                    <button
+                      type="button"
+                      className={classNames(
+                        'min-h-[44px] rounded-xl px-3 py-2 text-sm font-semibold ring-1',
+                        region.notifyEnabled
+                          ? 'bg-emerald-50 text-emerald-900 ring-emerald-200 hover:bg-emerald-100'
+                          : 'bg-white text-gray-900 ring-gray-200 hover:bg-gray-100'
+                      )}
+                      onClick={() => void toggleRegionNotification(region)}
+                    >
+                      {region.notifyEnabled ? '通知 ON' : '通知 OFF'}
+                    </button>
                     <button
                       type="button"
                       className="min-h-[44px] rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-gray-200 hover:bg-gray-100"
                       onClick={() => previewRegion(region)}
                     >
-                      地図で確認
+                      詳細を見る
                     </button>
                     <button
                       type="button"
@@ -621,7 +791,8 @@ export default function WatchPage() {
                   </div>
                 </div>
               </article>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

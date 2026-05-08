@@ -53,6 +53,12 @@ export function Seo({ title, description, canonicalPath }: Props) {
       <link rel="canonical" href={canonical} />
       <meta name="robots" content="index,follow" />
       <meta name="theme-color" content="#0f172a" />
+      <meta name="application-name" content="HinaNavi" />
+      <meta name="apple-mobile-web-app-capable" content="yes" />
+      <meta name="apple-mobile-web-app-title" content="HinaNavi" />
+      <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+      <link rel="manifest" href="/manifest.webmanifest" />
+      <link rel="icon" href="/icons/hinanavi-icon.svg" type="image/svg+xml" />
 
       <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:title" content={pageTitle} />

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="HinaNavi">
+  <rect width="512" height="512" rx="96" fill="#0f172a"/>
+  <path d="M96 230 256 96l160 134" fill="none" stroke="#ffffff" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M128 224v176h256V224" fill="#2563eb"/>
+  <path d="M214 400V282h84v118" fill="#ffffff"/>
+  <path d="M181 178h150" stroke="#93c5fd" stroke-width="24" stroke-linecap="round"/>
+</svg>

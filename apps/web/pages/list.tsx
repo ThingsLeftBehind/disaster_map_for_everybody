@@ -150,6 +150,17 @@ function firstQueryValue(value: string | string[] | undefined): string | undefin
   return Array.isArray(value) ? value[0] : value;
 }
 
+function sanitizeQueryLabel(value: string | undefined): string | null {
+  if (!value) return null;
+  const text = value
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/(?:https?:\/\/|www\.)\S+/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 40);
+  return text || null;
+}
+
 function formatDistanceKm(km: number | undefined | null): string {
   if (km == null || !Number.isFinite(km)) return '';
   if (km < 1) return `${Math.round(km * 1000)}m`;
@@ -179,6 +190,8 @@ export default function ListPage() {
   // Removed area filter data loading
   const [coords, setCoords] = useState<Coords | null>(null);
   const [coordsFromLink, setCoordsFromLink] = useState(false);
+  const [queryLocationLabel, setQueryLocationLabel] = useState<string | null>(null);
+  const [queryLocationSource, setQueryLocationSource] = useState<'watch' | 'link' | null>(null);
   const [draftMode, setDraftMode] = useState<SearchMode>('LOCATION');
   const [modeLocked, setModeLocked] = useState(false);
   const [reverse, setReverse] = useState<{ prefCode: string | null; muniCode: string | null; address: string | null } | null>(null);
@@ -207,11 +220,13 @@ export default function ListPage() {
     const qLon = firstQueryValue(router.query.lon as any);
     const qLimit = firstQueryValue(router.query.limit as any);
     const qRadius = firstQueryValue(router.query.radiusKm as any);
+    const qLabel = firstQueryValue(router.query.label as any);
+    const qSource = firstQueryValue(router.query.source as any);
     const qHazards = firstQueryValue(router.query.hazards as any);
     const qHideIneligible = firstQueryValue(router.query.hideIneligible as any);
 
     const allowedLimits = [3, 5, 10, 20];
-    const allowedRadius = [5, 10, 20, 30, 50];
+    const allowedRadius = [1, 3, 5, 10, 20, 30, 50];
     const parsedLimit = qLimit ? Number(qLimit) : NaN;
     if (Number.isFinite(parsedLimit) && allowedLimits.includes(parsedLimit)) setLimit(parsedLimit);
 
@@ -240,9 +255,14 @@ export default function ListPage() {
     if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
       initialCoords = { lat, lon };
       fromLink = true;
+      const fromWatch = qSource === 'watch';
+      setQueryLocationSource(fromWatch ? 'watch' : 'link');
+      setQueryLocationLabel(fromWatch ? sanitizeQueryLabel(qLabel) : null);
     } else {
       const last = loadLastLocation();
       if (last) initialCoords = last;
+      setQueryLocationSource(null);
+      setQueryLocationLabel(null);
     }
 
     if (initialCoords) {
@@ -259,7 +279,7 @@ export default function ListPage() {
         q: '',
         hazards: [], // Start with no hazard filters from URL unless parsed properly above? (Keeping simple: empty)
         limit: parsedLimit || 10,
-        radiusKm: parsedRadius || 30,
+        radiusKm: Number.isFinite(parsedRadius) && allowedRadius.includes(parsedRadius) ? parsedRadius : 30,
         lat: initialCoords.lat,
         lon: initialCoords.lon,
         offset: 0,
@@ -345,6 +365,8 @@ export default function ListPage() {
     [selectedArea]
   );
   const shareFromArea = reverseAreaLabel ?? selectedAreaLabel ?? null;
+  const watchLocationMode = coordsFromLink && queryLocationSource === 'watch' && Boolean(queryLocationLabel);
+  const pageTitle = watchLocationMode ? `${queryLocationLabel}周辺の避難場所` : '避難場所検索';
 
   const list: ShelterListItem[] = useMemo(() => searchData?.items ?? searchData?.sites ?? [], [searchData?.items, searchData?.sites]);
 
@@ -461,6 +483,8 @@ export default function ListPage() {
   };
 
   const handleLocate = async () => {
+    setQueryLocationSource(null);
+    setQueryLocationLabel(null);
     setUseCurrentLocation(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -521,7 +545,7 @@ export default function ListPage() {
 
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">避難場所検索</h1>
+          <h1 className="text-2xl font-bold">{pageTitle}</h1>
           <Link href="/designated" className="mt-1 inline-flex min-h-[36px] items-center text-xs font-semibold text-blue-700 hover:underline">
             指定避難所一覧（参考）はこちら
           </Link>
@@ -535,9 +559,24 @@ export default function ListPage() {
       )}
 
       {useCurrentLocation && coords && (
-        <div className="rounded border bg-gray-50 px-3 py-2 text-xs text-gray-700">
-          現在地: {reverseAreaLabel ?? 'エリア未確定'}
-          {coordsFromLink && <div className="mt-1 text-[11px] text-gray-600">共有リンクの位置（概算）を表示中</div>}
+        <div className="flex flex-col gap-2 rounded border bg-gray-50 px-3 py-2 text-xs text-gray-700 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            {watchLocationMode ? `${queryLocationLabel}周辺` : `現在地: ${reverseAreaLabel ?? 'エリア未確定'}`}
+            {watchLocationMode ? (
+              <div className="mt-1 text-[11px] text-gray-600">登録済みの場所を基準に表示しています。</div>
+            ) : (
+              coordsFromLink && <div className="mt-1 text-[11px] text-gray-600">共有リンクの位置（概算）を表示中</div>
+            )}
+          </div>
+          {watchLocationMode && (
+            <button
+              type="button"
+              className="min-h-[36px] rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-gray-900 ring-1 ring-gray-200 hover:bg-gray-100"
+              onClick={() => void handleLocate()}
+            >
+              現在地で探す
+            </button>
+          )}
         </div>
       )}
 
@@ -553,6 +592,8 @@ export default function ListPage() {
               onClick={() => {
                 const center = mapCenterCoords ?? mapCenter;
                 if (!center) return;
+                setQueryLocationSource(null);
+                setQueryLocationLabel(null);
                 setUseCurrentLocation(false);
                 applySearchWithCoords(center);
               }}
@@ -565,6 +606,8 @@ export default function ListPage() {
                 if (useCurrentLocation) {
                   const center = mapCenterCoords ?? mapCenter;
                   if (!center) return;
+                  setQueryLocationSource(null);
+                  setQueryLocationLabel(null);
                   setUseCurrentLocation(false);
                   applySearchWithCoords(center);
                   return;

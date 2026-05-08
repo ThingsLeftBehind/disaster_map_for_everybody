@@ -36,13 +36,19 @@ export type SavedPlaceRegion = {
 
 type WatchRegionRow = {
   id: string;
+  deviceId?: string;
   label: string;
   latitude: number;
   longitude: number;
   radiusKm: number;
+  notifyEnabled?: boolean | null;
   active: boolean;
   createdAt: Date;
   updatedAt: Date;
+};
+
+export type SavedPlaceRegionForNotification = SavedPlaceRegion & {
+  deviceDbId: string;
 };
 
 type DeviceRef = { id: string; deviceHash: string };
@@ -240,7 +246,7 @@ function toSavedPlaceRegion(row: WatchRegionRow): SavedPlaceRegion {
     lat: row.latitude,
     lon: row.longitude,
     radiusKm: row.radiusKm,
-    notifyEnabled: decoded.notifyEnabled,
+    notifyEnabled: Boolean(row.notifyEnabled ?? decoded.notifyEnabled),
     active: row.active,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -279,7 +285,16 @@ async function resolveOrCreateDevice(deviceHash: string): Promise<DeviceRef> {
 }
 
 export function normalizeWatchRegionBody(raw: unknown, existing?: WatchRegionRow) {
-  return normalizePayload(raw, existing ? { ...decodeLabel(existing.label), radiusKm: existing.radiusKm } : undefined);
+  return normalizePayload(
+    raw,
+    existing
+      ? {
+          ...decodeLabel(existing.label),
+          notifyEnabled: Boolean(existing.notifyEnabled || decodeLabel(existing.label).notifyEnabled),
+          radiusKm: existing.radiusKm,
+        }
+      : undefined
+  );
 }
 
 export async function listWatchRegions(deviceHash: string): Promise<SavedPlaceRegion[]> {
@@ -298,6 +313,7 @@ export async function listWatchRegions(deviceHash: string): Promise<SavedPlaceRe
       latitude: true,
       longitude: true,
       radiusKm: true,
+      notifyEnabled: true,
       active: true,
       createdAt: true,
       updatedAt: true,
@@ -305,6 +321,33 @@ export async function listWatchRegions(deviceHash: string): Promise<SavedPlaceRe
   });
 
   return rows.map(toSavedPlaceRegion);
+}
+
+export async function listNotifyEnabledWatchRegions(): Promise<SavedPlaceRegionForNotification[]> {
+  const rows = await prisma.watchRegion.findMany({
+    where: {
+      active: true,
+      notifyEnabled: true,
+    },
+    orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
+    select: {
+      id: true,
+      deviceId: true,
+      label: true,
+      latitude: true,
+      longitude: true,
+      radiusKm: true,
+      notifyEnabled: true,
+      active: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  return rows.map((row) => ({
+    ...toSavedPlaceRegion(row),
+    deviceDbId: row.deviceId,
+  }));
 }
 
 export async function createWatchRegion(deviceHash: string, rawBody: unknown): Promise<SavedPlaceRegion> {
@@ -333,6 +376,7 @@ export async function createWatchRegion(deviceHash: string, rawBody: unknown): P
       latitude: body.latitude,
       longitude: body.longitude,
       radiusKm: body.radiusKm,
+      notifyEnabled: body.notifyEnabled,
       active: true,
       createdAt: now,
       updatedAt: now,
@@ -343,6 +387,7 @@ export async function createWatchRegion(deviceHash: string, rawBody: unknown): P
       latitude: true,
       longitude: true,
       radiusKm: true,
+      notifyEnabled: true,
       active: true,
       createdAt: true,
       updatedAt: true,
@@ -367,6 +412,7 @@ export async function updateWatchRegion(deviceHash: string, regionId: string, ra
       latitude: true,
       longitude: true,
       radiusKm: true,
+      notifyEnabled: true,
       active: true,
       createdAt: true,
       updatedAt: true,
@@ -385,6 +431,7 @@ export async function updateWatchRegion(deviceHash: string, regionId: string, ra
       latitude: body.latitude ?? existing.latitude,
       longitude: body.longitude ?? existing.longitude,
       radiusKm: body.radiusKm,
+      notifyEnabled: body.notifyEnabled,
       active: body.hasActive ? body.active : existing.active,
       updatedAt: new Date(),
     },
@@ -394,6 +441,7 @@ export async function updateWatchRegion(deviceHash: string, regionId: string, ra
       latitude: true,
       longitude: true,
       radiusKm: true,
+      notifyEnabled: true,
       active: true,
       createdAt: true,
       updatedAt: true,

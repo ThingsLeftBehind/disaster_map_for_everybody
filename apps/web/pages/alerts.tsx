@@ -36,6 +36,18 @@ type Class20AreaOption = AreaOption & {
   class10Code: string | null;
   class10Name: string | null;
 };
+type WatchRegionAlertOption = {
+  id: string;
+  label: string;
+  placeTypeLabel?: string;
+  jma?: {
+    prefCode: string | null;
+    muniCode: string | null;
+    areaCode: string | null;
+    class20Code: string | null;
+    address: string | null;
+  };
+};
 
 function shouldShowUnstable({ status, warnings }: { status?: FetchStatusPayload | null; warnings?: FetchStatusPayload | null }): boolean {
   if (status?.lastError || warnings?.lastError) return true;
@@ -77,7 +89,7 @@ export default function AlertsPage() {
     }
   }, [router, router.isReady, router.asPath]);
 
-  const { device, selectedArea, selectedJmaAreaCode, currentJmaAreaCode, coarseArea, setSelectedAreaId, setCoarseArea } = useDevice();
+  const { deviceId, device, selectedArea, selectedJmaAreaCode, currentJmaAreaCode, coarseArea, setSelectedAreaId, setCoarseArea } = useDevice();
   const refreshMs = device?.settings?.powerSaving ? 180_000 : 60_000;
   const { label: coarseAreaLabel } = useAreaName({ prefCode: coarseArea?.prefCode ?? null, muniCode: coarseArea?.muniCode ?? null });
 
@@ -87,11 +99,38 @@ export default function AlertsPage() {
   const [manualPrefCode, setManualPrefCode] = useState('');
   const [manualSubAreaCode, setManualSubAreaCode] = useState('');
   const [manualClass20Code, setManualClass20Code] = useState('');
+  const [selectedWatchRegionId, setSelectedWatchRegionId] = useState('');
 
   const [actionBusy, setActionBusy] = useState(false);
   const lastActionRef = useRef(0);
 
   const { data: prefecturesData } = useSWR('/api/ref/municipalities', fetcher, { dedupingInterval: 60_000 });
+  const watchRegionsUrl = deviceId ? `/api/watch-regions/status?deviceId=${encodeURIComponent(deviceId)}` : null;
+  const { data: watchRegionsData } = useSWR(watchRegionsUrl, fetcher, { dedupingInterval: 60_000 });
+  const watchRegionOptions = useMemo<WatchRegionAlertOption[]>(() => {
+    const rows = Array.isArray(watchRegionsData?.regions) ? watchRegionsData.regions : [];
+    return rows
+      .map((row: any) => ({
+        id: typeof row?.id === 'string' ? row.id : '',
+        label: typeof row?.label === 'string' ? row.label : '',
+        placeTypeLabel: typeof row?.placeTypeLabel === 'string' ? row.placeTypeLabel : undefined,
+        jma:
+          row?.jma && typeof row.jma === 'object'
+            ? {
+                prefCode: typeof row.jma.prefCode === 'string' ? row.jma.prefCode : null,
+                muniCode: typeof row.jma.muniCode === 'string' ? row.jma.muniCode : null,
+                areaCode: typeof row.jma.areaCode === 'string' ? row.jma.areaCode : null,
+                class20Code: typeof row.jma.class20Code === 'string' ? row.jma.class20Code : null,
+                address: typeof row.jma.address === 'string' ? row.jma.address : null,
+              }
+            : undefined,
+      }))
+      .filter((row: WatchRegionAlertOption) => row.id && row.label);
+  }, [watchRegionsData?.regions]);
+  const selectedWatchRegion = useMemo(
+    () => watchRegionOptions.find((region) => region.id === selectedWatchRegionId) ?? null,
+    [selectedWatchRegionId, watchRegionOptions]
+  );
   const prefectures: Array<{ prefCode: string; prefName: string }> = prefecturesData?.prefectures ?? [];
   const manualPrefName = useMemo(
     () => prefectures.find((p) => p.prefCode === manualPrefCode)?.prefName ?? null,
@@ -99,12 +138,38 @@ export default function AlertsPage() {
   );
   const manualPrefLabel = manualPrefName ?? (manualPrefCode ? '選択中' : null);
 
+  useEffect(() => {
+    if (!router.isReady) return;
+    const raw = router.query.watchRegionId;
+    const id = Array.isArray(raw) ? raw[0] : raw;
+    if (!id || !watchRegionOptions.some((region) => region.id === id)) return;
+    setSelectedWatchRegionId(id);
+    setUseCurrent(false);
+    setManualPrefCode('');
+    setManualSubAreaCode('');
+    setManualClass20Code('');
+    void setSelectedAreaId(null);
+  }, [router.isReady, router.query.watchRegionId, setSelectedAreaId, watchRegionOptions]);
+
   const manualAreaCode = manualPrefCode ? `${manualPrefCode}0000` : null;
-  const effectiveAreaCode = useCurrent ? currentJmaAreaCode : manualAreaCode ?? selectedJmaAreaCode;
-  const activeMuniCode = useCurrent ? coarseArea?.muniCode : manualPrefCode ? null : selectedArea?.muniCode;
-  const class20 = !useCurrent && manualClass20Code ? manualClass20Code : toJmaClass20(activeMuniCode ?? null);
+  const selectedWatchAreaCode = selectedWatchRegion?.jma?.areaCode ?? null;
+  const selectedWatchClass20Code = selectedWatchRegion?.jma?.class20Code ?? null;
+  const effectiveAreaCode = selectedWatchAreaCode ?? (useCurrent ? currentJmaAreaCode : manualAreaCode ?? selectedJmaAreaCode);
+  const activeMuniCode = selectedWatchRegion ? selectedWatchRegion.jma?.muniCode ?? null : useCurrent ? coarseArea?.muniCode : manualPrefCode ? null : selectedArea?.muniCode;
+  const class20 = selectedWatchClass20Code ?? (!useCurrent && manualClass20Code ? manualClass20Code : toJmaClass20(activeMuniCode ?? null));
   const requestedTokyoGroup = useMemo((): TokyoGroupKey | null => {
     if (effectiveAreaCode !== '130000') return null;
+    if (selectedWatchRegion) {
+      return (
+        getTokyoGroupFromAreaCode(selectedWatchClass20Code ?? '') ??
+        inferTokyoGroup({
+          prefCode: selectedWatchRegion.jma?.prefCode ?? null,
+          muniCode: selectedWatchRegion.jma?.muniCode ?? null,
+          label: selectedWatchRegion.label,
+        }) ??
+        'tokyo-mainland'
+      );
+    }
     if (!useCurrent && manualSubAreaCode) return getTokyoGroupFromAreaCode(manualSubAreaCode) ?? 'tokyo-mainland';
     if (useCurrent) {
       return (
@@ -134,6 +199,8 @@ export default function AlertsPage() {
     manualPrefCode,
     manualSubAreaCode,
     selectedArea,
+    selectedWatchClass20Code,
+    selectedWatchRegion,
     useCurrent,
   ]);
   const warningsUrl = effectiveAreaCode
@@ -141,6 +208,13 @@ export default function AlertsPage() {
     : null;
   const { data: warnings, mutate: mutateWarnings } = useSWR(warningsUrl, fetcher, { refreshInterval: refreshMs, dedupingInterval: 10_000 });
   const areaContext = useMemo(() => {
+    if (selectedWatchRegion) {
+      return {
+        prefCode: selectedWatchRegion.jma?.prefCode ?? null,
+        muniCode: selectedWatchClass20Code ?? selectedWatchRegion.jma?.muniCode ?? null,
+        label: selectedWatchRegion.label,
+      };
+    }
     if (useCurrent) {
       return {
         prefCode: coarseArea?.prefCode ?? null,
@@ -170,6 +244,8 @@ export default function AlertsPage() {
     manualPrefCode,
     manualPrefName,
     selectedArea,
+    selectedWatchClass20Code,
+    selectedWatchRegion,
     useCurrent,
   ]);
 
@@ -328,14 +404,16 @@ export default function AlertsPage() {
     : ((warnings as any)?.selectedAreaName as string | null) ??
       getTokyoGroupLabel(tokyoGroupFilter ?? selectedSubTokyoGroup) ??
       (tokyoContext === 'MAINLAND' ? '東京地方（島しょ除く）' : tokyoContext === 'ISLANDS' ? '東京都島しょ部' : null);
-  const showTokyoSubAreaSelector = effectiveAreaCode === '130000' && tokyoAreaOptions.length > 0;
+  const showTokyoSubAreaSelector = !selectedWatchRegion && effectiveAreaCode === '130000' && tokyoAreaOptions.length > 0;
   const tokyoMainlandDefault = tokyoAreaOptions.some((area) => area.code === '130010') ? '130010' : tokyoAreaOptions[0]?.code ?? '';
   const tokyoSubAreaValue = manualSubAreaCode || ((warnings as any)?.selectedAreaCode as string | null) || tokyoMainlandDefault;
   const manualTokyoSubAreaName = manualPrefCode === '13'
     ? tokyoAreaOptions.find((area) => area.code === (manualSubAreaCode || tokyoMainlandDefault))?.name ?? null
     : null;
 
-  const targetLabel = useCurrent
+  const targetLabel = selectedWatchRegion
+    ? `登録済み: ${selectedWatchRegion.label}`
+    : useCurrent
     ? currentJmaAreaCode
       ? coarseAreaLabel
         ? `現在地: ${coarseAreaLabel}`
@@ -389,6 +467,7 @@ export default function AlertsPage() {
         try {
           const r = await reverseGeocodeGsi(next);
           setCoarseArea({ prefCode: r.prefCode, muniCode: r.muniCode, address: r.address });
+          setSelectedWatchRegionId('');
           setUseCurrent(true);
           endAction();
         } catch {
@@ -404,7 +483,9 @@ export default function AlertsPage() {
     );
   };
 
-  const warningResultTitle = useCurrent
+  const warningResultTitle = selectedWatchRegion
+    ? `${selectedWatchRegion.label}の警報・注意報`
+    : useCurrent
     ? 'マイエリアの警報・注意報'
     : selectedClass20Area
       ? `${selectedClass20Area.name}の警報・注意報`
@@ -514,8 +595,44 @@ export default function AlertsPage() {
           </div>
 
           <div className="rounded-2xl border bg-gray-50 p-4 md:col-span-2">
-            <div className="text-xs text-gray-600">エリア選択</div>
-            <div className="mt-2 space-y-3">
+              <div className="text-xs text-gray-600">エリア選択</div>
+              <div className="mt-2 space-y-3">
+              {watchRegionOptions.length > 0 && (
+                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                  <select
+                    className="min-h-[44px] w-full rounded border px-3 py-2"
+                    aria-label="登録済みの場所から選択"
+                    value={selectedWatchRegionId}
+                    onChange={(e) => {
+                      const nextId = e.target.value;
+                      setSelectedWatchRegionId(nextId);
+                      if (nextId) {
+                        setUseCurrent(false);
+                        void setSelectedAreaId(null);
+                        setManualPrefCode('');
+                        setManualSubAreaCode('');
+                        setManualClass20Code('');
+                      }
+                    }}
+                  >
+                    <option value="">登録済みの場所から選択</option>
+                    {watchRegionOptions.map((region) => (
+                      <option key={region.id} value={region.id}>
+                        {region.label}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedWatchRegionId && (
+                    <button
+                      type="button"
+                      className="min-h-[44px] rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-gray-200 hover:bg-gray-50"
+                      onClick={() => setSelectedWatchRegionId('')}
+                    >
+                      選択解除
+                    </button>
+                  )}
+                </div>
+              )}
               <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center">
                 <select
                   className="min-h-[44px] w-full rounded border px-3 py-2"
@@ -523,6 +640,7 @@ export default function AlertsPage() {
                   value={manualPrefCode}
                   onChange={(e) => {
                     setUseCurrent(false);
+                    setSelectedWatchRegionId('');
                     setSelectedAreaId(null); // Clear myarea selection if pref selected manual
                     setManualPrefCode(e.target.value);
                     setManualSubAreaCode('');
@@ -564,6 +682,7 @@ export default function AlertsPage() {
                       value={tokyoSubAreaValue}
                       onChange={(e) => {
                         setUseCurrent(false);
+                        setSelectedWatchRegionId('');
                         setSelectedAreaId(null);
                         setManualPrefCode('13');
                         setManualSubAreaCode(e.target.value);
@@ -600,7 +719,7 @@ export default function AlertsPage() {
                   className="min-h-[44px] rounded-xl bg-white px-4 py-2 font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-50"
                   onClick={async () => {
                     if (!beginAction()) return;
-                    if (!selectedArea && !manualPrefCode) {
+                    if (!selectedWatchRegion && !selectedArea && !manualPrefCode) {
                       alert('都道府県を選択してください');
                       endAction();
                       return;

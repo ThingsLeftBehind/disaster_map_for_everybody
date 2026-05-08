@@ -8,6 +8,7 @@ import { useAreaName } from '../lib/client/areaName';
 import { toDisplayFetchStatus } from '../lib/ui/fetchStatusLabel';
 import { Footer } from './Footer';
 import { toJmaClass20 } from '../lib/muni-helper';
+import { PwaInstallPrompt } from './PwaInstallPrompt';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -335,6 +336,8 @@ export default function Layout({ children }: { children: ReactNode }) {
             <div className="mx-auto max-w-6xl px-4 py-2 text-sm text-amber-900">{bannerText}</div>
           </div>
         )}
+
+        {(router.pathname === '/main' || router.pathname === '/watch') && <PwaInstallPrompt />}
 
         {(selectedWarningsUrl || currentWarningsUrl) && warningCount > 0 && (
           <div className="border-t bg-red-50">

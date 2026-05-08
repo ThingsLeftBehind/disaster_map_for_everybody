@@ -16,6 +16,8 @@ model Device {
   transferCode     String             @unique
   createdAt        DateTime           @default(now())
   updatedAt        DateTime
+  NotificationDelivery NotificationDelivery[]
+  PushSubscription PushSubscription[]
   SafetyStatus     SafetyStatus?
   SiteStatusReport SiteStatusReport[]
   WatchRegion      WatchRegion[]
@@ -120,14 +122,17 @@ model WatchRegion {
   latitude            Float
   longitude           Float
   radiusKm            Float
+  notifyEnabled       Boolean               @default(false)
   active              Boolean               @default(true)
   createdAt           DateTime              @default(now())
   updatedAt           DateTime
   HazardAlertSnapshot HazardAlertSnapshot[]
+  NotificationDelivery NotificationDelivery[]
   Device              Device                @relation(fields: [deviceId], references: [id], onDelete: Cascade)
   WatchRegionHazard   WatchRegionHazard[]
 
   @@index([deviceId])
+  @@index([notifyEnabled, active])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -139,6 +144,39 @@ model WatchRegionHazard {
   WatchRegion WatchRegion @relation(fields: [regionId], references: [id], onDelete: Cascade)
 
   @@unique([regionId, hazardType])
+}
+
+model PushSubscription {
+  id         String    @id @default(uuid()) @db.Uuid
+  deviceId   String    @db.Uuid
+  endpoint   String    @unique
+  p256dh     String
+  auth       String
+  userAgent  String?
+  disabledAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  Device     Device    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@index([disabledAt])
+}
+
+model NotificationDelivery {
+  id            String       @id @default(uuid()) @db.Uuid
+  deviceId      String       @db.Uuid
+  watchRegionId String?      @db.Uuid
+  fingerprint   String
+  title         String
+  body          String
+  channel       String
+  sentAt        DateTime     @default(now())
+  Device        Device       @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  WatchRegion   WatchRegion? @relation(fields: [watchRegionId], references: [id], onDelete: SetNull)
+
+  @@index([deviceId, sentAt])
+  @@index([watchRegionId, sentAt])
+  @@unique([watchRegionId, fingerprint, channel])
 }
 
 enum AccessibilityLevel {

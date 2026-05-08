@@ -1,0 +1,19 @@
+{
+  "name": "避難ナビ",
+  "short_name": "HinaNavi",
+  "description": "全国の避難場所、警報・注意報、地震情報を確認できる防災支援アプリです。",
+  "start_url": "/main",
+  "scope": "/",
+  "display": "standalone",
+  "lang": "ja",
+  "background_color": "#f9fafb",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/icons/hinanavi-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
