@@ -6,6 +6,13 @@ import { readCachedWarnings } from 'lib/jma/normalize';
 import { readJsonFile } from 'lib/jma/cache';
 import { jmaAreaConstPath, jmaWebJsonWarningPath } from 'lib/jma/paths';
 import {
+  getAreaNameFromMetadata,
+  getClass10ChildrenForArea,
+  getClass20DescendantsForArea,
+  getHokkaidoWarningOfficeCodes,
+  isAreaInTokyoGroup,
+} from 'lib/jma/areaHierarchy';
+import {
   getTokyoGroupLabel,
   normalizeTokyoGroupKey,
   TOKYO_AVAILABLE_AREAS,
@@ -42,21 +49,31 @@ type AreaNode = { name?: string; parent?: string; children?: string[] };
 const WARNING_CODE_BASE: Record<string, string> = {
   '05': '暴風',
   '07': '波浪',
+  '10': '大雪',
   '13': '風雪',
   '14': '雷',
   '15': '強風',
   '16': '波浪',
+  '17': '融雪',
+  '20': '濃霧',
   '21': '乾燥',
+  '22': 'なだれ',
+  '24': '霜',
 };
 
 const WARNING_CODE_SEVERITY: Record<string, '警報' | '注意報'> = {
   '05': '警報',
   '07': '警報',
+  '10': '注意報',
   '13': '注意報',
   '14': '注意報',
   '15': '注意報',
   '16': '注意報',
+  '17': '注意報',
+  '20': '注意報',
   '21': '注意報',
+  '22': '注意報',
+  '24': '注意報',
 };
 
 function firstQuery(value: string | string[] | undefined): string | null {
@@ -79,20 +96,39 @@ async function buildForecastAreaBreakdown(
 ): Promise<{
   breakdown: Record<string, { name: string; items: NormalizedWarningItem[] }>;
   muniMap: Record<string, string>;
+  class20Groups: Record<
+    string,
+    {
+      name: string;
+      parentCode: string | null;
+      parentName: string | null;
+      class10Code: string | null;
+      class10Name: string | null;
+      items: NormalizedWarningItem[];
+    }
+  >;
+  availableClass20Areas: Array<{
+    code: string;
+    name: string;
+    parentCode: string | null;
+    parentName: string | null;
+    class10Code: string | null;
+    class10Name: string | null;
+  }>;
 } | null> {
-  // Only process for prefecture level
-  if (area.length !== 6 || !area.endsWith('0000')) return null;
+  if (area.length !== 6) return null;
 
   const [warningJson, areaConst] = await Promise.all([
     readJsonFile<any>(jmaWebJsonWarningPath(area)),
     getAreaConst(),
   ]);
 
-  if (!warningJson || !areaConst) return null;
+  if (!areaConst) return null;
 
   // Build local index for hierarchy from this const file
   const index = new Map<string, AreaNode>();
   const class10s = new Set(Object.keys(areaConst.class10s ?? {}));
+  const class15s = new Set(Object.keys(areaConst.class15s ?? {}));
   const class20s = new Set(Object.keys(areaConst.class20s ?? {}));
 
   const push = (rec?: Record<string, AreaNode>) => {
@@ -107,57 +143,129 @@ async function buildForecastAreaBreakdown(
 
   const breakdown: Record<string, { name: string; items: NormalizedWarningItem[] }> = {};
   const muniMap: Record<string, string> = {};
-
-  // 1. Identify relevant Forecast Areas (Class10s that belong to this Pref)
-  const walk = (node: any) => {
-    if (!node) return;
-    if (Array.isArray(node)) {
-      node.forEach(walk);
-      return;
+  const class20Groups: Record<
+    string,
+    {
+      name: string;
+      parentCode: string | null;
+      parentName: string | null;
+      class10Code: string | null;
+      class10Name: string | null;
+      items: NormalizedWarningItem[];
     }
-    if (typeof node !== 'object') return;
-    const code = String((node as any).code);
+  > = {};
+
+  const class10Options = await getClass10ChildrenForArea(area);
+  for (const option of class10Options) {
+    breakdown[option.code] = { name: option.name, items: [] };
+  }
+
+  const class20Options = await getClass20DescendantsForArea(area);
+  const availableClass20Areas = class20Options.map((option) => {
+    const parentCode = resolveClass15Code(option.code, index, class15s);
+    const class10Code = resolveClass10Code(option.code, index, class10s);
+    const parentName = parentCode ? index.get(parentCode)?.name ?? parentCode : null;
+    const class10Name = class10Code ? index.get(class10Code)?.name ?? class10Code : null;
+    if (parentCode && !breakdown[parentCode]) {
+      breakdown[parentCode] = { name: parentName ?? parentCode, items: [] };
+    }
+    class20Groups[option.code] = {
+      name: option.name,
+      parentCode,
+      parentName,
+      class10Code,
+      class10Name,
+      items: [],
+    };
+    return {
+      code: option.code,
+      name: option.name,
+      parentCode,
+      parentName,
+      class10Code,
+      class10Name,
+    };
+  });
+
+  const appendCurrentArea = (node: any) => {
+    if (!node || typeof node !== 'object') return;
+    const codeRaw = (node as any).code;
+    const code =
+      typeof codeRaw === 'string'
+        ? codeRaw.trim()
+        : codeRaw !== undefined && codeRaw !== null
+          ? String(codeRaw).trim()
+          : '';
+    if (!code) return;
 
     const forecastCode = resolveClass10Code(code, index, class10s);
-    if (forecastCode && forecastCode.startsWith(area.slice(0, 2))) {
-      // Collect warnings
-      const rawItems: NormalizedWarningItem[] = [];
-      const warnings = (node as any).warnings;
-      if (Array.isArray(warnings)) {
-        for (const entry of warnings) {
-          const status = typeof (entry as any).status === 'string' ? String((entry as any).status).trim() : null;
-          if (shouldSkipWarningStatus(status)) continue;
-          const warningCodeRaw = (entry as any).code;
-          const warningCode = warningCodeRaw !== undefined && warningCodeRaw !== null ? String(warningCodeRaw).padStart(2, '0') : null;
-          const severity = inferWarningSeverity(entry, status, warningCode);
-          const hints = collectWarningHints(entry);
-          const base = inferWarningBase(warningCode, hints, severity);
-          const kind = buildWarningKind(base, severity);
-          const id = hashId(`${forecastCode}|${code}|${kind}|${status ?? ''}`);
+    if (!forecastCode || !forecastCode.startsWith(area.slice(0, 2))) return;
+    const class15Code = resolveClass15Code(code, index, class15s);
 
-          rawItems.push({
-            id,
-            kind,
-            status,
-            source: 'webjson',
-            areaCode: code,
-            areaName: index.get(code)?.name ?? null,
-          } as NormalizedWarningItem);
-        }
-      }
+    const warnings = (node as any).warnings;
+    if (!Array.isArray(warnings)) return;
 
-      // Accumulate raw items; deduplication is done in final pass
-      if (!breakdown[forecastCode]) {
-        const name = index.get(forecastCode)?.name ?? forecastCode;
-        breakdown[forecastCode] = { name, items: [] };
-      }
-      breakdown[forecastCode].items.push(...rawItems);
+    const rawItems: NormalizedWarningItem[] = [];
+    for (const entry of warnings) {
+      if (!entry || typeof entry !== 'object') continue;
+      const status = typeof (entry as any).status === 'string' ? String((entry as any).status).trim() : null;
+      if (shouldSkipWarningStatus(status)) continue;
+      const warningCodeRaw = (entry as any).code;
+      const warningCode =
+        warningCodeRaw !== undefined && warningCodeRaw !== null ? String(warningCodeRaw).padStart(2, '0') : null;
+      if (!warningCode) continue;
+      const severity = inferWarningSeverity(entry, status, warningCode);
+      const hints = collectWarningHints(entry);
+      const base = inferWarningBase(warningCode, hints, severity);
+      const kind = buildWarningKind(base, severity);
+      const id = hashId(`${forecastCode}|${code}|${warningCode}|${kind}|${status ?? ''}`);
+
+      rawItems.push({
+        id,
+        kind,
+        status,
+        source: 'webjson',
+        areaCode: code,
+        areaName: index.get(code)?.name ?? null,
+      } as NormalizedWarningItem);
     }
 
-    for (const v of Object.values(node)) walk(v);
+    if (!breakdown[forecastCode]) {
+      const name = index.get(forecastCode)?.name ?? forecastCode;
+      breakdown[forecastCode] = { name, items: [] };
+    }
+    breakdown[forecastCode].items.push(...rawItems);
+
+    if (class15Code) {
+      if (!breakdown[class15Code]) {
+        const name = index.get(class15Code)?.name ?? class15Code;
+        breakdown[class15Code] = { name, items: [] };
+      }
+      breakdown[class15Code].items.push(...rawItems);
+    }
+
+    if (class20s.has(code)) {
+      if (!class20Groups[code]) {
+        class20Groups[code] = {
+          name: index.get(code)?.name ?? code,
+          parentCode: class15Code,
+          parentName: class15Code ? index.get(class15Code)?.name ?? class15Code : null,
+          class10Code: forecastCode,
+          class10Name: index.get(forecastCode)?.name ?? forecastCode,
+          items: [],
+        };
+      }
+      class20Groups[code].items.push(...rawItems);
+    }
   };
 
-  walk(warningJson);
+  if (warningJson) {
+    const areaTypes = Array.isArray(warningJson?.areaTypes) ? warningJson.areaTypes : [];
+    for (const areaType of areaTypes) {
+      const areas = Array.isArray(areaType?.areas) ? areaType.areas : [];
+      for (const currentArea of areas) appendCurrentArea(currentArea);
+    }
+  }
 
   // 2. Final Deduplication per Area Code
   for (const code of Object.keys(breakdown)) {
@@ -191,6 +299,10 @@ async function buildForecastAreaBreakdown(
     breakdown[code].items = distinct;
   }
 
+  for (const code of Object.keys(class20Groups)) {
+    class20Groups[code].items = dedupeWarningItems(class20Groups[code].items);
+  }
+
   // 2. Build Muni -> Forecast Area Map
   const prefPrefix = area.slice(0, 2);
   for (const c20 of class20s) {
@@ -207,7 +319,7 @@ async function buildForecastAreaBreakdown(
     }
   }
 
-  return { breakdown, muniMap };
+  return { breakdown, muniMap, class20Groups, availableClass20Areas };
 }
 
 let cachedAreaIndex: Map<string, AreaNode> | null = null;
@@ -272,6 +384,16 @@ function resolveClass10Code(code: string, index: Map<string, AreaNode>, class10s
   return null;
 }
 
+function resolveClass15Code(code: string, index: Map<string, AreaNode>, class15s: Set<string>): string | null {
+  let cursor: string | undefined = code;
+  for (let i = 0; i < 10 && cursor; i += 1) {
+    if (class15s.has(cursor)) return cursor;
+    const node = index.get(cursor);
+    cursor = node?.parent ? String(node.parent) : undefined;
+  }
+  return null;
+}
+
 function inferTokyoGroupForRequest(args: {
   area: string;
   requestedGroup: TokyoGroupKey | null;
@@ -312,9 +434,9 @@ function buildSelectedAreaChildren(selectedAreaCode: string | null, index: Map<s
 }
 
 function shouldSkipWarningStatus(status: string | null): boolean {
-  if (!status) return false;
+  if (!status) return true;
   const s = status.trim();
-  if (!s) return false;
+  if (!s) return true;
   if (/解除/.test(s)) return true;
   if (/発表警報・注意報は?なし/.test(s)) return true;
   if (/発表警報・注意報は?ありません/.test(s)) return true;
@@ -428,38 +550,45 @@ async function buildTokyoGroups(area: string): Promise<{
     groupBuckets.set(key, new Map());
   });
 
-  const walkAreas = (node: any) => {
-    if (!node) return;
-    if (Array.isArray(node)) {
-      for (const v of node) walkAreas(v);
-      return;
-    }
-    if (typeof node !== 'object') return;
-    const codeRaw = (node as any).code;
-    const warnings = (node as any).warnings;
-    const code = typeof codeRaw === 'string' ? codeRaw : typeof codeRaw === 'number' ? String(codeRaw) : null;
-    if (code && Array.isArray(warnings) && code.length >= 6) {
-      const group = resolveTokyoGroup(code, index);
-      const targetGroups =
-        group
-          ? [group]
-          : code === area
-            ? (Object.keys(TOKYO_GROUP_LABELS) as TokyoGroupKey[])
-            : [];
-      for (const targetGroup of targetGroups) {
+  const areaTypes = Array.isArray(warningJson?.areaTypes) ? warningJson.areaTypes : [];
+  for (const areaType of areaTypes) {
+    const areas = Array.isArray(areaType?.areas) ? areaType.areas : [];
+    for (const currentArea of areas) {
+      const codeRaw = currentArea?.code;
+      const code =
+        typeof codeRaw === 'string'
+          ? codeRaw.trim()
+          : codeRaw !== undefined && codeRaw !== null
+            ? String(codeRaw).trim()
+            : '';
+      const warnings = currentArea?.warnings;
+      if (!code || !Array.isArray(warnings)) continue;
+
+      const matchingGroups: TokyoGroupKey[] = [];
+      if (code === area) {
+        matchingGroups.push(...(Object.keys(TOKYO_GROUP_LABELS) as TokyoGroupKey[]));
+      } else {
+        for (const group of Object.keys(TOKYO_GROUP_LABELS) as TokyoGroupKey[]) {
+          if (await isAreaInTokyoGroup(code, group)) matchingGroups.push(group);
+        }
+      }
+
+      for (const targetGroup of matchingGroups) {
         const bucket = groupBuckets.get(targetGroup)!;
         for (const entry of warnings) {
           if (!entry || typeof entry !== 'object') continue;
           const status = typeof (entry as any).status === 'string' ? String((entry as any).status).trim() : null;
           if (shouldSkipWarningStatus(status)) continue;
           const warningCodeRaw = (entry as any).code;
-          const warningCode = warningCodeRaw !== undefined && warningCodeRaw !== null ? String(warningCodeRaw).padStart(2, '0') : null;
+          const warningCode =
+            warningCodeRaw !== undefined && warningCodeRaw !== null ? String(warningCodeRaw).padStart(2, '0') : null;
+          if (!warningCode) continue;
           const severity = inferWarningSeverity(entry, status, warningCode);
           const hints = collectWarningHints(entry);
           const base = inferWarningBase(warningCode, hints, severity);
           const kind = buildWarningKind(base, severity);
-          const id = hashId(`${targetGroup}|${code}|${kind}|${status ?? ''}`);
-          bucket.set(`${kind}|${status ?? ''}`, {
+          const id = hashId(`${targetGroup}|${code}|${warningCode}|${kind}|${status ?? ''}`);
+          bucket.set(`${code}|${warningCode}`, {
             id,
             kind,
             status,
@@ -471,10 +600,7 @@ async function buildTokyoGroups(area: string): Promise<{
         }
       }
     }
-    for (const v of Object.values(node)) walkAreas(v);
-  };
-
-  walkAreas(warningJson);
+  }
 
   const groups = Object.fromEntries(
     (Object.keys(TOKYO_GROUP_LABELS) as Array<keyof typeof TOKYO_GROUP_LABELS>).map((key) => {
@@ -484,6 +610,233 @@ async function buildTokyoGroups(area: string): Promise<{
   );
 
   return { groups };
+}
+
+function mergeBreakdown(
+  target: Record<string, { name: string; items: NormalizedWarningItem[] }>,
+  source: Record<string, { name: string; items: NormalizedWarningItem[] }> | null | undefined
+) {
+  if (!source) return;
+  for (const [code, value] of Object.entries(source)) {
+    if (!target[code]) target[code] = { name: value.name, items: [] };
+    target[code].items.push(...(value.items ?? []));
+  }
+}
+
+function mergeMuniMap(target: Record<string, string>, source: Record<string, string> | null | undefined) {
+  if (!source) return;
+  for (const [code, forecastCode] of Object.entries(source)) {
+    target[code] = forecastCode;
+  }
+}
+
+function mergeClass20Groups(
+  target: Record<
+    string,
+    {
+      name: string;
+      parentCode: string | null;
+      parentName: string | null;
+      class10Code: string | null;
+      class10Name: string | null;
+      items: NormalizedWarningItem[];
+    }
+  >,
+  source:
+    | Record<
+        string,
+        {
+          name: string;
+          parentCode: string | null;
+          parentName: string | null;
+          class10Code: string | null;
+          class10Name: string | null;
+          items: NormalizedWarningItem[];
+        }
+      >
+    | null
+    | undefined
+) {
+  if (!source) return;
+  for (const [code, value] of Object.entries(source)) {
+    if (!target[code]) target[code] = { ...value, items: [] };
+    target[code].items.push(...(value.items ?? []));
+  }
+}
+
+function mergeClass20Options(
+  target: Map<
+    string,
+    {
+      code: string;
+      name: string;
+      parentCode: string | null;
+      parentName: string | null;
+      class10Code: string | null;
+      class10Name: string | null;
+    }
+  >,
+  source:
+    | Array<{
+        code: string;
+        name: string;
+        parentCode: string | null;
+        parentName: string | null;
+        class10Code: string | null;
+        class10Name: string | null;
+      }>
+    | null
+    | undefined
+) {
+  if (!source) return;
+  for (const option of source) {
+    if (!target.has(option.code)) target.set(option.code, option);
+  }
+}
+
+function dedupeWarningItems(items: NormalizedWarningItem[]): NormalizedWarningItem[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const key = `${item.areaCode ?? ''}|${item.kind}|${item.status ?? ''}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+async function buildHokkaidoAggregatePayload(args: {
+  area: string;
+  class20: string | null;
+  debug: boolean;
+}) {
+  const officeCodes = await getHokkaidoWarningOfficeCodes();
+  const settled = await Promise.allSettled(
+    officeCodes.map(async (officeCode) => {
+      const [data, subAreaInfo, areaName] = await Promise.all([
+        getJmaWarnings(officeCode),
+        buildForecastAreaBreakdown(officeCode, args.debug),
+        getAreaNameFromMetadata(officeCode),
+      ]);
+      return { officeCode, areaName: areaName ?? data.areaName ?? officeCode, data, subAreaInfo };
+    })
+  );
+
+  const items: NormalizedWarningItem[] = [];
+  const breakdown: Record<string, { name: string; items: NormalizedWarningItem[] }> = {};
+  const muniMap: Record<string, string> = {};
+  const class20Groups: Record<
+    string,
+    {
+      name: string;
+      parentCode: string | null;
+      parentName: string | null;
+      class10Code: string | null;
+      class10Name: string | null;
+      items: NormalizedWarningItem[];
+    }
+  > = {};
+  const class20Options = new Map<
+    string,
+    {
+      code: string;
+      name: string;
+      parentCode: string | null;
+      parentName: string | null;
+      class10Code: string | null;
+      class10Name: string | null;
+    }
+  >();
+  const sources: Array<{
+    area: string;
+    areaName: string | null;
+    fetchStatus: string;
+    updatedAt: string | null;
+    lastError: string | null;
+  }> = [];
+  let succeeded = 0;
+  let failed = 0;
+  let updatedAt: string | null = null;
+
+  for (const result of settled) {
+    if (result.status === 'rejected') {
+      failed += 1;
+      sources.push({
+        area: 'unknown',
+        areaName: null,
+        fetchStatus: 'DOWN',
+        updatedAt: null,
+        lastError: result.reason instanceof Error ? result.reason.message : String(result.reason),
+      });
+      continue;
+    }
+
+    const { officeCode, areaName, data, subAreaInfo } = result.value;
+    const sourceFailed = data.fetchStatus !== 'OK' && !data.updatedAt;
+    if (sourceFailed) failed += 1;
+    else succeeded += 1;
+
+    items.push(...data.items);
+    mergeBreakdown(breakdown, subAreaInfo?.breakdown);
+    mergeMuniMap(muniMap, subAreaInfo?.muniMap);
+    mergeClass20Groups(class20Groups, subAreaInfo?.class20Groups);
+    mergeClass20Options(class20Options, subAreaInfo?.availableClass20Areas);
+    if (data.updatedAt && (!updatedAt || Date.parse(data.updatedAt) > Date.parse(updatedAt))) {
+      updatedAt = data.updatedAt;
+    }
+    sources.push({
+      area: officeCode,
+      areaName,
+      fetchStatus: sourceFailed ? 'DOWN' : data.fetchStatus,
+      updatedAt: data.updatedAt,
+      lastError: data.lastError,
+    });
+  }
+
+  for (const value of Object.values(breakdown)) {
+    value.items = dedupeWarningItems(value.items);
+  }
+  for (const value of Object.values(class20Groups)) {
+    value.items = dedupeWarningItems(value.items);
+  }
+
+  const distinctItems = dedupeWarningItems(args.class20 ? class20Groups[args.class20]?.items ?? [] : items);
+  const fetchStatus =
+    succeeded === 0
+      ? 'DOWN'
+      : failed > 0
+        ? 'PARTIAL'
+        : distinctItems.length === 0
+          ? 'EMPTY'
+          : 'OK';
+
+  return {
+    fetchStatus,
+    updatedAt,
+    lastError:
+      fetchStatus === 'OK' || fetchStatus === 'EMPTY'
+        ? null
+        : sources.map((s) => s.lastError).find(Boolean) ?? null,
+    area: args.area,
+    areaName: '北海道',
+    confidence: 'LOW',
+    confidenceNotes: ['北海道は複数の気象庁発表区域をまとめて取得しています'],
+    items: distinctItems,
+    tokyoGroups: null,
+    selectedAreaGroup: null,
+    selectedAreaName: null,
+    selectedAreaCode: null,
+    selectedAreaChildren: [],
+    availableTokyoAreas: [],
+    breakdown,
+    muniMap,
+    class20Groups,
+    availableClass20Areas: Array.from(class20Options.values()).sort((a, b) => a.code.localeCompare(b.code)),
+    selectedClass20Code: args.class20,
+    selectedClass20Name: args.class20 ? class20Groups[args.class20]?.name ?? null : null,
+    parentAreaCode: args.class20 ? class20Groups[args.class20]?.parentCode ?? null : null,
+    parentAreaName: args.class20 ? class20Groups[args.class20]?.parentName ?? null : null,
+    sources,
+  };
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -509,6 +862,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    if (area === '010000') {
+      const payload = await buildHokkaidoAggregatePayload({
+        area,
+        class20,
+        debug: process.env.NODE_ENV !== 'production' && req.query.debug === '1',
+      });
+      setCached(cacheKey, payload);
+      return res.status(200).json(payload);
+    }
+
     const [data, tokyoGroups, subAreaInfo, areaIndex] = await Promise.all([
       getJmaWarnings(area),
       buildTokyoGroups(area),
@@ -528,19 +891,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let items = data.items;
     if (selectedAreaGroup && area === '130000') {
       const groupedItems = tokyoGroups?.groups?.[selectedAreaGroup]?.items;
-      if (Array.isArray(groupedItems) && groupedItems.length > 0) {
+      const filteredByAreaCode: NormalizedWarningItem[] = [];
+      for (const item of data.items) {
+        if (await isAreaInTokyoGroup(item.areaCode, selectedAreaGroup)) filteredByAreaCode.push(item);
+      }
+      if (filteredByAreaCode.length > 0) {
+        items = dedupeWarningItems(filteredByAreaCode);
+      } else if (Array.isArray(groupedItems)) {
         items = groupedItems;
       } else if (selectedAreaCode && subAreaInfo?.breakdown?.[selectedAreaCode]) {
         items = subAreaInfo.breakdown[selectedAreaCode].items;
-      } else if (Array.isArray(groupedItems)) {
-        items = groupedItems;
       } else {
-        items = [];
+        items = data.items;
       }
     } else if (class20 && subAreaInfo?.muniMap && subAreaInfo?.breakdown) {
-      const forecastCode = subAreaInfo.muniMap[class20] ?? null;
-      if (forecastCode && subAreaInfo.breakdown[forecastCode]) {
-        items = subAreaInfo.breakdown[forecastCode].items;
+      if (subAreaInfo.class20Groups?.[class20]) {
+        items = subAreaInfo.class20Groups[class20].items;
+      } else {
+        const forecastCode = subAreaInfo.muniMap[class20] ?? null;
+        if (forecastCode && subAreaInfo.breakdown[forecastCode]) {
+          items = subAreaInfo.breakdown[forecastCode].items;
+        }
       }
     }
 
@@ -554,7 +925,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       selectedAreaChildren: buildSelectedAreaChildren(selectedAreaCode, areaIndex),
       availableTokyoAreas: area === '130000' ? TOKYO_AVAILABLE_AREAS : [],
       breakdown: subAreaInfo?.breakdown ?? null,
-      muniMap: subAreaInfo?.muniMap ?? null
+      muniMap: subAreaInfo?.muniMap ?? null,
+      class20Groups: subAreaInfo?.class20Groups ?? null,
+      availableClass20Areas: subAreaInfo?.availableClass20Areas ?? [],
+      selectedClass20Code: class20,
+      selectedClass20Name: class20 ? subAreaInfo?.class20Groups?.[class20]?.name ?? null : null,
+      parentAreaCode: class20 ? subAreaInfo?.class20Groups?.[class20]?.parentCode ?? null : null,
+      parentAreaName: class20 ? subAreaInfo?.class20Groups?.[class20]?.parentName ?? null : null,
     };
 
     if (process.env.NODE_ENV !== 'production' && req.query.debug === '1') {
@@ -586,6 +963,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         availableTokyoAreas: area === '130000' ? TOKYO_AVAILABLE_AREAS : [],
         breakdown: null,
         muniMap: null,
+        class20Groups: null,
+        availableClass20Areas: [],
+        selectedClass20Code: class20,
+        selectedClass20Name: null,
+        parentAreaCode: null,
+        parentAreaName: null,
       };
       setCached(cacheKey, payload);
       return res.status(200).json(payload);
@@ -607,6 +990,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         availableTokyoAreas: area === '130000' ? TOKYO_AVAILABLE_AREAS : [],
         breakdown: null,
         muniMap: null,
+        class20Groups: null,
+        availableClass20Areas: [],
+        selectedClass20Code: class20,
+        selectedClass20Name: null,
+        parentAreaCode: null,
+        parentAreaName: null,
       };
       setCached(cacheKey, payload);
       return res.status(200).json(payload);

@@ -472,47 +472,68 @@ export async function areaNameFromConst(area: string): Promise<string | null> {
 const WARNING_CODE_BASE: Record<string, string> = {
   '05': '暴風',
   '07': '波浪',
+  '10': '大雪',
   '13': '風雪',
   '14': '雷',
   '15': '強風',
   '16': '波浪',
+  '17': '融雪',
+  '20': '濃霧',
   '21': '乾燥',
+  '22': 'なだれ',
+  '24': '霜',
 };
 
 const WARNING_CODE_SEVERITY: Record<string, '警報' | '注意報'> = {
   '05': '警報',
   '07': '警報',
+  '10': '注意報',
   '13': '注意報',
   '14': '注意報',
   '15': '注意報',
   '16': '注意報',
+  '17': '注意報',
+  '20': '注意報',
   '21': '注意報',
+  '22': '注意報',
+  '24': '注意報',
 };
 
 function shouldSkipWarningStatus(status: string | null): boolean {
-  if (!status) return false;
+  if (!status) return true;
   const s = status.trim();
-  if (!s) return false;
+  if (!s) return true;
   if (/解除/.test(s)) return true;
   if (/発表警報・注意報は?なし/.test(s)) return true;
   if (/発表警報・注意報は?ありません/.test(s)) return true;
   return false;
 }
 
-function collectWarningEntries(raw: unknown): any[] {
-  const entries: any[] = [];
-  const walk = (node: any) => {
-    if (!node) return;
-    if (Array.isArray(node)) {
-      for (const v of node) walk(v);
-      return;
+function collectCurrentWarningEntries(raw: unknown): Array<{ areaCode: string; entry: any }> {
+  if (!raw || typeof raw !== 'object') return [];
+  const areaTypes = (raw as any).areaTypes;
+  if (!Array.isArray(areaTypes)) return [];
+
+  const entries: Array<{ areaCode: string; entry: any }> = [];
+  for (const areaType of areaTypes) {
+    const areas = areaType?.areas;
+    if (!Array.isArray(areas)) continue;
+    for (const area of areas) {
+      const areaCodeRaw = area?.code;
+      const areaCode =
+        typeof areaCodeRaw === 'string'
+          ? areaCodeRaw.trim()
+          : areaCodeRaw !== undefined && areaCodeRaw !== null
+            ? String(areaCodeRaw).trim()
+            : '';
+      if (!areaCode) continue;
+      const warnings = area?.warnings;
+      if (!Array.isArray(warnings)) continue;
+      for (const entry of warnings) {
+        entries.push({ areaCode, entry });
+      }
     }
-    if (typeof node !== 'object') return;
-    const warnings = (node as any).warnings;
-    if (Array.isArray(warnings)) entries.push(...warnings);
-    for (const v of Object.values(node)) walk(v);
-  };
-  walk(raw);
+  }
   return entries;
 }
 
@@ -607,74 +628,43 @@ function buildWarningKind(base: string | null, severity: '警報' | '注意報')
   return `${base}${severity}`;
 }
 
-function normalizeWarningsFromWebJson(raw: unknown): NormalizedWarningItem[] {
+function normalizeWarningsFromWebJson(
+  raw: unknown,
+  areaNameLookup?: (areaCode: string) => string | null
+): NormalizedWarningItem[] {
   if (!raw || typeof raw !== 'object') return [];
 
-  const entries = collectWarningEntries(raw);
+  const entries = collectCurrentWarningEntries(raw);
   const items: NormalizedWarningItem[] = [];
 
-  for (const entry of entries) {
+  for (const { areaCode, entry } of entries) {
     if (!entry || typeof entry !== 'object') continue;
     const status = typeof (entry as any).status === 'string' ? String((entry as any).status).trim() : null;
     if (shouldSkipWarningStatus(status)) continue;
 
     const codeRaw = (entry as any).code;
     const code = codeRaw !== undefined && codeRaw !== null ? String(codeRaw).padStart(2, '0') : null;
+    if (!code) continue;
     const severity = inferWarningSeverity(entry, status, code);
     const hints = collectWarningHints(entry);
     const base = inferWarningBase(code, hints, severity);
     const kind = buildWarningKind(base, severity);
 
-    const basis = JSON.stringify({ kind, status });
+    const basis = JSON.stringify({ areaCode, code, kind, status });
     const id = crypto.createHash('sha256').update(basis).digest('hex').slice(0, 16);
     items.push({
       id,
       kind,
       status,
       source: 'webjson',
+      areaCode,
+      areaName: areaNameLookup?.(areaCode) ?? null,
     });
-  }
-
-  if (items.length === 0) {
-    const fallback: NormalizedWarningItem[] = [];
-    const walk = (node: any) => {
-      if (!node) return;
-      if (Array.isArray(node)) {
-        for (const v of node) walk(v);
-        return;
-      }
-      if (typeof node !== 'object') return;
-
-      const maybeKind =
-        node.kind?.name ??
-        node.kindName ??
-        node.warningName ??
-        node.name ??
-        node.title ??
-        node.warning;
-      const maybeStatus = node.status ?? node.state ?? node.level ?? null;
-
-      if (typeof maybeKind === 'string' && maybeKind.trim() && /警報|注意報|特別警報/.test(maybeKind)) {
-        const basis = JSON.stringify({ kind: maybeKind, status: maybeStatus ?? null });
-        const id = crypto.createHash('sha256').update(basis).digest('hex').slice(0, 16);
-        fallback.push({
-          id,
-          kind: maybeKind,
-          status: typeof maybeStatus === 'string' ? maybeStatus : null,
-          source: 'webjson',
-        });
-      }
-
-      for (const v of Object.values(node)) walk(v);
-    };
-
-    walk(raw);
-    items.push(...fallback);
   }
 
   const seen = new Set<string>();
   return items.filter((i) => {
-    const key = `${i.kind}|${i.status ?? ''}`;
+    const key = `${i.areaCode ?? ''}|${i.kind}|${i.status ?? ''}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -698,10 +688,18 @@ export async function updateNormalizedWarningsArea(area: string): Promise<Normal
   const warningJson = await readJsonFile<unknown>(jmaWebJsonWarningPath(area));
   let items: NormalizedWarningItem[] = [];
   if (warningJson) {
-    items = normalizeWarningsFromWebJson(warningJson);
+    const areaConst = await readAreaConst();
+    const lookupAreaName = (areaCode: string) =>
+      areaConst?.offices?.[areaCode]?.name ??
+      areaConst?.class10s?.[areaCode]?.name ??
+      areaConst?.class15s?.[areaCode]?.name ??
+      areaConst?.class20s?.[areaCode]?.name ??
+      areaConst?.centers?.[areaCode]?.name ??
+      null;
+    items = normalizeWarningsFromWebJson(warningJson, lookupAreaName);
   }
 
-  if (items.length === 0) {
+  if (!warningJson && items.length === 0) {
     const regularXml = await readTextFile(jmaFeedXmlPath('regular'));
     const extraXml = await readTextFile(jmaFeedXmlPath('extra'));
     const titles = [
