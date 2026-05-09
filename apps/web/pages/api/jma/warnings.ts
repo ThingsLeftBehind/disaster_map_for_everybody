@@ -756,6 +756,54 @@ function dedupeWarningItems(items: NormalizedWarningItem[]): NormalizedWarningIt
   });
 }
 
+function buildWarningCounts(items: NormalizedWarningItem[]) {
+  let special = 0;
+  let warning = 0;
+  let advisory = 0;
+  for (const item of items) {
+    if (/特別警報/.test(item.kind)) special += 1;
+    else if (/警報/.test(item.kind) && !/注意報/.test(item.kind)) warning += 1;
+    else if (/注意報/.test(item.kind)) advisory += 1;
+  }
+  return {
+    special,
+    warning,
+    advisory,
+    activeTotal: special + warning + advisory,
+    releasedTotal: 0,
+  };
+}
+
+function buildGroupedByClass20(
+  class20Groups: Record<
+    string,
+    {
+      name: string;
+      parentCode?: string | null;
+      parentName?: string | null;
+      class10Code?: string | null;
+      class10Name?: string | null;
+      items: NormalizedWarningItem[];
+    }
+  > | null | undefined,
+  exactCode?: string | null
+) {
+  if (!class20Groups) return [];
+  return Object.entries(class20Groups)
+    .filter(([code]) => !exactCode || code === exactCode)
+    .map(([code, group]) => ({
+      areaCode: code,
+      areaName: group.name,
+      parentAreaCode: group.parentCode ?? null,
+      parentAreaName: group.parentName ?? null,
+      class10Code: group.class10Code ?? null,
+      class10Name: group.class10Name ?? null,
+      warnings: dedupeWarningItems(group.items),
+    }))
+    .filter((group) => group.warnings.length > 0)
+    .sort((a, b) => a.areaName.localeCompare(b.areaName, 'ja') || a.areaCode.localeCompare(b.areaCode));
+}
+
 async function buildHokkaidoAggregatePayload(args: {
   area: string;
   class20: string | null;
@@ -866,6 +914,7 @@ async function buildHokkaidoAggregatePayload(args: {
   }
 
   const distinctItems = dedupeWarningItems(args.class20 ? class20Groups[args.class20]?.items ?? [] : items);
+  const selectedClass20Group = args.class20 ? class20Groups[args.class20] ?? null : null;
   const fetchStatus =
     succeeded === 0
       ? 'DOWN'
@@ -892,17 +941,23 @@ async function buildHokkaidoAggregatePayload(args: {
     selectedAreaName: null,
     selectedAreaCode: null,
     selectedAreaChildren: [],
+    counts: buildWarningCounts(distinctItems),
     availableTokyoAreas: [],
     breakdown,
     muniMap,
     class20Groups,
+    groupedByClass20: buildGroupedByClass20(class20Groups, args.class20),
     availableClass10Areas: Array.from(class10Options.values()).sort((a, b) => a.code.localeCompare(b.code)),
     availableClass15Areas: Array.from(class15Options.values()).sort((a, b) => a.code.localeCompare(b.code)),
     availableClass20Areas: Array.from(class20Options.values()).sort((a, b) => a.code.localeCompare(b.code)),
     selectedClass20Code: args.class20,
-    selectedClass20Name: args.class20 ? class20Groups[args.class20]?.name ?? null : null,
-    parentAreaCode: args.class20 ? class20Groups[args.class20]?.parentCode ?? null : null,
-    parentAreaName: args.class20 ? class20Groups[args.class20]?.parentName ?? null : null,
+    selectedClass20Name: selectedClass20Group?.name ?? null,
+    selectedClass15Code: selectedClass20Group?.parentCode ?? null,
+    selectedClass15Name: selectedClass20Group?.parentName ?? null,
+    selectedClass10Code: selectedClass20Group?.class10Code ?? null,
+    selectedClass10Name: selectedClass20Group?.class10Name ?? null,
+    parentAreaCode: selectedClass20Group?.parentCode ?? null,
+    parentAreaName: selectedClass20Group?.parentName ?? null,
     sources,
   };
 }
@@ -983,6 +1038,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
+    const selectedClass20Group = class20 ? subAreaInfo?.class20Groups?.[class20] ?? null : null;
     const payload = {
       ...data,
       items,
@@ -991,17 +1047,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       selectedAreaName,
       selectedAreaCode,
       selectedAreaChildren: buildSelectedAreaChildren(selectedAreaCode, areaIndex),
+      counts: buildWarningCounts(items),
       availableTokyoAreas: area === '130000' ? TOKYO_AVAILABLE_AREAS : [],
       breakdown: subAreaInfo?.breakdown ?? null,
       muniMap: subAreaInfo?.muniMap ?? null,
       class20Groups: subAreaInfo?.class20Groups ?? null,
+      groupedByClass20: buildGroupedByClass20(subAreaInfo?.class20Groups, class20),
       availableClass10Areas: subAreaInfo?.availableClass10Areas ?? [],
       availableClass15Areas: subAreaInfo?.availableClass15Areas ?? [],
       availableClass20Areas: subAreaInfo?.availableClass20Areas ?? [],
       selectedClass20Code: class20,
-      selectedClass20Name: class20 ? subAreaInfo?.class20Groups?.[class20]?.name ?? null : null,
-      parentAreaCode: class20 ? subAreaInfo?.class20Groups?.[class20]?.parentCode ?? null : null,
-      parentAreaName: class20 ? subAreaInfo?.class20Groups?.[class20]?.parentName ?? null : null,
+      selectedClass20Name: selectedClass20Group?.name ?? null,
+      selectedClass15Code: selectedClass20Group?.parentCode ?? null,
+      selectedClass15Name: selectedClass20Group?.parentName ?? null,
+      selectedClass10Code: selectedClass20Group?.class10Code ?? null,
+      selectedClass10Name: selectedClass20Group?.class10Name ?? null,
+      parentAreaCode: selectedClass20Group?.parentCode ?? null,
+      parentAreaName: selectedClass20Group?.parentName ?? null,
     };
 
     if (process.env.NODE_ENV !== 'production' && req.query.debug === '1') {
@@ -1030,15 +1092,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         selectedAreaName: null,
         selectedAreaCode: null,
         selectedAreaChildren: [],
+        counts: buildWarningCounts(snap?.items ?? []),
         availableTokyoAreas: area === '130000' ? TOKYO_AVAILABLE_AREAS : [],
         breakdown: null,
         muniMap: null,
         class20Groups: null,
+        groupedByClass20: [],
         availableClass10Areas: [],
         availableClass15Areas: [],
         availableClass20Areas: [],
         selectedClass20Code: class20,
         selectedClass20Name: null,
+        selectedClass15Code: null,
+        selectedClass15Name: null,
+        selectedClass10Code: null,
+        selectedClass10Name: null,
         parentAreaCode: null,
         parentAreaName: null,
       };
@@ -1059,15 +1127,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         selectedAreaName: null,
         selectedAreaCode: null,
         selectedAreaChildren: [],
+        counts: buildWarningCounts([]),
         availableTokyoAreas: area === '130000' ? TOKYO_AVAILABLE_AREAS : [],
         breakdown: null,
         muniMap: null,
         class20Groups: null,
+        groupedByClass20: [],
         availableClass10Areas: [],
         availableClass15Areas: [],
         availableClass20Areas: [],
         selectedClass20Code: class20,
         selectedClass20Name: null,
+        selectedClass15Code: null,
+        selectedClass15Name: null,
+        selectedClass10Code: null,
+        selectedClass10Name: null,
         parentAreaCode: null,
         parentAreaName: null,
       };

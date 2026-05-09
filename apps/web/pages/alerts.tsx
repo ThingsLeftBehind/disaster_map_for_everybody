@@ -508,6 +508,26 @@ export default function AlertsPage() {
   const manualTokyoSubAreaName = manualPrefCode === '13'
     ? tokyoAreaOptions.find((area) => area.code === (manualSubAreaCode || tokyoMainlandDefault))?.name ?? null
     : null;
+  const forecastAreaOptions = showTokyoSubAreaSelector ? tokyoAreaOptions : subAreaOptions;
+  const forecastAreaValue = showTokyoSubAreaSelector ? tokyoSubAreaValue : manualSubAreaCode;
+  const showForecastAreaSelect =
+    !selectedWatchRegion &&
+    forecastAreaOptions.length > 0 &&
+    (showTokyoSubAreaSelector || (!useCurrent && Boolean(manualPrefCode)));
+  const handleForecastAreaChange = (nextCode: string) => {
+    setUseCurrent(false);
+    setSelectedWatchRegionId('');
+    setSelectedAreaId(null);
+    setManualClass20Code('');
+    if (showTokyoSubAreaSelector) {
+      setManualPrefCode('13');
+      setManualSubAreaCode(nextCode);
+      setManualTokyoGroupOverride(tokyoAreaOptions.find((area) => area.code === nextCode)?.group ?? null);
+      return;
+    }
+    setManualSubAreaCode(nextCode);
+    setManualTokyoGroupOverride(null);
+  };
 
   const targetLabel = selectedWatchRegion
     ? `登録済み: ${selectedWatchRegion.label}`
@@ -733,90 +753,76 @@ export default function AlertsPage() {
                   )}
                 </div>
               )}
-              <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center">
-                <select
-                  className="min-h-[44px] w-full rounded border px-3 py-2"
-                  aria-label="都道府県を選択"
-                  value={manualPrefCode}
-                  onChange={(e) => {
-                    setUseCurrent(false);
-                    setSelectedWatchRegionId('');
-                    setSelectedAreaId(null); // Clear myarea selection if pref selected manual
-                    setManualPrefCode(e.target.value);
-                    setManualSubAreaCode('');
-                    setManualClass20Code('');
-                    setManualTokyoGroupOverride(null);
-                  }}
-                >
-                  <option value="">都道府県を選択</option>
-                  {prefectures.map((p) => (
-                    <option key={p.prefCode} value={p.prefCode}>
-                      {p.prefName}
-                    </option>
-                  ))}
-                </select>
-
-                {manualPrefCode && manualPrefCode !== '13' && subAreaOptions.length > 0 && !useCurrent && (
+              <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold text-gray-700">都道府県</span>
                   <select
                     className="min-h-[44px] w-full rounded border px-3 py-2"
-                    value={manualSubAreaCode}
+                    aria-label="都道府県"
+                    value={manualPrefCode}
                     onChange={(e) => {
-                      setManualSubAreaCode(e.target.value);
+                      setUseCurrent(false);
+                      setSelectedWatchRegionId('');
+                      setSelectedAreaId(null);
+                      setManualPrefCode(e.target.value);
+                      setManualSubAreaCode('');
                       setManualClass20Code('');
                       setManualTokyoGroupOverride(null);
                     }}
-                    aria-label="気象庁の発表区域"
                   >
-                    {subAreaOptions.map((area) => (
-                      <option key={area.code} value={area.code}>
-                        {area.name}
+                    <option value="">都道府県を選択</option>
+                    {prefectures.map((p) => (
+                      <option key={p.prefCode} value={p.prefCode}>
+                        {p.prefName}
                       </option>
                     ))}
                   </select>
-                )}
+                </label>
 
-                {showTokyoSubAreaSelector && (
-                  <label className="block">
-                    <span className="sr-only">東京都の発表区域</span>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold text-gray-700">発表区域</span>
+                  {showForecastAreaSelect ? (
                     <select
-                      id="tokyo-subarea-select"
                       className="min-h-[44px] w-full rounded border px-3 py-2"
-                      value={tokyoSubAreaValue}
-                      onChange={(e) => {
-                        setUseCurrent(false);
-                        setSelectedWatchRegionId('');
-                        setSelectedAreaId(null);
-                        setManualPrefCode('13');
-                        setManualSubAreaCode(e.target.value);
-                        setManualClass20Code('');
-                        setManualTokyoGroupOverride(tokyoAreaOptions.find((area) => area.code === e.target.value)?.group ?? null);
-                      }}
-                      aria-label="東京都の発表区域"
+                      value={forecastAreaValue}
+                      onChange={(e) => handleForecastAreaChange(e.target.value)}
+                      aria-label="発表区域"
                     >
-                      {tokyoAreaOptions.map((area) => (
+                      {forecastAreaOptions.map((area) => (
                         <option key={area.code} value={area.code}>
                           {area.name}
                         </option>
                       ))}
                     </select>
-                  </label>
-                )}
+                  ) : (
+                    <div className="flex min-h-[44px] items-center rounded border bg-white px-3 py-2 text-sm text-gray-500">
+                      都道府県を選ぶと表示されます
+                    </div>
+                  )}
+                </label>
 
-                {!useCurrent && manualPrefCode && visibleClass20Options.length > 0 && (
-                  <select
-                    className="min-h-[44px] w-full rounded border px-3 py-2"
-                    value={manualClass20Code}
-                    onChange={(e) => setManualClass20Code(e.target.value)}
-                    aria-label="市区町村・詳細区域"
-                  >
-                    <option value="">市区町村・詳細区域</option>
-                    {visibleClass20Options.map((area) => (
-                      <option key={area.code} value={area.code}>
-                        {area.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold text-gray-700">市区町村・詳細区域</span>
+                  {!useCurrent && manualPrefCode && visibleClass20Options.length > 0 ? (
+                    <select
+                      className="min-h-[44px] w-full rounded border px-3 py-2"
+                      value={manualClass20Code}
+                      onChange={(e) => setManualClass20Code(e.target.value)}
+                      aria-label="市区町村・詳細区域"
+                    >
+                      <option value="">すべて表示</option>
+                      {visibleClass20Options.map((area) => (
+                        <option key={area.code} value={area.code}>
+                          {area.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="flex min-h-[44px] items-center rounded border bg-white px-3 py-2 text-sm text-gray-500">
+                      発表区域を選ぶと表示されます
+                    </div>
+                  )}
+                </label>
 
                 <button
                   className="min-h-[44px] rounded-xl bg-white px-4 py-2 font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-50"
@@ -931,7 +937,7 @@ export default function AlertsPage() {
       <div className="rounded-xl border bg-gray-50 px-3 py-2 text-sm text-gray-700">
         <div className="font-semibold">発表区域について</div>
         <div className="mt-1 text-xs leading-relaxed">
-          気象庁の警報・注意報は『予報区（一次細分区域）』などの区域単位で発表されます。市区町村の境界と一致しない場合があります。
+          警報・注意報は地域ごとに発表されます。必要に応じて発表区域と市区町村・詳細区域を切り替えて確認してください。
         </div>
       </div>
 
@@ -1139,6 +1145,7 @@ function SubAreaBreakdown({
   parentCode?: string | null;
   exactCode?: string | null;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
   const class20Items = class20Groups
     ? Object.entries(class20Groups)
         .filter(([code, data]) => {
@@ -1164,6 +1171,7 @@ function SubAreaBreakdown({
     return (
       <div>
         <h3 className="font-bold text-gray-800">市区町村ごとの警報・注意報</h3>
+        <p className="mt-1 text-xs text-gray-600">警報・注意報が発表されている地域を表示しています。</p>
         <div className="mt-3 grid gap-2 md:grid-cols-2">
           {class20Items.map((area) => (
             <div key={area.code} className="rounded-lg border bg-white p-3 text-sm">
@@ -1199,8 +1207,6 @@ function SubAreaBreakdown({
       }
       return a[0].localeCompare(b[0]);
     });
-
-  const [isOpen, setIsOpen] = useState(false);
 
   const hasContent = items.some(([, d]) => d.items.length > 0);
   if (!hasContent) return null;
