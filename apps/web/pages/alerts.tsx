@@ -89,7 +89,6 @@ function uniqueAreaOptions(options: AreaOption[]): AreaOption[] {
 }
 
 function tokyoAreaSortRank(area: TokyoAreaSelectOption): number {
-  if (area.code === '130010') return 0;
   if (area.group === 'tokyo-mainland') return 1;
   if (area.code === '130020') return 90;
   if (area.code === '130030') return 91;
@@ -220,7 +219,7 @@ export default function AlertsPage() {
         }) ?? 'tokyo-mainland'
       );
     }
-    if (manualPrefCode === '13') return 'tokyo-mainland';
+    if (manualPrefCode === '13') return null;
     if (selectedArea) {
       return (
         inferTokyoGroup({
@@ -245,7 +244,7 @@ export default function AlertsPage() {
     useCurrent,
   ]);
   const warningsUrl = effectiveAreaCode
-    ? `/api/jma/warnings?area=${effectiveAreaCode}${class20 ? `&class20=${class20}` : ''}${requestedTokyoGroup ? `&tokyoGroup=${requestedTokyoGroup}` : ''}`
+    ? `/api/jma/warnings?area=${effectiveAreaCode}${manualSubAreaCode && !useCurrent ? `&subArea=${manualSubAreaCode}` : ''}${class20 ? `&class20=${class20}` : ''}${requestedTokyoGroup ? `&tokyoGroup=${requestedTokyoGroup}` : ''}`
     : null;
   const { data: warnings, mutate: mutateWarnings } = useSWR(warningsUrl, fetcher, { refreshInterval: refreshMs, dedupingInterval: 10_000 });
   const areaContext = useMemo(() => {
@@ -339,10 +338,10 @@ export default function AlertsPage() {
       .filter((row: Class15AreaOption) => row.code && row.name);
   }, [warnings]);
   const subAreaOptions = useMemo<AreaOption[]>(() => {
-    const metadataOptions = uniqueAreaOptions([
-      ...class10Options,
-      ...class15Options.map((area) => ({ code: area.code, name: area.name })),
-    ]);
+    const metadataOptions =
+      class15Options.length > 0
+        ? uniqueAreaOptions(class15Options.map((area) => ({ code: area.code, name: area.name })))
+        : uniqueAreaOptions(class10Options);
     if (metadataOptions.length > 0) return metadataOptions.sort((a, b) => a.code.localeCompare(b.code));
     if (!breakdown) return [];
     return Object.entries(breakdown)
@@ -350,7 +349,7 @@ export default function AlertsPage() {
       .sort((a, b) => a.code.localeCompare(b.code));
   }, [breakdown, class10Options, class15Options]);
   const visibleClass20Options = useMemo<Class20AreaOption[]>(() => {
-    if (!manualSubAreaCode) return class20Options;
+    if (!manualSubAreaCode) return [];
     return class20Options.filter(
       (area) => area.code === manualSubAreaCode || area.parentCode === manualSubAreaCode || area.class10Code === manualSubAreaCode
     );
@@ -387,13 +386,13 @@ export default function AlertsPage() {
     class15Options
       .filter((area) => area.class10Code === '130010')
       .forEach((area) => byCode.set(area.code, area));
-    ['130010', '130020', '130030', '130040'].forEach((code) => {
-      const area = byCode.get(code);
-      if (area) add(area);
-    });
     class15Options
       .filter((area) => area.class10Code === '130010')
       .forEach(add);
+    ['130020', '130030', '130040'].forEach((code) => {
+      const area = byCode.get(code);
+      if (area) add(area);
+    });
     return Array.from(options.values()).sort((a, b) => {
       const rankCompare = tokyoAreaSortRank(a) - tokyoAreaSortRank(b);
       if (rankCompare !== 0) return rankCompare;
@@ -408,16 +407,13 @@ export default function AlertsPage() {
       setManualTokyoGroupOverride(null);
       return;
     }
-    if (manualPrefCode === '13') {
-      setManualSubAreaCode((current) => current || '130010');
-      setManualTokyoGroupOverride((current) => current ?? 'tokyo-mainland');
-      return;
+    const validOptions = manualPrefCode === '13' ? tokyoAreaOptions : subAreaOptions;
+    if (manualSubAreaCode && validOptions.length > 0 && !validOptions.some((area) => area.code === manualSubAreaCode)) {
+      setManualSubAreaCode('');
+      setManualClass20Code('');
+      setManualTokyoGroupOverride(null);
     }
-    setManualTokyoGroupOverride(null);
-    if (subAreaOptions.length > 0 && !subAreaOptions.some((area) => area.code === manualSubAreaCode)) {
-      setManualSubAreaCode(subAreaOptions[0].code);
-    }
-  }, [manualPrefCode, manualSubAreaCode, subAreaOptions, useCurrent]);
+  }, [manualPrefCode, manualSubAreaCode, subAreaOptions, tokyoAreaOptions, useCurrent]);
 
   useEffect(() => {
     if (useCurrent) return;
@@ -431,7 +427,18 @@ export default function AlertsPage() {
   const selectedSubArea = manualSubAreaCode && breakdown?.[manualSubAreaCode] ? breakdown[manualSubAreaCode] : null;
   const selectedSubTokyoGroup = selectedSubArea || manualSubAreaCode ? getTokyoGroupFromAreaCode(manualSubAreaCode) ?? manualTokyoGroupOverride : null;
   const selectedClass20Area = manualClass20Code && class20Groups?.[manualClass20Code] ? class20Groups[manualClass20Code] : null;
-  const selectedSubAreaLabel = selectedSubArea ? areaDisplayName({ code: manualSubAreaCode, name: selectedSubArea.name }) : null;
+  const selectedSubAreaOption = useMemo(
+    () =>
+      manualSubAreaCode
+        ? [...tokyoAreaOptions, ...subAreaOptions].find((area) => area.code === manualSubAreaCode) ?? null
+        : null,
+    [manualSubAreaCode, subAreaOptions, tokyoAreaOptions]
+  );
+  const selectedSubAreaLabel = selectedSubAreaOption
+    ? selectedSubAreaOption.name
+    : selectedSubArea
+      ? areaDisplayName({ code: manualSubAreaCode, name: selectedSubArea.name })
+      : null;
   const scopedWarnings = useMemo(() => {
     if (selectedClass20Area) {
       return {
@@ -440,12 +447,19 @@ export default function AlertsPage() {
         tokyoGroups: null,
       };
     }
-    if (!selectedSubArea) return warnings;
+    if (!manualSubAreaCode) return warnings;
     const childGroups = class20Groups
       ? Object.entries(class20Groups)
           .filter(([, group]) => group.parentCode === manualSubAreaCode || group.class10Code === manualSubAreaCode)
           .flatMap(([, group]) => group.items)
       : [];
+    if (!selectedSubArea) {
+      return {
+        ...(warnings ?? {}),
+        items: childGroups.length > 0 ? childGroups : (warnings as any)?.items ?? [],
+        tokyoGroups: null,
+      };
+    }
     return {
       ...(warnings ?? {}),
       items: childGroups.length > 0 ? childGroups : selectedSubArea.items,
@@ -460,18 +474,18 @@ export default function AlertsPage() {
         label: selectedClass20Area.name,
       };
     }
-    if (selectedSubArea) {
+    if (manualSubAreaCode && selectedSubAreaLabel) {
       return {
         prefCode: manualPrefCode || areaContext.prefCode,
         muniCode: null,
-        label: selectedSubAreaLabel ?? selectedSubArea.name,
+        label: selectedSubAreaLabel,
       };
     }
     if (requestedTokyoGroup) {
       return { prefCode: areaContext.prefCode, muniCode: null, label: getTokyoGroupLabel(requestedTokyoGroup) };
     }
     return areaContext;
-  }, [areaContext, manualClass20Code, manualPrefCode, requestedTokyoGroup, selectedClass20Area, selectedSubArea, selectedSubAreaLabel]);
+  }, [areaContext, manualClass20Code, manualPrefCode, manualSubAreaCode, requestedTokyoGroup, selectedClass20Area, selectedSubAreaLabel]);
 
   const warningShape = useMemo(
     () =>
@@ -497,16 +511,15 @@ export default function AlertsPage() {
     : selectedSubTokyoGroup
       ? getTokyoContextFromGroup(selectedSubTokyoGroup)
       : tokyoContextFromMuni;
-  const tokyoScopeLabel = selectedSubArea
-    ? selectedSubAreaLabel ?? selectedSubArea.name
+  const tokyoScopeLabel = manualSubAreaCode && selectedSubAreaLabel
+    ? selectedSubAreaLabel
     : ((warnings as any)?.selectedAreaName as string | null) ??
       getTokyoGroupLabel(tokyoGroupFilter ?? selectedSubTokyoGroup) ??
       (tokyoContext === 'MAINLAND' ? '東京地方（島しょ除く）' : tokyoContext === 'ISLANDS' ? '東京都島しょ部' : null);
   const showTokyoSubAreaSelector = !selectedWatchRegion && effectiveAreaCode === '130000' && tokyoAreaOptions.length > 0;
-  const tokyoMainlandDefault = tokyoAreaOptions.some((area) => area.code === '130010') ? '130010' : tokyoAreaOptions[0]?.code ?? '';
-  const tokyoSubAreaValue = manualSubAreaCode || ((warnings as any)?.selectedAreaCode as string | null) || tokyoMainlandDefault;
+  const tokyoSubAreaValue = manualSubAreaCode;
   const manualTokyoSubAreaName = manualPrefCode === '13'
-    ? tokyoAreaOptions.find((area) => area.code === (manualSubAreaCode || tokyoMainlandDefault))?.name ?? null
+    ? tokyoAreaOptions.find((area) => area.code === manualSubAreaCode)?.name ?? null
     : null;
   const forecastAreaOptions = showTokyoSubAreaSelector ? tokyoAreaOptions : subAreaOptions;
   const forecastAreaValue = showTokyoSubAreaSelector ? tokyoSubAreaValue : manualSubAreaCode;
@@ -514,6 +527,19 @@ export default function AlertsPage() {
     !selectedWatchRegion &&
     forecastAreaOptions.length > 0 &&
     (showTokyoSubAreaSelector || (!useCurrent && Boolean(manualPrefCode)));
+  const showForecastAreaEmpty =
+    !selectedWatchRegion &&
+    !useCurrent &&
+    Boolean(manualPrefCode) &&
+    Boolean(warnings) &&
+    forecastAreaOptions.length === 0;
+  const showClass20Empty =
+    !selectedWatchRegion &&
+    !useCurrent &&
+    Boolean(manualPrefCode) &&
+    Boolean(manualSubAreaCode) &&
+    Boolean(warnings) &&
+    visibleClass20Options.length === 0;
   const handleForecastAreaChange = (nextCode: string) => {
     setUseCurrent(false);
     setSelectedWatchRegionId('');
@@ -538,7 +564,7 @@ export default function AlertsPage() {
         : '現在地: エリア未確定'
       : '現在地: エリア未確定'
     : manualPrefLabel
-      ? `手動: ${manualPrefLabel}${selectedSubArea ? ` / ${selectedSubAreaLabel ?? selectedSubArea.name}` : manualTokyoSubAreaName ? ` / ${manualTokyoSubAreaName}` : ''}${selectedClass20Area ? ` / ${selectedClass20Area.name}` : ''}`
+      ? `手動: ${manualPrefLabel}${manualSubAreaCode && selectedSubAreaLabel ? ` / ${selectedSubAreaLabel}` : manualTokyoSubAreaName ? ` / ${manualTokyoSubAreaName}` : ''}${selectedClass20Area ? ` / ${selectedClass20Area.name}` : ''}`
       : selectedArea
         ? `選択エリア: ${formatPrefMuniLabel({ prefName: selectedArea.prefName, muniName: selectedArea.muniName ?? null }) ?? selectedArea.prefName}`
         : 'エリア未確定';
@@ -550,7 +576,7 @@ export default function AlertsPage() {
     if (!breakdown) return [];
     return Object.entries(breakdown)
       .map(([code, data]) => {
-        if (selectedSubArea && code !== manualSubAreaCode) return null;
+        if (manualSubAreaCode && code !== manualSubAreaCode) return null;
         if (!matchesTokyoGroup(code, tokyoGroupFilter)) return null;
         const activeItems = data.items.filter((i: any) => {
           const s = i.status || '';
@@ -561,7 +587,7 @@ export default function AlertsPage() {
       })
       .filter((area): area is NonNullable<typeof area> => area !== null && area.items.length > 0)
       .sort((a, b) => b.items.length - a.items.length || a.code.localeCompare(b.code));
-  }, [breakdown, manualSubAreaCode, selectedSubArea, tokyoGroupFilter]);
+  }, [breakdown, manualSubAreaCode, tokyoGroupFilter]);
 
   const activeAreaNames = activeAreas.slice(0, 3).map(a => a.name);
   if (activeAreas.length > 3) activeAreaNames.push('ほか');
@@ -608,11 +634,71 @@ export default function AlertsPage() {
     ? 'マイエリアの警報・注意報'
     : selectedClass20Area
       ? `${selectedClass20Area.name}の警報・注意報`
-      : selectedSubArea
-        ? `${selectedSubAreaLabel ?? selectedSubArea.name}の警報・注意報`
+    : manualSubAreaCode && selectedSubAreaLabel
+      ? `${selectedSubAreaLabel}の警報・注意報`
         : manualPrefName
           ? `${manualPrefName}の警報・注意報`
           : '選択エリアの警報・注意報';
+  const warningResultMessage = useMemo(() => {
+    if (!warningsUrl) {
+      return { text: '都道府県・発表区域を選択してください。', className: 'text-gray-600' };
+    }
+    if (!warnings) {
+      return { text: '確認中です。', className: 'text-gray-600' };
+    }
+    const fetchStatus = String((warnings as any)?.fetchStatus ?? '');
+    const lastError = (warnings as any)?.lastError;
+    if (fetchStatus === 'PARTIAL') {
+      return { text: '一部の情報を取得できませんでした。取得できた範囲を表示しています。', className: 'text-amber-900' };
+    }
+    if (fetchStatus === 'DOWN' || (lastError && warningCounts.total === 0 && fetchStatus !== 'EMPTY')) {
+      return { text: '警報・注意報を取得できませんでした。', className: 'text-red-700' };
+    }
+    if (warningCounts.total === 0) {
+      return { text: '現在、警報・注意報は発表されていません。', className: 'text-gray-700' };
+    }
+    return { text: `${warningCounts.total}種類`, className: 'text-gray-700' };
+  }, [warningCounts.total, warnings, warningsUrl]);
+  const watchRegionSelector = watchRegionOptions.length > 0 ? (
+    <div className="rounded-xl border bg-gray-50 p-3">
+      <div className="mb-2 text-xs font-semibold text-gray-700">登録済みの場所から選択</div>
+      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+        <select
+          className="min-h-[44px] w-full rounded border px-3 py-2 text-sm"
+          aria-label="登録済みの場所から選択"
+          value={selectedWatchRegionId}
+          onChange={(e) => {
+            const nextId = e.target.value;
+            setSelectedWatchRegionId(nextId);
+            if (nextId) {
+              setUseCurrent(false);
+              void setSelectedAreaId(null);
+              setManualPrefCode('');
+              setManualSubAreaCode('');
+              setManualClass20Code('');
+              setManualTokyoGroupOverride(null);
+            }
+          }}
+        >
+          <option value="">選択しない</option>
+          {watchRegionOptions.map((region) => (
+            <option key={region.id} value={region.id}>
+              {region.label}
+            </option>
+          ))}
+        </select>
+        {selectedWatchRegionId && (
+          <button
+            type="button"
+            className="min-h-[44px] rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-gray-200 hover:bg-gray-50"
+            onClick={() => setSelectedWatchRegionId('')}
+          >
+            選択解除
+          </button>
+        )}
+      </div>
+    </div>
+  ) : null;
 
   return (
     <div className="space-y-6">
@@ -716,43 +802,6 @@ export default function AlertsPage() {
           <div className="rounded-2xl border bg-gray-50 p-4 md:col-span-2">
               <div className="text-xs text-gray-600">エリア選択</div>
               <div className="mt-2 space-y-3">
-              {watchRegionOptions.length > 0 && (
-                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                  <select
-                    className="min-h-[44px] w-full rounded border px-3 py-2"
-                    aria-label="登録済みの場所から選択"
-                    value={selectedWatchRegionId}
-                    onChange={(e) => {
-                      const nextId = e.target.value;
-                      setSelectedWatchRegionId(nextId);
-                      if (nextId) {
-                        setUseCurrent(false);
-                        void setSelectedAreaId(null);
-                        setManualPrefCode('');
-                        setManualSubAreaCode('');
-                        setManualClass20Code('');
-                        setManualTokyoGroupOverride(null);
-                      }
-                    }}
-                  >
-                    <option value="">登録済みの場所から選択</option>
-                    {watchRegionOptions.map((region) => (
-                      <option key={region.id} value={region.id}>
-                        {region.label}
-                      </option>
-                    ))}
-                  </select>
-                  {selectedWatchRegionId && (
-                    <button
-                      type="button"
-                      className="min-h-[44px] rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-gray-200 hover:bg-gray-50"
-                      onClick={() => setSelectedWatchRegionId('')}
-                    >
-                      選択解除
-                    </button>
-                  )}
-                </div>
-              )}
               <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
                 <label className="block">
                   <span className="mb-1 block text-xs font-semibold text-gray-700">都道府県</span>
@@ -779,31 +828,35 @@ export default function AlertsPage() {
                   </select>
                 </label>
 
-                <label className="block">
-                  <span className="mb-1 block text-xs font-semibold text-gray-700">発表区域</span>
-                  {showForecastAreaSelect ? (
+                {!selectedWatchRegion && !useCurrent && manualPrefCode && (
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-gray-700">発表区域</span>
+                    {showForecastAreaSelect ? (
                     <select
                       className="min-h-[44px] w-full rounded border px-3 py-2"
                       value={forecastAreaValue}
                       onChange={(e) => handleForecastAreaChange(e.target.value)}
                       aria-label="発表区域"
                     >
+                      <option value="">発表区域を選択</option>
                       {forecastAreaOptions.map((area) => (
                         <option key={area.code} value={area.code}>
                           {area.name}
                         </option>
                       ))}
                     </select>
-                  ) : (
-                    <div className="flex min-h-[44px] items-center rounded border bg-white px-3 py-2 text-sm text-gray-500">
-                      都道府県を選ぶと表示されます
-                    </div>
-                  )}
-                </label>
+                    ) : (
+                      <div className="py-2 text-xs text-gray-600">
+                        {showForecastAreaEmpty ? 'この区域には下位の選択肢がありません。' : '発表区域を読み込み中...'}
+                      </div>
+                    )}
+                  </label>
+                )}
 
-                <label className="block">
-                  <span className="mb-1 block text-xs font-semibold text-gray-700">市区町村・詳細区域</span>
-                  {!useCurrent && manualPrefCode && visibleClass20Options.length > 0 ? (
+                {!selectedWatchRegion && !useCurrent && manualPrefCode && manualSubAreaCode && (
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-gray-700">市区町村・詳細区域</span>
+                    {visibleClass20Options.length > 0 ? (
                     <select
                       className="min-h-[44px] w-full rounded border px-3 py-2"
                       value={manualClass20Code}
@@ -817,12 +870,13 @@ export default function AlertsPage() {
                         </option>
                       ))}
                     </select>
-                  ) : (
-                    <div className="flex min-h-[44px] items-center rounded border bg-white px-3 py-2 text-sm text-gray-500">
-                      発表区域を選ぶと表示されます
-                    </div>
-                  )}
-                </label>
+                    ) : showClass20Empty ? (
+                      <div className="py-2 text-xs text-gray-600">この区域には下位の選択肢がありません。</div>
+                    ) : (
+                      <div className="py-2 text-xs text-gray-600">市区町村・詳細区域を読み込み中...</div>
+                    )}
+                  </label>
+                )}
 
                 <button
                   className="min-h-[44px] rounded-xl bg-white px-4 py-2 font-semibold text-gray-900 ring-1 ring-gray-300 hover:bg-gray-50"
@@ -846,9 +900,6 @@ export default function AlertsPage() {
                   検索
                 </button>
               </div>
-              {showTokyoSubAreaSelector && (
-                <div className="text-xs text-gray-600">島しょ部は発表区域を切り替えて確認できます。</div>
-              )}
             </div>
           </div>
         </div>
@@ -872,13 +923,12 @@ export default function AlertsPage() {
       </section >
 
       <section className="space-y-6">
-        <MyAreaWarningsSection />
+        <MyAreaWarningsSection watchRegionSelector={watchRegionSelector} />
 
         <div className="rounded-2xl bg-white p-5 shadow">
           <h2 className="text-lg font-bold text-gray-900">{warningResultTitle}</h2>
 
-          {warningsUrl && !warnings && <div className="mt-3 text-sm text-gray-600">読み込み中...</div>}
-          {!warningsUrl && <div className="mt-3 text-sm text-gray-600">エリアを確定すると表示されます。</div>}
+          <div className={classNames('mt-3 text-sm', warningResultMessage.className)}>{warningResultMessage.text}</div>
 
           {shouldShowUnstable({ status, warnings }) && (
             <div className="mt-3 rounded-xl border bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -889,29 +939,9 @@ export default function AlertsPage() {
 
           {warnings && (
             <>
-              <div className="mt-2 text-sm text-gray-700">
-                {warningCounts.total > 0
-                  ? `${warningCounts.total}種類`
-                  : '該当なし'}
-              </div>
-
-              {/* Checkbox removed per request */}
-
               <div className="mt-4 space-y-4">
                 <WarningGroupSection title="緊急（警報/特別警報）" groups={warningBuckets.urgent} />
                 <WarningGroupSection title="注意報" groups={warningBuckets.advisory} />
-                {/* Reference info always hidden or removed? User said remove checkbox. 
-                  But also 'Dedupe per area card...'. 
-                  If we want to show reference (possibility etc), user didn't explicitly say "Show reference always".
-                  They said "Remove '参考情報も表示する' checkbox entirely".
-                  Usually implies default behavior or always visible?
-                  "Important things top... (possibility etc default hidden)" text at line 294 suggests hidden.
-                  Task says "Remove checkbox entirely". 
-                  Implementation: I will omit Reference section unless it was intended to be always shown.
-                  Given "行動の目安 must ALWAYS be expanded", maybe reference info too?
-                  Use judgement: The checkbox toggled visibility. If removed, we either never show or always show.
-                  Given it's "Reference" (Series/Potential), usually clutter. I'll hide it.
-              */}
               </div>
 
               {breakdown && (

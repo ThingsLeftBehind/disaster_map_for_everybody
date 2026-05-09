@@ -33,8 +33,8 @@ function msSince(iso: string | null | undefined): number {
   return Date.now() - t;
 }
 
-function buildCacheKey(area: string, class20: string | null): string {
-  return `${area}:${class20 ?? ''}`;
+function buildCacheKey(area: string, class20: string | null, subArea: string | null): string {
+  return `${area}:${subArea ?? ''}:${class20 ?? ''}`;
 }
 
 type AreaConst = {
@@ -786,11 +786,16 @@ function buildGroupedByClass20(
       items: NormalizedWarningItem[];
     }
   > | null | undefined,
-  exactCode?: string | null
+  exactCode?: string | null,
+  parentCode?: string | null
 ) {
   if (!class20Groups) return [];
   return Object.entries(class20Groups)
-    .filter(([code]) => !exactCode || code === exactCode)
+    .filter(([code, group]) => {
+      if (exactCode) return code === exactCode;
+      if (parentCode) return code === parentCode || group.parentCode === parentCode || group.class10Code === parentCode;
+      return true;
+    })
     .map(([code, group]) => ({
       areaCode: code,
       areaName: group.name,
@@ -806,6 +811,7 @@ function buildGroupedByClass20(
 
 async function buildHokkaidoAggregatePayload(args: {
   area: string;
+  subArea: string | null;
   class20: string | null;
   debug: boolean;
 }) {
@@ -913,8 +919,23 @@ async function buildHokkaidoAggregatePayload(args: {
     value.items = dedupeWarningItems(value.items);
   }
 
-  const distinctItems = dedupeWarningItems(args.class20 ? class20Groups[args.class20]?.items ?? [] : items);
+  const parentItems = args.subArea
+    ? Object.values(class20Groups)
+        .filter((group) => group.parentCode === args.subArea || group.class10Code === args.subArea)
+        .flatMap((group) => group.items)
+    : [];
+  const distinctItems = dedupeWarningItems(
+    args.class20
+      ? class20Groups[args.class20]?.items ?? []
+      : args.subArea
+        ? parentItems.length > 0
+          ? parentItems
+          : breakdown[args.subArea]?.items ?? []
+        : items
+  );
   const selectedClass20Group = args.class20 ? class20Groups[args.class20] ?? null : null;
+  const selectedClass15Option = args.subArea ? class15Options.get(args.subArea) ?? null : null;
+  const selectedClass10Option = args.subArea ? class10Options.get(args.subArea) ?? null : null;
   const fetchStatus =
     succeeded === 0
       ? 'DOWN'
@@ -938,24 +959,24 @@ async function buildHokkaidoAggregatePayload(args: {
     items: distinctItems,
     tokyoGroups: null,
     selectedAreaGroup: null,
-    selectedAreaName: null,
-    selectedAreaCode: null,
+    selectedAreaName: selectedClass15Option?.name ?? selectedClass10Option?.name ?? null,
+    selectedAreaCode: args.subArea,
     selectedAreaChildren: [],
     counts: buildWarningCounts(distinctItems),
     availableTokyoAreas: [],
     breakdown,
     muniMap,
     class20Groups,
-    groupedByClass20: buildGroupedByClass20(class20Groups, args.class20),
+    groupedByClass20: buildGroupedByClass20(class20Groups, args.class20, args.subArea),
     availableClass10Areas: Array.from(class10Options.values()).sort((a, b) => a.code.localeCompare(b.code)),
     availableClass15Areas: Array.from(class15Options.values()).sort((a, b) => a.code.localeCompare(b.code)),
     availableClass20Areas: Array.from(class20Options.values()).sort((a, b) => a.code.localeCompare(b.code)),
     selectedClass20Code: args.class20,
     selectedClass20Name: selectedClass20Group?.name ?? null,
-    selectedClass15Code: selectedClass20Group?.parentCode ?? null,
-    selectedClass15Name: selectedClass20Group?.parentName ?? null,
-    selectedClass10Code: selectedClass20Group?.class10Code ?? null,
-    selectedClass10Name: selectedClass20Group?.class10Name ?? null,
+    selectedClass15Code: selectedClass20Group?.parentCode ?? selectedClass15Option?.code ?? null,
+    selectedClass15Name: selectedClass20Group?.parentName ?? selectedClass15Option?.name ?? null,
+    selectedClass10Code: selectedClass20Group?.class10Code ?? selectedClass15Option?.class10Code ?? selectedClass10Option?.code ?? null,
+    selectedClass10Name: selectedClass20Group?.class10Name ?? selectedClass15Option?.class10Name ?? selectedClass10Option?.name ?? null,
     parentAreaCode: selectedClass20Group?.parentCode ?? null,
     parentAreaName: selectedClass20Group?.parentName ?? null,
     sources,
@@ -973,12 +994,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const area = parsed.data.area;
+  const rawSubArea = parsed.data.subArea ?? null;
+  const subArea = rawSubArea && rawSubArea.startsWith(area.slice(0, 2)) ? rawSubArea : null;
   const rawClass20 = parsed.data.class20 ?? null;
   const normalizedClass20 = toJmaClass20(rawClass20);
   const class20 =
     normalizedClass20 && normalizedClass20.startsWith(area.slice(0, 2)) ? normalizedClass20 : null;
   const requestedTokyoGroup = normalizeTokyoGroupKey(firstQuery(req.query.tokyoGroup));
-  const cacheKey = `${buildCacheKey(area, normalizedClass20 ?? null)}:${requestedTokyoGroup ?? ''}`;
+  const cacheKey = `${buildCacheKey(area, normalizedClass20 ?? null, subArea)}:${requestedTokyoGroup ?? ''}`;
   const cached = getCached(cacheKey);
   if (cached) {
     return res.status(200).json(cached);
@@ -988,6 +1011,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (area === '010000') {
       const payload = await buildHokkaidoAggregatePayload({
         area,
+        subArea,
         class20,
         debug: process.env.NODE_ENV !== 'production' && req.query.debug === '1',
       });
@@ -1008,8 +1032,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       class20,
       index: areaIndex,
     });
-    const selectedAreaCode = selectedAreaGroup ? TOKYO_AVAILABLE_AREAS.find((item) => item.group === selectedAreaGroup)?.code ?? null : null;
-    const selectedAreaName = selectedAreaGroup ? getTokyoGroupLabel(selectedAreaGroup) : null;
+    const selectedSubArea =
+      subArea && subAreaInfo
+        ? subAreaInfo.availableClass15Areas.find((item) => item.code === subArea) ??
+          subAreaInfo.availableClass10Areas.find((item) => item.code === subArea) ??
+          null
+        : null;
+    const selectedAreaCode = subArea ?? (selectedAreaGroup ? TOKYO_AVAILABLE_AREAS.find((item) => item.group === selectedAreaGroup)?.code ?? null : null);
+    const selectedAreaName = selectedSubArea?.name ?? (selectedAreaGroup ? getTokyoGroupLabel(selectedAreaGroup) : null);
 
     let items = data.items;
     if (class20 && subAreaInfo?.muniMap && subAreaInfo?.breakdown) {
@@ -1020,6 +1050,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (forecastCode && subAreaInfo.breakdown[forecastCode]) {
           items = subAreaInfo.breakdown[forecastCode].items;
         }
+      }
+    } else if (subArea && subAreaInfo) {
+      const childItems = Object.values(subAreaInfo.class20Groups)
+        .filter((group) => group.parentCode === subArea || group.class10Code === subArea)
+        .flatMap((group) => group.items);
+      if (childItems.length > 0) {
+        items = dedupeWarningItems(childItems);
+      } else if (subAreaInfo.breakdown?.[subArea]) {
+        items = subAreaInfo.breakdown[subArea].items;
       }
     } else if (selectedAreaGroup && area === '130000') {
       const groupedItems = tokyoGroups?.groups?.[selectedAreaGroup]?.items;
@@ -1052,16 +1091,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       breakdown: subAreaInfo?.breakdown ?? null,
       muniMap: subAreaInfo?.muniMap ?? null,
       class20Groups: subAreaInfo?.class20Groups ?? null,
-      groupedByClass20: buildGroupedByClass20(subAreaInfo?.class20Groups, class20),
+      groupedByClass20: buildGroupedByClass20(subAreaInfo?.class20Groups, class20, subArea),
       availableClass10Areas: subAreaInfo?.availableClass10Areas ?? [],
       availableClass15Areas: subAreaInfo?.availableClass15Areas ?? [],
       availableClass20Areas: subAreaInfo?.availableClass20Areas ?? [],
       selectedClass20Code: class20,
       selectedClass20Name: selectedClass20Group?.name ?? null,
-      selectedClass15Code: selectedClass20Group?.parentCode ?? null,
-      selectedClass15Name: selectedClass20Group?.parentName ?? null,
-      selectedClass10Code: selectedClass20Group?.class10Code ?? null,
-      selectedClass10Name: selectedClass20Group?.class10Name ?? null,
+      selectedClass15Code: selectedClass20Group?.parentCode ?? (selectedSubArea && 'class10Code' in selectedSubArea ? selectedSubArea.code : null),
+      selectedClass15Name: selectedClass20Group?.parentName ?? (selectedSubArea && 'class10Code' in selectedSubArea ? selectedSubArea.name : null),
+      selectedClass10Code:
+        selectedClass20Group?.class10Code ??
+        (selectedSubArea && 'class10Code' in selectedSubArea ? selectedSubArea.class10Code : selectedSubArea?.code ?? null),
+      selectedClass10Name:
+        selectedClass20Group?.class10Name ??
+        (selectedSubArea && 'class10Name' in selectedSubArea ? selectedSubArea.class10Name : selectedSubArea?.name ?? null),
       parentAreaCode: selectedClass20Group?.parentCode ?? null,
       parentAreaName: selectedClass20Group?.parentName ?? null,
     };
