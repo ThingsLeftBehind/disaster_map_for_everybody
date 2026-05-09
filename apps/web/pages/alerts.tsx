@@ -639,66 +639,6 @@ export default function AlertsPage() {
         : manualPrefName
           ? `${manualPrefName}の警報・注意報`
           : '選択エリアの警報・注意報';
-  const warningResultMessage = useMemo(() => {
-    if (!warningsUrl) {
-      return { text: '都道府県・発表区域を選択してください。', className: 'text-gray-600' };
-    }
-    if (!warnings) {
-      return { text: '確認中です。', className: 'text-gray-600' };
-    }
-    const fetchStatus = String((warnings as any)?.fetchStatus ?? '');
-    const lastError = (warnings as any)?.lastError;
-    if (fetchStatus === 'PARTIAL') {
-      return { text: '一部の情報を取得できませんでした。取得できた範囲を表示しています。', className: 'text-amber-900' };
-    }
-    if (fetchStatus === 'DOWN' || (lastError && warningCounts.total === 0 && fetchStatus !== 'EMPTY')) {
-      return { text: '警報・注意報を取得できませんでした。', className: 'text-red-700' };
-    }
-    if (warningCounts.total === 0) {
-      return { text: '現在、警報・注意報は発表されていません。', className: 'text-gray-700' };
-    }
-    return { text: `${warningCounts.total}種類`, className: 'text-gray-700' };
-  }, [warningCounts.total, warnings, warningsUrl]);
-  const watchRegionSelector = watchRegionOptions.length > 0 ? (
-    <div className="rounded-xl border bg-gray-50 p-3">
-      <div className="mb-2 text-xs font-semibold text-gray-700">登録済みの場所から選択</div>
-      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-        <select
-          className="min-h-[44px] w-full rounded border px-3 py-2 text-sm"
-          aria-label="登録済みの場所から選択"
-          value={selectedWatchRegionId}
-          onChange={(e) => {
-            const nextId = e.target.value;
-            setSelectedWatchRegionId(nextId);
-            if (nextId) {
-              setUseCurrent(false);
-              void setSelectedAreaId(null);
-              setManualPrefCode('');
-              setManualSubAreaCode('');
-              setManualClass20Code('');
-              setManualTokyoGroupOverride(null);
-            }
-          }}
-        >
-          <option value="">選択しない</option>
-          {watchRegionOptions.map((region) => (
-            <option key={region.id} value={region.id}>
-              {region.label}
-            </option>
-          ))}
-        </select>
-        {selectedWatchRegionId && (
-          <button
-            type="button"
-            className="min-h-[44px] rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-gray-200 hover:bg-gray-50"
-            onClick={() => setSelectedWatchRegionId('')}
-          >
-            選択解除
-          </button>
-        )}
-      </div>
-    </div>
-  ) : null;
 
   return (
     <div className="space-y-6">
@@ -802,6 +742,43 @@ export default function AlertsPage() {
           <div className="rounded-2xl border bg-gray-50 p-4 md:col-span-2">
               <div className="text-xs text-gray-600">エリア選択</div>
               <div className="mt-2 space-y-3">
+              {watchRegionOptions.length > 0 && (
+                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                  <select
+                    className="min-h-[44px] w-full rounded border px-3 py-2"
+                    aria-label="登録済みの場所から選択"
+                    value={selectedWatchRegionId}
+                    onChange={(e) => {
+                      const nextId = e.target.value;
+                      setSelectedWatchRegionId(nextId);
+                      if (nextId) {
+                        setUseCurrent(false);
+                        void setSelectedAreaId(null);
+                        setManualPrefCode('');
+                        setManualSubAreaCode('');
+                        setManualClass20Code('');
+                        setManualTokyoGroupOverride(null);
+                      }
+                    }}
+                  >
+                    <option value="">登録済みの場所から選択</option>
+                    {watchRegionOptions.map((region) => (
+                      <option key={region.id} value={region.id}>
+                        {region.label}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedWatchRegionId && (
+                    <button
+                      type="button"
+                      className="min-h-[44px] rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-gray-200 hover:bg-gray-50"
+                      onClick={() => setSelectedWatchRegionId('')}
+                    >
+                      選択解除
+                    </button>
+                  )}
+                </div>
+              )}
               <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
                 <label className="block">
                   <span className="mb-1 block text-xs font-semibold text-gray-700">都道府県</span>
@@ -900,6 +877,9 @@ export default function AlertsPage() {
                   検索
                 </button>
               </div>
+              {showTokyoSubAreaSelector && (
+                <div className="text-xs text-gray-600">島しょ部は発表区域を切り替えて確認できます。</div>
+              )}
             </div>
           </div>
         </div>
@@ -923,12 +903,13 @@ export default function AlertsPage() {
       </section >
 
       <section className="space-y-6">
-        <MyAreaWarningsSection watchRegionSelector={watchRegionSelector} />
+        <MyAreaWarningsSection />
 
         <div className="rounded-2xl bg-white p-5 shadow">
           <h2 className="text-lg font-bold text-gray-900">{warningResultTitle}</h2>
 
-          <div className={classNames('mt-3 text-sm', warningResultMessage.className)}>{warningResultMessage.text}</div>
+          {warningsUrl && !warnings && <div className="mt-3 text-sm text-gray-600">読み込み中...</div>}
+          {!warningsUrl && <div className="mt-3 text-sm text-gray-600">エリアを確定すると表示されます。</div>}
 
           {shouldShowUnstable({ status, warnings }) && (
             <div className="mt-3 rounded-xl border bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -939,9 +920,29 @@ export default function AlertsPage() {
 
           {warnings && (
             <>
+              <div className="mt-2 text-sm text-gray-700">
+                {warningCounts.total > 0
+                  ? `${warningCounts.total}種類`
+                  : '該当なし'}
+              </div>
+
+              {/* Checkbox removed per request */}
+
               <div className="mt-4 space-y-4">
                 <WarningGroupSection title="緊急（警報/特別警報）" groups={warningBuckets.urgent} />
                 <WarningGroupSection title="注意報" groups={warningBuckets.advisory} />
+                {/* Reference info always hidden or removed? User said remove checkbox. 
+                  But also 'Dedupe per area card...'. 
+                  If we want to show reference (possibility etc), user didn't explicitly say "Show reference always".
+                  They said "Remove '参考情報も表示する' checkbox entirely".
+                  Usually implies default behavior or always visible?
+                  "Important things top... (possibility etc default hidden)" text at line 294 suggests hidden.
+                  Task says "Remove checkbox entirely". 
+                  Implementation: I will omit Reference section unless it was intended to be always shown.
+                  Given "行動の目安 must ALWAYS be expanded", maybe reference info too?
+                  Use judgement: The checkbox toggled visibility. If removed, we either never show or always show.
+                  Given it's "Reference" (Series/Potential), usually clutter. I'll hide it.
+              */}
               </div>
 
               {breakdown && (
