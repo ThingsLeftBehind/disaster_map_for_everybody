@@ -31,6 +31,10 @@ type FetchStatusPayload = {
 
 type AreaOption = { code: string; name: string };
 type TokyoAreaSelectOption = AreaOption & { group: TokyoGroupKey | null };
+type Class15AreaOption = AreaOption & {
+  class10Code: string | null;
+  class10Name: string | null;
+};
 type Class20AreaOption = AreaOption & {
   parentCode: string | null;
   parentName: string | null;
@@ -73,7 +77,33 @@ function matchesTokyoGroup(areaCode: string, group: TokyoGroupKey | null): boole
   return inferTokyoGroup({ muniCode: raw }) === group;
 }
 
+function uniqueAreaOptions(options: AreaOption[]): AreaOption[] {
+  const seen = new Set<string>();
+  const result: AreaOption[] = [];
+  for (const option of options) {
+    if (!option.code || !option.name || seen.has(option.code)) continue;
+    seen.add(option.code);
+    result.push(option);
+  }
+  return result;
+}
 
+function tokyoAreaSortRank(area: TokyoAreaSelectOption): number {
+  if (area.code === '130010') return 0;
+  if (area.group === 'tokyo-mainland') return 1;
+  if (area.code === '130020') return 90;
+  if (area.code === '130030') return 91;
+  if (area.code === '130040') return 92;
+  if (area.group === 'tokyo-izu-north') return 93;
+  if (area.group === 'tokyo-izu-south') return 94;
+  if (area.group === 'tokyo-ogasawara') return 95;
+  return 50;
+}
+
+function areaDisplayName(area: { code: string; name: string } | null | undefined): string | null {
+  if (!area) return null;
+  return getTokyoGroupLabel(getTokyoGroupFromAreaCode(area.code)) ?? area.name;
+}
 
 import { useRouter } from 'next/router';
 
@@ -288,12 +318,37 @@ export default function AlertsPage() {
       }))
       .filter((row: Class20AreaOption) => row.code && row.name);
   }, [warnings]);
+  const class10Options = useMemo<AreaOption[]>(() => {
+    const rows = Array.isArray((warnings as any)?.availableClass10Areas) ? (warnings as any).availableClass10Areas : [];
+    return rows
+      .map((row: any) => ({
+        code: typeof row?.code === 'string' ? row.code : '',
+        name: typeof row?.name === 'string' ? row.name : '',
+      }))
+      .filter((row: AreaOption) => row.code && row.name);
+  }, [warnings]);
+  const class15Options = useMemo<Class15AreaOption[]>(() => {
+    const rows = Array.isArray((warnings as any)?.availableClass15Areas) ? (warnings as any).availableClass15Areas : [];
+    return rows
+      .map((row: any) => ({
+        code: typeof row?.code === 'string' ? row.code : '',
+        name: typeof row?.name === 'string' ? row.name : '',
+        class10Code: typeof row?.class10Code === 'string' ? row.class10Code : null,
+        class10Name: typeof row?.class10Name === 'string' ? row.class10Name : null,
+      }))
+      .filter((row: Class15AreaOption) => row.code && row.name);
+  }, [warnings]);
   const subAreaOptions = useMemo<AreaOption[]>(() => {
+    const metadataOptions = uniqueAreaOptions([
+      ...class10Options,
+      ...class15Options.map((area) => ({ code: area.code, name: area.name })),
+    ]);
+    if (metadataOptions.length > 0) return metadataOptions.sort((a, b) => a.code.localeCompare(b.code));
     if (!breakdown) return [];
     return Object.entries(breakdown)
       .map(([code, data]) => ({ code, name: data.name || code }))
       .sort((a, b) => a.code.localeCompare(b.code));
-  }, [breakdown]);
+  }, [breakdown, class10Options, class15Options]);
   const visibleClass20Options = useMemo<Class20AreaOption[]>(() => {
     if (!manualSubAreaCode) return class20Options;
     return class20Options.filter(
@@ -315,7 +370,8 @@ export default function AlertsPage() {
       const direct = getTokyoGroupFromAreaCode(code);
       if (direct) return direct;
       const child = class20Options.find((area) => area.code === code || area.parentCode === code || area.class10Code === code);
-      return getTokyoGroupFromAreaCode(child?.class10Code ?? null);
+      const class15 = class15Options.find((area) => area.code === code);
+      return getTokyoGroupFromAreaCode(child?.class10Code ?? class15?.class10Code ?? null);
     };
     const add = (area: AreaOption) => {
       const directGroup = getTokyoGroupFromAreaCode(area.code);
@@ -325,14 +381,25 @@ export default function AlertsPage() {
         name: getTokyoGroupLabel(directGroup) ?? area.name,
       });
     };
-    apiTokyoAreaOptions.forEach(add);
-    subAreaOptions.forEach(add);
+    const byCode = new Map<string, AreaOption>();
+    apiTokyoAreaOptions.forEach((area) => byCode.set(area.code, area));
+    class10Options.forEach((area) => byCode.set(area.code, area));
+    class15Options
+      .filter((area) => area.class10Code === '130010')
+      .forEach((area) => byCode.set(area.code, area));
+    ['130010', '130020', '130030', '130040'].forEach((code) => {
+      const area = byCode.get(code);
+      if (area) add(area);
+    });
+    class15Options
+      .filter((area) => area.class10Code === '130010')
+      .forEach(add);
     return Array.from(options.values()).sort((a, b) => {
-      const groupCompare = String(a.group ?? '').localeCompare(String(b.group ?? ''));
-      if (groupCompare !== 0) return groupCompare;
+      const rankCompare = tokyoAreaSortRank(a) - tokyoAreaSortRank(b);
+      if (rankCompare !== 0) return rankCompare;
       return a.code.localeCompare(b.code);
     });
-  }, [apiTokyoAreaOptions, class20Options, subAreaOptions]);
+  }, [apiTokyoAreaOptions, class10Options, class15Options, class20Options]);
 
   useEffect(() => {
     if (useCurrent || !manualPrefCode) {
@@ -364,6 +431,7 @@ export default function AlertsPage() {
   const selectedSubArea = manualSubAreaCode && breakdown?.[manualSubAreaCode] ? breakdown[manualSubAreaCode] : null;
   const selectedSubTokyoGroup = selectedSubArea || manualSubAreaCode ? getTokyoGroupFromAreaCode(manualSubAreaCode) ?? manualTokyoGroupOverride : null;
   const selectedClass20Area = manualClass20Code && class20Groups?.[manualClass20Code] ? class20Groups[manualClass20Code] : null;
+  const selectedSubAreaLabel = selectedSubArea ? areaDisplayName({ code: manualSubAreaCode, name: selectedSubArea.name }) : null;
   const scopedWarnings = useMemo(() => {
     if (selectedClass20Area) {
       return {
@@ -396,14 +464,14 @@ export default function AlertsPage() {
       return {
         prefCode: manualPrefCode || areaContext.prefCode,
         muniCode: null,
-        label: getTokyoGroupLabel(selectedSubTokyoGroup) ?? selectedSubArea.name,
+        label: selectedSubAreaLabel ?? selectedSubArea.name,
       };
     }
     if (requestedTokyoGroup) {
       return { prefCode: areaContext.prefCode, muniCode: null, label: getTokyoGroupLabel(requestedTokyoGroup) };
     }
     return areaContext;
-  }, [areaContext, manualClass20Code, manualPrefCode, requestedTokyoGroup, selectedClass20Area, selectedSubArea, selectedSubTokyoGroup]);
+  }, [areaContext, manualClass20Code, manualPrefCode, requestedTokyoGroup, selectedClass20Area, selectedSubArea, selectedSubAreaLabel]);
 
   const warningShape = useMemo(
     () =>
@@ -430,7 +498,7 @@ export default function AlertsPage() {
       ? getTokyoContextFromGroup(selectedSubTokyoGroup)
       : tokyoContextFromMuni;
   const tokyoScopeLabel = selectedSubArea
-    ? getTokyoGroupLabel(selectedSubTokyoGroup) ?? selectedSubArea.name
+    ? selectedSubAreaLabel ?? selectedSubArea.name
     : ((warnings as any)?.selectedAreaName as string | null) ??
       getTokyoGroupLabel(tokyoGroupFilter ?? selectedSubTokyoGroup) ??
       (tokyoContext === 'MAINLAND' ? '東京地方（島しょ除く）' : tokyoContext === 'ISLANDS' ? '東京都島しょ部' : null);
@@ -450,7 +518,7 @@ export default function AlertsPage() {
         : '現在地: エリア未確定'
       : '現在地: エリア未確定'
     : manualPrefLabel
-      ? `手動: ${manualPrefLabel}${selectedSubArea ? ` / ${getTokyoGroupLabel(selectedSubTokyoGroup) ?? selectedSubArea.name}` : manualTokyoSubAreaName ? ` / ${manualTokyoSubAreaName}` : ''}${selectedClass20Area ? ` / ${selectedClass20Area.name}` : ''}`
+      ? `手動: ${manualPrefLabel}${selectedSubArea ? ` / ${selectedSubAreaLabel ?? selectedSubArea.name}` : manualTokyoSubAreaName ? ` / ${manualTokyoSubAreaName}` : ''}${selectedClass20Area ? ` / ${selectedClass20Area.name}` : ''}`
       : selectedArea
         ? `選択エリア: ${formatPrefMuniLabel({ prefName: selectedArea.prefName, muniName: selectedArea.muniName ?? null }) ?? selectedArea.prefName}`
         : 'エリア未確定';
@@ -521,7 +589,7 @@ export default function AlertsPage() {
     : selectedClass20Area
       ? `${selectedClass20Area.name}の警報・注意報`
       : selectedSubArea
-        ? `${getTokyoGroupLabel(selectedSubTokyoGroup) ?? selectedSubArea.name}の警報・注意報`
+        ? `${selectedSubAreaLabel ?? selectedSubArea.name}の警報・注意報`
         : manualPrefName
           ? `${manualPrefName}の警報・注意報`
           : '選択エリアの警報・注意報';

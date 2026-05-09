@@ -8,7 +8,8 @@ import { jmaAreaConstPath, jmaWebJsonWarningPath } from 'lib/jma/paths';
 import {
   getAreaNameFromMetadata,
   getClass10ChildrenForArea,
-  getClass20DescendantsForArea,
+  getClass15DescendantsForArea,
+  getClass20DescendantsDetailedForArea,
   getHokkaidoWarningOfficeCodes,
   isAreaInTokyoGroup,
 } from 'lib/jma/areaHierarchy';
@@ -115,6 +116,10 @@ async function buildForecastAreaBreakdown(
     class10Code: string | null;
     class10Name: string | null;
   }>;
+  availableClass10Areas: Array<{
+    code: string;
+    name: string;
+  }>;
   availableClass15Areas: Array<{
     code: string;
     name: string;
@@ -166,17 +171,24 @@ async function buildForecastAreaBreakdown(
     breakdown[option.code] = { name: option.name, items: [] };
   }
 
-  const class20Options = await getClass20DescendantsForArea(area);
   const class15Options = new Map<string, { code: string; name: string; class10Code: string | null; class10Name: string | null }>();
-  const availableClass20Areas = class20Options.map((option) => {
-    const parentCode = resolveClass15Code(option.code, index, class15s);
-    const class10Code = resolveClass10Code(option.code, index, class10s);
-    const parentName = parentCode ? index.get(parentCode)?.name ?? parentCode : null;
-    const class10Name = class10Code ? index.get(class10Code)?.name ?? class10Code : null;
+  const class15MetadataOptions = await getClass15DescendantsForArea(area);
+  for (const option of class15MetadataOptions) {
+    class15Options.set(option.code, option);
+    if (!breakdown[option.code]) {
+      breakdown[option.code] = { name: option.name, items: [] };
+    }
+  }
+  const availableClass20Areas = await getClass20DescendantsDetailedForArea(area);
+  for (const option of availableClass20Areas) {
+    const parentCode = option.parentCode;
+    const class10Code = option.class10Code;
+    const parentName = option.parentName;
+    const class10Name = option.class10Name;
     if (parentCode && !breakdown[parentCode]) {
       breakdown[parentCode] = { name: parentName ?? parentCode, items: [] };
     }
-    if (parentCode) {
+    if (parentCode && !class15Options.has(parentCode)) {
       class15Options.set(parentCode, {
         code: parentCode,
         name: parentName ?? parentCode,
@@ -192,15 +204,7 @@ async function buildForecastAreaBreakdown(
       class10Name,
       items: [],
     };
-    return {
-      code: option.code,
-      name: option.name,
-      parentCode,
-      parentName,
-      class10Code,
-      class10Name,
-    };
-  });
+  }
 
   const appendCurrentArea = (node: any) => {
     if (!node || typeof node !== 'object') return;
@@ -338,6 +342,7 @@ async function buildForecastAreaBreakdown(
     breakdown,
     muniMap,
     class20Groups,
+    availableClass10Areas: class10Options,
     availableClass20Areas,
     availableClass15Areas: Array.from(class15Options.values()).sort((a, b) => a.code.localeCompare(b.code)),
   };
@@ -793,6 +798,7 @@ async function buildHokkaidoAggregatePayload(args: {
       class10Name: string | null;
     }
   >();
+  const class10Options = new Map<string, { code: string; name: string }>();
   const class15Options = new Map<
     string,
     {
@@ -835,6 +841,9 @@ async function buildHokkaidoAggregatePayload(args: {
     mergeBreakdown(breakdown, subAreaInfo?.breakdown);
     mergeMuniMap(muniMap, subAreaInfo?.muniMap);
     mergeClass20Groups(class20Groups, subAreaInfo?.class20Groups);
+    for (const option of subAreaInfo?.availableClass10Areas ?? []) {
+      if (!class10Options.has(option.code)) class10Options.set(option.code, option);
+    }
     mergeClass20Options(class20Options, subAreaInfo?.availableClass20Areas);
     mergeClass15Options(class15Options, subAreaInfo?.availableClass15Areas);
     if (data.updatedAt && (!updatedAt || Date.parse(data.updatedAt) > Date.parse(updatedAt))) {
@@ -887,6 +896,7 @@ async function buildHokkaidoAggregatePayload(args: {
     breakdown,
     muniMap,
     class20Groups,
+    availableClass10Areas: Array.from(class10Options.values()).sort((a, b) => a.code.localeCompare(b.code)),
     availableClass15Areas: Array.from(class15Options.values()).sort((a, b) => a.code.localeCompare(b.code)),
     availableClass20Areas: Array.from(class20Options.values()).sort((a, b) => a.code.localeCompare(b.code)),
     selectedClass20Code: args.class20,
@@ -947,7 +957,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const selectedAreaName = selectedAreaGroup ? getTokyoGroupLabel(selectedAreaGroup) : null;
 
     let items = data.items;
-    if (selectedAreaGroup && area === '130000') {
+    if (class20 && subAreaInfo?.muniMap && subAreaInfo?.breakdown) {
+      if (subAreaInfo.class20Groups?.[class20]) {
+        items = subAreaInfo.class20Groups[class20].items;
+      } else {
+        const forecastCode = subAreaInfo.muniMap[class20] ?? null;
+        if (forecastCode && subAreaInfo.breakdown[forecastCode]) {
+          items = subAreaInfo.breakdown[forecastCode].items;
+        }
+      }
+    } else if (selectedAreaGroup && area === '130000') {
       const groupedItems = tokyoGroups?.groups?.[selectedAreaGroup]?.items;
       const filteredByAreaCode: NormalizedWarningItem[] = [];
       for (const item of data.items) {
@@ -961,15 +980,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         items = subAreaInfo.breakdown[selectedAreaCode].items;
       } else {
         items = data.items;
-      }
-    } else if (class20 && subAreaInfo?.muniMap && subAreaInfo?.breakdown) {
-      if (subAreaInfo.class20Groups?.[class20]) {
-        items = subAreaInfo.class20Groups[class20].items;
-      } else {
-        const forecastCode = subAreaInfo.muniMap[class20] ?? null;
-        if (forecastCode && subAreaInfo.breakdown[forecastCode]) {
-          items = subAreaInfo.breakdown[forecastCode].items;
-        }
       }
     }
 
@@ -985,6 +995,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       breakdown: subAreaInfo?.breakdown ?? null,
       muniMap: subAreaInfo?.muniMap ?? null,
       class20Groups: subAreaInfo?.class20Groups ?? null,
+      availableClass10Areas: subAreaInfo?.availableClass10Areas ?? [],
       availableClass15Areas: subAreaInfo?.availableClass15Areas ?? [],
       availableClass20Areas: subAreaInfo?.availableClass20Areas ?? [],
       selectedClass20Code: class20,
@@ -1023,6 +1034,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         breakdown: null,
         muniMap: null,
         class20Groups: null,
+        availableClass10Areas: [],
         availableClass15Areas: [],
         availableClass20Areas: [],
         selectedClass20Code: class20,
@@ -1051,6 +1063,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         breakdown: null,
         muniMap: null,
         class20Groups: null,
+        availableClass10Areas: [],
         availableClass15Areas: [],
         availableClass20Areas: [],
         selectedClass20Code: class20,
