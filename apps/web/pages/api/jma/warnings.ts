@@ -4,8 +4,9 @@ import { getJmaWarnings } from 'lib/jma/service';
 import { JmaWarningsQuerySchema, type NormalizedWarningItem } from 'lib/jma/types';
 import { readCachedWarnings } from 'lib/jma/normalize';
 import { readJsonFile } from 'lib/jma/cache';
-import { jmaAreaConstPath, jmaWebJsonWarningPath } from 'lib/jma/paths';
+import { jmaWebJsonWarningPath } from 'lib/jma/paths';
 import {
+  getAreaConstMetadata,
   getAreaNameFromMetadata,
   getClass10ChildrenForArea,
   getClass15DescendantsForArea,
@@ -88,7 +89,7 @@ function firstQuery(value: string | string[] | undefined): string | null {
 // Let's create a new helper `getAreaHierarchy` that reuses the file read.
 
 async function getAreaConst(): Promise<AreaConst | null> {
-  return readJsonFile<AreaConst>(jmaAreaConstPath());
+  return (await getAreaConstMetadata()) as AreaConst | null;
 }
 
 async function buildForecastAreaBreakdown(

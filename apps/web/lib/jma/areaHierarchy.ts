@@ -1,10 +1,11 @@
 import { readJsonFile } from './cache';
 import { jmaAreaConstPath } from './paths';
+import bundledAreaConst from '../../../../data/ref/jma/const/area.json';
 
 export type TokyoAreaGroup = 'tokyo_mainland' | 'izu_north' | 'izu_south' | 'ogasawara';
 
 type AreaNode = { name?: string; parent?: string; children?: string[] };
-type AreaConst = {
+export type AreaConst = {
   offices?: Record<string, AreaNode>;
   class10s?: Record<string, AreaNode>;
   class15s?: Record<string, AreaNode>;
@@ -38,11 +39,41 @@ export type JmaClass20AreaOption = {
 
 let cachedAreaConst: AreaConst | null = null;
 let cachedIndex: Map<string, AreaNode> | null = null;
+let warnedAreaConstFallback = false;
+
+function getBundledAreaConst(): AreaConst | null {
+  const areaConst = bundledAreaConst as AreaConst | null;
+  if (
+    areaConst &&
+    typeof areaConst === 'object' &&
+    (areaConst.offices || areaConst.centers || areaConst.class10s || areaConst.class15s || areaConst.class20s)
+  ) {
+    return areaConst;
+  }
+  return null;
+}
 
 async function readAreaConst(): Promise<AreaConst | null> {
   if (cachedAreaConst) return cachedAreaConst;
+  const bundled = getBundledAreaConst();
+  if (bundled) {
+    cachedAreaConst = bundled;
+    return cachedAreaConst;
+  }
+
+  if (!warnedAreaConstFallback) {
+    warnedAreaConstFallback = true;
+    console.warn('[jma] bundled area metadata is unavailable; falling back to filesystem area.json');
+  }
   cachedAreaConst = await readJsonFile<AreaConst>(jmaAreaConstPath());
+  if (!cachedAreaConst) {
+    console.warn('[jma] failed to load JMA area metadata');
+  }
   return cachedAreaConst;
+}
+
+export async function getAreaConstMetadata(): Promise<AreaConst | null> {
+  return readAreaConst();
 }
 
 async function readAreaIndex(): Promise<Map<string, AreaNode> | null> {
