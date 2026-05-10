@@ -163,12 +163,15 @@ function isValidCoords(coords: WatchPlaceCoords | null): coords is WatchPlaceCoo
 
 function safeMessage(error: unknown, fallback: string): string {
   const payload = (error as any)?.payload;
-  if (payload?.errorCode === 'limit_exceeded') return '登録できる場所は最大10件までです。';
-  if (payload?.errorCode === 'invalid_payload') return '入力内容を確認してください';
-  if (payload?.errorCode === 'save_failed' || payload?.error === 'save_failed') {
-    return '場所を保存できませんでした。通信状況を確認して、もう一度お試しください';
-  }
-  if (typeof payload?.error === 'string' && payload.error !== 'internal_error') return payload.error;
+  const code = payload?.errorCode ?? payload?.error;
+  if (code === 'limit_exceeded') return '登録できる場所は最大10件までです。';
+  if (code === 'missing_label') return '場所名を入力してください。';
+  if (code === 'missing_location') return '位置情報を選択してください。';
+  if (code === 'device_failed') return '端末情報を準備できませんでした。ページを再読み込みしてください。';
+  if (code === 'not_found') return '対象の場所が見つかりません。';
+  if (code === 'invalid_payload') return '入力内容を確認してください。';
+  if (code === 'save_failed') return '場所を保存できませんでした。';
+  if (code === 'delete_failed') return '削除できませんでした。';
   return fallback;
 }
 
@@ -365,12 +368,18 @@ export default function WatchPage() {
     event.preventDefault();
     setFeedback(null);
     if (!deviceId) {
-      setFeedback({ kind: 'error', text: '場所を保存できませんでした。通信状況を確認して、もう一度お試しください' });
+      setFeedback({ kind: 'error', text: '端末情報を準備できませんでした。ページを再読み込みしてください。' });
+      return;
+    }
+
+    const trimmedLabel = label.trim();
+    if (!trimmedLabel) {
+      setFeedback({ kind: 'error', text: '場所名を入力してください。' });
       return;
     }
 
     if (!isValidCoords(selectedPosition)) {
-      setFeedback({ kind: 'error', text: '地図で保存する位置を選択してください' });
+      setFeedback({ kind: 'error', text: '位置情報を選択してください。' });
       return;
     }
 
@@ -388,8 +397,8 @@ export default function WatchPage() {
         body: JSON.stringify({
           deviceId,
           placeType,
-          label,
-          addressMemo,
+          label: trimmedLabel,
+          addressMemo: addressMemo.trim(),
           latitude: selectedPosition.lat,
           longitude: selectedPosition.lon,
           radiusKm,
@@ -407,7 +416,7 @@ export default function WatchPage() {
       setFeedback({ kind: 'success', text: editing ? '更新しました' : '保存しました' });
       resetForm(placeType);
     } catch (err) {
-      setFeedback({ kind: 'error', text: safeMessage(err, '場所を保存できませんでした。通信状況を確認して、もう一度お試しください') });
+      setFeedback({ kind: 'error', text: safeMessage(err, '場所を保存できませんでした。') });
     } finally {
       setSaving(false);
     }
@@ -415,7 +424,7 @@ export default function WatchPage() {
 
   const deleteRegion = async (region: SavedPlaceRegion) => {
     if (!deviceId) {
-      setFeedback({ kind: 'error', text: '削除できませんでした' });
+      setFeedback({ kind: 'error', text: '端末情報を準備できませんでした。ページを再読み込みしてください。' });
       return;
     }
     if (!window.confirm(`${region.label}を削除しますか？`)) return;
@@ -429,13 +438,17 @@ export default function WatchPage() {
         body: JSON.stringify({ deviceId }),
       });
       const json: ApiResponse | null = await res.json().catch(() => null);
-      if (!res.ok || json?.ok === false) throw new Error(json?.error ?? 'delete_failed');
+      if (!res.ok || json?.ok === false) {
+        const err = new Error(json?.error ?? 'delete_failed');
+        (err as any).payload = json;
+        throw err;
+      }
       if (editingId === region.id) resetForm(placeType);
       await mutate();
       await mutateStatus();
       setFeedback({ kind: 'success', text: '削除しました' });
-    } catch {
-      setFeedback({ kind: 'error', text: '削除できませんでした' });
+    } catch (err) {
+      setFeedback({ kind: 'error', text: safeMessage(err, '削除できませんでした。') });
     } finally {
       setDeletingId(null);
     }

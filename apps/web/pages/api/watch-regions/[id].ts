@@ -10,6 +10,11 @@ export const config = {
 };
 
 const WRITE_RATE_LIMIT = { keyPrefix: 'write:watch-region', limit: 40, windowMs: 5 * 60_000 };
+const DEVICE_ERROR = {
+  ok: false,
+  error: '端末情報を準備できませんでした。ページを再読み込みしてください。',
+  errorCode: 'device_failed',
+};
 
 function first(value: string | string[] | undefined): string | undefined {
   if (!value) return undefined;
@@ -57,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!id) return jsonError(res, 400, { ok: false, error: 'invalid_payload', errorCode: 'invalid_payload' });
 
     const deviceId = parseDeviceId(req);
-    if (!deviceId) return jsonError(res, 400, { ok: false, error: 'invalid_payload', errorCode: 'invalid_payload' });
+    if (!deviceId) return jsonError(res, 400, DEVICE_ERROR);
 
     if (req.method === 'PATCH') {
       const region = await updateWatchRegion(deviceId, id, req.body);

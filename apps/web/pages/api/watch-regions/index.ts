@@ -11,6 +11,11 @@ export const config = {
 
 const READ_RATE_LIMIT = { keyPrefix: 'read:watch-regions', limit: 120, windowMs: 60_000 };
 const WRITE_RATE_LIMIT = { keyPrefix: 'write:watch-regions', limit: 30, windowMs: 5 * 60_000 };
+const DEVICE_ERROR = {
+  ok: false,
+  error: '端末情報を準備できませんでした。ページを再読み込みしてください。',
+  errorCode: 'device_failed',
+};
 
 function first(value: string | string[] | undefined): string | undefined {
   if (!value) return undefined;
@@ -66,7 +71,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const deviceId = parseDeviceId(req);
-      if (!deviceId) return jsonError(res, 400, { ok: false, error: 'invalid_payload', errorCode: 'invalid_payload' });
+      if (!deviceId) return jsonError(res, 400, DEVICE_ERROR);
 
       const region = await createWatchRegion(deviceId, req.body);
       return jsonOk(res, { ok: true, region });

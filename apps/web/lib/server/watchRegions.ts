@@ -150,13 +150,17 @@ function normalizePayload(raw: unknown, existing?: DecodedLabel): DecodedLabel &
   invalidRadiusKm: boolean;
   invalidLatitude: boolean;
   invalidLongitude: boolean;
+  missingLabel: boolean;
 } {
   const body = raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
   const coords = body.coords && typeof body.coords === 'object' && !Array.isArray(body.coords) ? (body.coords as Record<string, unknown>) : {};
   const rawPlaceType = pickPresent(body.placeType, body.type);
   const invalidPlaceType = rawPlaceType !== undefined && !isValidPlaceType(rawPlaceType);
   const placeType = rawPlaceType === undefined ? existing?.placeType ?? 'other' : normalizePlaceType(rawPlaceType);
-  const label = safeText(pickPresent(body.label, body.name), 40) || existing?.label || PLACE_LABELS[placeType];
+  const rawLabel = pickPresent(body.label, body.name);
+  const normalizedLabel = safeText(rawLabel, 40);
+  const missingLabel = rawLabel !== undefined && normalizedLabel.length === 0;
+  const label = normalizedLabel || existing?.label || PLACE_LABELS[placeType];
   const addressMemo = safeText(pickPresent(body.addressMemo, body.address, body.memo, existing?.addressMemo), 120) || null;
   const rawLatitude = pickPresent(body.latitude, body.lat, body.lastKnownLat, coords.latitude, coords.lat);
   const rawLongitude = pickPresent(body.longitude, body.lon, body.lng, body.lastKnownLon, coords.longitude, coords.lon, coords.lng);
@@ -181,6 +185,7 @@ function normalizePayload(raw: unknown, existing?: DecodedLabel): DecodedLabel &
     invalidRadiusKm,
     invalidLatitude: rawLatitude !== undefined && latitude === null,
     invalidLongitude: rawLongitude !== undefined && longitude === null,
+    missingLabel,
   };
 }
 
@@ -351,11 +356,23 @@ export async function listNotifyEnabledWatchRegions(): Promise<SavedPlaceRegionF
 
 export async function createWatchRegion(deviceHash: string, rawBody: unknown): Promise<SavedPlaceRegion> {
   const body = normalizeWatchRegionBody(rawBody);
-  if (body.invalidPlaceType || body.invalidRadiusKm || body.invalidLatitude || body.invalidLongitude || body.latitude === null || body.longitude === null) {
-    throw new WatchRegionApiError(400, 'invalid_payload', 'invalid_payload');
+  if (body.missingLabel) {
+    throw new WatchRegionApiError(400, 'missing_label', '場所名を入力してください。');
+  }
+  if (body.invalidPlaceType || body.invalidRadiusKm || body.invalidLatitude || body.invalidLongitude) {
+    throw new WatchRegionApiError(400, 'invalid_payload', '入力内容を確認してください。');
+  }
+  if (body.latitude === null || body.longitude === null) {
+    throw new WatchRegionApiError(400, 'missing_location', '位置情報を選択してください。');
   }
 
-  const device = await resolveOrCreateDevice(deviceHash.trim());
+  let device: DeviceRef;
+  try {
+    device = await resolveOrCreateDevice(deviceHash.trim());
+  } catch {
+    throw new WatchRegionApiError(500, 'device_failed', '端末情報を準備できませんでした。ページを再読み込みしてください。');
+  }
+
   const activeCount = await prisma.watchRegion.count({
     where: {
       deviceId: device.id,
@@ -417,8 +434,11 @@ export async function updateWatchRegion(deviceHash: string, regionId: string, ra
   if (!existing) return null;
 
   const body = normalizeWatchRegionBody(rawBody, existing);
+  if (body.missingLabel) {
+    throw new WatchRegionApiError(400, 'missing_label', '場所名を入力してください。');
+  }
   if (body.invalidPlaceType || body.invalidRadiusKm || body.invalidLatitude || body.invalidLongitude) {
-    throw new WatchRegionApiError(400, 'invalid_payload', 'invalid_payload');
+    throw new WatchRegionApiError(400, 'invalid_payload', '入力内容を確認してください。');
   }
   const row = await prisma.watchRegion.update({
     where: { id: existing.id },
