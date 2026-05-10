@@ -10,6 +10,18 @@ type PushStatus = {
 
 const PUSH_STEP_TIMEOUT_MS = 15_000;
 
+function logPushApiFailure(endpoint: string, status: number | null, payload: unknown, fallbackCode: string): void {
+  const body = payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : {};
+  const errorCode = typeof body.errorCode === 'string' ? body.errorCode : typeof body.error === 'string' ? body.error : fallbackCode;
+  const message = typeof body.message === 'string' ? body.message : typeof body.error === 'string' ? body.error : fallbackCode;
+  console.error('[push] api_failed', {
+    endpoint: endpoint.split('?')[0],
+    status,
+    errorCode,
+    message,
+  });
+}
+
 function withTimeout<T>(promise: Promise<T>, code: string, timeoutMs = PUSH_STEP_TIMEOUT_MS): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | null = null;
   const timeout = new Promise<never>((_, reject) => {
@@ -27,13 +39,20 @@ async function fetchJsonWithTimeout<T>(url: string, init: RequestInit | undefine
     const res = await fetch(url, { ...init, signal: controller.signal });
     const json = await res.json().catch(() => null);
     if (!json || typeof json !== 'object' || !res.ok || (json as { ok?: boolean }).ok === false) {
+      logPushApiFailure(url, res.status, json, code);
       const error = new Error(code) as Error & { payload?: unknown };
       error.payload = json;
       throw error;
     }
     return json as T;
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') throw new Error(code);
+    if (error instanceof Error && error.name === 'AbortError') {
+      logPushApiFailure(url, null, null, code);
+      throw new Error(code);
+    }
+    if (!(error && typeof error === 'object' && 'payload' in error)) {
+      logPushApiFailure(url, null, null, code);
+    }
     throw error instanceof Error ? error : new Error(code);
   } finally {
     clearTimeout(timer);

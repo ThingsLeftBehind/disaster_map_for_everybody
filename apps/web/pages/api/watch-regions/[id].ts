@@ -14,6 +14,7 @@ const DEVICE_ERROR = {
   ok: false,
   error: '端末情報を準備できませんでした。ページを再読み込みしてください。',
   errorCode: 'device_failed',
+  message: '端末情報を準備できませんでした。ページを再読み込みしてください。',
 };
 
 function first(value: string | string[] | undefined): string | undefined {
@@ -30,48 +31,51 @@ function parseDeviceId(req: NextApiRequest): string | null {
 
 function safeApiError(res: NextApiResponse, error: unknown, action: 'save' | 'delete'): void {
   if (error instanceof WatchRegionApiError) {
-    jsonError(res, error.status, { ok: false, error: error.message, errorCode: error.errorCode });
+    jsonError(res, error.status, { ok: false, error: error.message, errorCode: error.errorCode, message: error.message });
     return;
   }
 
   const message = error instanceof Error ? error.message : String(error);
-  console.warn('[watch-region] unhandled_error', { action, error: message });
+  const code = error && typeof error === 'object' && 'code' in error ? String((error as { code?: unknown }).code) : null;
+  console.warn('[watch-region] unhandled_error', { action, code, error: message });
+  const userMessage = action === 'save' ? '場所を保存できませんでした。' : '削除できませんでした。';
   jsonError(res, 500, {
     ok: false,
     error: action === 'save' ? 'save_failed' : 'delete_failed',
     errorCode: action === 'save' ? 'save_failed' : 'delete_failed',
+    message: userMessage,
   });
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader('Cache-Control', 'no-store');
-  if (!assertSameOrigin(req)) return jsonError(res, 403, { ok: false, error: 'forbidden', errorCode: 'forbidden' });
+  if (!assertSameOrigin(req)) return jsonError(res, 403, { ok: false, error: 'forbidden', errorCode: 'forbidden', message: 'forbidden' });
 
   try {
     if (req.method !== 'PATCH' && req.method !== 'DELETE') {
-      return jsonError(res, 405, { ok: false, error: 'method_not_allowed', errorCode: 'method_not_allowed' });
+      return jsonError(res, 405, { ok: false, error: 'method_not_allowed', errorCode: 'method_not_allowed', message: 'method_not_allowed' });
     }
 
     const rl = rateLimit(req, WRITE_RATE_LIMIT);
     if (!rl.ok) {
       res.setHeader('Retry-After', String(rl.retryAfterSec));
-      return jsonError(res, 429, { ok: false, error: 'rate_limited', errorCode: 'rate_limited' });
+      return jsonError(res, 429, { ok: false, error: 'rate_limited', errorCode: 'rate_limited', message: 'rate_limited' });
     }
 
     const id = first(req.query.id);
-    if (!id) return jsonError(res, 400, { ok: false, error: 'invalid_payload', errorCode: 'invalid_payload' });
+    if (!id) return jsonError(res, 400, { ok: false, error: 'invalid_payload', errorCode: 'invalid_payload', message: '入力内容を確認してください。' });
 
     const deviceId = parseDeviceId(req);
     if (!deviceId) return jsonError(res, 400, DEVICE_ERROR);
 
     if (req.method === 'PATCH') {
       const region = await updateWatchRegion(deviceId, id, req.body);
-      if (!region) return jsonError(res, 404, { ok: false, error: 'not_found', errorCode: 'not_found' });
+      if (!region) return jsonError(res, 404, { ok: false, error: 'not_found', errorCode: 'not_found', message: '対象の場所が見つかりません。' });
       return jsonOk(res, { ok: true, region });
     }
 
     const deleted = await deleteWatchRegion(deviceId, id);
-    if (!deleted) return jsonError(res, 404, { ok: false, error: 'not_found', errorCode: 'not_found' });
+    if (!deleted) return jsonError(res, 404, { ok: false, error: 'not_found', errorCode: 'not_found', message: '対象の場所が見つかりません。' });
     return jsonOk(res, { ok: true });
   } catch (error) {
     return safeApiError(res, error, req.method === 'PATCH' ? 'save' : 'delete');

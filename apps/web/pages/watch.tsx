@@ -175,6 +175,18 @@ function safeMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+function logWatchApiFailure(endpoint: string, status: number, payload: unknown): void {
+  const body = payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : {};
+  const errorCode = typeof body.errorCode === 'string' ? body.errorCode : typeof body.error === 'string' ? body.error : null;
+  const message = typeof body.message === 'string' ? body.message : typeof body.error === 'string' ? body.error : null;
+  console.error('[watch] api_failed', {
+    endpoint: endpoint.split('?')[0],
+    status,
+    errorCode,
+    message,
+  });
+}
+
 function riskBadgeClassName(riskLevel: RiskLevel | null | undefined): string {
   switch (riskLevel) {
     case 'normal':
@@ -389,8 +401,8 @@ export default function WatchPage() {
     }
 
     setSaving(true);
+    const endpoint = editing ? `/api/watch-regions/${encodeURIComponent(editing.id)}` : '/api/watch-regions';
     try {
-      const endpoint = editing ? `/api/watch-regions/${encodeURIComponent(editing.id)}` : '/api/watch-regions';
       const res = await fetch(endpoint, {
         method: editing ? 'PATCH' : 'POST',
         headers: { 'content-type': 'application/json' },
@@ -406,6 +418,7 @@ export default function WatchPage() {
       });
       const json: ApiResponse | null = await res.json().catch(() => null);
       if (!res.ok || json?.ok === false) {
+        logWatchApiFailure(endpoint, res.status, json);
         const err = new Error(json?.error ?? 'save_failed');
         (err as any).payload = json;
         throw err;
@@ -416,6 +429,7 @@ export default function WatchPage() {
       setFeedback({ kind: 'success', text: editing ? '更新しました' : '保存しました' });
       resetForm(placeType);
     } catch (err) {
+      if (!(err && typeof err === 'object' && 'payload' in err)) logWatchApiFailure(endpoint, 0, null);
       setFeedback({ kind: 'error', text: safeMessage(err, '場所を保存できませんでした。') });
     } finally {
       setSaving(false);
@@ -431,14 +445,16 @@ export default function WatchPage() {
 
     setDeletingId(region.id);
     setFeedback(null);
+    const endpoint = `/api/watch-regions/${encodeURIComponent(region.id)}`;
     try {
-      const res = await fetch(`/api/watch-regions/${encodeURIComponent(region.id)}`, {
+      const res = await fetch(endpoint, {
         method: 'DELETE',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ deviceId }),
       });
       const json: ApiResponse | null = await res.json().catch(() => null);
       if (!res.ok || json?.ok === false) {
+        logWatchApiFailure(endpoint, res.status, json);
         const err = new Error(json?.error ?? 'delete_failed');
         (err as any).payload = json;
         throw err;
@@ -448,6 +464,7 @@ export default function WatchPage() {
       await mutateStatus();
       setFeedback({ kind: 'success', text: '削除しました' });
     } catch (err) {
+      if (!(err && typeof err === 'object' && 'payload' in err)) logWatchApiFailure(endpoint, 0, null);
       setFeedback({ kind: 'error', text: safeMessage(err, '削除できませんでした。') });
     } finally {
       setDeletingId(null);

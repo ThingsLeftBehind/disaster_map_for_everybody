@@ -71,7 +71,9 @@ const LS_KEY = 'jp_evac_device_state_v1';
 const LS_AREA = 'jp_evac_coarse_area_v1';
 const LS_PENDING_CHECKINS = 'jp_evac_pending_checkins_v1';
 const LS_LAST_CHECKIN = 'jp_evac_last_checkin_v1';
+const LS_DEVICE_ID = 'jp_evac_device_id';
 const MIN_CHECKIN_INTERVAL_MS = 15_000;
+let memoryDeviceId: string | null = null;
 
 type PendingCheckin = {
   status: string;
@@ -159,12 +161,30 @@ function roundLatLon(coords: { lat: number; lon: number }, decimals: number): { 
   return { lat: roundNumber(coords.lat, decimals), lon: roundNumber(coords.lon, decimals) };
 }
 
+function normalizeStoredDeviceId(value: string | null | undefined): string | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim();
+  if (normalized.length < 6 || normalized.length > 80) return null;
+  if (!/^[A-Za-z0-9_-]+$/.test(normalized)) return null;
+  if (normalized === 'undefined' || normalized === 'null') return null;
+  return normalized;
+}
+
 function getOrCreateDeviceId(): string {
-  const existing = localStorage.getItem('jp_evac_device_id');
-  if (existing) return existing;
-  const id = nanoid(16);
-  localStorage.setItem('jp_evac_device_id', id);
-  return id;
+  try {
+    const existing = localStorage.getItem(LS_DEVICE_ID);
+    const normalized = normalizeStoredDeviceId(existing);
+    if (normalized) {
+      if (existing !== normalized) localStorage.setItem(LS_DEVICE_ID, normalized);
+      return normalized;
+    }
+    const id = nanoid(16);
+    localStorage.setItem(LS_DEVICE_ID, id);
+    return id;
+  } catch {
+    if (!memoryDeviceId) memoryDeviceId = nanoid(16);
+    return memoryDeviceId;
+  }
 }
 
 async function safeFetchJson(url: string, init?: RequestInit): Promise<any> {

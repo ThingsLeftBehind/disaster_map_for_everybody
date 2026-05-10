@@ -17,16 +17,16 @@ function isValidVapidPublicKey(value: string): boolean {
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'GET') {
-    return jsonError(res, 405, { ok: false, error: 'method_not_allowed', errorCode: 'METHOD_NOT_ALLOWED' });
+    return jsonError(res, 405, { ok: false, error: 'method_not_allowed', errorCode: 'METHOD_NOT_ALLOWED', message: 'method_not_allowed' });
   }
   const rl = rateLimit(req, READ_RATE_LIMIT);
   if (!rl.ok) {
     res.setHeader('Retry-After', String(rl.retryAfterSec));
-    return jsonError(res, 429, { ok: false, error: 'rate_limited', errorCode: 'RATE_LIMITED' });
+    return jsonError(res, 429, { ok: false, error: 'rate_limited', errorCode: 'RATE_LIMITED', message: 'rate_limited' });
   }
   const publicKey = getVapidPublicKey();
   if (!publicKey || !isValidVapidPublicKey(publicKey)) {
-    return jsonError(res, 503, { ok: false, error: 'vapid_not_configured', errorCode: 'VAPID_NOT_CONFIGURED' });
+    return jsonError(res, 503, { ok: false, error: 'vapid_not_configured', errorCode: 'VAPID_NOT_CONFIGURED', message: '通知の設定が未完了です。' });
   }
   return jsonOk(res, { ok: true, publicKey });
 }
