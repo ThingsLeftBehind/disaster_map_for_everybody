@@ -47,6 +47,24 @@ type AreaConst = {
 };
 
 type AreaNode = { name?: string; parent?: string; children?: string[] };
+type MetadataOptions = {
+  areaName: string | null;
+  availableClass10Areas: Array<{ code: string; name: string }>;
+  availableClass15Areas: Array<{
+    code: string;
+    name: string;
+    class10Code: string | null;
+    class10Name: string | null;
+  }>;
+  availableClass20Areas: Array<{
+    code: string;
+    name: string;
+    parentCode: string | null;
+    parentName: string | null;
+    class10Code: string | null;
+    class10Name: string | null;
+  }>;
+};
 
 const WARNING_CODE_BASE: Record<string, string> = {
   '05': '暴風',
@@ -90,6 +108,53 @@ function firstQuery(value: string | string[] | undefined): string | null {
 
 async function getAreaConst(): Promise<AreaConst | null> {
   return (await getAreaConstMetadata()) as AreaConst | null;
+}
+
+async function buildMetadataOptions(area: string): Promise<MetadataOptions> {
+  try {
+    const [areaName, availableClass10Areas, availableClass15Areas, availableClass20Areas] = await Promise.all([
+      getAreaNameFromMetadata(area),
+      getClass10ChildrenForArea(area),
+      getClass15DescendantsForArea(area),
+      getClass20DescendantsDetailedForArea(area),
+    ]);
+    return {
+      areaName,
+      availableClass10Areas,
+      availableClass15Areas,
+      availableClass20Areas,
+    };
+  } catch (error) {
+    console.warn('[jma] failed to build metadata area options', {
+      area,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return {
+      areaName: null,
+      availableClass10Areas: [],
+      availableClass15Areas: [],
+      availableClass20Areas: [],
+    };
+  }
+}
+
+function mergeMetadataOptions<T extends Record<string, any>>(payload: T, metadata: MetadataOptions): T {
+  return {
+    ...payload,
+    areaName: payload.areaName ?? metadata.areaName,
+    availableClass10Areas:
+      Array.isArray(payload.availableClass10Areas) && payload.availableClass10Areas.length > 0
+        ? payload.availableClass10Areas
+        : metadata.availableClass10Areas,
+    availableClass15Areas:
+      Array.isArray(payload.availableClass15Areas) && payload.availableClass15Areas.length > 0
+        ? payload.availableClass15Areas
+        : metadata.availableClass15Areas,
+    availableClass20Areas:
+      Array.isArray(payload.availableClass20Areas) && payload.availableClass20Areas.length > 0
+        ? payload.availableClass20Areas
+        : metadata.availableClass20Areas,
+  };
 }
 
 async function buildForecastAreaBreakdown(
@@ -368,7 +433,7 @@ function setCached(cacheKey: string, payload: any) {
 
 async function readAreaIndex(): Promise<Map<string, AreaNode> | null> {
   if (cachedAreaIndex && Date.now() - cachedAreaIndexAt < 24 * 60 * 60_000) return cachedAreaIndex;
-  const areaConst = await readJsonFile<AreaConst>(jmaAreaConstPath());
+  const areaConst = await getAreaConst();
   if (!areaConst) return null;
 
   const index = new Map<string, AreaNode>();
@@ -1003,9 +1068,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     normalizedClass20 && normalizedClass20.startsWith(area.slice(0, 2)) ? normalizedClass20 : null;
   const requestedTokyoGroup = normalizeTokyoGroupKey(firstQuery(req.query.tokyoGroup));
   const cacheKey = `${buildCacheKey(area, normalizedClass20 ?? null, subArea)}:${requestedTokyoGroup ?? ''}`;
+  const metadataOptions = await buildMetadataOptions(area);
   const cached = getCached(cacheKey);
   if (cached) {
-    return res.status(200).json(cached);
+    const payload = mergeMetadataOptions(cached, metadataOptions);
+    setCached(cacheKey, payload);
+    return res.status(200).json(payload);
   }
 
   try {
@@ -1016,8 +1084,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         class20,
         debug: process.env.NODE_ENV !== 'production' && req.query.debug === '1',
       });
-      setCached(cacheKey, payload);
-      return res.status(200).json(payload);
+      const mergedPayload = mergeMetadataOptions(payload, metadataOptions);
+      setCached(cacheKey, mergedPayload);
+      return res.status(200).json(mergedPayload);
     }
 
     const [data, tokyoGroups, subAreaInfo, areaIndex] = await Promise.all([
@@ -1079,7 +1148,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const selectedClass20Group = class20 ? subAreaInfo?.class20Groups?.[class20] ?? null : null;
-    const payload = {
+    const payload = mergeMetadataOptions({
       ...data,
       items,
       tokyoGroups: tokyoGroups?.groups ?? null,
@@ -1108,7 +1177,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         (selectedSubArea && 'class10Name' in selectedSubArea ? selectedSubArea.class10Name : selectedSubArea?.name ?? null),
       parentAreaCode: selectedClass20Group?.parentCode ?? null,
       parentAreaName: selectedClass20Group?.parentName ?? null,
-    };
+    }, metadataOptions);
 
     if (process.env.NODE_ENV !== 'production' && req.query.debug === '1') {
       // eslint-disable-next-line no-console
@@ -1127,7 +1196,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         updatedAt: snap?.updatedAt ?? null,
         lastError: message,
         area,
-        areaName: snap?.areaName ?? null,
+        areaName: snap?.areaName ?? metadataOptions.areaName,
         confidence: 'LOW',
         confidenceNotes: ['internal error; serving last cached snapshot if available'],
         items: snap?.items ?? [],
@@ -1142,9 +1211,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         muniMap: null,
         class20Groups: null,
         groupedByClass20: [],
-        availableClass10Areas: [],
-        availableClass15Areas: [],
-        availableClass20Areas: [],
+        availableClass10Areas: metadataOptions.availableClass10Areas,
+        availableClass15Areas: metadataOptions.availableClass15Areas,
+        availableClass20Areas: metadataOptions.availableClass20Areas,
         selectedClass20Code: class20,
         selectedClass20Name: null,
         selectedClass15Code: null,
@@ -1162,7 +1231,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         updatedAt: null,
         lastError: message,
         area,
-        areaName: null,
+        areaName: metadataOptions.areaName,
         confidence: 'LOW',
         confidenceNotes: ['internal error'],
         items: [],
@@ -1177,9 +1246,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         muniMap: null,
         class20Groups: null,
         groupedByClass20: [],
-        availableClass10Areas: [],
-        availableClass15Areas: [],
-        availableClass20Areas: [],
+        availableClass10Areas: metadataOptions.availableClass10Areas,
+        availableClass15Areas: metadataOptions.availableClass15Areas,
+        availableClass20Areas: metadataOptions.availableClass20Areas,
         selectedClass20Code: class20,
         selectedClass20Name: null,
         selectedClass15Code: null,
