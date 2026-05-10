@@ -1,6 +1,6 @@
 import { readJsonFile } from './cache';
 import { jmaAreaConstPath } from './paths';
-import bundledAreaConst from '../../../../data/ref/jma/const/area.json';
+import bundledAreaConst from './data/area.json';
 
 export type TokyoAreaGroup = 'tokyo_mainland' | 'izu_north' | 'izu_south' | 'ogasawara';
 
